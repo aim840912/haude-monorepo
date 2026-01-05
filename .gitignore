@@ -84,6 +84,13 @@ coverage/
 .nyc_output/
 
 # ================================
+# Playwright
+# ================================
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# ================================
 # Cache & Temp files
 # ================================
 .cache/
