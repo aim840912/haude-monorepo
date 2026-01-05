@@ -1,0 +1,6 @@
+export { ProductFeaturesList } from './ProductFeaturesList'
+export { ProductSpecificationsList } from './ProductSpecificationsList'
+export { ProductQuantitySelector } from './ProductQuantitySelector'
+export { ProductModalHeader, ProductPriceDisplay } from './ProductModalHeader'
+export { ProductModalActions } from './ProductModalActions'
+export type { ExtendedProduct, ProductDetailModalProps } from './types'
