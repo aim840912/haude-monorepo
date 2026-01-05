@@ -21,9 +21,9 @@ pnpm install
 pnpm dev
 
 # 啟動特定服務
-pnpm dev:web      # 用戶端 → http://localhost:5173
-pnpm dev:admin    # 管理後台 → http://localhost:5174
-pnpm dev:api      # 後端 API → http://localhost:3001
+pnpm dev:web      # 用戶端 → http://localhost:3000 (Next.js)
+pnpm dev:admin    # 管理後台 → http://localhost:5174 (Vite)
+pnpm dev:api      # 後端 API → http://localhost:3001 (NestJS)
 ```
 
 ### 常用指令
@@ -59,16 +59,16 @@ npx prisma studio            # 開啟資料庫管理 UI
 ```
 haude-v2/                     # Monorepo 根目錄
 ├── apps/
-│   ├── web/                  # @haude/web - 用戶端前端
+│   ├── web/                  # @haude/web - 用戶端前端 (Next.js)
 │   │   ├── src/
+│   │   │   ├── app/          # Next.js App Router
 │   │   │   ├── components/   # React 元件
-│   │   │   ├── pages/        # 頁面元件
 │   │   │   ├── stores/       # Zustand 狀態管理
 │   │   │   ├── services/     # API 服務層
 │   │   │   └── hooks/        # 自訂 Hooks
 │   │   └── package.json
 │   │
-│   ├── admin/                # @haude/admin - 管理後台
+│   ├── admin/                # @haude/admin - 管理後台 (Vite)
 │   │   ├── src/
 │   │   │   ├── components/   # 後台元件
 │   │   │   └── pages/        # 後台頁面
@@ -100,7 +100,7 @@ haude-v2/                     # Monorepo 根目錄
 | 層級 | 技術 | 說明 |
 |------|------|------|
 | **Monorepo** | pnpm + Turborepo | 工作區管理、智慧建置 |
-| **用戶端** | React 19 + Vite + Tailwind | 電商前端 |
+| **用戶端** | Next.js 15 + React 19 + Tailwind | 電商前端 (App Router) |
 | **管理後台** | React 19 + Vite + Tailwind | 後台管理介面 |
 | **後端** | NestJS 11 + Prisma 7 | REST API |
 | **資料庫** | PostgreSQL 15 | 關聯式資料庫 |
@@ -184,12 +184,12 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/haude_v2"
 JWT_SECRET=your-super-secret-jwt-key
 JWT_EXPIRES_IN=7d
 PORT=3001
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 ```
 
-**apps/web** (`.env.development`)：
+**apps/web** (`.env.local`)：
 ```env
-VITE_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 **apps/admin** (`.env.development`)：
