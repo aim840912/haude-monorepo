@@ -1,0 +1,363 @@
+// Prisma Schema for Haude V2
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 關聯
+  orders           Order[]
+  farmTourBookings FarmTourBooking[]
+  cart             Cart?
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ========================================
+// Products 模組
+// ========================================
+
+model Product {
+  id            String    @id @default(uuid())
+  name          String
+  description   String    @db.Text
+  category      String
+  price         Decimal   @db.Decimal(10, 2)
+  priceUnit     String?   @map("price_unit") // 價格單位（斤、包、箱等）
+  unitQuantity  Int?      @map("unit_quantity") // 單位數量
+  originalPrice Decimal?  @map("original_price") @db.Decimal(10, 2) // 原價（促銷用）
+  isOnSale      Boolean   @default(false) @map("is_on_sale") // 是否特價中
+  saleEndDate   DateTime? @map("sale_end_date") // 特價結束日期
+  stock         Int       @default(0) // 實際庫存
+  reservedStock Int       @default(0) @map("reserved_stock") // 保留庫存
+  isActive      Boolean   @default(true) @map("is_active") // 是否啟用
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // 關聯
+  images     ProductImage[]
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id              String   @id @default(uuid())
+  productId       String   @map("product_id")
+  storageUrl      String   @map("storage_url") // 圖片 URL
+  filePath        String   @map("file_path") // 儲存路徑
+  altText         String?  @map("alt_text") // 替代文字
+  displayPosition Int      @default(0) @map("display_position") // 排序位置
+  size            String   @default("medium") // thumbnail, medium, large
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+// ========================================
+// Cart 模組（購物車）
+// ========================================
+
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id") // 一個用戶只有一個購物車
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String   @map("cart_id")
+  productId String   @map("product_id")
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // 確保同一購物車內不會有重複的產品
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// ========================================
+// Orders 模組
+// ========================================
+
+enum OrderStatus {
+  pending
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+  expired
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  orderNumber     String        @unique @map("order_number") // 訂單編號
+  userId          String        @map("user_id")
+  status          OrderStatus   @default(pending) // 訂單狀態
+  subtotal        Decimal       @db.Decimal(10, 2) // 小計
+  shippingFee     Decimal       @map("shipping_fee") @db.Decimal(10, 2) // 運費
+  tax             Decimal       @default(0) @db.Decimal(10, 2) // 稅費
+  totalAmount     Decimal       @map("total_amount") @db.Decimal(10, 2) // 總金額
+  shippingAddress Json          @map("shipping_address") // 配送地址
+  paymentMethod   String?       @map("payment_method") // 付款方式
+  paymentStatus   PaymentStatus @default(pending) @map("payment_status") // 付款狀態
+  notes           String?       @db.Text // 訂單備註
+  trackingNumber  String?       @map("tracking_number") // 物流追蹤號
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // 關聯
+  user     User        @relation(fields: [userId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String   @id @default(uuid())
+  orderId      String   @map("order_id")
+  productId    String   @map("product_id")
+  productName  String   @map("product_name") // 快照：下單時產品名稱
+  productImage String?  @map("product_image") // 快照：下單時產品圖片
+  quantity     Int // 購買數量
+  unitPrice    Decimal  @map("unit_price") @db.Decimal(10, 2) // 快照：下單時單價
+  priceUnit    String?  @map("price_unit") // 價格單位
+  subtotal     Decimal  @db.Decimal(10, 2) // 小計
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ========================================
+// Payments 模組
+// ========================================
+
+model Payment {
+  id              String        @id @default(uuid())
+  orderId         String        @map("order_id")
+  merchantOrderNo String        @unique @map("merchant_order_no") // 商店訂單編號（給藍新用）
+  tradeNo         String?       @map("trade_no") // 藍新交易編號
+  status          PaymentStatus @default(pending)
+  amount          Int // 金額（整數，單位：元）
+  paymentType     String        @default("CREDIT") @map("payment_type") // CREDIT, VACC, CVS...
+  payTime         DateTime?     @map("pay_time") // 付款完成時間
+  requestData     Json?         @map("request_data") // 送出的請求參數
+  responseData    Json?         @map("response_data") // 藍新回傳的資料
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // 關聯
+  order Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  logs  PaymentLog[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model PaymentLog {
+  id              String   @id @default(uuid())
+  paymentId       String?  @map("payment_id")
+  merchantOrderNo String   @map("merchant_order_no") // 商店訂單編號
+  logType         String   @map("log_type") // notify, return, error
+  rawData         Json     @map("raw_data") // 原始回調資料
+  verified        Boolean  @default(false) // 簽章是否驗證通過
+  processed       Boolean  @default(false) // 是否已處理
+  ipAddress       String?  @map("ip_address") // 來源 IP
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // 關聯
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([merchantOrderNo])
+  @@index([paymentId])
+  @@map("payment_logs")
+}
+
+// ========================================
+// Farm Tours 模組（農場體驗）
+// ========================================
+
+enum FarmTourStatus {
+  upcoming
+  ongoing
+  completed
+  cancelled
+}
+
+enum FarmTourType {
+  harvest   // 採摘體驗
+  workshop  // 工作坊
+  tour      // 導覽
+  tasting   // 品嚐會
+}
+
+model FarmTour {
+  id                  String         @id @default(uuid())
+  name                String
+  description         String         @db.Text
+  date                DateTime       @db.Date
+  startTime           String         @map("start_time") // e.g., "09:00"
+  endTime             String         @map("end_time") // e.g., "12:00"
+  price               Decimal        @db.Decimal(10, 2)
+  maxParticipants     Int            @map("max_participants")
+  currentParticipants Int            @default(0) @map("current_participants")
+  location            String
+  imageUrl            String?        @map("image_url")
+  status              FarmTourStatus @default(upcoming)
+  type                FarmTourType   @default(tour)
+  tags                String[]       @default([])
+  isActive            Boolean        @default(true) @map("is_active")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  // 關聯
+  bookings FarmTourBooking[]
+
+  @@index([date])
+  @@index([status])
+  @@map("farm_tours")
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+model FarmTourBooking {
+  id           String        @id @default(uuid())
+  tourId       String        @map("tour_id")
+  userId       String        @map("user_id")
+  participants Int
+  contactName  String        @map("contact_name")
+  contactPhone String        @map("contact_phone")
+  notes        String?       @db.Text
+  status       BookingStatus @default(pending)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // 關聯
+  tour FarmTour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id])
+
+  @@index([tourId])
+  @@index([userId])
+  @@map("farm_tour_bookings")
+}
+
+// ========================================
+// Locations 模組（據點管理）
+// ========================================
+
+model Location {
+  id              String   @id @default(uuid())
+  name            String
+  title           String?
+  address         String
+  landmark        String?
+  phone           String?
+  lineId          String?  @map("line_id")
+  hours           String?
+  closedDays      String?  @map("closed_days")
+  parking         String?
+  publicTransport String?  @map("public_transport")
+  features        String[] @default([])
+  specialties     String[] @default([])
+  lat             Decimal? @db.Decimal(10, 7)
+  lng             Decimal? @db.Decimal(10, 7)
+  image           String?
+  isMain          Boolean  @default(false) @map("is_main")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("locations")
+}
+
+// ========================================
+// Schedules 模組（市集日程）
+// ========================================
+
+enum ScheduleStatus {
+  upcoming
+  ongoing
+  completed
+  cancelled
+}
+
+model Schedule {
+  id           String         @id @default(uuid())
+  title        String
+  location     String
+  date         DateTime       @db.Date
+  time         String // e.g., "06:00-12:00"
+  status       ScheduleStatus @default(upcoming)
+  products     String[]       @default([])
+  description  String?        @db.Text
+  contact      String?
+  specialOffer String?        @map("special_offer")
+  weatherNote  String?        @map("weather_note")
+  isActive     Boolean        @default(true) @map("is_active")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([status])
+  @@map("schedules")
+}

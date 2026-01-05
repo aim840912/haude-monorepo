@@ -1,0 +1,195 @@
+import { useState } from 'react'
+import { Star, Heart, Eye } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
+import type { Product } from '@/types/product'
+
+interface ProductCardProps {
+  /** 產品資料 */
+  product: Product
+  /** 是否為感興趣的產品 */
+  isInterested?: boolean
+  /** 產品點擊事件 */
+  onProductClick?: (product: Product) => void
+  /** 興趣切換事件 */
+  onToggleInterest?: (productId: string) => void
+}
+
+/**
+ * 產品卡片組件
+ *
+ * 特色：
+ * - 1:1 正方形圖片比例
+ * - 響應式設計
+ * - Hover 效果
+ * - 促銷標籤
+ */
+export function ProductCard({
+  product,
+  isInterested = false,
+  onProductClick,
+  onToggleInterest,
+}: ProductCardProps) {
+  const [isHovered, setIsHovered] = useState(false)
+  const [imageError, setImageError] = useState(false)
+
+  // 取得第一張圖片，使用 product.id 作為 seed 確保一致性
+  // 注意：API 回傳的是 images (camelCase)，不是 productImages
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const images = (product as any).images || product.productImages || []
+  const primaryImage = images[0]
+  const imageUrl = primaryImage?.storageUrl || primaryImage?.storage_url || PLACEHOLDER_IMAGES.product(product.id)
+
+  // 注意：API 回傳的是 stock (資料庫欄位)，前端型別定義是 inventory
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stock = (product as any).stock ?? product.inventory ?? 0
+
+  // 計算折扣百分比
+  const discountPercent =
+    product.originalPrice && product.originalPrice > product.price
+      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+      : 0
+
+  const handleClick = () => {
+    onProductClick?.(product)
+  }
+
+  const handleToggleInterest = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onToggleInterest?.(product.id)
+  }
+
+  return (
+    <div
+      className={cn(
+        'group relative bg-card-bg',
+        'cursor-pointer overflow-hidden rounded-xl',
+        'shadow-lg hover:shadow-xl',
+        'border border-card-border',
+        'transition-all duration-300 ease-out',
+        'hover:-translate-y-2 hover:scale-[1.01]',
+        'w-full max-w-[300px] mx-auto',
+        'tea-card'
+      )}
+      onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 產品標籤系統 */}
+      <div className="absolute top-4 left-4 z-20 space-y-2">
+        {/* 促銷標籤 */}
+        {discountPercent > 0 && (
+          <div className="inline-flex items-center bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+            <Star className="w-3 h-3 mr-1 fill-current flex-shrink-0" />
+            <span>特價 -{discountPercent}%</span>
+          </div>
+        )}
+
+        {/* 缺貨標籤 */}
+        {stock <= 0 && (
+          <div className="inline-flex items-center bg-gray-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+            <span>缺貨中</span>
+          </div>
+        )}
+      </div>
+
+      {/* 收藏按鈕 */}
+      {onToggleInterest && (
+        <button
+          onClick={handleToggleInterest}
+          className={cn(
+            'absolute top-4 right-4 z-20 w-10 h-10',
+            'flex items-center justify-center rounded-full',
+            'transition-all duration-300',
+            isInterested
+              ? 'bg-red-500 text-white'
+              : 'bg-white/80 text-gray-600 hover:bg-red-100 hover:text-red-500'
+          )}
+          aria-label={isInterested ? '移除收藏' : '加入收藏'}
+        >
+          <Heart className={cn('w-5 h-5', isInterested && 'fill-current')} />
+        </button>
+      )}
+
+      {/* 產品圖片 */}
+      <div className="relative overflow-hidden rounded-t-xl product-image-wrapper">
+        <div className="pb-[100%] bg-card-bg-secondary relative">
+          {!imageError ? (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={() => setImageError(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-primary-tea-light text-text-tertiary">
+              <span className="text-sm">無圖片</span>
+            </div>
+          )}
+        </div>
+
+        {/* 圖片遮罩 */}
+        <div
+          className={cn(
+            'absolute inset-0 transition-opacity duration-300',
+            'bg-black/20',
+            isHovered ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+
+        {/* 查看詳情按鈕 */}
+        <div
+          className={cn(
+            'absolute inset-0 flex items-center justify-center',
+            'transition-opacity duration-300',
+            isHovered ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 text-gray-800">
+            <Eye className="w-4 h-4" />
+            <span className="text-sm font-medium">查看詳情</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 產品資訊區域 */}
+      <div className="p-4 space-y-2">
+        {/* 類別 */}
+        <span className="text-xs text-text-tertiary uppercase tracking-wider">{product.category}</span>
+
+        {/* 產品名稱 */}
+        <h3 className="text-base font-bold text-foreground leading-tight group-hover:text-primary-tea transition-colors duration-300 line-clamp-2">
+          {product.name}
+        </h3>
+
+        {/* 價格區域 */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* 現價 */}
+          <span className="text-lg font-bold text-primary-tea">
+            NT$ {product.price.toLocaleString()}
+            {product.priceUnit && (
+              <span className="text-xs font-normal text-text-secondary ml-1">/ {product.priceUnit}</span>
+            )}
+          </span>
+
+          {/* 原價 */}
+          {product.originalPrice && product.originalPrice > product.price && (
+            <span className="text-sm text-text-tertiary line-through">
+              NT$ {product.originalPrice.toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        {/* 庫存資訊 */}
+        <div className="text-xs text-text-tertiary">
+          {stock > 0 ? (
+            <span className="text-primary-green">庫存: {stock}</span>
+          ) : (
+            <span className="text-accent-red">缺貨中</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

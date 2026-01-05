@@ -1,0 +1,36 @@
+import { useState, useEffect } from 'react'
+
+/**
+ * Custom hook that debounces a value
+ * @param value - The value to debounce
+ * @param delay - The delay in milliseconds
+ * @returns The debounced value
+ *
+ * @example
+ * ```tsx
+ * const [search, setSearch] = useState('')
+ * const debouncedSearch = useDebounce(search, 300)
+ *
+ * useEffect(() => {
+ *   // This will only run 300ms after the user stops typing
+ *   fetchResults(debouncedSearch)
+ * }, [debouncedSearch])
+ * ```
+ */
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    // Set debouncedValue to value after the specified delay
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    // Cancel the timeout if value changes (also on delay change or unmount)
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
