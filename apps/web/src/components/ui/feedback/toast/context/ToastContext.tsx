@@ -1,8 +1,8 @@
+'use client'
+
 /**
  * Toast Context 和 Provider
  */
-
-
 
 import React, { createContext, useState, useCallback } from 'react'
 import { ToastContainer } from '../components/ToastContainer'

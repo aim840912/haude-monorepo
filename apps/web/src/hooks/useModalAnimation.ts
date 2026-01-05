@@ -75,7 +75,7 @@ export const useModalAnimation = (
   }, [duration])
 
   // 響應外部 isOpen 變化（這是動畫控制 hook 的核心邏輯，需要響應 prop 變化）
-  /* eslint-disable react-hooks/set-state-in-effect */
+  
   useEffect(() => {
     if (isOpen && !shouldRender) {
       open()
@@ -83,7 +83,7 @@ export const useModalAnimation = (
       close()
     }
   }, [isOpen, shouldRender, open, close])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  
 
   // 背景遮罩樣式
   const backdropClasses = `

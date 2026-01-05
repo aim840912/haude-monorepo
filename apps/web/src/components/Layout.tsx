@@ -1,9 +1,11 @@
-import { Outlet } from 'react-router-dom'
+interface LayoutProps {
+  children: React.ReactNode
+}
 
-export function Layout() {
+export function Layout({ children }: LayoutProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Outlet />
+      {children}
     </div>
   )
 }

@@ -9,12 +9,12 @@ import type { AuthServiceInterface } from './types'
  * - .env.development: VITE_USE_MOCK=true
  * - .env.production: VITE_USE_MOCK=false
  */
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true'
 
 export const authService: AuthServiceInterface = USE_MOCK ? mockAuthService : realAuthService
 
 // 開發時顯示當前模式
-if (import.meta.env.DEV) {
+if (process.env.NODE_ENV !== 'production') {
   console.log(`[Auth Service] 使用 ${USE_MOCK ? 'Mock' : 'Real'} 模式`)
 }
 

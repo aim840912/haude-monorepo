@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { CalendarDays, Gift } from 'lucide-react'
 import { useUpcomingSchedule } from '@/hooks/useSchedule'
 import { formatDate } from '@/utils/formatters'
@@ -62,7 +62,7 @@ export function NextMarketScheduleCard() {
           {error ? '無法載入行程' : '目前沒有即將到來的市集'}
         </p>
         <Link
-          to="/schedule"
+          href="/schedule"
           className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-3 rounded-full font-semibold transition-colors"
         >
           查看完整行程
@@ -96,7 +96,7 @@ export function NextMarketScheduleCard() {
       )}
 
       <Link
-        to="/schedule"
+        href="/schedule"
         className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-3 rounded-full font-semibold transition-colors"
       >
         查看完整行程

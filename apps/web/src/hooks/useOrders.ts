@@ -57,7 +57,7 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersReturn {
         setHasMore(data.hasMore)
       } catch (err) {
         // 開發模式：API 失敗時使用 Mock 資料
-        if (import.meta.env.DEV) {
+        if (process.env.NODE_ENV !== 'production') {
           console.warn('[useOrders] API 不可用，使用 Mock 資料')
           const currentOffset = reset ? 0 : offset
           const paginatedOrders = mockOrders.slice(currentOffset, currentOffset + limit)
@@ -135,7 +135,7 @@ export function useOrder(orderId: string | undefined): UseOrderReturn {
       setOrder(data)
     } catch (err) {
       // 開發模式：API 失敗時使用 Mock 資料
-      if (import.meta.env.DEV) {
+      if (process.env.NODE_ENV !== 'production') {
         const mockOrder = getMockOrderById(orderId)
         if (mockOrder) {
           console.warn('[useOrder] API 不可用，使用 Mock 資料')

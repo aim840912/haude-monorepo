@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { Search, SlidersHorizontal, Loader2, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSearch } from '@/hooks/useSearch'
@@ -38,7 +38,7 @@ export function SearchResults({ query, className }: SearchResultsProps) {
     return (
       <Link
         key={result.id}
-        to={result.url}
+        href={result.url}
         className={cn(
           'block p-6 bg-white rounded-lg border border-gray-200',
           'hover:border-green-300 hover:shadow-md transition-all duration-200'

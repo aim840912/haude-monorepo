@@ -1,5 +1,8 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ShoppingCart, Settings, LogOut, User, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
@@ -18,7 +21,7 @@ const adminMenuItems = [
  * 使用 Zustand authStore 替代 AuthContext
  */
 export function DesktopHeader() {
-  const location = useLocation()
+  const pathname = usePathname()
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
@@ -26,9 +29,9 @@ export function DesktopHeader() {
 
   const isActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/'
+      return pathname === '/'
     }
-    return location.pathname.startsWith(path)
+    return pathname.startsWith(path)
   }
 
   // 點擊外部關閉選單
@@ -49,7 +52,7 @@ export function DesktopHeader() {
         {/* 左側：品牌 + 導航 */}
         <div className="flex items-center gap-6 h-8">
           {/* 品牌標誌（緊湊版）*/}
-          <Link to="/" className="flex items-center">
+          <Link href="/" className="flex items-center">
             <div className="flex items-center gap-2 h-8">
               <div className="font-display text-[#3e2723] tracking-tight text-2xl">豪德製茶所</div>
               <div className="text-[#5d4037]/70 font-inter font-medium tracking-wider text-[8px]">
@@ -78,7 +81,7 @@ export function DesktopHeader() {
                     ></div>
                   </a>
                 ) : (
-                  <Link to={item.href} className="block py-2 px-2">
+                  <Link href={item.href} className="block py-2 px-2">
                     <span
                       className={`text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm font-sans font-medium ${
                         isActive(item.href) ? 'text-green-600' : ''
@@ -103,7 +106,7 @@ export function DesktopHeader() {
           {/* 購物車按鈕 - 僅登入用戶顯示 */}
           {isAuthenticated && (
             <Link
-              to="/cart"
+              href="/cart"
               className="relative w-10 h-10 flex items-center justify-center text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
               title="購物車"
             >
@@ -135,7 +138,7 @@ export function DesktopHeader() {
                   {adminMenuItems.map(item => (
                     <Link
                       key={item.href}
-                      to={item.href}
+                      href={item.href}
                       onClick={() => setIsAdminMenuOpen(false)}
                       className={`block px-4 py-2 text-sm transition-colors ${
                         isActive(item.href)
@@ -165,7 +168,7 @@ export function DesktopHeader() {
             </div>
           ) : (
             <Link
-              to="/login"
+              href="/login"
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
             >
               <User className="w-4 h-4" />

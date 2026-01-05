@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import type { Product } from '@/types/product'
 
@@ -22,10 +22,10 @@ export interface UseProductModalReturn {
 export function useProductModal(products: Product[]): UseProductModalReturn {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const { user, isAuthenticated } = useAuthStore()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   // 檢查 URL 參數並自動開啟產品 modal（這是初始化邏輯，從 URL 同步狀態）
-  /* eslint-disable react-hooks/set-state-in-effect */
+  
   useEffect(() => {
     if (typeof window === 'undefined' || products.length === 0) return
 
@@ -39,7 +39,7 @@ export function useProductModal(products: Product[]): UseProductModalReturn {
       }
     }
   }, [products])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  
 
   const openModal = useCallback((product: Product) => {
     setSelectedProduct(product)
@@ -64,16 +64,16 @@ export function useProductModal(products: Product[]): UseProductModalReturn {
   const requestQuote = useCallback(
     (product: Product) => {
       if (!isAuthenticated || !user) {
-        navigate('/login')
+        router.push('/login')
         return
       }
 
       // 導向詢問單頁面，並預填產品資訊（包含價格）
-      navigate(
+      router.push(
         `/inquiries/create?product=${encodeURIComponent(product.name)}&productId=${product.id}&price=${product.price}`
       )
     },
-    [isAuthenticated, user, navigate]
+    [isAuthenticated, user, router]
   )
 
   return {

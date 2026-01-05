@@ -12,7 +12,7 @@ interface LogMessage {
   timestamp: string
 }
 
-const isDev = import.meta.env.DEV
+const isDev = process.env.NODE_ENV !== 'production'
 
 function formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): LogMessage {
   return {

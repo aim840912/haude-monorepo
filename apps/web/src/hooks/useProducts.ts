@@ -40,7 +40,7 @@ export function useProducts(options: UseProductsOptions = {}): UseProductsReturn
       setProducts(data)
     } catch (err) {
       // 開發模式：API 失敗時使用 Mock 資料
-      if (import.meta.env.DEV) {
+      if (process.env.NODE_ENV !== 'production') {
         console.warn('[useProducts] API 不可用，使用 Mock 資料')
         setProducts(mockProducts)
         setError(null)
@@ -97,7 +97,7 @@ export function useProduct(productId: string | undefined): UseProductReturn {
       setProduct(data)
     } catch (err) {
       // 開發模式：API 失敗時使用 Mock 資料
-      if (import.meta.env.DEV) {
+      if (process.env.NODE_ENV !== 'production') {
         const mockProduct = getMockProductById(productId)
         if (mockProduct) {
           console.warn('[useProduct] API 不可用，使用 Mock 資料')
@@ -155,7 +155,7 @@ export function useCategories(): UseCategoriesReturn {
         setCategories(data)
       } catch (err) {
         // 開發模式：API 失敗時使用 Mock 類別
-        if (import.meta.env.DEV) {
+        if (process.env.NODE_ENV !== 'production') {
           console.warn('[useCategories] API 不可用，使用 Mock 類別')
           setCategories(mockCategories)
           setError(null)
