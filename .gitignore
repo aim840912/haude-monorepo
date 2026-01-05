@@ -1,34 +1,112 @@
+# ================================
 # Dependencies
+# ================================
 node_modules/
 .pnpm-store/
+.pnpm-debug.log
 
+# ================================
 # Build outputs
+# ================================
 dist/
 build/
 .next/
+out/
+
+# ================================
+# Turborepo
+# ================================
 .turbo/
 
+# ================================
+# Vite
+# ================================
+*.local
+.vite/
+
+# ================================
 # Environment files
+# ================================
 .env
 .env.local
-.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Keep example files
+!.env.example
+!.env.*.example
 
-# IDE
-.vscode/
+# ================================
+# Prisma
+# ================================
+# Generated Prisma Client (regenerated on install)
+# prisma/generated/
+
+# ================================
+# IDE & Editors
+# ================================
 .idea/
+*.swp
+*.swo
+*~
 
-# OS
+# VSCode - ignore user-specific settings, keep shared configs
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# ================================
+# OS files
+# ================================
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
+# ================================
 # Logs
+# ================================
+logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
+# ================================
 # Testing
+# ================================
 coverage/
+.nyc_output/
 
-# Cache
+# ================================
+# Cache & Temp files
+# ================================
 .cache/
 *.tsbuildinfo
+.eslintcache
+.prettiercache
+
+# ================================
+# Misc
+# ================================
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/
