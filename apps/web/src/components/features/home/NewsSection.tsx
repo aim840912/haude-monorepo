@@ -3,7 +3,7 @@
  * 包含當季推薦、農場活動、下次市集、聯絡我們四個卡片
  */
 
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { Phone } from 'lucide-react'
 import { NextMarketScheduleCard } from './NextMarketScheduleCard'
 
@@ -72,7 +72,7 @@ export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps)
                   {newsCards.seasonalRecommendation.description}
                 </p>
                 <Link
-                  to={newsCards.seasonalRecommendation.linkUrl}
+                  href={newsCards.seasonalRecommendation.linkUrl}
                   className="inline-flex items-center text-[#d35400] hover:text-[#e67e22] font-medium transition-colors"
                 >
                   {newsCards.seasonalRecommendation.linkText}
@@ -96,7 +96,7 @@ export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps)
                   {newsCards.farmActivity.description}
                 </p>
                 <Link
-                  to={newsCards.farmActivity.linkUrl}
+                  href={newsCards.farmActivity.linkUrl}
                   className="inline-flex items-center text-[#d35400] hover:text-[#e67e22] font-medium transition-colors"
                 >
                   {newsCards.farmActivity.linkText}
@@ -120,7 +120,7 @@ export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps)
               有任何問題歡迎與我們聯繫
             </p>
             <Link
-              to="/contact"
+              href="/contact"
               className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-md hover:shadow-lg"
             >
               立即聯繫

@@ -1,5 +1,8 @@
+'use client'
+
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ShoppingCart, Settings, LogOut, User, Menu, X, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
@@ -31,16 +34,16 @@ export function MobileHeader({
   handleMobileMenuToggle,
   handleMenuItemClick,
 }: MobileHeaderProps) {
-  const location = useLocation()
+  const pathname = usePathname()
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
 
   const isActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/'
+      return pathname === '/'
     }
-    return location.pathname.startsWith(path)
+    return pathname.startsWith(path)
   }
 
   const handleLogout = () => {
@@ -57,7 +60,7 @@ export function MobileHeader({
     <div className="lg:hidden">
       <div className="flex items-center justify-between">
         {/* Brand - 左側固定 */}
-        <Link to="/" className="flex items-center flex-shrink-0">
+        <Link href="/" className="flex items-center flex-shrink-0">
           <div>
             <div className="font-display text-green-900 tracking-tight text-xl">豪德製茶所</div>
             <div className="text-green-700/70 font-inter font-medium tracking-wider text-[8px]">
@@ -71,7 +74,7 @@ export function MobileHeader({
           {/* 購物車按鈕 - 僅登入用戶顯示 */}
           {isAuthenticated && (
             <Link
-              to="/cart"
+              href="/cart"
               className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-all duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
               title="購物車"
             >
@@ -103,7 +106,7 @@ export function MobileHeader({
                   {adminMenuItems.map(item => (
                     <Link
                       key={item.href}
-                      to={item.href}
+                      href={item.href}
                       onClick={handleAdminItemClick}
                       className={`block px-4 py-2 text-sm transition-colors ${
                         isActive(item.href)
@@ -155,7 +158,7 @@ export function MobileHeader({
                   </a>
                 ) : (
                   <Link
-                    to={item.href}
+                    href={item.href}
                     className={`block px-4 py-3 transition-colors duration-200 rounded-lg mx-2 ${
                       isActive(item.href)
                         ? 'text-green-900 bg-green-50 font-semibold'
@@ -188,7 +191,7 @@ export function MobileHeader({
               </>
             ) : (
               <Link
-                to="/login"
+                href="/login"
                 className="flex items-center gap-2 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 rounded-lg mx-2"
                 onClick={handleMenuItemClick}
               >

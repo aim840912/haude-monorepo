@@ -249,7 +249,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components -- Context 文件需要同時導出 Provider 和 hook
 export function useCart() {
   const context = useContext(CartContext)
   if (!context) {

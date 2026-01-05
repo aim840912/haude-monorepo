@@ -40,12 +40,12 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
     useFocusTrap(shouldRender)
 
     // 重置數量當產品變更時（這是從 props 同步到 state 的合法模式）
-    /* eslint-disable react-hooks/set-state-in-effect */
+    
     useEffect(() => {
       setQuantity(1)
       setCurrentImageIndex(0)
     }, [product.id])
-    /* eslint-enable react-hooks/set-state-in-effect */
+    
 
     const handleBackdropClick = (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {

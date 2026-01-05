@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 
 // ==========================================
@@ -55,16 +57,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isClient, setIsClient] = useState(false)
 
   // 從 localStorage 載入主題偏好（這是初始化狀態的標準模式）
-  /* eslint-disable react-hooks/set-state-in-effect */
+  
   useEffect(() => {
     setIsClient(true)
     const savedTheme = getStoredTheme()
     setThemeState(savedTheme)
   }, [])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  
 
   // 解析實際應用的主題（響應 theme 變化計算派生狀態）
-  /* eslint-disable react-hooks/set-state-in-effect */
+  
   useEffect(() => {
     if (!isClient) return
 
@@ -89,7 +91,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       html.classList.remove('dark')
     }
   }, [theme, isClient])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  
 
   /**
    * 切換主題並儲存到 localStorage
@@ -110,7 +112,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
  * useTheme Hook
  * 用於在元件中存取主題相關功能
  */
-// eslint-disable-next-line react-refresh/only-export-components -- Context 文件需要同時導出 Provider 和 hook
 export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext)
   if (context === undefined) {

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { Calendar, MapPin, Users, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
@@ -154,7 +154,7 @@ export function FarmTourCard({ tour, className, onClick }: FarmTourCardProps) {
   }
 
   return (
-    <Link to={`/farm-tours/${tour.id}`} className={cardClassName}>
+    <Link href={`/farm-tours/${tour.id}`} className={cardClassName}>
       {cardContent}
     </Link>
   )

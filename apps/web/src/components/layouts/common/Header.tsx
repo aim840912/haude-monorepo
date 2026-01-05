@@ -1,3 +1,5 @@
+'use client'
+
 import { DesktopHeader } from './header/DesktopHeader'
 import { MobileHeader } from './header/MobileHeader'
 import { useHeaderState } from './header/useHeaderState'

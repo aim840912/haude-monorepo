@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 
 /**
  * Footer 元件
@@ -13,25 +13,25 @@ export function Footer() {
         </p>
         <nav className="flex gap-4 text-sm">
           <Link
-            to="/products"
+            href="/products"
             className="text-gray-300 hover:text-green-500 transition-colors"
           >
             產品
           </Link>
           <Link
-            to="/farm-tours"
+            href="/farm-tours"
             className="text-gray-300 hover:text-green-500 transition-colors"
           >
             農場參觀
           </Link>
           <Link
-            to="/schedule"
+            href="/schedule"
             className="text-gray-300 hover:text-green-500 transition-colors"
           >
             擺攤行程
           </Link>
           <Link
-            to="/locations"
+            href="/locations"
             className="text-gray-300 hover:text-green-500 transition-colors"
           >
             門市據點

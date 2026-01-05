@@ -27,7 +27,7 @@ export function AdminSidebarProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false)
 
   // 從 localStorage 讀取偏好設定（這是初始化狀態的標準模式）
-  /* eslint-disable react-hooks/set-state-in-effect */
+  
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored !== null) {
@@ -35,7 +35,7 @@ export function AdminSidebarProvider({ children }: { children: ReactNode }) {
     }
     setIsHydrated(true)
   }, [])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  
 
   // 儲存收合狀態到 localStorage
   useEffect(() => {
@@ -93,7 +93,6 @@ export function AdminSidebarProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components -- Context 文件需要同時導出 Provider 和 hook
 export function useAdminSidebar() {
   const context = useContext(AdminSidebarContext)
   if (context === undefined) {

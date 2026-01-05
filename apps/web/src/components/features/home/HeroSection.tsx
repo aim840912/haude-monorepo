@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface HeroSectionProps {
@@ -81,13 +81,13 @@ export function HeroSection({ images, scrollY, currentSlide, onSlideChange }: He
         {/* CTA 按鈕 */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            to="/products"
+            href="/products"
             className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-4 rounded-full text-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
           >
             探索產品
           </Link>
           <Link
-            to="/about"
+            href="/about"
             className="inline-block bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-8 py-4 rounded-full text-lg font-medium transition-all duration-300 border border-white/50"
           >
             了解更多

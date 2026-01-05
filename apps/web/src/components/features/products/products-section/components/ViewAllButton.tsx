@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { ShoppingBag, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,7 @@ export const ViewAllButton = React.memo<ViewAllButtonProps>(({
   return (
     <div className={cn('text-center', isVisible && 'animate-fade-in')}>
       <Link
-        to={href}
+        href={href}
         className={cn(
           'inline-flex items-center gap-3',
           'bg-gray-900 text-white px-8 py-4 rounded-lg',
