@@ -12,8 +12,10 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String
+  password  String?  // 可為空，Google 登入用戶不需要密碼
   name      String
+  googleId  String?  @unique @map("google_id") // Google OAuth 用戶 ID
+  avatar    String?  // Google 頭像 URL
   role      Role     @default(USER)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
