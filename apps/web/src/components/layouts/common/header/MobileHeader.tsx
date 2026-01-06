@@ -71,22 +71,20 @@ export function MobileHeader({
 
         {/* 右側:工具按鈕組 */}
         <div className="flex items-center flex-shrink-0 space-x-2">
-          {/* 購物車按鈕 - 僅登入用戶顯示 */}
-          {isAuthenticated && (
-            <Link
-              href="/cart"
-              className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-all duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
-              title="購物車"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {/* 購物車數量 Badge */}
-              {totalItems > 0 && (
-                <span className="absolute top-0 right-0 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </Link>
-          )}
+          {/* 購物車按鈕 - 所有用戶皆可見 */}
+          <Link
+            href="/cart"
+            className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-all duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
+            title="購物車"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            {/* 購物車數量 Badge */}
+            {totalItems > 0 && (
+              <span className="absolute top-0 right-0 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
+                {totalItems > 99 ? '99+' : totalItems}
+              </span>
+            )}
+          </Link>
 
           {/* 管理員選單 - Mobile */}
           {user?.role === 'ADMIN' && (

@@ -7,6 +7,7 @@ import { ArrowLeft, CreditCard, Building2, Store, Globe, Loader2, ShoppingBag } 
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
 import { ordersApi } from '@/services/api'
 import { cn } from '@/lib/utils'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import type { PaymentMethod, ShippingAddress } from '@/types/order'
 
 // 付款方式選項
@@ -33,8 +34,21 @@ const taiwanCities = [
  * - 填寫收件人資訊
  * - 選擇付款方式
  * - 建立訂單
+ *
+ * 注意：需要登入才能結帳（使用 ProtectedRoute 包裹）
  */
 export default function CheckoutPage() {
+  return (
+    <ProtectedRoute>
+      <CheckoutContent />
+    </ProtectedRoute>
+  )
+}
+
+/**
+ * 結帳頁面內容元件
+ */
+function CheckoutContent() {
   const router = useRouter()
   const { items, clearCart } = useCartStore()
   const totalItems = useTotalItems()
