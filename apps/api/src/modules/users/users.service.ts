@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -45,8 +49,30 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    currentUserId?: string,
+  ) {
     await this.findOne(id);
+
+    // 防止管理員降低自己的權限或停用自己的帳號
+    if (currentUserId && id === currentUserId) {
+      // 角色優先級：ADMIN > STAFF > VIP > USER
+      const roleHierarchy = ['USER', 'VIP', 'STAFF', 'ADMIN'];
+      const currentUser = await this.findOne(currentUserId);
+      const currentRoleIndex = roleHierarchy.indexOf(currentUser.role);
+      const newRoleIndex = updateUserDto.role
+        ? roleHierarchy.indexOf(updateUserDto.role)
+        : currentRoleIndex;
+
+      if (newRoleIndex < currentRoleIndex) {
+        throw new ForbiddenException('不能降低自己的權限');
+      }
+      if (updateUserDto.isActive === false) {
+        throw new ForbiddenException('不能停用自己的帳號');
+      }
+    }
 
     return this.prisma.user.update({
       where: { id },

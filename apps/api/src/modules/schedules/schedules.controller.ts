@@ -44,11 +44,11 @@ export class SchedulesController {
 }
 
 /**
- * 管理員 API
+ * 管理員 API (STAFF 和 ADMIN 可存取)
  */
 @Controller('admin/schedules')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
+@Roles('STAFF', 'ADMIN')
 export class AdminSchedulesController {
   constructor(private readonly schedulesService: SchedulesService) {}
 

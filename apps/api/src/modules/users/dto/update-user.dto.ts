@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'John Doe' })
@@ -17,4 +24,20 @@ export class UpdateUserDto {
   @IsString()
   @MinLength(6)
   password?: string;
+
+  @ApiPropertyOptional({
+    example: 'USER',
+    enum: ['USER', 'VIP', 'STAFF', 'ADMIN'],
+    description: 'USER=一般會員, VIP=VIP會員, STAFF=員工, ADMIN=管理員',
+  })
+  @IsOptional()
+  @IsEnum(['USER', 'VIP', 'STAFF', 'ADMIN'], {
+    message: 'role 必須是 USER、VIP、STAFF 或 ADMIN',
+  })
+  role?: 'USER' | 'VIP' | 'STAFF' | 'ADMIN';
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

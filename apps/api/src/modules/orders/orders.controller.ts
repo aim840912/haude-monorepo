@@ -89,13 +89,13 @@ export class OrdersController {
 }
 
 // ========================================
-// 管理員訂單 API
+// 管理員訂單 API (STAFF 和 ADMIN 可存取)
 // ========================================
 
 @ApiTags('admin/orders')
 @Controller('admin/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
 export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
