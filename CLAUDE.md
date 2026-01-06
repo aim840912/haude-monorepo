@@ -21,7 +21,7 @@ pnpm install
 pnpm dev
 
 # 啟動特定服務
-pnpm dev:web      # 用戶端 → http://localhost:3000 (Next.js)
+pnpm dev:web      # 用戶端 → http://localhost:5173 (Next.js)
 pnpm dev:admin    # 管理後台 → http://localhost:5174 (Vite)
 pnpm dev:api      # 後端 API → http://localhost:3001 (NestJS)
 ```
@@ -176,6 +176,34 @@ PUT    /cart/items/:productId
 DELETE /cart/items/:productId
 ```
 
+### Port 管理規範
+
+**固定 Port 分配（不可變更）**：
+
+| 服務 | Port | 說明 |
+|------|------|------|
+| **web** | 5173 | Next.js 用戶端（`next dev -p 5173`） |
+| **api** | 3001 | NestJS 後端 API |
+| **admin** | 5174 | Vite 管理後台 |
+
+**啟動服務前必須執行**：
+
+```bash
+# 檢查 port 是否被占用
+lsof -i :5173 -i :3001 -i :5174
+
+# 如果有殘留進程，強制終止後再啟動
+# 終止特定 port 的進程
+kill -9 $(lsof -t -i :5173)  # 終止佔用 5173 的進程
+kill -9 $(lsof -t -i :3001)  # 終止佔用 3001 的進程
+kill -9 $(lsof -t -i :5174)  # 終止佔用 5174 的進程
+```
+
+**規則**：
+- **永不** 自動切換到其他 port - 如果指定 port 被占用，必須先終止占用進程
+- **永不** 假設服務已停止 - 啟動前必須用 `lsof` 檢查
+- **始終** 使用固定 port - 確保前後端 URL 設定一致
+
 ### 環境變數
 
 **apps/api** (`.env`)：
@@ -184,7 +212,7 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/haude_v2"
 JWT_SECRET=your-super-secret-jwt-key
 JWT_EXPIRES_IN=7d
 PORT=3001
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 ```
 
 **apps/web** (`.env.local`)：
