@@ -43,10 +43,10 @@ model Product {
   name          String
   description   String    @db.Text
   category      String
-  price         Decimal   @db.Decimal(10, 2)
+  price         Int       // 價格（台幣整數）
   priceUnit     String?   @map("price_unit") // 價格單位（斤、包、箱等）
   unitQuantity  Int?      @map("unit_quantity") // 單位數量
-  originalPrice Decimal?  @map("original_price") @db.Decimal(10, 2) // 原價（促銷用）
+  originalPrice Int?      @map("original_price") // 原價（促銷用）
   isOnSale      Boolean   @default(false) @map("is_on_sale") // 是否特價中
   saleEndDate   DateTime? @map("sale_end_date") // 特價結束日期
   stock         Int       @default(0) // 實際庫存
@@ -142,10 +142,10 @@ model Order {
   orderNumber     String        @unique @map("order_number") // 訂單編號
   userId          String        @map("user_id")
   status          OrderStatus   @default(pending) // 訂單狀態
-  subtotal        Decimal       @db.Decimal(10, 2) // 小計
-  shippingFee     Decimal       @map("shipping_fee") @db.Decimal(10, 2) // 運費
-  tax             Decimal       @default(0) @db.Decimal(10, 2) // 稅費
-  totalAmount     Decimal       @map("total_amount") @db.Decimal(10, 2) // 總金額
+  subtotal        Int           // 小計（台幣整數）
+  shippingFee     Int           @map("shipping_fee") // 運費
+  tax             Int           @default(0) // 稅費
+  totalAmount     Int           @map("total_amount") // 總金額
   shippingAddress Json          @map("shipping_address") // 配送地址
   paymentMethod   String?       @map("payment_method") // 付款方式
   paymentStatus   PaymentStatus @default(pending) @map("payment_status") // 付款狀態
@@ -171,9 +171,9 @@ model OrderItem {
   productName  String   @map("product_name") // 快照：下單時產品名稱
   productImage String?  @map("product_image") // 快照：下單時產品圖片
   quantity     Int // 購買數量
-  unitPrice    Decimal  @map("unit_price") @db.Decimal(10, 2) // 快照：下單時單價
+  unitPrice    Int      @map("unit_price") // 快照：下單時單價
   priceUnit    String?  @map("price_unit") // 價格單位
-  subtotal     Decimal  @db.Decimal(10, 2) // 小計
+  subtotal     Int      // 小計
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -256,7 +256,7 @@ model FarmTour {
   date                DateTime       @db.Date
   startTime           String         @map("start_time") // e.g., "09:00"
   endTime             String         @map("end_time") // e.g., "12:00"
-  price               Decimal        @db.Decimal(10, 2)
+  price               Int            // 價格（台幣整數）
   maxParticipants     Int            @map("max_participants")
   currentParticipants Int            @default(0) @map("current_participants")
   location            String
