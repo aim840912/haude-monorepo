@@ -64,7 +64,7 @@ export function useDashboard(): UseDashboardReturn {
       const ordersTotal = ordersData.total || 0
       const users = usersRes.data || []
 
-      // 計算統計數據
+      // 計算統計數據（金額已改為整數，無需轉換）
       const totalRevenue = orders.reduce(
         (sum: number, order: { totalAmount?: number }) => sum + (order.totalAmount || 0),
         0
