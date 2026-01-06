@@ -13,8 +13,9 @@ import {
   ApiBearerAuth,
   ApiResponse,
   ApiExcludeEndpoint,
+  ApiQuery,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Response, Request as ExpressRequest } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -73,24 +74,43 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth login' })
+  @ApiQuery({ name: 'redirect', required: false, description: 'Redirect target: "admin" or "web"' })
   @ApiResponse({ status: 302, description: 'Redirect to Google OAuth.' })
   googleAuth() {
-    // Guard 會自動重導向到 Google
+    // GoogleStrategy.authenticate() 會處理 redirect 參數並設定 state
+    // Guard 會重導向到 Google，此方法不會實際執行
   }
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiExcludeEndpoint() // 不在 Swagger 中顯示
   async googleAuthCallback(
-    @Request() req: { user: { id: string; email: string; name: string; role: string } },
+    @Request() req: ExpressRequest & { user: { id: string; email: string; name: string; role: string; oauthState?: string } },
     @Res() res: Response,
   ) {
-    // Google OAuth 回調處理
-    const { user, accessToken } = await this.authService.googleLogin(req.user);
+    // 從 user 物件取得 oauthState（由 GoogleStrategy 附加）
+    const { oauthState, ...userData } = req.user;
 
-    // 將 token 傳回前端
-    // 使用 URL fragment 傳遞 token（更安全，不會被伺服器記錄）
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    // Google OAuth 回調處理
+    const { user, accessToken } = await this.authService.googleLogin(userData);
+
+    if (oauthState === 'admin') {
+      // Admin 登入：檢查是否為 ADMIN 角色
+      const adminUrl = this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';
+
+      if (user.role !== 'ADMIN') {
+        // 非管理員，重導向到錯誤頁面
+        res.redirect(`${adminUrl}/auth/callback#error=${encodeURIComponent('您沒有管理員權限')}`);
+        return;
+      }
+
+      const redirectUrl = `${adminUrl}/auth/callback#token=${accessToken}&user=${encodeURIComponent(JSON.stringify(user))}`;
+      res.redirect(redirectUrl);
+      return;
+    }
+
+    // Web 登入（預設）
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
     const redirectUrl = `${frontendUrl}/auth/callback#token=${accessToken}&user=${encodeURIComponent(JSON.stringify(user))}`;
 
     res.redirect(redirectUrl);
