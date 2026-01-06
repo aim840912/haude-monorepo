@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { Plus, Search, Edit, Trash2, RefreshCw } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
+import { ProductEditModal } from '../components/ProductEditModal'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import type { Product } from '@haude/types'
 
 export function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { products, isLoading, error, refetch } = useProducts()
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
+  const { products, isLoading, error, refetch, updateProduct, deleteProduct, isUpdating, isDeleting } = useProducts()
 
   // 過濾產品
   const filteredProducts = products.filter((product) =>
@@ -126,10 +131,18 @@ export function ProductsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="p-2 text-gray-600 hover:text-blue-600">
+                    <button
+                      onClick={() => setEditingProduct(product)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="編輯產品"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-gray-600 hover:text-red-600">
+                    <button
+                      onClick={() => setDeletingProduct(product)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="刪除產品"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -145,6 +158,37 @@ export function ProductsPage() {
         共 {filteredProducts.length} 個產品
         {searchQuery && ` (搜尋結果)`}
       </div>
+
+      {/* 編輯產品 Modal */}
+      {editingProduct && (
+        <ProductEditModal
+          product={editingProduct}
+          isOpen={!!editingProduct}
+          isUpdating={isUpdating}
+          onClose={() => setEditingProduct(null)}
+          onSave={updateProduct}
+        />
+      )}
+
+      {/* 刪除確認 Dialog */}
+      {deletingProduct && (
+        <ConfirmDialog
+          isOpen={!!deletingProduct}
+          isLoading={isDeleting}
+          title="確認刪除"
+          message={`確定要刪除「${deletingProduct.name}」嗎？此操作無法復原。`}
+          confirmText="確認刪除"
+          cancelText="取消"
+          variant="danger"
+          onConfirm={async () => {
+            const success = await deleteProduct(deletingProduct.id)
+            if (success) {
+              setDeletingProduct(null)
+            }
+          }}
+          onCancel={() => setDeletingProduct(null)}
+        />
+      )}
     </div>
   )
 }

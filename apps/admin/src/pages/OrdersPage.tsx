@@ -1,13 +1,8 @@
-import { Search, Eye } from 'lucide-react'
 import { useState } from 'react'
-import type { Order, OrderStatus } from '@haude/types'
-
-// Mock data
-const mockOrders: Partial<Order>[] = [
-  { id: '1', orderNumber: 'ORD20260105001', status: 'pending', totalAmount: 2400, createdAt: '2026-01-05' },
-  { id: '2', orderNumber: 'ORD20260104002', status: 'processing', totalAmount: 1800, createdAt: '2026-01-04' },
-  { id: '3', orderNumber: 'ORD20260103003', status: 'delivered', totalAmount: 3200, createdAt: '2026-01-03' },
-]
+import { Search, Eye, RefreshCw, Edit } from 'lucide-react'
+import { useOrders, Order } from '../hooks/useOrders'
+import { OrderStatusModal } from '../components/OrderStatusModal'
+import type { OrderStatus } from '@haude/types'
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: '待處理',
@@ -31,12 +26,54 @@ const statusColors: Record<OrderStatus, string> = {
 
 export function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const { orders, isLoading, error, refetch, updateOrderStatus, isUpdating } = useOrders()
+
+  // 過濾訂單
+  const filteredOrders = orders.filter(
+    (order) =>
+      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.userEmail?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={refetch}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          <RefreshCw className="w-4 h-4" />
+          重試
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">訂單管理</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">訂單管理</h1>
+        <button
+          onClick={refetch}
+          className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg"
+          title="重新整理"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
 
-      {/* Search & Filters */}
+      {/* Search */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -44,7 +81,7 @@ export function OrdersPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜尋訂單編號..."
+            placeholder="搜尋訂單編號、客戶名稱或 Email..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
@@ -52,57 +89,97 @@ export function OrdersPage() {
 
       {/* Orders Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                訂單編號
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                建立時間
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                金額
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                狀態
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {mockOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="font-medium text-gray-900">{order.orderNumber}</span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                  {order.createdAt}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                  NT$ {order.totalAmount?.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      statusColors[order.status as OrderStatus]
-                    }`}
-                  >
-                    {statusLabels[order.status as OrderStatus]}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <button className="p-2 text-gray-600 hover:text-blue-600">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </td>
+        {filteredOrders.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            {searchQuery ? '找不到符合的訂單' : '尚無訂單'}
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  訂單編號
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  客戶
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  建立時間
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  金額
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  狀態
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操作
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredOrders.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="font-medium text-gray-900">{order.orderNumber}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-gray-900">{order.userName || '-'}</div>
+                    <div className="text-sm text-gray-500">{order.userEmail || '-'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                    {new Date(order.createdAt).toLocaleDateString('zh-TW')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900">
+                    NT$ {order.totalAmount?.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {statusLabels[order.status] || order.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <button
+                      onClick={() => setEditingOrder(order)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="更新狀態"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="查看詳情"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* 訂單數量統計 */}
+      <div className="mt-4 text-sm text-gray-500">
+        共 {filteredOrders.length} 筆訂單
+        {searchQuery && ` (搜尋結果)`}
+      </div>
+
+      {/* 狀態更新 Modal */}
+      {editingOrder && (
+        <OrderStatusModal
+          order={editingOrder}
+          isOpen={!!editingOrder}
+          isUpdating={isUpdating}
+          onClose={() => setEditingOrder(null)}
+          onSave={updateOrderStatus}
+        />
+      )}
     </div>
   )
 }

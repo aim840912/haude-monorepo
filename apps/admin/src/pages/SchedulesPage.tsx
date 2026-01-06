@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Plus, Search, Edit, Trash2, RefreshCw, Calendar, MapPin, Phone } from 'lucide-react'
 import { useSchedules, Schedule } from '../hooks/useSchedules'
+import { ScheduleEditModal } from '../components/ScheduleEditModal'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 
 // 狀態標籤樣式
 const statusStyles: Record<Schedule['status'], string> = {
@@ -18,7 +20,9 @@ const statusLabels: Record<Schedule['status'], string> = {
 
 export function SchedulesPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { schedules, isLoading, error, refetch } = useSchedules()
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
+  const [deletingSchedule, setDeletingSchedule] = useState<Schedule | null>(null)
+  const { schedules, isLoading, error, refetch, updateSchedule, deleteSchedule, isUpdating, isDeleting } = useSchedules()
 
   // 過濾行程
   const filteredSchedules = schedules.filter(
@@ -171,10 +175,18 @@ export function SchedulesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="p-2 text-gray-600 hover:text-blue-600">
+                    <button
+                      onClick={() => setEditingSchedule(schedule)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="編輯行程"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-gray-600 hover:text-red-600">
+                    <button
+                      onClick={() => setDeletingSchedule(schedule)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="刪除行程"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -190,6 +202,37 @@ export function SchedulesPage() {
         共 {filteredSchedules.length} 個行程
         {searchQuery && ` (搜尋結果)`}
       </div>
+
+      {/* 編輯行程 Modal */}
+      {editingSchedule && (
+        <ScheduleEditModal
+          schedule={editingSchedule}
+          isOpen={!!editingSchedule}
+          isUpdating={isUpdating}
+          onClose={() => setEditingSchedule(null)}
+          onSave={updateSchedule}
+        />
+      )}
+
+      {/* 刪除確認 Dialog */}
+      {deletingSchedule && (
+        <ConfirmDialog
+          isOpen={!!deletingSchedule}
+          isLoading={isDeleting}
+          title="確認刪除"
+          message={`確定要刪除「${deletingSchedule.title}」嗎？此操作無法復原。`}
+          confirmText="確認刪除"
+          cancelText="取消"
+          variant="danger"
+          onConfirm={async () => {
+            const success = await deleteSchedule(deletingSchedule.id)
+            if (success) {
+              setDeletingSchedule(null)
+            }
+          }}
+          onCancel={() => setDeletingSchedule(null)}
+        />
+      )}
     </div>
   )
 }

@@ -20,24 +20,45 @@ export interface FarmTour {
   updatedAt: string
 }
 
+export interface UpdateFarmTourData {
+  name?: string
+  description?: string
+  date?: string
+  startTime?: string
+  endTime?: string
+  price?: number
+  maxParticipants?: number
+  location?: string
+  imageUrl?: string
+  status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
+  type?: 'harvest' | 'workshop' | 'tour' | 'tasting'
+  tags?: string[]
+}
+
 interface UseFarmToursReturn {
   farmTours: FarmTour[]
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  updateFarmTour: (id: string, data: UpdateFarmTourData) => Promise<boolean>
+  deleteFarmTour: (id: string) => Promise<boolean>
+  isUpdating: boolean
+  isDeleting: boolean
 }
 
 export function useFarmTours(): UseFarmToursReturn {
   const [farmTours, setFarmTours] = useState<FarmTour[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchFarmTours = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      // 使用公開 API 取得所有活動
-      const { data } = await farmToursApi.getAll()
+      // 使用管理員 API 取得所有活動
+      const { data } = await farmToursApi.getAllAdmin()
       setFarmTours(data)
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入觀光果園活動失敗'
@@ -48,6 +69,34 @@ export function useFarmTours(): UseFarmToursReturn {
     }
   }, [])
 
+  const updateFarmTour = useCallback(async (id: string, data: UpdateFarmTourData): Promise<boolean> => {
+    setIsUpdating(true)
+    try {
+      await farmToursApi.update(id, data)
+      await fetchFarmTours()
+      return true
+    } catch (err) {
+      console.error('[useFarmTours] 更新失敗:', err)
+      return false
+    } finally {
+      setIsUpdating(false)
+    }
+  }, [fetchFarmTours])
+
+  const deleteFarmTour = useCallback(async (id: string): Promise<boolean> => {
+    setIsDeleting(true)
+    try {
+      await farmToursApi.delete(id)
+      await fetchFarmTours()
+      return true
+    } catch (err) {
+      console.error('[useFarmTours] 刪除失敗:', err)
+      return false
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [fetchFarmTours])
+
   useEffect(() => {
     fetchFarmTours()
   }, [fetchFarmTours])
@@ -57,6 +106,10 @@ export function useFarmTours(): UseFarmToursReturn {
     isLoading,
     error,
     refetch: fetchFarmTours,
+    updateFarmTour,
+    deleteFarmTour,
+    isUpdating,
+    isDeleting,
   }
 }
 

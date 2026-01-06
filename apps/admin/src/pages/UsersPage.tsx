@@ -1,58 +1,65 @@
-import { Search, Eye, UserCheck, UserX } from 'lucide-react'
 import { useState } from 'react'
-
-type UserRole = 'user' | 'admin'
-type UserStatus = 'active' | 'inactive' | 'banned'
-
-interface MockUser {
-  id: string
-  name: string
-  email: string
-  phone: string
-  role: UserRole
-  status: UserStatus
-  createdAt: string
-  orderCount: number
-}
-
-// Mock data
-const mockUsers: MockUser[] = [
-  { id: '1', name: '王小明', email: 'wang@example.com', phone: '0912-345-678', role: 'user', status: 'active', createdAt: '2025-12-01', orderCount: 5 },
-  { id: '2', name: '李美玲', email: 'lee@example.com', phone: '0923-456-789', role: 'user', status: 'active', createdAt: '2025-11-15', orderCount: 12 },
-  { id: '3', name: '張大偉', email: 'zhang@example.com', phone: '0934-567-890', role: 'admin', status: 'active', createdAt: '2025-10-20', orderCount: 0 },
-  { id: '4', name: '陳小華', email: 'chen@example.com', phone: '0945-678-901', role: 'user', status: 'inactive', createdAt: '2025-09-10', orderCount: 2 },
-]
+import { Search, Edit, RefreshCw, UserCheck, UserX } from 'lucide-react'
+import { useUsers, User, UserRole } from '../hooks/useUsers'
+import { UserStatusModal } from '../components/UserStatusModal'
 
 const roleLabels: Record<UserRole, string> = {
   user: '一般會員',
   admin: '管理員',
 }
 
-const statusLabels: Record<UserStatus, string> = {
-  active: '啟用中',
-  inactive: '未啟用',
-  banned: '已停權',
-}
-
-const statusColors: Record<UserStatus, string> = {
-  active: 'bg-green-100 text-green-800',
-  inactive: 'bg-gray-100 text-gray-800',
-  banned: 'bg-red-100 text-red-800',
-}
-
 export function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const { users, isLoading, error, refetch, updateUser, isUpdating } = useUsers()
 
-  const filteredUsers = mockUsers.filter(
+  // 過濾會員
+  const filteredUsers = users.filter(
     (user) =>
-      user.name.includes(searchQuery) ||
-      user.email.includes(searchQuery) ||
-      user.phone.includes(searchQuery)
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.phone && user.phone.includes(searchQuery))
   )
+
+  // 計算統計
+  const activeCount = users.filter((u) => u.isActive).length
+  const inactiveCount = users.filter((u) => !u.isActive).length
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={refetch}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          <RefreshCw className="w-4 h-4" />
+          重試
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">會員管理</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">會員管理</h1>
+        <button
+          onClick={refetch}
+          className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg"
+          title="重新整理"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -63,9 +70,7 @@ export function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">啟用會員</p>
-              <p className="text-xl font-bold text-gray-900">
-                {mockUsers.filter((u) => u.status === 'active').length}
-              </p>
+              <p className="text-xl font-bold text-gray-900">{activeCount}</p>
             </div>
           </div>
         </div>
@@ -76,9 +81,7 @@ export function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">未啟用</p>
-              <p className="text-xl font-bold text-gray-900">
-                {mockUsers.filter((u) => u.status === 'inactive').length}
-              </p>
+              <p className="text-xl font-bold text-gray-900">{inactiveCount}</p>
             </div>
           </div>
         </div>
@@ -89,7 +92,7 @@ export function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">總會員數</p>
-              <p className="text-xl font-bold text-gray-900">{mockUsers.length}</p>
+              <p className="text-xl font-bold text-gray-900">{users.length}</p>
             </div>
           </div>
         </div>
@@ -111,64 +114,95 @@ export function UsersPage() {
 
       {/* Users Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                會員資訊
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                電話
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                角色
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                訂單數
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                狀態
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="font-medium text-gray-900">{user.name}</div>
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                  {user.phone}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                  {roleLabels[user.role]}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                  {user.orderCount}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[user.status]}`}
-                  >
-                    {statusLabels[user.status]}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <button className="p-2 text-gray-600 hover:text-blue-600">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </td>
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            {searchQuery ? '找不到符合的會員' : '尚無會員'}
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  會員資訊
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  電話
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  角色
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  註冊時間
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  狀態
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操作
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="font-medium text-gray-900">{user.name}</div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                    {user.phone || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                    {roleLabels[user.role] || user.role}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                    {new Date(user.createdAt).toLocaleDateString('zh-TW')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        user.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {user.isActive ? '啟用中' : '已停用'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <button
+                      onClick={() => setEditingUser(user)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="編輯會員"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* 會員數量統計 */}
+      <div className="mt-4 text-sm text-gray-500">
+        共 {filteredUsers.length} 位會員
+        {searchQuery && ` (搜尋結果)`}
+      </div>
+
+      {/* 編輯會員 Modal */}
+      {editingUser && (
+        <UserStatusModal
+          user={editingUser}
+          isOpen={!!editingUser}
+          isUpdating={isUpdating}
+          onClose={() => setEditingUser(null)}
+          onSave={updateUser}
+        />
+      )}
     </div>
   )
 }
