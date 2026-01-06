@@ -5,6 +5,7 @@ import {
   setRememberMe,
   clearAllAuthStorage,
 } from '@/stores/authStore'
+import { useCartStore } from '@/stores/cartStore'
 import { authService } from '@/services/auth'
 
 interface UseAuthReturn {
@@ -54,6 +55,8 @@ export function useAuth(): UseAuthReturn {
       const data = await authService.login(email, password)
       // 3. 儲存認證狀態（dynamicStorage 會根據 rememberMe 選擇 storage）
       setAuth(data.user, data.accessToken)
+      // 4. 合併本地購物車到後端（訪客加入的商品會保留）
+      await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
       const message = err instanceof Error ? err.message : '登入失敗'
       setError(message)
@@ -69,6 +72,8 @@ export function useAuth(): UseAuthReturn {
     try {
       const data = await authService.register(email, password, name)
       setAuth(data.user, data.accessToken)
+      // 合併本地購物車到後端（訪客加入的商品會保留）
+      await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
       const message = err instanceof Error ? err.message : '註冊失敗'
       setError(message)

@@ -103,22 +103,20 @@ export function DesktopHeader() {
 
         {/* 右側：工具按鈕 */}
         <div className="flex items-center space-x-2 h-8">
-          {/* 購物車按鈕 - 僅登入用戶顯示 */}
-          {isAuthenticated && (
-            <Link
-              href="/cart"
-              className="relative w-10 h-10 flex items-center justify-center text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
-              title="購物車"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {/* 購物車數量 Badge */}
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </Link>
-          )}
+          {/* 購物車按鈕 - 所有用戶皆可見 */}
+          <Link
+            href="/cart"
+            className="relative w-10 h-10 flex items-center justify-center text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
+            title="購物車"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            {/* 購物車數量 Badge */}
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
+                {totalItems > 99 ? '99+' : totalItems}
+              </span>
+            )}
+          </Link>
 
           {/* 管理員選單 */}
           {user?.role === 'ADMIN' && (

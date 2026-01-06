@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Share2, ShoppingCart, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
-import { useCart } from '@/contexts/CartContext'
+import { useCartStore } from '@/stores/cartStore'
 import type { ExtendedProduct } from './types'
 import type { Product } from '@/types/product'
 
@@ -33,7 +33,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
     const [isRequestingQuote, setIsRequestingQuote] = useState(false)
     const [isAddingToCart, setIsAddingToCart] = useState(false)
     const { user, isAuthenticated } = useAuthStore()
-    const { addItem, getItemQuantity } = useCart()
+    const { addItem, getItemQuantity, isLoading: isCartLoading } = useCartStore()
 
     // 取得購物車中此產品的數量
     const cartQuantity = getItemQuantity(product.id)
@@ -50,8 +50,8 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
       }
     }
 
-    const handleAddToCart = () => {
-      if (!isAuthenticated || !user || isOutOfStock) return
+    const handleAddToCart = async () => {
+      if (isOutOfStock) return
 
       setIsAddingToCart(true)
       try {
@@ -70,7 +70,9 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
           updatedAt: product.updatedAt || new Date().toISOString(),
         }
 
-        addItem(productForCart, quantity)
+        await addItem(productForCart, quantity)
+      } catch (error) {
+        console.error('加入購物車失敗:', error)
       } finally {
         setIsAddingToCart(false)
       }
@@ -189,14 +191,14 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={!isAuthenticated || isOutOfStock || isAddingToCart}
+            disabled={isOutOfStock || isAddingToCart}
             className={cn(
               'w-full min-h-[48px] rounded-3xl',
               'flex items-center justify-center',
               'transition duration-300 ease-in-out',
               'transform hover:scale-[1.01] active:scale-[0.99]',
               'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500',
-              !isAuthenticated || isOutOfStock
+              isOutOfStock
                 ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-2 border-gray-300'
                 : 'bg-white cursor-pointer border-2 border-green-500 shadow-[inset_0px_-2px_0px_1px_#f59e0b] hover:bg-green-500 hover:text-white group'
             )}
@@ -204,7 +206,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
             <span
               className={cn(
                 'font-medium flex items-center justify-center gap-2',
-                !isAuthenticated || isOutOfStock ? 'text-gray-500' : 'text-gray-800 group-hover:text-white'
+                isOutOfStock ? 'text-gray-500' : 'text-gray-800 group-hover:text-white'
               )}
             >
               {isOutOfStock ? (
@@ -216,8 +218,6 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   <span className="font-bold text-base">加入中...</span>
                 </>
-              ) : !isAuthenticated ? (
-                <span className="font-bold text-base">請先登入才能加入購物車</span>
               ) : (
                 <>
                   <ShoppingCart className="w-5 h-5" />

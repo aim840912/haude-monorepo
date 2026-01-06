@@ -1,7 +1,0 @@
-export { ProductsSection } from './components/ProductsSection'
-export { SectionHeader } from './components/SectionHeader'
-export { ViewAllButton } from './components/ViewAllButton'
-export { LoadingState } from './components/LoadingState'
-export { ErrorState } from './components/ErrorState'
-export { EmptyState } from './components/EmptyState'
-export { useVisibility } from './hooks/useVisibility'
