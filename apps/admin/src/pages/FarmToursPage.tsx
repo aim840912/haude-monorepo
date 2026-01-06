@@ -1,14 +1,39 @@
 import { useState } from 'react'
-import { Plus, Search, Edit, Trash2, RefreshCw } from 'lucide-react'
-import { useProducts } from '../hooks/useProducts'
+import { Plus, Search, Edit, Trash2, RefreshCw, Calendar, MapPin, Users } from 'lucide-react'
+import { useFarmTours, FarmTour } from '../hooks/useFarmTours'
 
-export function ProductsPage() {
+// 狀態標籤樣式
+const statusStyles: Record<FarmTour['status'], string> = {
+  upcoming: 'bg-blue-100 text-blue-800',
+  ongoing: 'bg-green-100 text-green-800',
+  completed: 'bg-gray-100 text-gray-800',
+  cancelled: 'bg-red-100 text-red-800',
+}
+
+// 狀態中文名稱
+const statusLabels: Record<FarmTour['status'], string> = {
+  upcoming: '即將開始',
+  ongoing: '進行中',
+  completed: '已結束',
+  cancelled: '已取消',
+}
+
+// 活動類型中文名稱
+const typeLabels: Record<FarmTour['type'], string> = {
+  harvest: '採收體驗',
+  workshop: '手作工坊',
+  tour: '農場導覽',
+  tasting: '品茗體驗',
+}
+
+export function FarmToursPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { products, isLoading, error, refetch } = useProducts()
+  const { farmTours, isLoading, error, refetch } = useFarmTours()
 
-  // 過濾產品
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // 過濾活動
+  const filteredTours = farmTours.filter((tour) =>
+    tour.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tour.location.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (isLoading) {
@@ -37,7 +62,7 @@ export function ProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">產品管理</h1>
+        <h1 className="text-2xl font-bold text-gray-900">觀光果園管理</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={refetch}
@@ -48,7 +73,7 @@ export function ProductsPage() {
           </button>
           <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
             <Plus className="w-5 h-5" />
-            新增產品
+            新增活動
           </button>
         </div>
       </div>
@@ -61,33 +86,39 @@ export function ProductsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜尋產品名稱..."
+            placeholder="搜尋活動名稱或地點..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
       </div>
 
-      {/* Products Table */}
+      {/* Farm Tours Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {filteredProducts.length === 0 ? (
+        {filteredTours.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            {searchQuery ? '找不到符合的產品' : '尚無產品資料'}
+            {searchQuery ? '找不到符合的活動' : '尚無觀光果園活動'}
           </div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  產品名稱
+                  活動名稱
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  分類
+                  類型
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  日期時間
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  地點
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  報名狀況
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   價格
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  庫存
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   狀態
@@ -98,31 +129,56 @@ export function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
+              {filteredTours.map((tour) => (
+                <tr key={tour.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-medium text-gray-900">{product.name}</span>
+                    <span className="font-medium text-gray-900">{tour.name}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {product.category || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                    NT$ {product.price?.toLocaleString()}
+                    {typeLabels[tour.type] || tour.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={product.inventory === 0 ? 'text-red-600' : 'text-gray-900'}>
-                      {product.inventory ?? '-'}
-                    </span>
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      <span>{tour.date}</span>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {tour.startTime} - {tour.endTime}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <MapPin className="w-4 h-4" />
+                      <span>{tour.location}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <span
+                        className={
+                          tour.currentParticipants >= tour.maxParticipants
+                            ? 'text-red-600 font-medium'
+                            : 'text-gray-900'
+                        }
+                      >
+                        {tour.currentParticipants} / {tour.maxParticipants}
+                      </span>
+                    </div>
+                    {tour.currentParticipants >= tour.maxParticipants && (
+                      <span className="text-xs text-red-500">已額滿</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900">
+                    NT$ {tour.price?.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        product.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        statusStyles[tour.status] || 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {product.isActive ? '上架' : '下架'}
+                      {statusLabels[tour.status] || tour.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -140,9 +196,9 @@ export function ProductsPage() {
         )}
       </div>
 
-      {/* 產品數量統計 */}
+      {/* 活動數量統計 */}
       <div className="mt-4 text-sm text-gray-500">
-        共 {filteredProducts.length} 個產品
+        共 {filteredTours.length} 個活動
         {searchQuery && ` (搜尋結果)`}
       </div>
     </div>

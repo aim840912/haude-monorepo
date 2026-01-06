@@ -1,14 +1,30 @@
 import { useState } from 'react'
-import { Plus, Search, Edit, Trash2, RefreshCw } from 'lucide-react'
-import { useProducts } from '../hooks/useProducts'
+import { Plus, Search, Edit, Trash2, RefreshCw, Calendar, MapPin, Phone } from 'lucide-react'
+import { useSchedules, Schedule } from '../hooks/useSchedules'
 
-export function ProductsPage() {
+// 狀態標籤樣式
+const statusStyles: Record<Schedule['status'], string> = {
+  upcoming: 'bg-blue-100 text-blue-800',
+  ongoing: 'bg-green-100 text-green-800',
+  completed: 'bg-gray-100 text-gray-800',
+}
+
+// 狀態中文名稱
+const statusLabels: Record<Schedule['status'], string> = {
+  upcoming: '即將開始',
+  ongoing: '進行中',
+  completed: '已結束',
+}
+
+export function SchedulesPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { products, isLoading, error, refetch } = useProducts()
+  const { schedules, isLoading, error, refetch } = useSchedules()
 
-  // 過濾產品
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // 過濾行程
+  const filteredSchedules = schedules.filter(
+    (schedule) =>
+      schedule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      schedule.location.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (isLoading) {
@@ -37,7 +53,7 @@ export function ProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">產品管理</h1>
+        <h1 className="text-2xl font-bold text-gray-900">擺攤行程管理</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={refetch}
@@ -48,7 +64,7 @@ export function ProductsPage() {
           </button>
           <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
             <Plus className="w-5 h-5" />
-            新增產品
+            新增行程
           </button>
         </div>
       </div>
@@ -61,33 +77,36 @@ export function ProductsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜尋產品名稱..."
+            placeholder="搜尋行程名稱或地點..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
       </div>
 
-      {/* Products Table */}
+      {/* Schedules Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {filteredProducts.length === 0 ? (
+        {filteredSchedules.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            {searchQuery ? '找不到符合的產品' : '尚無產品資料'}
+            {searchQuery ? '找不到符合的行程' : '尚無擺攤行程'}
           </div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  產品名稱
+                  行程名稱
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  分類
+                  日期時間
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  價格
+                  地點
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  庫存
+                  聯絡方式
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  販售產品
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   狀態
@@ -98,31 +117,57 @@ export function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-medium text-gray-900">{product.name}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {product.category || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                    NT$ {product.price?.toLocaleString()}
+              {filteredSchedules.map((schedule) => (
+                <tr key={schedule.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{schedule.title}</div>
+                    {schedule.specialOffer && (
+                      <div className="text-sm text-orange-600">{schedule.specialOffer}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={product.inventory === 0 ? 'text-red-600' : 'text-gray-900'}>
-                      {product.inventory ?? '-'}
-                    </span>
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      <span>{schedule.date}</span>
+                    </div>
+                    <div className="text-sm text-gray-400">{schedule.time}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="line-clamp-2">{schedule.location}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <Phone className="w-4 h-4" />
+                      <span>{schedule.contact}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {schedule.products.slice(0, 3).map((product, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded"
+                        >
+                          {product}
+                        </span>
+                      ))}
+                      {schedule.products.length > 3 && (
+                        <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                          +{schedule.products.length - 3}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        product.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        statusStyles[schedule.status] || 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {product.isActive ? '上架' : '下架'}
+                      {statusLabels[schedule.status] || schedule.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -140,9 +185,9 @@ export function ProductsPage() {
         )}
       </div>
 
-      {/* 產品數量統計 */}
+      {/* 行程數量統計 */}
       <div className="mt-4 text-sm text-gray-500">
-        共 {filteredProducts.length} 個產品
+        共 {filteredSchedules.length} 個行程
         {searchQuery && ` (搜尋結果)`}
       </div>
     </div>

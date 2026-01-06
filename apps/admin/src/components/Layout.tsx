@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Package,
+  TreeDeciduous,
+  CalendarDays,
   ShoppingCart,
   Users,
   Settings,
@@ -10,10 +12,13 @@ import {
   X,
   LogOut,
 } from 'lucide-react'
+import { useAuthStore } from '../stores/authStore'
 
 const navItems = [
   { path: '/', label: '儀表板', icon: LayoutDashboard },
   { path: '/products', label: '產品管理', icon: Package },
+  { path: '/farm-tours', label: '觀光果園', icon: TreeDeciduous },
+  { path: '/schedules', label: '擺攤行程', icon: CalendarDays },
   { path: '/orders', label: '訂單管理', icon: ShoppingCart },
   { path: '/users', label: '會員管理', icon: Users },
   { path: '/settings', label: '系統設定', icon: Settings },
@@ -22,6 +27,13 @@ const navItems = [
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -70,7 +82,10 @@ export function Layout() {
           })}
         </nav>
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
-          <button className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+          >
             <LogOut className="w-5 h-5" />
             登出
           </button>
@@ -88,7 +103,14 @@ export function Layout() {
             <Menu className="w-6 h-6" />
           </button>
           <div className="ml-auto flex items-center gap-4">
-            <span className="text-sm text-gray-600">管理員</span>
+            {user?.avatar && (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-8 h-8 rounded-full"
+              />
+            )}
+            <span className="text-sm text-gray-600">{user?.name || '管理員'}</span>
           </div>
         </header>
 

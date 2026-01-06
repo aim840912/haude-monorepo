@@ -10,6 +10,7 @@ export interface User {
   email: string
   name: string
   role?: 'USER' | 'ADMIN'
+  avatar?: string // Google OAuth 頭像
   createdAt: string
 }
 
