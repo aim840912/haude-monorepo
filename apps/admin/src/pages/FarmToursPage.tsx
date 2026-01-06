@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Plus, Search, Edit, Trash2, RefreshCw, Calendar, MapPin, Users } from 'lucide-react'
 import { useFarmTours, FarmTour } from '../hooks/useFarmTours'
+import { FarmTourEditModal } from '../components/FarmTourEditModal'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 
 // 狀態標籤樣式
 const statusStyles: Record<FarmTour['status'], string> = {
@@ -28,7 +30,9 @@ const typeLabels: Record<FarmTour['type'], string> = {
 
 export function FarmToursPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { farmTours, isLoading, error, refetch } = useFarmTours()
+  const [editingTour, setEditingTour] = useState<FarmTour | null>(null)
+  const [deletingTour, setDeletingTour] = useState<FarmTour | null>(null)
+  const { farmTours, isLoading, error, refetch, updateFarmTour, deleteFarmTour, isUpdating, isDeleting } = useFarmTours()
 
   // 過濾活動
   const filteredTours = farmTours.filter((tour) =>
@@ -182,10 +186,18 @@ export function FarmToursPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="p-2 text-gray-600 hover:text-blue-600">
+                    <button
+                      onClick={() => setEditingTour(tour)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="編輯活動"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-gray-600 hover:text-red-600">
+                    <button
+                      onClick={() => setDeletingTour(tour)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="刪除活動"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -201,6 +213,37 @@ export function FarmToursPage() {
         共 {filteredTours.length} 個活動
         {searchQuery && ` (搜尋結果)`}
       </div>
+
+      {/* 編輯活動 Modal */}
+      {editingTour && (
+        <FarmTourEditModal
+          farmTour={editingTour}
+          isOpen={!!editingTour}
+          isUpdating={isUpdating}
+          onClose={() => setEditingTour(null)}
+          onSave={updateFarmTour}
+        />
+      )}
+
+      {/* 刪除確認 Dialog */}
+      {deletingTour && (
+        <ConfirmDialog
+          isOpen={!!deletingTour}
+          isLoading={isDeleting}
+          title="確認刪除"
+          message={`確定要刪除「${deletingTour.name}」嗎？此操作無法復原。`}
+          confirmText="確認刪除"
+          cancelText="取消"
+          variant="danger"
+          onConfirm={async () => {
+            const success = await deleteFarmTour(deletingTour.id)
+            if (success) {
+              setDeletingTour(null)
+            }
+          }}
+          onCancel={() => setDeletingTour(null)}
+        />
+      )}
     </div>
   )
 }

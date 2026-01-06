@@ -17,24 +17,43 @@ export interface Schedule {
   updatedAt: string
 }
 
+export interface UpdateScheduleData {
+  title?: string
+  location?: string
+  date?: string
+  time?: string
+  status?: 'upcoming' | 'ongoing' | 'completed'
+  products?: string[]
+  description?: string
+  contact?: string
+  specialOffer?: string
+  weatherNote?: string
+}
+
 interface UseSchedulesReturn {
   schedules: Schedule[]
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  updateSchedule: (id: string, data: UpdateScheduleData) => Promise<boolean>
+  deleteSchedule: (id: string) => Promise<boolean>
+  isUpdating: boolean
+  isDeleting: boolean
 }
 
 export function useSchedules(): UseSchedulesReturn {
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchSchedules = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      // 使用公開 API 取得所有行程
-      const { data } = await schedulesApi.getAll()
+      // 使用管理員 API 取得所有行程
+      const { data } = await schedulesApi.getAllAdmin()
       setSchedules(data)
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入擺攤行程失敗'
@@ -45,6 +64,34 @@ export function useSchedules(): UseSchedulesReturn {
     }
   }, [])
 
+  const updateSchedule = useCallback(async (id: string, data: UpdateScheduleData): Promise<boolean> => {
+    setIsUpdating(true)
+    try {
+      await schedulesApi.update(id, data)
+      await fetchSchedules()
+      return true
+    } catch (err) {
+      console.error('[useSchedules] 更新失敗:', err)
+      return false
+    } finally {
+      setIsUpdating(false)
+    }
+  }, [fetchSchedules])
+
+  const deleteSchedule = useCallback(async (id: string): Promise<boolean> => {
+    setIsDeleting(true)
+    try {
+      await schedulesApi.delete(id)
+      await fetchSchedules()
+      return true
+    } catch (err) {
+      console.error('[useSchedules] 刪除失敗:', err)
+      return false
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [fetchSchedules])
+
   useEffect(() => {
     fetchSchedules()
   }, [fetchSchedules])
@@ -54,6 +101,10 @@ export function useSchedules(): UseSchedulesReturn {
     isLoading,
     error,
     refetch: fetchSchedules,
+    updateSchedule,
+    deleteSchedule,
+    isUpdating,
+    isDeleting,
   }
 }
 

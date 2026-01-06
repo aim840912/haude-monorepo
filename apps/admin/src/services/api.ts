@@ -53,7 +53,7 @@ export const productsApi = {
       isActive?: boolean
     }
   ) => api.put(`/admin/products/${id}`, data),
-  delete: (id: string) => api.delete(`/admin/products/${id}`),
+  delete: (id: string) => api.delete(`/products/${id}`),
 }
 
 // Orders API (Admin)
