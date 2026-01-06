@@ -4,8 +4,10 @@ import { useUsers, User, UserRole } from '../hooks/useUsers'
 import { UserStatusModal } from '../components/UserStatusModal'
 
 const roleLabels: Record<UserRole, string> = {
-  user: '一般會員',
-  admin: '管理員',
+  USER: '一般會員',
+  VIP: 'VIP 會員',
+  STAFF: '員工',
+  ADMIN: '管理員',
 }
 
 export function UsersPage() {

@@ -10,9 +10,11 @@ interface UserStatusModalProps {
   onSave: (id: string, data: UpdateUserData) => Promise<boolean>
 }
 
-const roleOptions: { value: UserRole; label: string }[] = [
-  { value: 'user', label: '一般會員' },
-  { value: 'admin', label: '管理員' },
+const roleOptions: { value: UserRole; label: string; description: string }[] = [
+  { value: 'USER', label: '一般會員', description: '下單、報名活動' },
+  { value: 'VIP', label: 'VIP 會員', description: '專屬折扣、優先報名' },
+  { value: 'STAFF', label: '員工', description: '查看訂單、管理行程' },
+  { value: 'ADMIN', label: '管理員', description: '完整後台權限' },
 ]
 
 export function UserStatusModal({
@@ -24,7 +26,7 @@ export function UserStatusModal({
 }: UserStatusModalProps) {
   const [formData, setFormData] = useState({
     isActive: true,
-    role: 'user' as UserRole,
+    role: 'USER' as UserRole,
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -125,7 +127,7 @@ export function UserStatusModal({
             >
               {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {option.label} - {option.description}
                 </option>
               ))}
             </select>
