@@ -9,7 +9,7 @@ import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
 
 const adminMenuItems = [
-  { href: '/dashboard', label: '控制台' },
+  { href: '/account', label: '我的帳戶' },
   { href: '/admin/products', label: '產品管理' },
   { href: '/admin/schedules', label: '日程管理' },
   { href: '/admin/locations', label: '據點管理' },

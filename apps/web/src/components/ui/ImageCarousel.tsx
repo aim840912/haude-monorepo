@@ -15,6 +15,8 @@ interface ImageCarouselProps {
   showIndicators?: boolean
   /** 是否顯示箭頭，預設 true */
   showArrows?: boolean
+  /** 是否顯示縮圖列，預設 true（多圖時） */
+  showThumbnails?: boolean
   /** 自訂 class */
   className?: string
 }
@@ -35,6 +37,7 @@ export function ImageCarousel({
   autoPlayInterval = 4000,
   showIndicators = true,
   showArrows = true,
+  showThumbnails = true,
   className,
 }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -96,51 +99,69 @@ export function ImageCarousel({
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* 主圖容器 */}
-      <div className="aspect-square bg-white rounded-xl overflow-hidden shadow-lg">
+      <div className="aspect-square bg-white rounded-xl overflow-hidden shadow-lg relative">
         <img
           src={images[currentIndex]}
           alt={`${productName}${hasMultipleImages ? ` - ${currentIndex + 1}` : ''}`}
           className="w-full h-full object-cover transition-opacity duration-300"
         />
+
+        {/* 左右點擊區（在主圖容器內，多張圖片時才顯示） */}
+        {hasMultipleImages && showArrows && (
+          <>
+            {/* 左側 20% - 上一張 */}
+            <button
+              onClick={goToPrev}
+              className={cn(
+                'absolute left-0 top-0 w-[20%] h-full',
+                'flex items-center justify-center',
+                'bg-transparent hover:bg-black/10',
+                'transition-all duration-200',
+                'focus:outline-none',
+                '[&>div]:opacity-0 [&:hover>div]:opacity-100'
+              )}
+              aria-label="上一張圖片"
+            >
+              <div
+                className={cn(
+                  'w-10 h-10 flex items-center justify-center',
+                  'bg-black/30 text-white rounded-full',
+                  'transition-opacity duration-200'
+                )}
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </div>
+            </button>
+
+            {/* 右側 20% - 下一張 */}
+            <button
+              onClick={goToNext}
+              className={cn(
+                'absolute right-0 top-0 w-[20%] h-full',
+                'flex items-center justify-center',
+                'bg-transparent hover:bg-black/10',
+                'transition-all duration-200',
+                'focus:outline-none',
+                '[&>div]:opacity-0 [&:hover>div]:opacity-100'
+              )}
+              aria-label="下一張圖片"
+            >
+              <div
+                className={cn(
+                  'w-10 h-10 flex items-center justify-center',
+                  'bg-black/30 text-white rounded-full',
+                  'transition-opacity duration-200'
+                )}
+              >
+                <ChevronRight className="w-6 h-6" />
+              </div>
+            </button>
+          </>
+        )}
       </div>
 
-      {/* 左右箭頭（多張圖片時才顯示） */}
-      {hasMultipleImages && showArrows && (
-        <>
-          {/* 左箭頭 */}
-          <button
-            onClick={goToPrev}
-            className={cn(
-              'absolute left-3 top-1/2 -translate-y-1/2',
-              'w-10 h-10 flex items-center justify-center',
-              'bg-black/30 hover:bg-black/50 text-white rounded-full',
-              'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-white/50'
-            )}
-            aria-label="上一張圖片"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          {/* 右箭頭 */}
-          <button
-            onClick={goToNext}
-            className={cn(
-              'absolute right-3 top-1/2 -translate-y-1/2',
-              'w-10 h-10 flex items-center justify-center',
-              'bg-black/30 hover:bg-black/50 text-white rounded-full',
-              'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-white/50'
-            )}
-            aria-label="下一張圖片"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </>
-      )}
-
-      {/* 指示器（多張圖片時才顯示） */}
-      {hasMultipleImages && showIndicators && (
+      {/* 指示器（多張圖片時才顯示，但如果有縮圖則隱藏） */}
+      {hasMultipleImages && showIndicators && !showThumbnails && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">
           {/* 圓點指示器 */}
           <div className="flex gap-2">
@@ -170,6 +191,35 @@ export function ImageCarousel({
       {hasMultipleImages && autoPlayInterval > 0 && isPaused && (
         <div className="absolute top-3 right-3 text-white text-xs bg-black/40 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
           已暫停
+        </div>
+      )}
+
+      {/* 縮圖列（多張圖片時才顯示） */}
+      {hasMultipleImages && showThumbnails && (
+        <div className="mt-4 py-2 overflow-x-auto scrollbar-hide">
+          <div className="flex justify-center gap-3 min-w-max px-2">
+            {images.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => goToIndex(index)}
+                className={cn(
+                  'w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden',
+                  'transition-all duration-200 ease-out',
+                  'focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2',
+                  currentIndex === index
+                    ? 'scale-110 opacity-100 shadow-lg ring-2 ring-green-500'
+                    : 'opacity-60 hover:opacity-90 hover:scale-105'
+                )}
+                aria-label={`檢視第 ${index + 1} 張圖片`}
+              >
+                <img
+                  src={image}
+                  alt={`${productName} 縮圖 ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -58,7 +58,13 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i)
       const dateStr = date.toISOString().split('T')[0]
-      const dayEvents = schedules.filter(s => s.date === dateStr)
+      // 後端返回的日期可能是 ISO 格式 (2025-01-07T00:00:00.000Z)，需要截取日期部分比對
+      const dayEvents = schedules.filter(s => {
+        const scheduleDate = typeof s.date === 'string'
+          ? s.date.split('T')[0]  // 處理 ISO 格式
+          : new Date(s.date).toISOString().split('T')[0]
+        return scheduleDate === dateStr
+      })
 
       days.push({
         date: dateStr,
