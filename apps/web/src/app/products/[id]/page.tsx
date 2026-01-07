@@ -3,7 +3,7 @@
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Heart, Share2, ShoppingCart, Truck, Shield, RefreshCw, Loader2 } from 'lucide-react'
+import { ArrowLeft, Share2, ShoppingCart, Truck, Shield, RefreshCw, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useProduct } from '@/hooks/useProducts'
 import { useCartStore } from '@/stores/cartStore'
@@ -128,21 +128,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <ArrowLeft className="w-5 h-5" />
               <span>返回</span>
             </button>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleShare}
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
-                aria-label="分享"
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-gray-600 hover:text-red-500 transition-colors"
-                aria-label="收藏"
-              >
-                <Heart className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="分享"
+            >
+              <Share2 className="w-5 h-5" />
+              <span className="text-sm">分享</span>
+            </button>
           </div>
         </div>
       </div>
