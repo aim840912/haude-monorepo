@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
     try {
       await register(email, password, name)
-      router.push('/dashboard')
+      router.push('/')
     } catch {
       // Error is handled by useAuth hook
     }

@@ -44,8 +44,8 @@ export default function AuthCallbackPage() {
           console.warn('購物車合併失敗')
         }
 
-        // 導向到首頁或 dashboard
-        router.push('/dashboard')
+        // 導向到首頁
+        router.push('/')
       } catch (err) {
         console.error('Google 登入處理失敗:', err)
         setError(err instanceof Error ? err.message : '登入失敗')
