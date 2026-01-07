@@ -3,6 +3,7 @@ import { Plus, Search, Edit, Trash2, RefreshCw } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
 import { ProductEditModal } from '../components/ProductEditModal'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { getProductImageUrl } from '../config/placeholder.config'
 import type { Product } from '@haude/types'
 
 export function ProductsPage() {
@@ -82,6 +83,9 @@ export function ProductsPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                  圖片
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   產品名稱
                 </th>
@@ -103,8 +107,21 @@ export function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
+              {filteredProducts.map((product) => {
+                // 取得圖片 URL（API 回傳 images，型別定義 productImages）
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const images = (product as any).images || product.productImages || []
+                const imageUrl = getProductImageUrl(images, product.category)
+
+                return (
                 <tr key={product.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <img
+                      src={imageUrl}
+                      alt={product.name}
+                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="font-medium text-gray-900">{product.name}</span>
                   </td>
@@ -115,8 +132,8 @@ export function ProductsPage() {
                     NT$ {product.price?.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={product.inventory === 0 ? 'text-red-600' : 'text-gray-900'}>
-                      {product.inventory ?? '-'}
+                    <span className={product.stock === 0 ? 'text-red-600' : 'text-gray-900'}>
+                      {product.stock ?? '-'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -147,7 +164,7 @@ export function ProductsPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         )}

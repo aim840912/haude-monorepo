@@ -7,7 +7,7 @@ export interface UpdateProductData {
   description?: string
   price?: number
   category?: string
-  inventory?: number
+  stock?: number
   isActive?: boolean
 }
 

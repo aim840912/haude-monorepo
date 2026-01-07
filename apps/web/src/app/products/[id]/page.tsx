@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { useProduct } from '@/hooks/useProducts'
 import { useCartStore } from '@/stores/cartStore'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
+import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
 import { cn } from '@/lib/utils'
 
 interface ProductDetailPageProps {
@@ -59,7 +60,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   // 注意：API 回傳的是 images (camelCase)，不是 productImages
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const images = (product as any).images || product.productImages || []
-  const currentImage = images[selectedImageIndex]?.storageUrl || images[selectedImageIndex]?.storage_url || '/placeholder-product.jpg'
+  const hasImages = images.length > 0
+  // 優先使用真實圖片，沒有則使用分類專屬 placeholder
+  const currentImage = hasImages
+    ? (images[selectedImageIndex]?.storageUrl || images[selectedImageIndex]?.storage_url)
+    : PLACEHOLDER_IMAGES.product(product.category)
 
   // 注意：API 回傳的是 stock (資料庫欄位)，前端型別定義是 inventory
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -149,8 +154,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               />
             </div>
 
-            {/* 縮圖列表 */}
-            {images.length > 1 && (
+            {/* 縮圖列表（只有多張真實圖片時才顯示） */}
+            {hasImages && images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {images.map((image: { id: string; storageUrl?: string; storage_url?: string }, index: number) => (
                   <button

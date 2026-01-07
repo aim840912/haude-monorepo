@@ -19,7 +19,14 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { ProductsService } from './products.service';
-import { CreateProductDto, UpdateProductDto } from './dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  CreateProductImageDto,
+  UpdateProductImageDto,
+  ReorderImagesDto,
+  GetUploadUrlDto,
+} from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -144,5 +151,73 @@ export class AdminProductsController {
   @ApiResponse({ status: 403, description: '權限不足' })
   findAll() {
     return this.productsService.findAllAdmin();
+  }
+
+  // ========================================
+  // 產品圖片管理 API
+  // ========================================
+
+  @Get(':id/images')
+  @ApiOperation({ summary: '取得產品的所有圖片' })
+  @ApiResponse({ status: 200, description: '成功取得圖片列表' })
+  @ApiResponse({ status: 404, description: '產品不存在' })
+  getImages(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.getImages(id);
+  }
+
+  @Post(':id/images/upload-url')
+  @ApiOperation({ summary: '取得圖片上傳 URL（前端直傳用）' })
+  @ApiResponse({ status: 200, description: '成功取得上傳 URL' })
+  @ApiResponse({ status: 404, description: '產品不存在' })
+  getUploadUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: GetUploadUrlDto,
+  ) {
+    return this.productsService.getUploadUrl(id, dto.fileName);
+  }
+
+  @Post(':id/images')
+  @ApiOperation({ summary: '新增產品圖片記錄（上傳完成後呼叫）' })
+  @ApiResponse({ status: 201, description: '圖片記錄建立成功' })
+  @ApiResponse({ status: 404, description: '產品不存在' })
+  addImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateProductImageDto,
+  ) {
+    return this.productsService.addImage(id, dto);
+  }
+
+  @Put(':id/images/:imageId')
+  @ApiOperation({ summary: '更新產品圖片資訊' })
+  @ApiResponse({ status: 200, description: '圖片更新成功' })
+  @ApiResponse({ status: 404, description: '產品或圖片不存在' })
+  updateImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+    @Body() dto: UpdateProductImageDto,
+  ) {
+    return this.productsService.updateImage(id, imageId, dto);
+  }
+
+  @Delete(':id/images/:imageId')
+  @ApiOperation({ summary: '刪除產品圖片' })
+  @ApiResponse({ status: 200, description: '圖片刪除成功' })
+  @ApiResponse({ status: 404, description: '產品或圖片不存在' })
+  removeImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+  ) {
+    return this.productsService.removeImage(id, imageId);
+  }
+
+  @Put(':id/images/reorder')
+  @ApiOperation({ summary: '重新排序產品圖片' })
+  @ApiResponse({ status: 200, description: '排序更新成功' })
+  @ApiResponse({ status: 404, description: '產品不存在' })
+  reorderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReorderImagesDto,
+  ) {
+    return this.productsService.reorderImages(id, dto.imageIds);
   }
 }

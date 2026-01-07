@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@haude/types": "workspace:*",
+    "@supabase/supabase-js": "^2.87.1",
     "axios": "^1.13.2",
     "lucide-react": "^0.560.0",
     "react": "^19.2.0",

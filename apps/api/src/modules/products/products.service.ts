@@ -1,11 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './dto';
+import { SupabaseService } from '@/common/supabase';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  CreateProductImageDto,
+  UpdateProductImageDto,
+} from './dto';
 import { Prisma } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+
+// Storage bucket 名稱
+const PRODUCT_IMAGES_BUCKET = 'product-images';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private supabase: SupabaseService,
+  ) {}
 
   // ========================================
   // 查詢方法（Query Operations）
@@ -198,6 +211,154 @@ export class ProductsService {
     return this.prisma.product.update({
       where: { id },
       data: { isActive: false },
+    });
+  }
+
+  // ========================================
+  // 圖片管理方法（Image Operations）
+  // ========================================
+
+  /**
+   * 取得簽名上傳 URL（讓前端直傳到 Supabase Storage）
+   */
+  async getUploadUrl(productId: string, fileName: string) {
+    // 確認產品存在
+    await this.findOne(productId);
+
+    // 生成唯一檔名，避免覆蓋
+    const ext = fileName.split('.').pop() || 'jpg';
+    const uniqueFileName = `${uuidv4()}.${ext}`;
+    const filePath = `${productId}/${uniqueFileName}`;
+
+    const { signedUrl, path } = await this.supabase.createSignedUploadUrl(
+      PRODUCT_IMAGES_BUCKET,
+      filePath,
+    );
+
+    // 取得公開 URL
+    const publicUrl = this.supabase.getPublicUrl(PRODUCT_IMAGES_BUCKET, path);
+
+    return {
+      uploadUrl: signedUrl,
+      filePath: path,
+      publicUrl,
+    };
+  }
+
+  /**
+   * 新增產品圖片記錄
+   */
+  async addImage(productId: string, dto: CreateProductImageDto) {
+    // 確認產品存在
+    await this.findOne(productId);
+
+    // 如果沒有指定 displayPosition，放到最後
+    if (dto.displayPosition === undefined) {
+      const maxPosition = await this.prisma.productImage.aggregate({
+        where: { productId },
+        _max: { displayPosition: true },
+      });
+      dto.displayPosition = (maxPosition._max.displayPosition ?? -1) + 1;
+    }
+
+    return this.prisma.productImage.create({
+      data: {
+        productId,
+        storageUrl: dto.storageUrl,
+        filePath: dto.filePath,
+        altText: dto.altText,
+        displayPosition: dto.displayPosition,
+        size: dto.size || 'medium',
+      },
+    });
+  }
+
+  /**
+   * 更新產品圖片
+   */
+  async updateImage(
+    productId: string,
+    imageId: string,
+    dto: UpdateProductImageDto,
+  ) {
+    // 確認產品和圖片存在
+    const image = await this.prisma.productImage.findFirst({
+      where: { id: imageId, productId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`圖片不存在: ${imageId}`);
+    }
+
+    return this.prisma.productImage.update({
+      where: { id: imageId },
+      data: dto,
+    });
+  }
+
+  /**
+   * 刪除產品圖片
+   */
+  async removeImage(productId: string, imageId: string) {
+    // 確認圖片存在並取得檔案路徑
+    const image = await this.prisma.productImage.findFirst({
+      where: { id: imageId, productId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`圖片不存在: ${imageId}`);
+    }
+
+    // 從 Supabase Storage 刪除檔案
+    try {
+      await this.supabase.deleteFile(PRODUCT_IMAGES_BUCKET, image.filePath);
+    } catch (error) {
+      // 檔案可能不存在，記錄但不阻止刪除記錄
+      console.warn(`Failed to delete file from storage: ${image.filePath}`, error);
+    }
+
+    // 刪除資料庫記錄
+    await this.prisma.productImage.delete({
+      where: { id: imageId },
+    });
+
+    return { message: '圖片已刪除' };
+  }
+
+  /**
+   * 重新排序圖片
+   */
+  async reorderImages(productId: string, imageIds: string[]) {
+    // 確認產品存在
+    await this.findOne(productId);
+
+    // 批次更新排序
+    const updates = imageIds.map((id, index) =>
+      this.prisma.productImage.updateMany({
+        where: { id, productId },
+        data: { displayPosition: index },
+      }),
+    );
+
+    await this.prisma.$transaction(updates);
+
+    // 回傳更新後的圖片列表
+    return this.prisma.productImage.findMany({
+      where: { productId },
+      orderBy: { displayPosition: 'asc' },
+    });
+  }
+
+  /**
+   * 取得產品的所有圖片
+   */
+  async getImages(productId: string) {
+    // 確認產品存在
+    await this.findOne(productId);
+
+    return this.prisma.productImage.findMany({
+      where: { productId },
+      orderBy: { displayPosition: 'asc' },
     });
   }
 }
