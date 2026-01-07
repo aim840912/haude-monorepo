@@ -3,13 +3,19 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Settings, LogOut, User, Menu, X, ChevronDown } from 'lucide-react'
+import { ShoppingCart, Settings, LogOut, User, Menu, X, ChevronDown, Package } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
 
+// 所有登入用戶可見的選單
+const userMenuItems = [
+  { href: '/account', label: '我的帳戶', icon: User },
+  { href: '/orders', label: '我的訂單', icon: Package },
+]
+
+// 僅管理員可見的選單
 const adminMenuItems = [
-  { href: '/account', label: '我的帳戶' },
   { href: '/admin/products', label: '產品管理' },
   { href: '/admin/schedules', label: '日程管理' },
   { href: '/admin/locations', label: '據點管理' },
@@ -179,6 +185,25 @@ export function MobileHeader({
                 <div className="px-4 py-2 text-sm text-gray-500">
                   歡迎，{user?.name}
                 </div>
+                {/* 用戶選單項目 */}
+                {userMenuItems.map(item => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleMenuItemClick}
+                      className={`flex items-center gap-2 px-4 py-3 transition-colors duration-200 rounded-lg mx-2 ${
+                        isActive(item.href)
+                          ? 'text-green-900 bg-green-50 font-semibold'
+                          : 'text-gray-700 hover:text-green-900 hover:bg-green-50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-sans font-medium text-base">{item.label}</span>
+                    </Link>
+                  )
+                })}
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 w-full px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg mx-2"
