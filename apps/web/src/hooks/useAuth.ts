@@ -85,6 +85,8 @@ export function useAuth(): UseAuthReturn {
 
   const logout = () => {
     clearAllAuthStorage() // 清除所有 storage
+    localStorage.removeItem('cart-storage') // 清除本地購物車
+    useCartStore.setState({ items: [] }) // 重置購物車狀態
     storeLogout()
   }
 
