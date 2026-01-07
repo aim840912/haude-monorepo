@@ -8,8 +8,16 @@ import { useState } from 'react'
 import { useProduct } from '@/hooks/useProducts'
 import { useCartStore } from '@/stores/cartStore'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
+import { ImageCarousel } from '@/components/ui/ImageCarousel'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
 import { cn } from '@/lib/utils'
+
+// 圖片介面（API 回傳格式）
+interface ProductImage {
+  id: string
+  storageUrl?: string
+  storage_url?: string
+}
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>
@@ -28,7 +36,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const router = useRouter()
   const { product, isLoading, error } = useProduct(id)
   const { addItem, isLoading: isAddingToCart } = useCartStore()
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
 
@@ -59,12 +66,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   // 注意：API 回傳的是 images (camelCase)，不是 productImages
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const images = (product as any).images || product.productImages || []
-  const hasImages = images.length > 0
-  // 優先使用真實圖片，沒有則使用分類專屬 placeholder
-  const currentImage = hasImages
-    ? (images[selectedImageIndex]?.storageUrl || images[selectedImageIndex]?.storage_url)
-    : PLACEHOLDER_IMAGES.product(product.category)
+  const rawImages: ProductImage[] = (product as any).images || product.productImages || []
+
+  // 建構圖片 URL 陣列（供 ImageCarousel 使用）
+  const imageUrls = rawImages.length > 0
+    ? rawImages.map((img) => img.storageUrl || img.storage_url || '').filter(Boolean)
+    : [PLACEHOLDER_IMAGES.product(product.category)] // 無圖片時使用分類 placeholder
 
   // 注意：API 回傳的是 stock (資料庫欄位)，前端型別定義是 inventory
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,40 +150,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* 左側：圖片區 */}
+          {/* 左側：圖片區 - 使用 ImageCarousel */}
           <div className="space-y-4">
-            {/* 主圖 */}
-            <div className="aspect-square bg-white rounded-xl overflow-hidden shadow-lg">
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* 縮圖列表（只有多張真實圖片時才顯示） */}
-            {hasImages && images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {images.map((image: { id: string; storageUrl?: string; storage_url?: string }, index: number) => (
-                  <button
-                    key={image.id}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={cn(
-                      'flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors',
-                      selectedImageIndex === index
-                        ? 'border-green-500'
-                        : 'border-transparent hover:border-gray-300'
-                    )}
-                  >
-                    <img
-                      src={image.storageUrl || image.storage_url}
-                      alt={`${product.name} - ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+            <ImageCarousel
+              images={imageUrls}
+              productName={product.name}
+              autoPlayInterval={4000}
+              showIndicators={true}
+              showArrows={true}
+            />
           </div>
 
           {/* 右側：產品資訊 */}

@@ -40,6 +40,7 @@ export function FarmTourEditModal({
     price: 0,
     maxParticipants: 0,
     location: '',
+    imageUrl: '',
     type: 'tour' as FarmTour['type'],
     status: 'upcoming' as FarmTour['status'],
   })
@@ -56,6 +57,7 @@ export function FarmTourEditModal({
         price: farmTour.price || 0,
         maxParticipants: farmTour.maxParticipants || 0,
         location: farmTour.location || '',
+        imageUrl: farmTour.imageUrl || '',
         type: farmTour.type || 'tour',
         status: farmTour.status || 'upcoming',
       })
@@ -95,6 +97,7 @@ export function FarmTourEditModal({
       price: formData.price,
       maxParticipants: formData.maxParticipants,
       location: formData.location.trim(),
+      imageUrl: formData.imageUrl.trim() || undefined,
       type: formData.type,
       status: formData.status,
     })
@@ -286,6 +289,41 @@ export function FarmTourEditModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
               disabled={isUpdating}
             />
+          </div>
+
+          {/* 活動圖片 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              活動圖片 URL
+            </label>
+            <input
+              type="url"
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={isUpdating}
+            />
+            {/* 圖片預覽 */}
+            {formData.imageUrl && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-2">圖片預覽：</p>
+                <div className="relative w-full max-w-xs aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={formData.imageUrl}
+                    alt="活動圖片預覽"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                    }}
+                  />
+                  <div className="hidden absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                    圖片載入失敗
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

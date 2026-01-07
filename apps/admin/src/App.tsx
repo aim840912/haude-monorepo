@@ -5,6 +5,7 @@ import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { FarmToursPage } from './pages/FarmToursPage'
 import { SchedulesPage } from './pages/SchedulesPage'
+import { LocationsPage } from './pages/LocationsPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -31,6 +32,7 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/farm-tours" element={<FarmToursPage />} />
           <Route path="/schedules" element={<SchedulesPage />} />
+          <Route path="/locations" element={<LocationsPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
