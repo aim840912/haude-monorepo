@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
+import { useCartStore } from './cartStore'
 
 // Storage key 常數
 const AUTH_STORAGE_KEY = 'auth-storage'
@@ -54,6 +55,25 @@ export function clearAllAuthStorage(): void {
 }
 
 /**
+ * 統一的認證檢查函數（供其他模組使用，如 cartStore）
+ * 同時檢查 localStorage 和 sessionStorage，配合 dynamicStorage 的存儲策略
+ */
+export function isAuthenticated(): boolean {
+  try {
+    const authStorage =
+      localStorage.getItem(AUTH_STORAGE_KEY) ||
+      sessionStorage.getItem(AUTH_STORAGE_KEY)
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage)
+      return !!parsed?.state?.token
+    }
+  } catch {
+    // ignore parsing errors
+  }
+  return false
+}
+
+/**
  * 自定義 Storage Adapter
  * 根據「記住我」偏好動態選擇 localStorage 或 sessionStorage
  */
@@ -101,12 +121,16 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
         }),
 
-      logout: () =>
+      logout: () => {
+        // 清除本地購物車（避免登出後還顯示之前的訪客購物車）
+        localStorage.removeItem('cart-storage')
+        useCartStore.setState({ items: [] }) // 重置購物車記憶體狀態，讓 UI 立即更新
         set({
           user: null,
           token: null,
           isAuthenticated: false,
-        }),
+        })
+      },
     }),
     {
       name: AUTH_STORAGE_KEY,

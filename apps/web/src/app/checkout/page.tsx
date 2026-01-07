@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CreditCard, Building2, Store, Globe, Loader2, ShoppingBag } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
+import { useCheckoutStore } from '@/stores/checkoutStore'
 import { ordersApi } from '@/services/api'
 import { cn } from '@/lib/utils'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -54,7 +55,15 @@ function CheckoutContent() {
   const totalItems = useTotalItems()
   const totalPrice = useTotalPrice()
 
-  // 表單狀態
+  // 從 store 獲取持久化的表單數據
+  const {
+    shippingAddress: savedAddress,
+    paymentMethod: savedPaymentMethod,
+    setShippingAddress: saveAddress,
+    setPaymentMethod: savePaymentMethod,
+  } = useCheckoutStore()
+
+  // 表單狀態（本地狀態用於即時回應）
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     name: '',
     phone: '',
@@ -68,6 +77,14 @@ function CheckoutContent() {
   const [orderNotes, setOrderNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof ShippingAddress, string>>>({})
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Hydration: 客戶端載入後從 store 讀取已保存的數據
+  useEffect(() => {
+    setShippingAddress(savedAddress)
+    setPaymentMethod(savedPaymentMethod)
+    setIsHydrated(true)
+  }, [savedAddress, savedPaymentMethod])
 
   // 驗證表單
   const validateForm = (): boolean => {
@@ -99,11 +116,20 @@ function CheckoutContent() {
 
   // 處理欄位變更
   const handleAddressChange = (field: keyof ShippingAddress, value: string) => {
+    // 更新本地狀態（即時回應）
     setShippingAddress(prev => ({ ...prev, [field]: value }))
+    // 同步保存到 store（持久化）
+    saveAddress({ [field]: value })
     // 清除該欄位的錯誤
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
     }
+  }
+
+  // 處理付款方式變更
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method)
+    savePaymentMethod(method)
   }
 
   // 提交訂單
@@ -323,7 +349,7 @@ function CheckoutContent() {
                           name="paymentMethod"
                           value={method.value}
                           checked={paymentMethod === method.value}
-                          onChange={() => setPaymentMethod(method.value)}
+                          onChange={() => handlePaymentMethodChange(method.value)}
                           className="mt-1"
                         />
                         <div className="flex-1">

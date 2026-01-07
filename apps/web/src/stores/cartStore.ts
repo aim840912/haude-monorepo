@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@/services/api'
+import { isAuthenticated } from '@/stores/authStore'
 import type { Product } from '@/types/product'
 
 export interface CartItem {
@@ -34,21 +35,8 @@ interface CartState {
   totalPrice: number
 }
 
-// 判斷是否已登入
-const isAuthenticated = () => {
-  try {
-    const authStorage = localStorage.getItem('auth-storage')
-    if (authStorage) {
-      const parsed = JSON.parse(authStorage)
-      return !!parsed?.state?.token
-    }
-  } catch {
-    // ignore
-  }
-  return false
-}
-
 // 轉換 API 回傳的購物車資料
+// 注意：isAuthenticated 已從 authStore 統一導入，確保認證檢查邏輯一致
 const mapApiCartToItems = (apiCart: {
   items: Array<{
     id: string
