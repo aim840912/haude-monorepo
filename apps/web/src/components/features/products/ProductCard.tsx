@@ -33,12 +33,13 @@ export function ProductCard({
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
 
-  // 取得第一張圖片，使用 product.id 作為 seed 確保一致性
+  // 取得第一張圖片
   // 注意：API 回傳的是 images (camelCase)，不是 productImages
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const images = (product as any).images || product.productImages || []
   const primaryImage = images[0]
-  const imageUrl = primaryImage?.storageUrl || primaryImage?.storage_url || PLACEHOLDER_IMAGES.product(product.id)
+  // 優先使用真實圖片，沒有則使用分類專屬 placeholder
+  const imageUrl = primaryImage?.storageUrl || primaryImage?.storage_url || PLACEHOLDER_IMAGES.product(product.category)
 
   // 注意：API 回傳的是 stock (資料庫欄位)，前端型別定義是 inventory
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,9 +124,12 @@ export function ProductCard({
               loading="lazy"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-primary-tea-light text-text-tertiary">
-              <span className="text-sm">無圖片</span>
-            </div>
+            // 圖片載入失敗時，顯示分類專屬 placeholder
+            <img
+              src={PLACEHOLDER_IMAGES.product(product.category)}
+              alt={`${product.category} - 暫無圖片`}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           )}
         </div>
 

@@ -29,7 +29,7 @@ export interface Product {
   originalPrice?: number
   isOnSale?: boolean
   saleEndDate?: string
-  inventory: number
+  stock: number
   reservedStock?: number
   availableStock?: number
   isActive: boolean
@@ -48,7 +48,7 @@ export interface CreateProductData {
   originalPrice?: number
   isOnSale?: boolean
   saleEndDate?: string
-  inventory: number
+  stock: number
   isActive: boolean
 }
 
@@ -62,7 +62,7 @@ export interface UpdateProductData {
   originalPrice?: number
   isOnSale?: boolean
   saleEndDate?: string
-  inventory?: number
+  stock?: number
   isActive?: boolean
 }
 

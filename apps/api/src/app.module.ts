@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { SupabaseModule } from './common/supabase';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
@@ -21,8 +22,9 @@ import { CartModule } from './modules/cart/cart.module';
       isGlobal: true,
     }),
 
-    // Database
+    // Database & Storage
     PrismaModule,
+    SupabaseModule,
 
     // Feature modules
     AuthModule,

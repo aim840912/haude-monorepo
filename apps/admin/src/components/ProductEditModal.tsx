@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { Product } from '@haude/types'
 import type { UpdateProductData } from '../hooks/useProducts'
+import { ProductImageManager } from './ProductImageManager'
+import { productImagesApi, type ProductImage } from '../services/api'
 
 interface ProductEditModalProps {
   product: Product
@@ -23,12 +25,31 @@ export function ProductEditModal({
     description: '',
     category: '',
     price: 0,
-    inventory: 0,
+    stock: 0,
     isActive: true,
   })
   const [error, setError] = useState<string | null>(null)
+  const [images, setImages] = useState<ProductImage[]>([])
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
+  // 追蹤本次新上傳的圖片 ID（取消時需要刪除）
+  const [newlyUploadedIds, setNewlyUploadedIds] = useState<string[]>([])
+  const [isCancelling, setIsCancelling] = useState(false)
 
-  // 當 product 改變時重置表單
+  // 載入產品圖片
+  const loadImages = useCallback(async () => {
+    if (!product?.id) return
+    setIsLoadingImages(true)
+    try {
+      const { data } = await productImagesApi.getImages(product.id)
+      setImages(data)
+    } catch (err) {
+      console.error('載入圖片失敗:', err)
+    } finally {
+      setIsLoadingImages(false)
+    }
+  }, [product?.id])
+
+  // 當 product 改變時重置表單並載入圖片
   useEffect(() => {
     if (product) {
       setFormData({
@@ -36,12 +57,64 @@ export function ProductEditModal({
         description: product.description || '',
         category: product.category || '',
         price: product.price || 0,
-        inventory: product.inventory ?? 0,
+        stock: product.stock ?? 0,
         isActive: product.isActive ?? true,
       })
       setError(null)
+      // 重置新上傳圖片追蹤
+      setNewlyUploadedIds([])
+      // 如果產品有預載入的圖片，使用它們；否則從 API 載入
+      if (product.productImages && product.productImages.length > 0) {
+        setImages(product.productImages.map(img => ({
+          id: img.id,
+          productId: product.id,
+          storageUrl: img.storage_url,
+          filePath: img.file_path,
+          altText: img.alt_text || undefined,
+          displayPosition: img.display_position,
+          size: img.size as 'thumbnail' | 'medium' | 'large',
+          createdAt: img.created_at,
+          updatedAt: img.updated_at,
+        })))
+      } else {
+        loadImages()
+      }
     }
-  }, [product])
+  }, [product, loadImages])
+
+  // 處理圖片變更（上傳完成時呼叫）
+  const handleImagesChange = useCallback((newImageIds?: string[]) => {
+    // 記錄新上傳的圖片 ID
+    if (newImageIds && newImageIds.length > 0) {
+      setNewlyUploadedIds(prev => [...prev, ...newImageIds])
+    }
+    // 重新載入圖片列表
+    loadImages()
+  }, [loadImages])
+
+  // 取消時清理新上傳的圖片
+  const handleCancel = useCallback(async () => {
+    if (newlyUploadedIds.length === 0) {
+      onClose()
+      return
+    }
+
+    setIsCancelling(true)
+    try {
+      // 刪除本次新上傳的所有圖片
+      await Promise.all(
+        newlyUploadedIds.map(imageId =>
+          productImagesApi.deleteImage(product.id, imageId).catch(err => {
+            console.error(`刪除圖片 ${imageId} 失敗:`, err)
+          })
+        )
+      )
+    } finally {
+      setIsCancelling(false)
+      setNewlyUploadedIds([])
+      onClose()
+    }
+  }, [newlyUploadedIds, product.id, onClose])
 
   if (!isOpen) return null
 
@@ -58,7 +131,7 @@ export function ProductEditModal({
       setError('價格不能為負數')
       return
     }
-    if (formData.inventory < 0) {
+    if (formData.stock < 0) {
       setError('庫存不能為負數')
       return
     }
@@ -68,11 +141,13 @@ export function ProductEditModal({
       description: formData.description.trim(),
       category: formData.category.trim(),
       price: formData.price,
-      inventory: formData.inventory,
+      stock: formData.stock,
       isActive: formData.isActive,
     })
 
     if (success) {
+      // 儲存成功，清除追蹤（圖片已確認保留）
+      setNewlyUploadedIds([])
       onClose()
     } else {
       setError('更新失敗，請稍後再試')
@@ -82,18 +157,18 @@ export function ProductEditModal({
   // 使用 mousedown 而非 click，避免拖曳到外面時意外關閉
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     // 只有直接點擊背景時才關閉（不是點擊 Modal 內容後拖出來）
-    if (e.target === e.currentTarget && !isUpdating) {
-      onClose()
+    if (e.target === e.currentTarget && !isUpdating && !isCancelling) {
+      handleCancel()
     }
   }
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto py-8"
       onMouseDown={handleBackdropMouseDown}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4"
+        className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 my-auto"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
@@ -101,8 +176,8 @@ export function ProductEditModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">編輯產品</h2>
           <button
-            onClick={onClose}
-            disabled={isUpdating}
+            onClick={handleCancel}
+            disabled={isUpdating || isCancelling}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -166,8 +241,8 @@ export function ProductEditModal({
               </label>
               <input
                 type="number"
-                value={formData.inventory}
-                onChange={(e) => setFormData({ ...formData, inventory: parseInt(e.target.value) || 0 })}
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 min="0"
                 disabled={isUpdating}
@@ -220,19 +295,40 @@ export function ProductEditModal({
             </div>
           </div>
 
+          {/* 產品圖片 */}
+          <div className="pt-4 border-t border-gray-200">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              產品圖片
+            </label>
+            {isLoadingImages ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">載入圖片中...</span>
+              </div>
+            ) : (
+              <ProductImageManager
+                productId={product.id}
+                images={images}
+                onImagesChange={handleImagesChange}
+                disabled={isUpdating || isCancelling}
+              />
+            )}
+          </div>
+
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              disabled={isUpdating}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              onClick={handleCancel}
+              disabled={isUpdating || isCancelling}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >
-              取消
+              {isCancelling && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isCancelling ? '清理中...' : '取消'}
             </button>
             <button
               type="submit"
-              disabled={isUpdating}
+              disabled={isUpdating || isCancelling}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
