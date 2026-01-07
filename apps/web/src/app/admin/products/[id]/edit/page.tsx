@@ -35,7 +35,7 @@ export default function AdminProductEditPage({ params }: AdminProductEditPagePro
 
     setIsSubmitting(true)
     try {
-      // 轉換欄位名稱：inventory -> stock
+      // 直接使用表單資料（已是 API 格式）
       const apiData = {
         name: data.name,
         description: data.description,
@@ -46,7 +46,7 @@ export default function AdminProductEditPage({ params }: AdminProductEditPagePro
         originalPrice: data.originalPrice,
         isOnSale: data.isOnSale,
         saleEndDate: data.saleEndDate,
-        stock: data.inventory, // API 使用 stock
+        stock: data.stock,
         isActive: data.isActive,
       }
 

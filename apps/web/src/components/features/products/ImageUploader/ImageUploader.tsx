@@ -132,7 +132,7 @@ export function ImageUploader({
                 className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
               >
                 <img
-                  src={image.preview || image.storage_url || image.url}
+                  src={image.preview || image.storageUrl || image.url}
                   alt={image.alt || `圖片 ${index + 1}`}
                   className="w-full h-full object-cover"
                 />

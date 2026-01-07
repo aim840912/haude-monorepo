@@ -189,8 +189,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       name: product.name,
       price: product.price,
       quantity,
-      image: product.productImages?.[0]?.storage_url,
-      maxQuantity: product.inventory,
+      image: product.images[0]?.storageUrl,
+      maxQuantity: product.stock,
     }
     dispatch({ type: 'ADD_ITEM', payload: cartItem })
   }

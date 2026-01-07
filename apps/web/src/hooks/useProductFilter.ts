@@ -62,9 +62,9 @@ export function useProductFilter(products: Product[]): UseProductFilterReturn {
 
     // 庫存狀態篩選
     if (filters.availability === 'in_stock') {
-      filtered = filtered.filter(product => product.inventory > 0)
+      filtered = filtered.filter(product => product.stock > 0)
     } else if (filters.availability === 'out_of_stock') {
-      filtered = filtered.filter(product => product.inventory <= 0)
+      filtered = filtered.filter(product => product.stock <= 0)
     }
 
     // 搜尋篩選

@@ -47,9 +47,9 @@ export function AdminProductsTable({
 
     // 庫存狀態篩選
     if (filters.availability === 'in_stock') {
-      result = result.filter(p => p.inventory > 0)
+      result = result.filter(p => p.stock > 0)
     } else if (filters.availability === 'out_of_stock') {
-      result = result.filter(p => p.inventory <= 0)
+      result = result.filter(p => p.stock <= 0)
     }
 
     // 上架狀態篩選
@@ -69,7 +69,7 @@ export function AdminProductsTable({
         case 'price_high':
           return b.price - a.price
         case 'inventory':
-          return b.inventory - a.inventory
+          return b.stock - a.stock
         case 'created_asc':
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         case 'created_desc':
@@ -167,9 +167,9 @@ export function AdminProductsTable({
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                          {product.productImages?.[0] ? (
+                          {product.images[0] ? (
                             <img
-                              src={product.productImages[0].storage_url}
+                              src={product.images[0].storageUrl}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />
@@ -207,14 +207,14 @@ export function AdminProductsTable({
                       <span
                         className={cn(
                           'font-medium',
-                          product.inventory <= 0
+                          product.stock <= 0
                             ? 'text-red-600'
-                            : product.inventory < 10
+                            : product.stock < 10
                               ? 'text-yellow-600'
                               : 'text-green-600'
                         )}
                       >
-                        {product.inventory}
+                        {product.stock}
                       </span>
                     </td>
 

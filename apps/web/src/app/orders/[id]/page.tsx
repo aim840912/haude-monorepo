@@ -16,6 +16,7 @@ import {
   CreditCard,
 } from 'lucide-react'
 import { useOrder, useCancelOrder } from '@/hooks/useOrders'
+import { useToast } from '@/components/ui/feedback/toast'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { PaymentButton, PaymentStatusBadge } from '@/components/features/payment'
 import { cn } from '@/lib/utils'
@@ -47,6 +48,7 @@ interface OrderDetailPageProps {
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
+  const { error: showError } = useToast()
   const { order, isLoading, error, refetch } = useOrder(id)
   const { cancelOrder, isCancelling } = useCancelOrder()
   const [cancelError, setCancelError] = useState<string | null>(null)
@@ -104,7 +106,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
   // 處理付款錯誤
   const handlePaymentError = (errorMsg: string) => {
-    alert(errorMsg)
+    showError('付款失敗', errorMsg)
   }
 
   return (

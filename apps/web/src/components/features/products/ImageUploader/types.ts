@@ -8,7 +8,7 @@ export interface UploadedImage {
   path?: string
   file?: File
   preview?: string
-  storage_url?: string
+  storageUrl?: string
   position: number
   alt?: string
 }
