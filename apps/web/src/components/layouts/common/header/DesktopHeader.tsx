@@ -3,13 +3,19 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Settings, LogOut, User, ChevronDown } from 'lucide-react'
+import { ShoppingCart, Settings, LogOut, User, ChevronDown, Package } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
 
+// 所有登入用戶可見的選單
+const userMenuItems = [
+  { href: '/account', label: '我的帳戶', icon: User },
+  { href: '/orders', label: '我的訂單', icon: Package },
+]
+
+// 僅管理員可見的選單
 const adminMenuItems = [
-  { href: '/account', label: '我的帳戶' },
   { href: '/admin/products', label: '產品管理' },
   { href: '/admin/schedules', label: '日程管理' },
   { href: '/admin/locations', label: '據點管理' },
@@ -24,7 +30,9 @@ export function DesktopHeader() {
   const pathname = usePathname()
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const adminMenuRef = useRef<HTMLDivElement>(null)
 
   const isActive = (path: string) => {
@@ -37,6 +45,9 @@ export function DesktopHeader() {
   // 點擊外部關閉選單
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
       if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
         setIsAdminMenuOpen(false)
       }
@@ -152,17 +163,52 @@ export function DesktopHeader() {
             </div>
           )}
 
-          {/* 登入/登出按鈕 */}
+          {/* 用戶選單（所有登入用戶可見）*/}
           {isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">{user?.name}</span>
+            <div className="relative" ref={userMenuRef}>
               <button
-                onClick={logout}
-                className="w-10 h-10 flex items-center justify-center text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
-                title="登出"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 px-3 h-10 text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
               >
-                <LogOut className="w-5 h-5" />
+                <User className="w-5 h-5" />
+                <span className="text-sm font-medium">{user?.name}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* 用戶下拉選單 */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  {userMenuItems.map(item => {
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                          isActive(item.href)
+                            ? 'text-green-600 bg-green-50'
+                            : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                  <div className="border-t border-gray-100 my-1" />
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false)
+                      logout()
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    登出
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Link
