@@ -33,17 +33,12 @@ export function ProductCard({
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
 
-  // 取得第一張圖片
-  // 注意：API 回傳的是 images (camelCase)，不是 productImages
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const images = (product as any).images || product.productImages || []
-  const primaryImage = images[0]
-  // 優先使用真實圖片，沒有則使用分類專屬 placeholder
-  const imageUrl = primaryImage?.storageUrl || primaryImage?.storage_url || PLACEHOLDER_IMAGES.product(product.category)
+  // 取得第一張圖片，沒有則使用分類專屬 placeholder
+  const primaryImage = product.images[0]
+  const imageUrl = primaryImage?.storageUrl || PLACEHOLDER_IMAGES.product(product.category)
 
-  // 注意：API 回傳的是 stock (資料庫欄位)，前端型別定義是 inventory
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stock = (product as any).stock ?? product.inventory ?? 0
+  // 取得庫存
+  const stock = product.stock
 
   // 計算折扣百分比
   const discountPercent =

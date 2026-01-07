@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore, useTotalItems, useTotalPrice, type CartItem } from '@/stores/cartStore'
 import { useCheckoutStore } from '@/stores/checkoutStore'
+import { useToast } from '@/components/ui/feedback/toast'
 import { ordersApi } from '@/services/api'
 import type { PaymentMethod, ShippingAddress } from '@/types/order'
 
@@ -47,6 +48,7 @@ export interface UseCheckoutFormReturn {
  */
 export function useCheckoutForm(): UseCheckoutFormReturn {
   const router = useRouter()
+  const { warning, error: showError } = useToast()
   const { items, clearCart } = useCartStore()
   const totalItems = useTotalItems()
   const totalPrice = useTotalPrice()
@@ -142,7 +144,7 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
       }
 
       if (items.length === 0) {
-        alert('購物車是空的')
+        warning('購物車是空的', '請先將商品加入購物車')
         return
       }
 
@@ -167,12 +169,12 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
         router.push(`/orders/${data.id}`)
       } catch (error) {
         console.error('建立訂單失敗:', error)
-        alert('建立訂單失敗，請稍後再試')
+        showError('建立訂單失敗', '請稍後再試')
       } finally {
         setIsSubmitting(false)
       }
     },
-    [validateForm, items, shippingAddress, paymentMethod, orderNotes, clearCart, router]
+    [validateForm, items, shippingAddress, paymentMethod, orderNotes, clearCart, router, warning, showError]
   )
 
   return {

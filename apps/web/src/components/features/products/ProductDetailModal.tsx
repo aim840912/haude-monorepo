@@ -55,8 +55,8 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
 
     // 取得產品圖片 URL
     const getProductImageUrl = (): string => {
-      if (product.productImages && product.productImages.length > 0) {
-        return product.productImages[currentImageIndex]?.storage_url || '/placeholder-product.png'
+      if (product.images && product.images.length > 0) {
+        return product.images[currentImageIndex]?.storageUrl || '/placeholder-product.png'
       }
       return product.image || '/placeholder-product.png'
     }
@@ -67,11 +67,17 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
     }
 
     // 準備圖片陣列
-    type ImageItem = { id: string; storage_url: string }
-    const images: ImageItem[] = product.productImages?.map(img => ({
-      id: img.id,
-      storage_url: img.storage_url
-    })) || (product.image ? [{ id: 'main', storage_url: product.image }] : [])
+    type ImageItem = { id: string; storageUrl: string }
+    const images: ImageItem[] = (product.images || [])
+      .filter(img => img.storageUrl)
+      .map(img => ({
+        id: img.id,
+        storageUrl: img.storageUrl
+      }))
+    // 如果沒有圖片，使用 fallback
+    if (images.length === 0 && product.image) {
+      images.push({ id: 'main', storageUrl: product.image })
+    }
 
     // 確保只在客戶端渲染 Portal
     if (typeof window === 'undefined' || !shouldRender) {
@@ -135,7 +141,7 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                           aria-pressed={currentImageIndex === index}
                         >
                           <img
-                            src={image.storage_url}
+                            src={image.storageUrl}
                             alt={`預覽 ${index + 1}`}
                             className="w-full h-full object-cover"
                           />
@@ -187,7 +193,7 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                   <ProductQuantitySelector
                     quantity={quantity}
                     onQuantityChange={setQuantity}
-                    max={product.availableStock ?? product.inventory ?? 99}
+                    max={product.availableStock ?? product.stock ?? 99}
                   />
 
                   {/* 操作按鈕組 */}

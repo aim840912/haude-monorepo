@@ -1,23 +1,17 @@
-// 產品圖片結構 - 對應 images 表 (module='products')
-// 使用資料庫原始欄位名稱，與統一 API 格式一致
+// 產品圖片結構 - API 回傳格式 (camelCase)
 export interface ProductImage {
   id: string
-  entity_id: string // 資料庫: images.entity_id (產品 ID)
-  storage_url: string // 資料庫: images.storage_url
-  file_path: string // 資料庫: images.file_path
-  alt_text?: string | null // 資料庫: images.alt_text
-  display_position: number // 資料庫: images.display_position
-  size: 'thumbnail' | 'medium' | 'large'
-  width?: number | null // 存在 images.metadata
-  height?: number | null // 存在 images.metadata
-  file_size?: number | null // 存在 images.metadata
-  created_at: string
-  updated_at: string
-  module: string // 資料庫: images.module (固定為 'products')
-  _originalFile?: File // 記憶體模式專用：保存原始 File 物件以供後續上傳
+  productId?: string // 產品 ID (API 回傳)
+  storageUrl: string // 圖片 URL
+  filePath?: string // 儲存路徑
+  altText?: string | null // 替代文字
+  displayPosition?: number // 排序位置
+  size?: 'thumbnail' | 'medium' | 'large'
+  createdAt?: string
+  updatedAt?: string
 }
 
-// 產品主介面 - 使用 images 表存放產品圖片
+// 產品主介面 - API 回傳格式
 export interface Product {
   id: string
   name: string
@@ -29,16 +23,16 @@ export interface Product {
   originalPrice?: number
   isOnSale?: boolean
   saleEndDate?: string
-  inventory: number // 實際庫存
+  stock: number // 實際庫存
   reservedStock?: number // 保留庫存（已確認但未完成的詢價單）
-  availableStock?: number // 可用庫存 = inventory - reservedStock
+  availableStock?: number // 可用庫存 = stock - reservedStock
   isActive: boolean
   createdAt: string
   updatedAt: string
-  productImages: ProductImage[]
+  images: ProductImage[] // 產品圖片
 }
 
-// 產品建立資料
+// 產品建立資料 (送給 API)
 export interface CreateProductData {
   name: string
   description: string
@@ -49,11 +43,11 @@ export interface CreateProductData {
   originalPrice?: number
   isOnSale?: boolean
   saleEndDate?: string
-  inventory: number
+  stock: number // API 使用 stock
   isActive: boolean
 }
 
-// 產品更新資料
+// 產品更新資料 (送給 API)
 export interface UpdateProductData {
   name?: string
   description?: string
@@ -64,7 +58,7 @@ export interface UpdateProductData {
   originalPrice?: number
   isOnSale?: boolean
   saleEndDate?: string
-  inventory?: number
+  stock?: number // API 使用 stock
   isActive?: boolean
 }
 

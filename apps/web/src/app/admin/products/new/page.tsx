@@ -26,7 +26,7 @@ export default function AdminProductCreatePage() {
     setIsSubmitting(true)
     try {
       // 在 create 模式下，所有必填欄位都應該存在
-      // 轉換欄位名稱：inventory -> stock
+      // 直接使用表單資料（已是 API 格式）
       const apiData = {
         name: data.name as string,
         description: data.description as string,
@@ -37,7 +37,7 @@ export default function AdminProductCreatePage() {
         originalPrice: data.originalPrice,
         isOnSale: data.isOnSale,
         saleEndDate: data.saleEndDate,
-        stock: data.inventory as number, // API 使用 stock
+        stock: data.stock as number,
         isActive: data.isActive,
       }
 

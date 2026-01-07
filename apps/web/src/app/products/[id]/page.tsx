@@ -7,17 +7,14 @@ import { ArrowLeft, Share2, ShoppingCart, Truck, Shield, RefreshCw, Loader2 } fr
 import { useState } from 'react'
 import { useProduct } from '@/hooks/useProducts'
 import { useCartStore } from '@/stores/cartStore'
+import { useToast } from '@/components/ui/feedback/toast'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { ImageCarousel } from '@/components/ui/ImageCarousel'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
 import { cn } from '@/lib/utils'
 
-// 圖片介面（API 回傳格式）
-interface ProductImage {
-  id: string
-  storageUrl?: string
-  storage_url?: string
-}
+// 使用統一的 ProductImage 類型
+import type { ProductImage } from '@/types/product'
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>
@@ -34,6 +31,7 @@ interface ProductDetailPageProps {
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
+  const { success, error: showError } = useToast()
   const { product, isLoading, error } = useProduct(id)
   const { addItem, isLoading: isAddingToCart } = useCartStore()
   const [quantity, setQuantity] = useState(1)
@@ -64,18 +62,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     )
   }
 
-  // 注意：API 回傳的是 images (camelCase)，不是 productImages
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawImages: ProductImage[] = (product as any).images || product.productImages || []
-
   // 建構圖片 URL 陣列（供 ImageCarousel 使用）
-  const imageUrls = rawImages.length > 0
-    ? rawImages.map((img) => img.storageUrl || img.storage_url || '').filter(Boolean)
+  const imageUrls = product.images.length > 0
+    ? product.images.map((img) => img.storageUrl).filter(Boolean)
     : [PLACEHOLDER_IMAGES.product(product.category)] // 無圖片時使用分類 placeholder
 
-  // 注意：API 回傳的是 stock (資料庫欄位)，前端型別定義是 inventory
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stock = (product as any).stock ?? product.inventory ?? 0
+  // 取得庫存
+  const stock = product.stock
 
   // 計算折扣
   const discountPercent =
@@ -96,7 +89,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         await navigator.share(shareData)
       } else {
         await navigator.clipboard.writeText(shareUrl)
-        alert('連結已複製到剪貼簿！')
+        success('連結已複製', '可以貼上分享給朋友')
       }
     } catch {
       // User cancelled or error
@@ -109,9 +102,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       setAddedToCart(true)
       // 2 秒後重置狀態
       setTimeout(() => setAddedToCart(false), 2000)
-    } catch (error) {
-      console.error('加入購物車失敗:', error)
-      alert('加入購物車失敗，請稍後再試')
+    } catch (err) {
+      console.error('加入購物車失敗:', err)
+      showError('加入購物車失敗', '請稍後再試')
     }
   }
 

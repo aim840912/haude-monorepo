@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Share2, ShoppingCart, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/feedback/toast'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import type { ExtendedProduct } from './types'
@@ -32,12 +33,14 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
   ({ product, quantity, isInterested = false, onToggleInterest, onRequestQuote }) => {
     const [isRequestingQuote, setIsRequestingQuote] = useState(false)
     const [isAddingToCart, setIsAddingToCart] = useState(false)
+    const { success, info } = useToast()
     const { user, isAuthenticated } = useAuthStore()
     const { addItem, getItemQuantity, isLoading: isCartLoading } = useCartStore()
 
     // 取得購物車中此產品的數量
     const cartQuantity = getItemQuantity(product.id)
-    const availableStock = product.availableStock ?? product.inventory
+    // 取得庫存
+    const availableStock = product.availableStock ?? product.stock ?? 0
     const isOutOfStock = availableStock <= 0
 
     const handleRequestQuote = async () => {
@@ -60,9 +63,9 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
           id: product.id,
           name: product.name,
           price: product.price,
-          inventory: product.inventory,
+          stock: product.stock ?? 0,
           availableStock: product.availableStock,
-          productImages: product.productImages,
+          images: product.images || [],
           description: product.description || '',
           category: product.category || '',
           isActive: true,
@@ -91,11 +94,11 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
           await navigator.share(shareData)
         } else {
           await navigator.clipboard.writeText(shareUrl)
-          alert('連結已複製到剪貼簿！')
+          success('連結已複製', '可以貼上分享給朋友')
         }
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
-          alert(`請複製此連結分享：\n${shareUrl}`)
+          info('分享連結', shareUrl)
         }
       }
     }
@@ -167,7 +170,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
             >
               {isOutOfStock ? (
                 <span className="font-bold text-base">
-                  {product.inventory > 0 ? '庫存已保留' : '暫時缺貨'}
+                  {(product.stock ?? 0) > 0 ? '庫存已保留' : '暫時缺貨'}
                 </span>
               ) : isRequestingQuote ? (
                 <div className="flex items-center justify-center gap-2">
@@ -211,7 +214,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
             >
               {isOutOfStock ? (
                 <span className="font-bold text-base">
-                  {product.inventory > 0 ? '庫存已保留' : '暫時缺貨'}
+                  {(product.stock ?? 0) > 0 ? '庫存已保留' : '暫時缺貨'}
                 </span>
               ) : isAddingToCart ? (
                 <>

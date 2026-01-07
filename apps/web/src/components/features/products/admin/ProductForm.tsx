@@ -40,7 +40,7 @@ export function ProductForm({
         originalPrice: initialData.originalPrice ?? '',
         isOnSale: initialData.isOnSale ?? false,
         saleEndDate: initialData.saleEndDate ?? '',
-        inventory: initialData.inventory,
+        inventory: initialData.stock,
         isActive: initialData.isActive,
       }
     }
@@ -156,7 +156,7 @@ export function ProductForm({
         : undefined,
       isOnSale: values.isOnSale,
       saleEndDate: values.isOnSale ? values.saleEndDate : undefined,
-      inventory: Number(values.inventory),
+      stock: Number(values.inventory), // 內部表單用 inventory，API 用 stock
       isActive: values.isActive,
     }
 

@@ -73,14 +73,9 @@ export const useCartStore = create<CartState>()(
        * 新增商品到購物車
        */
       addItem: async (product, quantity = 1) => {
-        // 取得圖片 URL（處理前後端欄位命名不一致）
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const images = (product as any).images || product.productImages || []
-        const imageUrl = images[0]?.storageUrl || images[0]?.storage_url
-
-        // 取得庫存（處理前後端欄位命名不一致）
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stock = (product as any).stock ?? product.inventory ?? 99
+        // 取得圖片和庫存
+        const imageUrl = product.images[0]?.storageUrl
+        const stock = product.stock
 
         if (isAuthenticated()) {
           // 已登入：呼叫後端 API
