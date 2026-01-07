@@ -80,6 +80,11 @@ export function useFarmTour(tourId: string | undefined): UseFarmTourReturn {
   return { tour, isLoading, error }
 }
 
+interface UseFarmTourBookingOptions {
+  /** 是否自動載入預約列表，預設 true */
+  autoFetch?: boolean
+}
+
 interface UseFarmTourBookingReturn {
   bookings: FarmTourBooking[]
   isLoading: boolean
@@ -92,10 +97,14 @@ interface UseFarmTourBookingReturn {
 
 /**
  * 農場體驗預約管理
+ *
+ * @param options.autoFetch - 是否自動載入預約列表（需要登入），預設 true
+ *                           在詳情頁設為 false 避免未登入時觸發 401
  */
-export function useFarmTourBooking(): UseFarmTourBookingReturn {
+export function useFarmTourBooking(options: UseFarmTourBookingOptions = {}): UseFarmTourBookingReturn {
+  const { autoFetch = true } = options
   const [bookings, setBookings] = useState<FarmTourBooking[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(autoFetch)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -113,8 +122,10 @@ export function useFarmTourBooking(): UseFarmTourBookingReturn {
   }, [])
 
   useEffect(() => {
-    fetchBookings()
-  }, [fetchBookings])
+    if (autoFetch) {
+      fetchBookings()
+    }
+  }, [autoFetch, fetchBookings])
 
   const createBooking = useCallback(async (data: CreateFarmTourBookingDto): Promise<FarmTourBooking | null> => {
     setIsSubmitting(true)

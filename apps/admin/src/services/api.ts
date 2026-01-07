@@ -216,3 +216,55 @@ export const schedulesApi = {
   ) => api.put(`/admin/schedules/${id}`, data),
   delete: (id: string) => api.delete(`/admin/schedules/${id}`),
 }
+
+// Locations API (門市據點)
+export const locationsApi = {
+  // 公開 API
+  getAll: () => api.get('/locations'),
+  getMain: () => api.get('/locations/main'),
+  getById: (id: string) => api.get(`/locations/${id}`),
+  // 管理員 API
+  getAllAdmin: () => api.get('/admin/locations'),
+  create: (data: {
+    name: string
+    address: string
+    title?: string
+    landmark?: string
+    phone?: string
+    lineId?: string
+    hours?: string
+    closedDays?: string
+    parking?: string
+    publicTransport?: string
+    features?: string[]
+    specialties?: string[]
+    lat?: number
+    lng?: number
+    image?: string
+    isMain?: boolean
+    isActive?: boolean
+  }) => api.post('/admin/locations', data),
+  update: (
+    id: string,
+    data: {
+      name?: string
+      address?: string
+      title?: string
+      landmark?: string
+      phone?: string
+      lineId?: string
+      hours?: string
+      closedDays?: string
+      parking?: string
+      publicTransport?: string
+      features?: string[]
+      specialties?: string[]
+      lat?: number
+      lng?: number
+      image?: string
+      isMain?: boolean
+      isActive?: boolean
+    }
+  ) => api.put(`/admin/locations/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/locations/${id}`),
+}

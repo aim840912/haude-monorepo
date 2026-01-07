@@ -28,7 +28,8 @@ interface FarmTourDetailPageProps {
 export default function FarmTourDetailPage({ params }: FarmTourDetailPageProps) {
   const { id } = use(params)
   const { tour, isLoading, error } = useFarmTour(id)
-  const { createBooking, isSubmitting, error: bookingError } = useFarmTourBooking()
+  // autoFetch: false 避免未登入時自動呼叫需要認證的 API
+  const { createBooking, isSubmitting, error: bookingError } = useFarmTourBooking({ autoFetch: false })
   const [bookingSuccess, setBookingSuccess] = useState(false)
 
   const handleBook = async () => {
