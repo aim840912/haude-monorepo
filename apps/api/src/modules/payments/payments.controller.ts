@@ -48,7 +48,7 @@ export class PaymentsController {
   /**
    * 建立付款請求
    *
-   * 回傳前端需要的表單資料，前端收到後自動提交到藍新
+   * 回傳前端需要的表單資料，前端收到後自動提交到綠界
    */
   @Post('create')
   @UseGuards(JwtAuthGuard)
@@ -97,62 +97,55 @@ export class PaymentsController {
   }
 
   // ========================================
-  // 藍新回調端點
+  // 綠界回調端點
   // ========================================
 
   /**
-   * 藍新付款通知（Webhook）
+   * 綠界付款通知（Webhook）
    *
-   * 藍新會在付款完成後呼叫此端點
-   * 不需要認證，但會驗證 TradeSha 簽章
+   * 綠界會在付款完成後呼叫此端點
+   * 不需要認證，但會驗證 CheckMacValue
    */
-  @Post('newebpay/notify')
+  @Post('ecpay/notify')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '藍新付款通知（Webhook）' })
+  @ApiOperation({ summary: '綠界付款通知（Webhook）' })
   @ApiResponse({ status: 200, description: '處理成功' })
   async handleNotify(
-    @Body() body: { TradeInfo: string; TradeSha: string },
+    @Body() body: Record<string, string>,
     @Req() req: Request,
   ) {
-    this.logger.log('收到藍新付款通知');
+    this.logger.log('收到綠界付款通知');
 
     const ipAddress =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
       req.socket?.remoteAddress;
 
-    const success = await this.paymentsService.handleNotify(
-      body.TradeInfo,
-      body.TradeSha,
-      ipAddress,
-    );
+    const success = await this.paymentsService.handleNotify(body, ipAddress);
 
-    // 藍新要求回傳純文字
-    return success ? 'OK' : 'FAIL';
+    // 綠界要求回傳 1|OK 表示成功
+    return success ? '1|OK' : '0|FAIL';
   }
 
   /**
-   * 藍新付款返回頁
+   * 綠界付款返回頁
    *
    * 用戶付款完成後會被導向到這裡
    * 然後重定向到前端結果頁
    */
-  @Post('newebpay/return')
+  @Post('ecpay/return')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '藍新付款返回' })
+  @ApiOperation({ summary: '綠界付款返回' })
   async handleReturn(
-    @Body() body: { TradeInfo: string; TradeSha: string },
+    @Body() body: Record<string, string>,
     @Res() res: Response,
   ) {
-    this.logger.log('用戶從藍新返回');
+    this.logger.log('用戶從綠界返回');
 
-    const result = await this.paymentsService.handleReturn(
-      body.TradeInfo,
-      body.TradeSha,
-    );
+    const result = await this.paymentsService.handleReturn(body);
 
     // 重定向到前端結果頁
     const redirectUrl = result.success
-      ? `${this.frontendUrl}/orders/${result.orderId}/payment-result?status=success`
+      ? `${this.frontendUrl}/orders/${result.orderId}?payment=success`
       : `${this.frontendUrl}/payment-result?status=fail&message=${encodeURIComponent(result.message || '付款失敗')}`;
 
     return res.redirect(redirectUrl);

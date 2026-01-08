@@ -4,12 +4,7 @@ import { paymentsApi } from '@/services/api'
 interface PaymentFormData {
   action: string
   method: 'POST'
-  fields: {
-    MerchantID: string
-    TradeInfo: string
-    TradeSha: string
-    Version: string
-  }
+  fields: Record<string, string | number>
 }
 
 interface UsePaymentReturn {
@@ -26,10 +21,10 @@ interface UsePaymentReturn {
 /**
  * 付款 Hook
  *
- * 處理藍新金流付款流程：
+ * 處理綠界金流付款流程：
  * 1. 呼叫後端 API 取得加密參數
- * 2. 建立隱藏表單並自動提交到藍新
- * 3. 用戶在藍新頁面完成付款後會被導回
+ * 2. 建立隱藏表單並自動提交到綠界
+ * 3. 用戶在綠界頁面完成付款後會被導回
  *
  * @example
  * ```tsx
@@ -37,7 +32,7 @@ interface UsePaymentReturn {
  *
  * const handlePay = async () => {
  *   const success = await initiatePayment(orderId)
- *   // success 為 true 表示已導向藍新
+ *   // success 為 true 表示已導向綠界
  * }
  * ```
  */
@@ -46,24 +41,26 @@ export function usePayment(): UsePaymentReturn {
   const [error, setError] = useState<string | null>(null)
 
   /**
-   * 提交表單到藍新
+   * 提交表單到綠界
    *
    * 建立一個隱藏的 form 元素，填入加密資料後自動提交
-   * 這樣瀏覽器會導向到藍新的付款頁面
+   * 這樣瀏覽器會導向到綠界的付款頁面
    */
-  const submitToNewebPay = useCallback((formData: PaymentFormData) => {
+  const submitToECPay = useCallback((formData: PaymentFormData) => {
     // 建立隱藏表單
     const form = document.createElement('form')
     form.method = formData.method
     form.action = formData.action
     form.style.display = 'none'
+    // 設定編碼為 UTF-8
+    form.acceptCharset = 'UTF-8'
 
     // 加入表單欄位
     Object.entries(formData.fields).forEach(([name, value]) => {
       const input = document.createElement('input')
       input.type = 'hidden'
       input.name = name
-      input.value = value
+      input.value = String(value)
       form.appendChild(input)
     })
 
@@ -84,8 +81,8 @@ export function usePayment(): UsePaymentReturn {
           throw new Error('無法取得付款資料')
         }
 
-        // 提交到藍新
-        submitToNewebPay(data.data.formData)
+        // 提交到綠界
+        submitToECPay(data.data.formData)
         return true
       } catch (err) {
         const message =
@@ -95,9 +92,9 @@ export function usePayment(): UsePaymentReturn {
         return false
       }
       // 注意：成功時不會執行 setIsProcessing(false)
-      // 因為頁面會被導向到藍新，不需要重置狀態
+      // 因為頁面會被導向到綠界，不需要重置狀態
     },
-    [submitToNewebPay]
+    [submitToECPay]
   )
 
   const clearError = useCallback(() => {
@@ -117,7 +114,7 @@ interface UsePaymentStatusReturn {
   status: 'pending' | 'paid' | 'failed' | 'expired' | null
   /** 付款時間 */
   payTime: string | null
-  /** 藍新交易編號 */
+  /** 綠界交易編號 */
   tradeNo: string | null
   /** 是否載入中 */
   isLoading: boolean
