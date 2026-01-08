@@ -8,52 +8,47 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentStatus } from '@prisma/client';
 import {
-  NewebPayCrypto,
-  NewebPayConfig,
-  TradeInfoParams,
-  generateMerchantOrderNo,
-  getTimestamp,
-} from './utils/newebpay-crypto';
+  ECPayCrypto,
+  ECPayConfig,
+  ECPayTradeParams,
+  generateMerchantTradeNo,
+  getTradeDate,
+} from './utils/ecpay-crypto';
 
 /**
- * 付款表單資料（前端用於提交到藍新）
+ * 付款表單資料（前端用於提交到綠界）
  */
 export interface PaymentFormData {
   paymentId: string;
   formData: {
     action: string;
     method: 'POST';
-    fields: {
-      MerchantID: string;
-      TradeInfo: string;
-      TradeSha: string;
-      Version: string;
-    };
+    fields: Record<string, string | number>;
   };
 }
 
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly crypto: NewebPayCrypto;
-  private readonly config: NewebPayConfig;
+  private readonly crypto: ECPayCrypto;
+  private readonly config: ECPayConfig;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
-    // 初始化藍新配置
+    // 初始化綠界配置
     this.config = {
-      merchantId: this.configService.getOrThrow('NEWEBPAY_MERCHANT_ID'),
-      hashKey: this.configService.getOrThrow('NEWEBPAY_HASH_KEY'),
-      hashIv: this.configService.getOrThrow('NEWEBPAY_HASH_IV'),
-      apiUrl: this.configService.getOrThrow('NEWEBPAY_API_URL'),
-      notifyUrl: this.configService.getOrThrow('NEWEBPAY_NOTIFY_URL'),
-      returnUrl: this.configService.getOrThrow('NEWEBPAY_RETURN_URL'),
-      version: '2.0',
+      merchantId: this.configService.getOrThrow('ECPAY_MERCHANT_ID'),
+      hashKey: this.configService.getOrThrow('ECPAY_HASH_KEY'),
+      hashIv: this.configService.getOrThrow('ECPAY_HASH_IV'),
+      apiUrl: this.configService.getOrThrow('ECPAY_API_URL'),
+      notifyUrl: this.configService.getOrThrow('ECPAY_NOTIFY_URL'),
+      returnUrl: this.configService.getOrThrow('ECPAY_RETURN_URL'),
+      clientBackUrl: this.configService.get('ECPAY_CLIENT_BACK_URL'),
     };
 
-    this.crypto = new NewebPayCrypto(this.config.hashKey, this.config.hashIv);
+    this.crypto = new ECPayCrypto(this.config.hashKey, this.config.hashIv);
   }
 
   // ========================================
@@ -65,7 +60,7 @@ export class PaymentsService {
    *
    * 1. 驗證訂單存在且狀態可付款
    * 2. 建立 Payment 記錄
-   * 3. 生成藍新加密參數
+   * 3. 生成綠界加密參數
    * 4. 回傳前端表單資料
    */
   async createPayment(
@@ -106,36 +101,36 @@ export class PaymentsService {
     }
 
     // 3. 生成商店訂單編號
-    const merchantOrderNo = generateMerchantOrderNo(order.orderNumber);
+    const merchantTradeNo = generateMerchantTradeNo(order.orderNumber);
 
     // 4. 計算金額（取整數）
     const amount = Math.round(Number(order.totalAmount));
 
     // 5. 建立交易參數
-    const tradeParams: TradeInfoParams = {
+    const tradeParams: ECPayTradeParams = {
       MerchantID: this.config.merchantId,
-      RespondType: 'JSON',
-      TimeStamp: getTimestamp(),
-      Version: '2.0',
-      MerchantOrderNo: merchantOrderNo,
-      Amt: amount,
-      ItemDesc: this.formatItemDesc(order.items),
-      NotifyURL: this.config.notifyUrl,
-      ReturnURL: this.config.returnUrl,
-      CREDIT: 1, // 啟用信用卡
+      MerchantTradeNo: merchantTradeNo,
+      MerchantTradeDate: getTradeDate(),
+      PaymentType: 'aio',
+      TotalAmount: amount,
+      TradeDesc: encodeURIComponent('豪德製茶所訂單'),
+      ItemName: this.formatItemName(order.items),
+      ReturnURL: this.config.notifyUrl,
+      ChoosePayment: 'Credit',
+      EncryptType: 1,
+      ClientBackURL: this.config.clientBackUrl || this.config.returnUrl,
+      OrderResultURL: this.config.returnUrl,
+      NeedExtraPaidInfo: 'Y',
     };
 
-    // 6. 生成加密資料
-    const paymentData = this.crypto.createPaymentData(tradeParams, {
-      merchantId: this.config.merchantId,
-      version: '2.0',
-    });
+    // 6. 生成 CheckMacValue
+    const paymentData = this.crypto.createPaymentData(tradeParams);
 
     // 7. 建立 Payment 記錄
     const payment = await this.prisma.payment.create({
       data: {
         orderId,
-        merchantOrderNo,
+        merchantOrderNo: merchantTradeNo,
         amount,
         paymentType: 'CREDIT',
         status: 'pending',
@@ -157,30 +152,53 @@ export class PaymentsService {
 
   /**
    * 使用現有付款記錄重新生成表單
+   *
+   * 注意：舊的付款記錄可能是其他金流系統建立的，
+   * 需要確保所有綠界必要參數都存在
    */
   private async generateFormData(paymentId: string): Promise<PaymentFormData> {
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
+      include: { order: { include: { items: true } } },
     });
 
-    if (!payment || !payment.requestData) {
+    if (!payment || !payment.order) {
       throw new NotFoundException('付款記錄不存在');
     }
 
-    const tradeParams = payment.requestData as unknown as TradeInfoParams;
+    // 檢查交易編號長度（綠界限制 20 字元）
+    let merchantTradeNo = payment.merchantOrderNo;
+    if (merchantTradeNo.length > 20) {
+      // 舊編號太長，重新產生符合綠界規格的編號
+      merchantTradeNo = generateMerchantTradeNo(payment.order.orderNumber);
+    }
 
-    // 更新時間戳
-    tradeParams.TimeStamp = getTimestamp();
+    // 重新建立完整的綠界交易參數（而非依賴舊資料）
+    const tradeParams: ECPayTradeParams = {
+      MerchantID: this.config.merchantId,
+      MerchantTradeNo: merchantTradeNo,
+      MerchantTradeDate: getTradeDate(),
+      PaymentType: 'aio',
+      TotalAmount: payment.amount,
+      TradeDesc: encodeURIComponent('豪德製茶所訂單'),
+      ItemName: this.formatItemName(payment.order.items),
+      ReturnURL: this.config.notifyUrl,
+      ChoosePayment: 'Credit',
+      EncryptType: 1,
+      ClientBackURL: this.config.clientBackUrl || this.config.returnUrl,
+      OrderResultURL: this.config.returnUrl,
+      NeedExtraPaidInfo: 'Y',
+    };
 
-    const paymentData = this.crypto.createPaymentData(tradeParams, {
-      merchantId: this.config.merchantId,
-      version: '2.0',
-    });
+    const paymentData = this.crypto.createPaymentData(tradeParams);
 
-    // 更新請求資料
+    // 更新付款記錄（包含新的交易編號）
     await this.prisma.payment.update({
       where: { id: paymentId },
-      data: { requestData: tradeParams as object },
+      data: {
+        merchantOrderNo: merchantTradeNo,
+        requestData: tradeParams as object,
+      },
     });
 
     return {
@@ -194,70 +212,67 @@ export class PaymentsService {
   }
 
   // ========================================
-  // 處理藍新回調
+  // 處理綠界回調
   // ========================================
 
   /**
-   * 處理藍新付款通知（Webhook）
+   * 處理綠界付款通知（Webhook）
    *
-   * 1. 驗證簽章
-   * 2. 解密回應資料
-   * 3. 記錄到 PaymentLog
-   * 4. 更新 Payment 狀態
-   * 5. 更新 Order 狀態
+   * 1. 驗證 CheckMacValue
+   * 2. 記錄到 PaymentLog
+   * 3. 更新 Payment 狀態
+   * 4. 更新 Order 狀態
    */
   async handleNotify(
-    tradeInfo: string,
-    tradeSha: string,
+    body: Record<string, string>,
     ipAddress?: string,
   ): Promise<boolean> {
-    // 1. 解密並驗證
-    const response = this.crypto.decryptResponse(tradeInfo, tradeSha);
-
-    if (!response) {
-      this.logger.error('藍新回調驗證失敗');
+    // 1. 驗證 CheckMacValue
+    if (!this.crypto.verifyCheckMacValue(body)) {
+      this.logger.error('綠界回調驗證失敗');
       await this.createPaymentLog({
-        merchantOrderNo: 'UNKNOWN',
+        merchantOrderNo: body.MerchantTradeNo || 'UNKNOWN',
         logType: 'error',
-        rawData: { tradeInfo, tradeSha, error: '簽章驗證失敗' },
+        rawData: { ...body, error: 'CheckMacValue 驗證失敗' },
         verified: false,
         ipAddress,
       });
       return false;
     }
 
-    const merchantOrderNo = response.Result?.MerchantOrderNo || 'UNKNOWN';
+    const merchantTradeNo = body.MerchantTradeNo;
+    const rtnCode = parseInt(body.RtnCode, 10);
 
     // 2. 記錄回調日誌
     const payment = await this.prisma.payment.findUnique({
-      where: { merchantOrderNo },
+      where: { merchantOrderNo: merchantTradeNo },
       include: { order: true },
     });
 
     await this.createPaymentLog({
       paymentId: payment?.id,
-      merchantOrderNo,
+      merchantOrderNo: merchantTradeNo,
       logType: 'notify',
-      rawData: response,
+      rawData: body,
       verified: true,
       ipAddress,
     });
 
     if (!payment) {
-      this.logger.error(`找不到付款記錄: ${merchantOrderNo}`);
+      this.logger.error(`找不到付款記錄: ${merchantTradeNo}`);
       return false;
     }
 
     // 3. 檢查是否已處理（冪等性）
     if (payment.status === 'paid') {
-      this.logger.log(`付款已處理過: ${merchantOrderNo}`);
+      this.logger.log(`付款已處理過: ${merchantTradeNo}`);
       return true;
     }
 
-    // 4. 檢查回應狀態
-    const isSuccess = response.Status === 'SUCCESS';
+    // 4. 檢查回應狀態（RtnCode = 1 表示成功）
+    const isSuccess = rtnCode === 1;
 
-    if (isSuccess && response.Result) {
+    if (isSuccess) {
       // 付款成功
       await this.prisma.$transaction(async (tx) => {
         // 更新 Payment
@@ -265,9 +280,9 @@ export class PaymentsService {
           where: { id: payment.id },
           data: {
             status: 'paid',
-            tradeNo: response.Result!.TradeNo,
-            payTime: new Date(response.Result!.PayTime),
-            responseData: response as object,
+            tradeNo: body.TradeNo,
+            payTime: body.PaymentDate ? new Date(body.PaymentDate) : new Date(),
+            responseData: body as object,
           },
         });
 
@@ -283,7 +298,7 @@ export class PaymentsService {
       });
 
       this.logger.log(
-        `付款成功: ${merchantOrderNo}, 藍新交易號: ${response.Result.TradeNo}`,
+        `付款成功: ${merchantTradeNo}, 綠界交易號: ${body.TradeNo}`,
       );
     } else {
       // 付款失敗
@@ -291,7 +306,7 @@ export class PaymentsService {
         where: { id: payment.id },
         data: {
           status: 'failed',
-          responseData: response as object,
+          responseData: body as object,
         },
       });
 
@@ -301,7 +316,7 @@ export class PaymentsService {
       });
 
       this.logger.warn(
-        `付款失敗: ${merchantOrderNo}, 原因: ${response.Message}`,
+        `付款失敗: ${merchantTradeNo}, 原因: ${body.RtnMsg}`,
       );
     }
 
@@ -309,48 +324,47 @@ export class PaymentsService {
   }
 
   /**
-   * 處理藍新返回頁面（用戶返回時）
+   * 處理綠界返回頁面（用戶返回時）
    *
-   * 驗證並解密資料，回傳導向資訊
+   * 驗證並解析資料，回傳導向資訊
    */
   async handleReturn(
-    tradeInfo: string,
-    tradeSha: string,
+    body: Record<string, string>,
   ): Promise<{
     success: boolean;
     orderId?: string;
     message?: string;
   }> {
-    const response = this.crypto.decryptResponse(tradeInfo, tradeSha);
-
-    if (!response) {
+    // 驗證 CheckMacValue
+    if (!this.crypto.verifyCheckMacValue(body)) {
       return { success: false, message: '驗證失敗' };
     }
 
-    const merchantOrderNo = response.Result?.MerchantOrderNo;
-    if (!merchantOrderNo) {
+    const merchantTradeNo = body.MerchantTradeNo;
+    if (!merchantTradeNo) {
       return { success: false, message: '無效的回應' };
     }
 
     // 記錄返回日誌
     const payment = await this.prisma.payment.findUnique({
-      where: { merchantOrderNo },
+      where: { merchantOrderNo: merchantTradeNo },
     });
 
     await this.createPaymentLog({
       paymentId: payment?.id,
-      merchantOrderNo,
+      merchantOrderNo: merchantTradeNo,
       logType: 'return',
-      rawData: response,
+      rawData: body,
       verified: true,
     });
 
-    const isSuccess = response.Status === 'SUCCESS';
+    const rtnCode = parseInt(body.RtnCode, 10);
+    const isSuccess = rtnCode === 1;
 
     return {
       success: isSuccess,
       orderId: payment?.orderId,
-      message: response.Message,
+      message: body.RtnMsg,
     };
   }
 
@@ -394,13 +408,16 @@ export class PaymentsService {
   // ========================================
 
   /**
-   * 格式化商品描述（藍新限制 50 字元）
+   * 格式化商品名稱（綠界 ItemName 格式）
+   *
+   * 多項商品用 # 分隔，單項最多 400 字元
    */
-  private formatItemDesc(
+  private formatItemName(
     items: Array<{ productName: string; quantity: number }>,
   ): string {
-    const desc = items.map((i) => `${i.productName}x${i.quantity}`).join(', ');
-    return desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+    const names = items.map((i) => `${i.productName} x ${i.quantity}`);
+    const result = names.join('#');
+    return result.length > 400 ? result.slice(0, 397) + '...' : result;
   }
 
   /**
