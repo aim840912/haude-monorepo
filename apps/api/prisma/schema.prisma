@@ -22,11 +22,29 @@ model User {
   updatedAt DateTime @updatedAt
 
   // 關聯
-  orders           Order[]
-  farmTourBookings FarmTourBooking[]
-  cart             Cart?
+  orders              Order[]
+  farmTourBookings    FarmTourBooking[]
+  cart                Cart?
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+// Password Reset Token
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at") // 使用時間（null 表示未使用）
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // 關聯
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 enum Role {

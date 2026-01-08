@@ -28,8 +28,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    const requestUrl = error.config?.url || ''
+    const isAuthEndpoint = requestUrl.startsWith('/auth/')
+
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Token expired or invalid (排除登入/註冊等認證端點的 401)
       useAuthStore.getState().logout()
       window.location.href = '/login'
     }

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
-import { User, ShoppingBag, Heart, MapPin, LogOut, ChevronRight } from 'lucide-react'
+import { User, ShoppingBag, Heart, MapPin, Shield, LogOut, ChevronRight } from 'lucide-react'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -47,6 +47,12 @@ export default function AccountPage() {
       label: '收貨地址',
       href: '/account/addresses',
       description: '管理您的收貨地址',
+    },
+    {
+      icon: Shield,
+      label: '安全設定',
+      href: '/account/security',
+      description: '管理密碼與登入方式',
     },
   ]
 

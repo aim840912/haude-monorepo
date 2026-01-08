@@ -116,6 +116,43 @@ haude-v2/                     # Monorepo 根目錄
 2. **使用 TodoWrite 追蹤複雜任務** - 完成後立即標記 completed
 3. **遵循 Monorepo 規範** - 共用型別放 packages/types，專案特定放各自目錄
 
+### Plan Mode 工作流程
+
+大多數任務應從 **Plan Mode** 開始（按 `Shift+Tab` 兩次）：
+
+```
+1. 進入 Plan Mode
+2. 描述任務需求
+3. 與 Claude 討論實作方案，直到計畫完善
+4. 確認計畫後，切換到實作模式
+5. Claude 執行計畫
+```
+
+**何時使用 Plan Mode**：
+- 新功能開發
+- 複雜的重構任務
+- 跨多個檔案的變更
+
+**何時跳過**：
+- 簡單的 Bug 修復
+- 錯字修正
+- 單檔案小修改
+
+### 多代理並行工作
+
+> 詳見：`.claude/MULTI_AGENT_GUIDE.md`
+
+本專案的 Monorepo 結構天然支持多代理並行：
+
+| 工作區域 | 目錄 | 說明 |
+|----------|------|------|
+| Web 實例 | `apps/web` | 用戶端前端開發 |
+| Admin 實例 | `apps/admin` | 管理後台開發 |
+| API 實例 | `apps/api` | 後端 API 開發 |
+| 驗證實例 | 全專案 | 測試、驗證、Review |
+
+**核心原則**：不同 Claude 實例不應同時編輯同一個檔案
+
 ### Monorepo 規範
 
 - **共用型別**：使用 `import { Product } from '@haude/types'`
@@ -145,8 +182,14 @@ haude-v2/                     # Monorepo 根目錄
    - 管理後台功能 → `apps/admin`
    - API 端點 → `apps/api`
 3. **開發** - 使用 `pnpm dev` 開發
-4. **測試** - 使用 `pnpm build` 確認無錯誤
-5. **提交** - 使用清晰的 commit message
+4. **驗證** - ⚠️ **重要！每次變更後執行**（或使用 `/verify`）
+   ```bash
+   pnpm type-check   # 型別檢查（必做）
+   pnpm build        # 完整建置（確認無錯誤）
+   ```
+5. **提交** - 使用 `/git-pr` 或清晰的 commit message
+
+> 💡 Boris Cherny：「給 Claude 驗證方式會讓結果品質提升 2-3 倍」
 
 ### API 端點（現有）
 
@@ -224,6 +267,36 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ```env
 VITE_API_URL=http://localhost:3001
 ```
+
+---
+
+## Claude 常見錯誤（持續更新）
+
+> **使用方式**：每當 Claude 做錯事，將錯誤加到這裡，避免未來重複犯錯。
+>
+> 📌 這是 Boris Cherny（Claude Code 創造者）強調的最重要做法：「每個錯誤都變成規則」
+
+### 型別與 API 回應
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| 直接使用 `product.inventory` | 使用 fallback chain：`product.stock ?? product.inventory ?? 0` |
+| 使用 `image.storage_url` (snake_case) | 使用 camelCase：`image.storageUrl` |
+| 假設 API 回傳欄位存在 | 先檢查欄位，使用 optional chaining 和 fallback |
+
+### 檔案與架構
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| 建立新檔案前沒確認是否已存在 | 先 grep 或 glob 搜尋現有實作 |
+| 在 apps/ 建立共用型別 | 共用型別放 `packages/types/` |
+
+### Next.js 相關
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| 動態路由直接用 `params.id` | Next.js 15+ 需要 `use(params)` 或 `await params` |
+| 使用 `useSearchParams` 不包 Suspense | 必須用 `<Suspense>` 包裹使用該 hook 的元件 |
 
 ---
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { Mail, Lock, User, UserPlus } from 'lucide-react'
+import { Mail, Lock, User, UserPlus, X, Check } from 'lucide-react'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -143,15 +143,39 @@ export default function RegisterPage() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="input pl-10"
+                  className={`input pl-10 ${
+                    confirmPassword === ''
+                      ? ''
+                      : password === confirmPassword
+                        ? 'border-green-500 focus:ring-green-500 focus:border-green-500'
+                        : 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  }`}
                   placeholder="********"
                 />
               </div>
+              {/* 即時驗證提示 */}
+              {confirmPassword !== '' && (
+                <div className={`mt-1 flex items-center gap-1 text-sm ${
+                  password === confirmPassword ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {password === confirmPassword ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>密碼相符</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-4 h-4" />
+                      <span>密碼不一致</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !password || !confirmPassword || password !== confirmPassword}
               className="btn btn-primary w-full flex items-center justify-center gap-2"
             >
               {isLoading ? (
