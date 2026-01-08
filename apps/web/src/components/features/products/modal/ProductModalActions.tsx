@@ -42,6 +42,8 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
     // 取得庫存
     const availableStock = product.availableStock ?? product.stock ?? 0
     const isOutOfStock = availableStock <= 0
+    // 缺貨文字（避免重複的三元運算式）
+    const outOfStockText = (product.stock ?? 0) > 0 ? '庫存已保留' : '暫時缺貨'
 
     const handleRequestQuote = async () => {
       if (!onRequestQuote) return
@@ -58,19 +60,17 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
 
       setIsAddingToCart(true)
       try {
-        // 將 ExtendedProduct 轉換為 Product 類型
+        // 將 ExtendedProduct 轉換為 Product 類型（使用展開運算子簡化）
+        const now = new Date().toISOString()
         const productForCart: Product = {
-          id: product.id,
-          name: product.name,
-          price: product.price,
+          ...product,
           stock: product.stock ?? 0,
-          availableStock: product.availableStock,
           images: product.images || [],
           description: product.description || '',
           category: product.category || '',
           isActive: true,
-          createdAt: product.createdAt || new Date().toISOString(),
-          updatedAt: product.updatedAt || new Date().toISOString(),
+          createdAt: product.createdAt || now,
+          updatedAt: product.updatedAt || now,
         }
 
         await addItem(productForCart, quantity)
@@ -169,9 +169,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
               )}
             >
               {isOutOfStock ? (
-                <span className="font-bold text-base">
-                  {(product.stock ?? 0) > 0 ? '庫存已保留' : '暫時缺貨'}
-                </span>
+                <span className="font-bold text-base">{outOfStockText}</span>
               ) : isRequestingQuote ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -213,9 +211,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
               )}
             >
               {isOutOfStock ? (
-                <span className="font-bold text-base">
-                  {(product.stock ?? 0) > 0 ? '庫存已保留' : '暫時缺貨'}
-                </span>
+                <span className="font-bold text-base">{outOfStockText}</span>
               ) : isAddingToCart ? (
                 <>
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
