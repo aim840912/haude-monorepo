@@ -118,9 +118,9 @@ function LoginForm() {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="text-primary-tea hover:text-primary-tea-hover">
+                <Link href="/forgot-password" className="text-primary-tea hover:text-primary-tea-hover">
                   忘記密碼？
-                </a>
+                </Link>
               </div>
             </div>
 

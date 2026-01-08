@@ -14,6 +14,7 @@ import { FarmToursModule } from './modules/farm-tours/farm-tours.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
 import { CartModule } from './modules/cart/cart.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -25,6 +26,9 @@ import { CartModule } from './modules/cart/cart.module';
     // Database & Storage
     PrismaModule,
     SupabaseModule,
+
+    // Global modules
+    EmailModule,
 
     // Feature modules
     AuthModule,

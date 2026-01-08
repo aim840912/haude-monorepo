@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Body,
+  Query,
   UseGuards,
   Request,
   Res,
@@ -20,6 +21,9 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 
@@ -65,6 +69,47 @@ export class AuthController {
   logout() {
     // With JWT, logout is handled client-side by removing the token
     return { message: 'Logged out successfully' };
+  }
+
+  // ========================================
+  // 密碼重設端點
+  // ========================================
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: '忘記密碼 - 發送重設密碼郵件' })
+  @ApiResponse({ status: 200, description: '已發送重設密碼郵件（如果帳號存在）' })
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: '重設密碼' })
+  @ApiResponse({ status: 200, description: '密碼重設成功' })
+  @ApiResponse({ status: 400, description: '無效或已過期的重設連結' })
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Get('verify-reset-token')
+  @ApiOperation({ summary: '驗證重設密碼 Token 是否有效' })
+  @ApiResponse({ status: 200, description: 'Token 有效' })
+  @ApiResponse({ status: 400, description: '無效或已過期的 Token' })
+  verifyResetToken(@Query('token') token: string) {
+    return this.authService.verifyResetToken(token);
+  }
+
+  @Post('set-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '為 Google 帳號設定密碼' })
+  @ApiResponse({ status: 200, description: '密碼設定成功' })
+  @ApiResponse({ status: 400, description: '已設定過密碼或非 Google 用戶' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  setPassword(
+    @Request() req: { user: { userId: string } },
+    @Body() setPasswordDto: SetPasswordDto,
+  ) {
+    return this.authService.setPassword(req.user.userId, setPasswordDto);
   }
 
   // ========================================
