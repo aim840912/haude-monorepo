@@ -90,3 +90,13 @@ export const PRICE_UNITS = [
   { value: '包', label: '包' },
   { value: '瓶', label: '瓶' },
 ] as const
+
+/**
+ * 表單區塊共用 Props
+ */
+export interface FormSectionProps {
+  values: ProductFormValues
+  setValue: <K extends keyof ProductFormValues>(field: K, value: ProductFormValues[K]) => void
+  setFieldTouched: (field: string) => void
+  getFieldError: (field: keyof ProductFormErrors) => string | undefined
+}

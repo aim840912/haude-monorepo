@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
@@ -53,30 +53,26 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
       }
     }
 
-    // 取得產品圖片 URL
-    const getProductImageUrl = (): string => {
-      if (product.images && product.images.length > 0) {
-        return product.images[currentImageIndex]?.storageUrl || '/placeholder-product.png'
+    // 圖片陣列（使用 useMemo 避免重複計算）
+    const images = useMemo(() => {
+      const validImages = (product.images || [])
+        .filter(img => img.storageUrl)
+        .map(img => ({ id: img.id, storageUrl: img.storageUrl }))
+
+      // Fallback：使用 product.image 或 placeholder
+      if (validImages.length === 0) {
+        const fallbackUrl = product.image || '/placeholder-product.png'
+        return [{ id: 'fallback', storageUrl: fallbackUrl }]
       }
-      return product.image || '/placeholder-product.png'
-    }
+      return validImages
+    }, [product.images, product.image])
+
+    // 當前顯示的圖片 URL
+    const currentImageUrl = images[currentImageIndex]?.storageUrl || '/placeholder-product.png'
 
     // 圖片切換處理
     const handleImageChange = (index: number) => {
       setCurrentImageIndex(index)
-    }
-
-    // 準備圖片陣列
-    type ImageItem = { id: string; storageUrl: string }
-    const images: ImageItem[] = (product.images || [])
-      .filter(img => img.storageUrl)
-      .map(img => ({
-        id: img.id,
-        storageUrl: img.storageUrl
-      }))
-    // 如果沒有圖片，使用 fallback
-    if (images.length === 0 && product.image) {
-      images.push({ id: 'main', storageUrl: product.image })
     }
 
     // 確保只在客戶端渲染 Portal
@@ -109,7 +105,7 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                       <div className="relative aspect-square">
                         <img
-                          src={getProductImageUrl()}
+                          src={currentImageUrl}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {

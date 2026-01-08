@@ -1,7 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { ArrowLeft, Save, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { ImageUploader } from '../ImageUploader/ImageUploader'
+import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import type { UploadedImage } from '../ImageUploader/types'
 import type { CreateProductData, UpdateProductData } from '@/types/product'
 import {
@@ -9,9 +7,12 @@ import {
   type ProductFormValues,
   type ProductFormErrors,
   DEFAULT_FORM_VALUES,
-  PRODUCT_CATEGORIES,
-  PRICE_UNITS,
 } from './ProductForm.types'
+import { ProductBasicInfoSection } from './ProductBasicInfoSection'
+import { ProductPricingSection } from './ProductPricingSection'
+import { ProductPromotionSection } from './ProductPromotionSection'
+import { ProductImageSection } from './ProductImageSection'
+import { ProductStatusSection } from './ProductStatusSection'
 
 /**
  * 產品表單元件
@@ -182,277 +183,46 @@ export function ProductForm({
   }, [])
 
   // 取得欄位錯誤（僅在已觸碰時顯示）
-  const getFieldError = (field: keyof ProductFormErrors) => {
-    return touched.has(field) ? errors[field] : undefined
+  const getFieldError = useCallback(
+    (field: keyof ProductFormErrors) => {
+      return touched.has(field) ? errors[field] : undefined
+    },
+    [touched, errors]
+  )
+
+  // 共用 props
+  const sectionProps = {
+    values,
+    setValue,
+    setFieldTouched,
+    getFieldError,
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* 基本資訊區塊 */}
-      <section className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">基本資訊</h2>
-        <div className="space-y-4">
-          {/* 產品名稱 */}
-          <div>
-            <label htmlFor="name" className="label">
-              產品名稱 <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={values.name}
-              onChange={e => setValue('name', e.target.value)}
-              onBlur={() => setFieldTouched('name')}
-              className={cn('input', getFieldError('name') && 'border-red-500')}
-              placeholder="請輸入產品名稱"
-            />
-            {getFieldError('name') && (
-              <p className="mt-1 text-sm text-red-500">{getFieldError('name')}</p>
-            )}
-          </div>
-
-          {/* 類別選擇 */}
-          <div>
-            <label htmlFor="category" className="label">
-              產品類別 <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="category"
-              value={values.category}
-              onChange={e => setValue('category', e.target.value)}
-              onBlur={() => setFieldTouched('category')}
-              className={cn('input', getFieldError('category') && 'border-red-500')}
-            >
-              <option value="">請選擇類別</option>
-              {PRODUCT_CATEGORIES.map(cat => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-            {getFieldError('category') && (
-              <p className="mt-1 text-sm text-red-500">{getFieldError('category')}</p>
-            )}
-          </div>
-
-          {/* 產品描述 */}
-          <div>
-            <label htmlFor="description" className="label">
-              產品描述
-            </label>
-            <textarea
-              id="description"
-              value={values.description}
-              onChange={e => setValue('description', e.target.value)}
-              className="input min-h-[100px]"
-              placeholder="請輸入產品描述（選填）"
-              rows={4}
-            />
-          </div>
-        </div>
-      </section>
+      <ProductBasicInfoSection {...sectionProps} />
 
       {/* 價格與庫存區塊 */}
-      <section className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">價格與庫存</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* 售價 */}
-          <div>
-            <label htmlFor="price" className="label">
-              售價 (NT$) <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="price"
-              type="number"
-              value={values.price}
-              onChange={e => setValue('price', e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => setFieldTouched('price')}
-              className={cn('input', getFieldError('price') && 'border-red-500')}
-              placeholder="0"
-              min="0"
-              step="1"
-            />
-            {getFieldError('price') && (
-              <p className="mt-1 text-sm text-red-500">{getFieldError('price')}</p>
-            )}
-          </div>
-
-          {/* 庫存 */}
-          <div>
-            <label htmlFor="inventory" className="label">
-              庫存數量 <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="inventory"
-              type="number"
-              value={values.inventory}
-              onChange={e => setValue('inventory', e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => setFieldTouched('inventory')}
-              className={cn('input', getFieldError('inventory') && 'border-red-500')}
-              placeholder="0"
-              min="0"
-              step="1"
-            />
-            {getFieldError('inventory') && (
-              <p className="mt-1 text-sm text-red-500">{getFieldError('inventory')}</p>
-            )}
-          </div>
-
-          {/* 價格單位 */}
-          <div>
-            <label htmlFor="priceUnit" className="label">
-              價格單位
-            </label>
-            <select
-              id="priceUnit"
-              value={values.priceUnit}
-              onChange={e => setValue('priceUnit', e.target.value)}
-              className="input"
-            >
-              {PRICE_UNITS.map(unit => (
-                <option key={unit.value} value={unit.value}>
-                  {unit.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 單位數量 */}
-          <div>
-            <label htmlFor="unitQuantity" className="label">
-              單位數量
-            </label>
-            <input
-              id="unitQuantity"
-              type="number"
-              value={values.unitQuantity}
-              onChange={e => setValue('unitQuantity', e.target.value === '' ? '' : Number(e.target.value))}
-              className="input"
-              placeholder="如: 600 (克)"
-              min="0"
-            />
-          </div>
-        </div>
-      </section>
+      <ProductPricingSection {...sectionProps} />
 
       {/* 促銷設定區塊 */}
-      <section className="bg-white rounded-lg shadow-sm">
-        <button
-          type="button"
-          onClick={() => setShowPromotion(!showPromotion)}
-          className="w-full p-6 flex items-center justify-between text-left"
-        >
-          <h2 className="text-lg font-semibold text-gray-900">促銷設定</h2>
-          {showPromotion ? (
-            <ChevronUp className="w-5 h-5 text-gray-500" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
-          )}
-        </button>
-
-        {showPromotion && (
-          <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
-            {/* 促銷開關 */}
-            <div className="flex items-center gap-3">
-              <input
-                id="isOnSale"
-                type="checkbox"
-                checked={values.isOnSale}
-                onChange={e => setValue('isOnSale', e.target.checked)}
-                className="w-4 h-4 text-primary-green border-gray-300 rounded focus:ring-primary-green"
-              />
-              <label htmlFor="isOnSale" className="text-sm font-medium text-gray-700">
-                啟用促銷活動
-              </label>
-            </div>
-
-            {values.isOnSale && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-7">
-                {/* 原價 */}
-                <div>
-                  <label htmlFor="originalPrice" className="label">
-                    原價 (NT$) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="originalPrice"
-                    type="number"
-                    value={values.originalPrice}
-                    onChange={e => setValue('originalPrice', e.target.value === '' ? '' : Number(e.target.value))}
-                    onBlur={() => setFieldTouched('originalPrice')}
-                    className={cn('input', getFieldError('originalPrice') && 'border-red-500')}
-                    placeholder="0"
-                    min="0"
-                    step="1"
-                  />
-                  {getFieldError('originalPrice') && (
-                    <p className="mt-1 text-sm text-red-500">{getFieldError('originalPrice')}</p>
-                  )}
-                </div>
-
-                {/* 促銷結束日期 */}
-                <div>
-                  <label htmlFor="saleEndDate" className="label">
-                    促銷結束日期 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="saleEndDate"
-                    type="date"
-                    value={values.saleEndDate}
-                    onChange={e => setValue('saleEndDate', e.target.value)}
-                    onBlur={() => setFieldTouched('saleEndDate')}
-                    className={cn('input', getFieldError('saleEndDate') && 'border-red-500')}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                  {getFieldError('saleEndDate') && (
-                    <p className="mt-1 text-sm text-red-500">{getFieldError('saleEndDate')}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+      <ProductPromotionSection
+        {...sectionProps}
+        showPromotion={showPromotion}
+        setShowPromotion={setShowPromotion}
+      />
 
       {/* 圖片上傳區塊 */}
-      <section className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">產品圖片</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          上傳產品圖片，第一張將作為主圖顯示。支援 JPG、PNG、WebP 格式，單檔最大 10MB。
-        </p>
-
-        <ImageUploader
-          maxFiles={5}
-          allowMultiple
-          onFilesSelected={handleFilesSelected}
-          onDeleteSuccess={handleImageDelete}
-          onUploadError={handleImageError}
-        />
-
-        {imageError && (
-          <p className="mt-2 text-sm text-red-500">{imageError}</p>
-        )}
-      </section>
+      <ProductImageSection
+        onFilesSelected={handleFilesSelected}
+        onDeleteSuccess={handleImageDelete}
+        onUploadError={handleImageError}
+        imageError={imageError}
+      />
 
       {/* 上架狀態 */}
-      <section className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">上架狀態</h2>
-            <p className="text-sm text-gray-500">
-              {values.isActive ? '產品已上架，顧客可以看到此產品' : '產品已下架，顧客無法看到此產品'}
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={values.isActive}
-              onChange={e => setValue('isActive', e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-          </label>
-        </div>
-      </section>
+      <ProductStatusSection isActive={values.isActive} setValue={setValue} />
 
       {/* 操作按鈕 */}
       <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
