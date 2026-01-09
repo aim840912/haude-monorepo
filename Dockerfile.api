@@ -58,6 +58,10 @@ RUN cd apps/api && DATABASE_URL="postgresql://placeholder:placeholder@localhost:
 # 建置 API
 RUN pnpm --filter=@haude/api build
 
+# 使用 pnpm deploy 創建獨立的生產環境依賴
+# 這會把所有需要的依賴扁平化到一個目錄中
+RUN pnpm --filter=@haude/api deploy --prod /app/deploy
+
 # ------------------------------------------------------------------------------
 # Stage 4: Runner - 執行環境（最小化映像）
 # ------------------------------------------------------------------------------
@@ -73,16 +77,15 @@ ENV PORT=3001
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# 複製建置產物
+# 從 pnpm deploy 輸出複製所有需要的檔案
+COPY --from=builder /app/deploy/node_modules ./node_modules
+COPY --from=builder /app/deploy/package.json ./package.json
+
+# 複製建置產物（dist 目錄）
 COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./package.json
+
+# 複製 Prisma schema（用於 migrations）
 COPY --from=builder /app/apps/api/prisma ./prisma
-
-# 複製 node_modules（包含已生成的 Prisma Client）
-COPY --from=builder /app/apps/api/node_modules ./node_modules
-
-# 註：Prisma Client 已在 builder 階段生成，無需再次執行
-# @prisma/client 已包含在 node_modules 中
 
 # 切換到非 root 使用者
 USER nestjs
