@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Settings, LogOut, User, Menu, X, ChevronDown, Package } from 'lucide-react'
+import { ShoppingCart, Settings, LogOut, User, Menu, X, ChevronDown, Package, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
@@ -121,6 +121,17 @@ export function MobileHeader({
                       {item.label}
                     </Link>
                   ))}
+                  <div className="border-t border-gray-100 my-1" />
+                  <a
+                    href="https://haude-admin.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleAdminItemClick}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-green-600 hover:bg-gray-50 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    管理後台
+                  </a>
                 </div>
               )}
             </div>
@@ -214,7 +225,7 @@ export function MobileHeader({
               </>
             ) : (
               <Link
-                href="/login"
+                href={`/login?from=${pathname}`}
                 className="flex items-center gap-2 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 rounded-lg mx-2"
                 onClick={handleMenuItemClick}
               >
