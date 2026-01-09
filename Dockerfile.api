@@ -53,14 +53,27 @@ COPY . .
 RUN pnpm --filter=@haude/types build || true
 
 # 生成 Prisma Client（使用假的 DATABASE_URL，僅用於生成 client，不實際連接）
-# Prisma 會將 client 生成到 node_modules/.prisma/client/
+# Prisma 7 + pnpm 會將 client 生成到 .pnpm 虛擬存儲中
 RUN cd apps/api && DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
 
-# 將生成的 Prisma Client 複製到確定位置（可能在 root 或 apps/api 的 node_modules）
-RUN mkdir -p /app/prisma-client && \
-    (cp -r /app/node_modules/.prisma /app/prisma-client/ 2>/dev/null || \
-     cp -r /app/apps/api/node_modules/.prisma /app/prisma-client/ 2>/dev/null || \
-     echo "Warning: .prisma not found in expected locations")
+# 使用 find 命令定位 Prisma Client（因為 pnpm 虛擬存儲路徑不固定）
+# 找到 .prisma 目錄並複製到確定位置
+RUN mkdir -p /app/prisma-client/.prisma && \
+    PRISMA_DIR=$(find /app/node_modules -type d -name ".prisma" -path "*/@prisma/client/*" 2>/dev/null | head -1) && \
+    if [ -n "$PRISMA_DIR" ]; then \
+      cp -r "$PRISMA_DIR"/* /app/prisma-client/.prisma/ && \
+      echo "Prisma Client copied from: $PRISMA_DIR"; \
+    else \
+      echo "Searching for .prisma in all locations..." && \
+      find /app/node_modules -type d -name ".prisma" 2>/dev/null | head -5 && \
+      PRISMA_DIR_ALT=$(find /app/node_modules -type d -name ".prisma" 2>/dev/null | head -1) && \
+      if [ -n "$PRISMA_DIR_ALT" ]; then \
+        cp -r "$PRISMA_DIR_ALT"/* /app/prisma-client/.prisma/ && \
+        echo "Prisma Client copied from alt: $PRISMA_DIR_ALT"; \
+      else \
+        echo "ERROR: .prisma directory not found anywhere" && exit 1; \
+      fi \
+    fi
 
 # 建置 API
 RUN pnpm --filter=@haude/api build
