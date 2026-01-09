@@ -78,11 +78,11 @@ COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/package.json ./package.json
 COPY --from=builder /app/apps/api/prisma ./prisma
 
-# 複製 node_modules（只複製 production 依賴）
+# 複製 node_modules（包含已生成的 Prisma Client）
 COPY --from=builder /app/apps/api/node_modules ./node_modules
 
-# 再次生成 Prisma Client（確保在 production 環境正確）
-RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
+# 註：Prisma Client 已在 builder 階段生成，無需再次執行
+# @prisma/client 已包含在 node_modules 中
 
 # 切換到非 root 使用者
 USER nestjs
