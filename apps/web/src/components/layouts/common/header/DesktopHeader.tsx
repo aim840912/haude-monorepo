@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Settings, LogOut, User, ChevronDown, Package } from 'lucide-react'
+import { ShoppingCart, Settings, LogOut, User, ChevronDown, Package, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
@@ -158,6 +158,17 @@ export function DesktopHeader() {
                       {item.label}
                     </Link>
                   ))}
+                  <div className="border-t border-gray-100 my-1" />
+                  <a
+                    href="https://haude-admin.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsAdminMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-green-600 hover:bg-gray-50 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    管理後台
+                  </a>
                 </div>
               )}
             </div>
@@ -212,7 +223,7 @@ export function DesktopHeader() {
             </div>
           ) : (
             <Link
-              href="/login"
+              href={`/login?from=${pathname}`}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
             >
               <User className="w-4 h-4" />
