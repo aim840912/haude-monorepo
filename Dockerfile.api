@@ -52,8 +52,8 @@ COPY . .
 # 建置 types 套件（API 可能依賴它，忽略錯誤）
 RUN pnpm --filter=@haude/types build || true
 
-# 生成 Prisma Client
-RUN cd apps/api && npx prisma generate
+# 生成 Prisma Client（使用假的 DATABASE_URL，僅用於生成 client，不實際連接）
+RUN cd apps/api && DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
 
 # 建置 API
 RUN pnpm --filter=@haude/api build
@@ -82,7 +82,7 @@ COPY --from=builder /app/apps/api/prisma ./prisma
 COPY --from=builder /app/apps/api/node_modules ./node_modules
 
 # 再次生成 Prisma Client（確保在 production 環境正確）
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
 
 # 切換到非 root 使用者
 USER nestjs
