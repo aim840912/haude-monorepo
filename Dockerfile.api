@@ -45,13 +45,12 @@ WORKDIR /app
 # 複製依賴
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules 2>/dev/null || true
 
 # 複製原始碼
 COPY . .
 
-# 建置 types 套件（API 可能依賴它）
-RUN pnpm --filter=@haude/types build 2>/dev/null || true
+# 建置 types 套件（API 可能依賴它，忽略錯誤）
+RUN pnpm --filter=@haude/types build || true
 
 # 生成 Prisma Client
 RUN cd apps/api && npx prisma generate
