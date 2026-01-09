@@ -81,6 +81,10 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/deploy/node_modules ./node_modules
 COPY --from=builder /app/deploy/package.json ./package.json
 
+# 複製 Prisma 生成的 Client（prisma generate 的輸出）
+# 這是動態生成的，不包含在 pnpm deploy 中
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 # 複製建置產物（dist 目錄）
 COPY --from=builder /app/apps/api/dist ./dist
 
