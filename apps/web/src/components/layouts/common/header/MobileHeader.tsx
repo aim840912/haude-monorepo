@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Settings, LogOut, User, Menu, X, ChevronDown, Package, ExternalLink } from 'lucide-react'
+import { ShoppingCart, LogOut, User, Menu, X, Package, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
@@ -12,13 +11,6 @@ import { navItems } from './NavigationItems'
 const userMenuItems = [
   { href: '/account', label: '我的帳戶', icon: User },
   { href: '/orders', label: '我的訂單', icon: Package },
-]
-
-// 僅管理員可見的選單
-const adminMenuItems = [
-  { href: '/admin/products', label: '產品管理' },
-  { href: '/admin/schedules', label: '日程管理' },
-  { href: '/admin/locations', label: '據點管理' },
 ]
 
 interface MobileHeaderProps {
@@ -43,7 +35,6 @@ export function MobileHeader({
   const pathname = usePathname()
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
-  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -54,11 +45,6 @@ export function MobileHeader({
 
   const handleLogout = () => {
     logout()
-    handleMenuItemClick()
-  }
-
-  const handleAdminItemClick = () => {
-    setIsAdminMenuOpen(false)
     handleMenuItemClick()
   }
 
@@ -92,49 +78,17 @@ export function MobileHeader({
             )}
           </Link>
 
-          {/* 管理員選單 - Mobile */}
+          {/* 管理後台連結 - 僅 ADMIN 可見 */}
           {user?.role === 'ADMIN' && (
-            <div className="relative">
-              <button
-                onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)}
-                className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-all duration-200 rounded-md min-h-[44px] px-2"
-                title="管理控制台"
-              >
-                <Settings className="w-5 h-5" />
-                <ChevronDown className={`w-4 h-4 transition-transform ${isAdminMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* 下拉選單 */}
-              {isAdminMenuOpen && (
-                <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  {adminMenuItems.map(item => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={handleAdminItemClick}
-                      className={`block px-4 py-2 text-sm transition-colors ${
-                        isActive(item.href)
-                          ? 'text-green-600 bg-green-50'
-                          : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                  <div className="border-t border-gray-100 my-1" />
-                  <a
-                    href="https://haude-admin.vercel.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleAdminItemClick}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-green-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    管理後台
-                  </a>
-                </div>
-              )}
-            </div>
+            <a
+              href="https://haude-admin.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-all duration-200 rounded-md min-h-[44px] px-2"
+              title="管理後台"
+            >
+              <ExternalLink className="w-5 h-5" />
+            </a>
           )}
 
           {/* 漢堡選單按鈕 - Mobile */}

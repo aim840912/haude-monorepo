@@ -6,10 +6,13 @@ import {
   Param,
   Req,
   Res,
+  Query,
   UseGuards,
   Logger,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import {
@@ -17,8 +20,12 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto';
 import { ConfigService } from '@nestjs/config';
@@ -149,5 +156,55 @@ export class PaymentsController {
       : `${this.frontendUrl}/payment-result?status=fail&message=${encodeURIComponent(result.message || '付款失敗')}`;
 
     return res.redirect(redirectUrl);
+  }
+}
+
+// ========================================
+// 管理員付款 API (STAFF 和 ADMIN 可存取)
+// ========================================
+
+@ApiTags('admin/payments')
+@Controller('admin/payments')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.STAFF, Role.ADMIN)
+@ApiBearerAuth()
+export class AdminPaymentsController {
+  constructor(private readonly paymentsService: PaymentsService) {}
+
+  @Get()
+  @ApiOperation({ summary: '取得所有付款記錄（管理員）' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
+  @ApiResponse({ status: 200, description: '成功取得付款記錄' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  getAllPayments(
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ) {
+    return this.paymentsService.getAllPayments(limit, offset);
+  }
+
+  @Get('logs')
+  @ApiOperation({ summary: '取得付款日誌（管理員）' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
+  @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
+  @ApiResponse({ status: 200, description: '成功取得付款日誌' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  getPaymentLogs(
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ) {
+    return this.paymentsService.getPaymentLogs(limit, offset);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: '取得付款統計（管理員）' })
+  @ApiResponse({ status: 200, description: '成功取得統計' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  getPaymentStats() {
+    return this.paymentsService.getPaymentStats();
   }
 }

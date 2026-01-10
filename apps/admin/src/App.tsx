@@ -7,6 +7,7 @@ import { FarmToursPage } from './pages/FarmToursPage'
 import { SchedulesPage } from './pages/SchedulesPage'
 import { LocationsPage } from './pages/LocationsPage'
 import { OrdersPage } from './pages/OrdersPage'
+import { PaymentsPage } from './pages/PaymentsPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { Layout } from './components/Layout'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/schedules" element={<SchedulesPage />} />
           <Route path="/locations" element={<LocationsPage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
