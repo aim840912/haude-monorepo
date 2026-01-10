@@ -6,6 +6,7 @@ import {
   TreeDeciduous,
   CalendarDays,
   ShoppingCart,
+  CreditCard,
   Users,
   MapPin,
   Settings,
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/schedules', label: '擺攤行程', icon: CalendarDays },
   { path: '/locations', label: '門市管理', icon: MapPin },
   { path: '/orders', label: '訂單管理', icon: ShoppingCart },
+  { path: '/payments', label: '付款監控', icon: CreditCard },
   { path: '/users', label: '會員管理', icon: Users },
   { path: '/settings', label: '系統設定', icon: Settings },
 ]

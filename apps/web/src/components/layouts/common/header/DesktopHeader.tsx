@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Settings, LogOut, User, ChevronDown, Package, ExternalLink } from 'lucide-react'
+import { ShoppingCart, LogOut, User, ChevronDown, Package, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { navItems } from './NavigationItems'
@@ -12,13 +12,6 @@ import { navItems } from './NavigationItems'
 const userMenuItems = [
   { href: '/account', label: '我的帳戶', icon: User },
   { href: '/orders', label: '我的訂單', icon: Package },
-]
-
-// 僅管理員可見的選單
-const adminMenuItems = [
-  { href: '/admin/products', label: '產品管理' },
-  { href: '/admin/schedules', label: '日程管理' },
-  { href: '/admin/locations', label: '據點管理' },
 ]
 
 /**
@@ -31,9 +24,7 @@ export function DesktopHeader() {
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const adminMenuRef = useRef<HTMLDivElement>(null)
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -47,9 +38,6 @@ export function DesktopHeader() {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false)
-      }
-      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
-        setIsAdminMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -129,49 +117,18 @@ export function DesktopHeader() {
             )}
           </Link>
 
-          {/* 管理員選單 */}
+          {/* 管理後台連結 - 僅 ADMIN 可見 */}
           {user?.role === 'ADMIN' && (
-            <div className="relative" ref={adminMenuRef}>
-              <button
-                onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)}
-                className="flex items-center gap-1 px-3 h-10 text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
-                title="管理控制台"
-              >
-                <Settings className="w-5 h-5" />
-                <ChevronDown className={`w-4 h-4 transition-transform ${isAdminMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* 下拉選單 */}
-              {isAdminMenuOpen && (
-                <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  {adminMenuItems.map(item => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsAdminMenuOpen(false)}
-                      className={`block px-4 py-2 text-sm transition-colors ${
-                        isActive(item.href)
-                          ? 'text-green-600 bg-green-50'
-                          : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                  <div className="border-t border-gray-100 my-1" />
-                  <a
-                    href="https://haude-admin.vercel.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsAdminMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-green-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    管理後台
-                  </a>
-                </div>
-              )}
-            </div>
+            <a
+              href="https://haude-admin.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-3 h-10 text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
+              title="管理後台"
+            >
+              <ExternalLink className="w-5 h-5" />
+              <span className="text-sm font-medium">後台</span>
+            </a>
           )}
 
           {/* 用戶選單（所有登入用戶可見）*/}
