@@ -23,6 +23,7 @@ export interface ECPayConfig {
   returnUrl: string;
   notifyUrl: string;
   clientBackUrl?: string;
+  paymentInfoUrl?: string; // ATM/CVS 取號結果回調
 }
 
 /**
@@ -43,6 +44,15 @@ export interface ECPayTradeParams {
   ClientBackURL?: string;
   OrderResultURL?: string;
   NeedExtraPaidInfo?: 'Y' | 'N';
+  // ATM 專用參數
+  ExpireDate?: number; // 繳費期限（天數，1-60）
+  PaymentInfoURL?: string; // 取號結果回調 URL
+  // CVS 專用參數
+  StoreExpireDate?: number; // 繳費期限（分鐘，1-43200）
+  Desc_1?: string; // 交易描述 1
+  Desc_2?: string; // 交易描述 2
+  Desc_3?: string; // 交易描述 3
+  Desc_4?: string; // 交易描述 4
   // Index signature for dynamic access
   [key: string]: string | number | undefined;
 }

@@ -71,6 +71,7 @@ export class PaymentsController {
     const result = await this.paymentsService.createPayment(
       dto.orderId,
       req.user.userId,
+      dto.paymentMethod,
     );
 
     return {
@@ -130,6 +131,34 @@ export class PaymentsController {
     const success = await this.paymentsService.handleNotify(body, ipAddress);
 
     // 綠界要求回傳 1|OK 表示成功
+    return success ? '1|OK' : '0|FAIL';
+  }
+
+  /**
+   * 綠界取號結果通知（ATM/CVS）
+   *
+   * ATM 和 CVS 付款會先回調這個端點告知取號結果
+   * 包含虛擬帳號、銀行代碼、繳費代碼等資訊
+   */
+  @Post('ecpay/info')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '綠界取號結果通知（ATM/CVS）' })
+  @ApiResponse({ status: 200, description: '處理成功' })
+  async handlePaymentInfo(
+    @Body() body: Record<string, string>,
+    @Req() req: Request,
+  ) {
+    this.logger.log('收到綠界取號通知');
+
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+      req.socket?.remoteAddress;
+
+    const success = await this.paymentsService.handlePaymentInfo(
+      body,
+      ipAddress,
+    );
+
     return success ? '1|OK' : '0|FAIL';
   }
 

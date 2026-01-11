@@ -238,29 +238,34 @@ export const schedulesApi = {
   delete: (id: string) => api.delete(`/admin/schedules/${id}`),
 }
 
+// 前端付款方式到後端的映射
+const paymentMethodMap: Record<string, string> = {
+  CREDIT: 'CREDIT',
+  VACC: 'ATM', // 前端用 VACC，後端 ECPay 用 ATM
+  CVS: 'CVS',
+}
+
 // Payments API
 export const paymentsApi = {
   /**
    * 建立付款請求
-   * 後端會生成加密的 TradeInfo 和 TradeSha，前端用這些資料提交表單到藍新
+   * 後端會生成加密的 TradeInfo 和 TradeSha，前端用這些資料提交表單到綠界
    */
-  create: (orderId: string) =>
+  create: (orderId: string, paymentMethod?: string) =>
     api.post<{
       success: boolean
       data: {
         paymentId: string
         formData: {
-          action: string // 藍新 API URL
+          action: string // 綠界 API URL
           method: 'POST'
-          fields: {
-            MerchantID: string
-            TradeInfo: string // AES 加密的交易資訊
-            TradeSha: string // SHA256 簽章
-            Version: string
-          }
+          fields: Record<string, string | number>
         }
       }
-    }>('/payments/create', { orderId }),
+    }>('/payments/create', {
+      orderId,
+      paymentMethod: paymentMethod ? paymentMethodMap[paymentMethod] || paymentMethod : undefined,
+    }),
 
   /**
    * 查詢付款狀態

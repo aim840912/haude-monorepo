@@ -212,14 +212,20 @@ model OrderItem {
 model Payment {
   id              String        @id @default(uuid())
   orderId         String        @map("order_id")
-  merchantOrderNo String        @unique @map("merchant_order_no") // 商店訂單編號（給藍新用）
-  tradeNo         String?       @map("trade_no") // 藍新交易編號
+  merchantOrderNo String        @unique @map("merchant_order_no") // 商店訂單編號（給綠界用）
+  tradeNo         String?       @map("trade_no") // 綠界交易編號
   status          PaymentStatus @default(pending)
   amount          Int // 金額（整數，單位：元）
-  paymentType     String        @default("CREDIT") @map("payment_type") // CREDIT, VACC, CVS...
+  paymentType     String        @default("CREDIT") @map("payment_type") // CREDIT, ATM, CVS
   payTime         DateTime?     @map("pay_time") // 付款完成時間
+  // ATM/CVS 專用欄位
+  bankCode        String?       @map("bank_code") // ATM 銀行代碼
+  vaAccount       String?       @map("va_account") // ATM 虛擬帳號
+  paymentCode     String?       @map("payment_code") // CVS 繳費代碼
+  expireDate      DateTime?     @map("expire_date") // 繳費期限
+  // 原始資料
   requestData     Json?         @map("request_data") // 送出的請求參數
-  responseData    Json?         @map("response_data") // 藍新回傳的資料
+  responseData    Json?         @map("response_data") // 綠界回傳的資料
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
