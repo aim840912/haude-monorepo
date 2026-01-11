@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { ImageCarousel } from '@/components/ui/ImageCarousel'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
 import { cn } from '@/lib/utils'
+import logger from '@/lib/logger'
 
 // 使用統一的 ProductImage 類型
 import type { ProductImage } from '@/types/product'
@@ -103,7 +104,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       // 2 秒後重置狀態
       setTimeout(() => setAddedToCart(false), 2000)
     } catch (err) {
-      console.error('加入購物車失敗:', err)
+      logger.error('加入購物車失敗', { error: err })
       showError('加入購物車失敗', '請稍後再試')
     }
   }

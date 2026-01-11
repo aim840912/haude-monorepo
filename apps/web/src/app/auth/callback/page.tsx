@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
+import logger from '@/lib/logger'
 
 /**
  * Google OAuth 回調頁面
@@ -41,13 +42,13 @@ export default function AuthCallbackPage() {
           await useCartStore.getState().mergeLocalToBackend()
         } catch {
           // 忽略購物車合併錯誤
-          console.warn('購物車合併失敗')
+          logger.warn('購物車合併失敗')
         }
 
         // 導向到首頁
         router.push('/')
       } catch (err) {
-        console.error('Google 登入處理失敗:', err)
+        logger.error('Google 登入處理失敗', { error: err })
         setError(err instanceof Error ? err.message : '登入失敗')
         setIsProcessing(false)
       }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ordersApi } from '../services/api'
 import type { OrderStatus } from '@haude/types'
+import logger from '../lib/logger'
 
 export interface Order {
   id: string
@@ -49,7 +50,7 @@ export function useOrders(): UseOrdersReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入訂單失敗'
       setError(message)
-      console.error('[useOrders] API 錯誤:', err)
+      logger.error('[useOrders] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -62,7 +63,7 @@ export function useOrders(): UseOrdersReturn {
       await fetchOrders()
       return true
     } catch (err) {
-      console.error('[useOrders] 更新狀態失敗:', err)
+      logger.error('[useOrders] 更新狀態失敗', { error: err })
       return false
     } finally {
       setIsUpdating(false)
@@ -106,7 +107,7 @@ export function useOrder(orderId: string | undefined): UseOrderReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入訂單失敗'
       setError(message)
-      console.error('[useOrder] API 錯誤:', err)
+      logger.error('[useOrder] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }

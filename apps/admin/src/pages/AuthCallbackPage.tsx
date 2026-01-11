@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import logger from '../lib/logger'
 
 /**
  * Google OAuth 回調頁面
@@ -51,7 +52,7 @@ export function AuthCallbackPage() {
         // 導向到首頁
         navigate('/')
       } catch (err) {
-        console.error('Google 登入處理失敗:', err)
+        logger.error('Google 登入處理失敗', { error: err })
         setError(err instanceof Error ? err.message : '登入失敗')
         setIsProcessing(false)
       }

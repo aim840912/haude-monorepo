@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { paymentsApi } from '../services/api'
+import logger from '../lib/logger'
 
 export interface Payment {
   id: string
@@ -59,7 +60,7 @@ export function usePayments(): UsePaymentsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入付款記錄失敗'
       setError(message)
-      console.error('[usePayments] API 錯誤:', err)
+      logger.error('[usePayments] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -102,7 +103,7 @@ export function usePaymentLogs(): UsePaymentLogsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入付款日誌失敗'
       setError(message)
-      console.error('[usePaymentLogs] API 錯誤:', err)
+      logger.error('[usePaymentLogs] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -142,7 +143,7 @@ export function usePaymentStats(): UsePaymentStatsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入統計失敗'
       setError(message)
-      console.error('[usePaymentStats] API 錯誤:', err)
+      logger.error('[usePaymentStats] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }

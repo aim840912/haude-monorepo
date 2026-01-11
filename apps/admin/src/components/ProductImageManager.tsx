@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Upload, X, Loader2, GripVertical, Image as ImageIcon } from 'lucide-react'
 import { productImagesApi, type ProductImage } from '../services/api'
+import logger from '../lib/logger'
 
 interface ProductImageManagerProps {
   productId: string
@@ -91,7 +92,7 @@ export function ProductImageManager({
         // 通知父元件更新，並傳遞新上傳的圖片 ID
         onImagesChange(uploadedImageIds)
       } catch (err) {
-        console.error('上傳錯誤:', err)
+        logger.error('上傳錯誤', { error: err })
         setError(err instanceof Error ? err.message : '上傳失敗，請稍後再試')
       } finally {
         setIsUploading(false)
@@ -116,7 +117,7 @@ export function ProductImageManager({
       setDeletingImageId(null)
       onImagesChange()
     } catch (err) {
-      console.error('刪除失敗:', err)
+      logger.error('刪除失敗', { error: err })
       setError('刪除失敗，請稍後再試')
     } finally {
       setIsDeleting(false)

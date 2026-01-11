@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { schedulesApi } from '../services/api'
+import logger from '../lib/logger'
 
 export interface Schedule {
   id: string
@@ -58,7 +59,7 @@ export function useSchedules(): UseSchedulesReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入擺攤行程失敗'
       setError(message)
-      console.error('[useSchedules] API 錯誤:', err)
+      logger.error('[useSchedules] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -71,7 +72,7 @@ export function useSchedules(): UseSchedulesReturn {
       await fetchSchedules()
       return true
     } catch (err) {
-      console.error('[useSchedules] 更新失敗:', err)
+      logger.error('[useSchedules] 更新失敗', { error: err })
       return false
     } finally {
       setIsUpdating(false)
@@ -85,7 +86,7 @@ export function useSchedules(): UseSchedulesReturn {
       await fetchSchedules()
       return true
     } catch (err) {
-      console.error('[useSchedules] 刪除失敗:', err)
+      logger.error('[useSchedules] 刪除失敗', { error: err })
       return false
     } finally {
       setIsDeleting(false)
@@ -131,7 +132,7 @@ export function useSchedule(scheduleId: string | undefined): UseScheduleReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入行程失敗'
       setError(message)
-      console.error('[useSchedule] API 錯誤:', err)
+      logger.error('[useSchedule] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
