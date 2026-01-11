@@ -55,6 +55,7 @@ export interface Order {
   paymentBankCode?: string // ATM 銀行代碼
   paymentVaAccount?: string // ATM 虛擬帳號
   paymentExpireDate?: string // ATM/超商繳費期限
+  payment?: OrderPayment | null // API 回傳的嵌套付款資訊
   notes?: string // 備註
   estimatedDeliveryDate?: string // 預計送達日期
   actualDeliveryDate?: string // 實際送達日期
@@ -110,6 +111,18 @@ export interface OrderFilters {
   minAmount?: number
   maxAmount?: number
   userId?: string
+}
+
+// API 回傳的付款資訊（嵌套在 order.payment）
+export interface OrderPayment {
+  id: string
+  status: string
+  paymentType?: string
+  bankCode?: string      // ATM 銀行代碼
+  vaAccount?: string     // ATM 虛擬帳號
+  paymentCode?: string   // CVS 超商繳費代碼
+  expireDate?: string    // 繳費期限
+  payTime?: string       // 付款完成時間
 }
 
 export interface PaymentLog {
