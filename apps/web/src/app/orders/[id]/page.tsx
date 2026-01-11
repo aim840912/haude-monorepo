@@ -165,8 +165,37 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               </div>
             </div>
 
+            {/* ATM 虛擬帳號資訊 */}
+            {order.paymentMethod === 'VACC' && order.paymentBankCode && order.paymentVaAccount && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-800 mb-2">ATM 轉帳資訊</p>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-gray-600">銀行代碼：</span><span className="font-mono font-medium">{order.paymentBankCode}</span></p>
+                  <p><span className="text-gray-600">虛擬帳號：</span><span className="font-mono font-medium">{order.paymentVaAccount}</span></p>
+                  {order.paymentExpireDate && (
+                    <p><span className="text-gray-600">繳費期限：</span>{new Date(order.paymentExpireDate).toLocaleString('zh-TW')}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* CVS 超商繳費資訊 */}
+            {order.paymentMethod === 'CVS' && order.paymentTradeNo && (
+              <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm font-medium text-orange-800 mb-2">超商繳費資訊</p>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-gray-600">繳費代碼：</span><span className="font-mono font-medium">{order.paymentTradeNo}</span></p>
+                  {order.paymentExpireDate && (
+                    <p><span className="text-gray-600">繳費期限：</span>{new Date(order.paymentExpireDate).toLocaleString('zh-TW')}</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">請至 7-11、全家、萊爾富、OK 超商繳費</p>
+              </div>
+            )}
+
             <PaymentButton
               orderId={order.id}
+              paymentMethod={order.paymentMethod || undefined}
               onError={handlePaymentError}
               className="w-full sm:w-auto sm:min-w-[200px] sm:ml-auto sm:block"
             />

@@ -9,7 +9,7 @@ interface PaymentFormData {
 
 interface UsePaymentReturn {
   /** 發起付款流程 */
-  initiatePayment: (orderId: string) => Promise<boolean>
+  initiatePayment: (orderId: string, paymentMethod?: string) => Promise<boolean>
   /** 是否正在處理中 */
   isProcessing: boolean
   /** 錯誤訊息 */
@@ -70,12 +70,12 @@ export function usePayment(): UsePaymentReturn {
   }, [])
 
   const initiatePayment = useCallback(
-    async (orderId: string): Promise<boolean> => {
+    async (orderId: string, paymentMethod?: string): Promise<boolean> => {
       setIsProcessing(true)
       setError(null)
 
       try {
-        const { data } = await paymentsApi.create(orderId)
+        const { data } = await paymentsApi.create(orderId, paymentMethod)
 
         if (!data.success || !data.data?.formData) {
           throw new Error('無法取得付款資料')

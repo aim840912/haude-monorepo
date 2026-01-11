@@ -7,7 +7,7 @@ export type OrderStatus =
   | 'cancelled'
   | 'refunded'
 
-export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS' | 'WEBATM'
+export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS'
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expired'
 

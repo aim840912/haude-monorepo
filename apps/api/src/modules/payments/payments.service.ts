@@ -14,6 +14,7 @@ import {
   generateMerchantTradeNo,
   getTradeDate,
 } from './utils/ecpay-crypto';
+import type { PaymentMethodType } from './dto/create-payment.dto';
 
 /**
  * 付款表單資料（前端用於提交到綠界）
@@ -46,6 +47,7 @@ export class PaymentsService {
       notifyUrl: this.configService.getOrThrow('ECPAY_NOTIFY_URL'),
       returnUrl: this.configService.getOrThrow('ECPAY_RETURN_URL'),
       clientBackUrl: this.configService.get('ECPAY_CLIENT_BACK_URL'),
+      paymentInfoUrl: this.configService.get('ECPAY_PAYMENT_INFO_URL'),
     };
 
     this.crypto = new ECPayCrypto(this.config.hashKey, this.config.hashIv);
@@ -66,6 +68,7 @@ export class PaymentsService {
   async createPayment(
     orderId: string,
     userId: string,
+    paymentMethod: PaymentMethodType = 'CREDIT',
   ): Promise<PaymentFormData> {
     // 1. 驗證訂單
     const order = await this.prisma.order.findFirst({
@@ -97,7 +100,7 @@ export class PaymentsService {
 
     if (existingPayment) {
       // 使用現有的付款記錄重新生成表單
-      return this.generateFormData(existingPayment.id);
+      return this.generateFormData(existingPayment.id, paymentMethod);
     }
 
     // 3. 生成商店訂單編號
@@ -106,7 +109,10 @@ export class PaymentsService {
     // 4. 計算金額（取整數）
     const amount = Math.round(Number(order.totalAmount));
 
-    // 5. 建立交易參數
+    // 5. 對應 ECPay 的付款類型
+    const ecpayPaymentType = this.mapPaymentMethod(paymentMethod);
+
+    // 6. 建立交易參數
     const tradeParams: ECPayTradeParams = {
       MerchantID: this.config.merchantId,
       MerchantTradeNo: merchantTradeNo,
@@ -116,29 +122,44 @@ export class PaymentsService {
       TradeDesc: encodeURIComponent('豪德製茶所訂單'),
       ItemName: this.formatItemName(order.items),
       ReturnURL: this.config.notifyUrl,
-      ChoosePayment: 'Credit',
+      ChoosePayment: ecpayPaymentType,
       EncryptType: 1,
       ClientBackURL: this.config.clientBackUrl || this.config.returnUrl,
       OrderResultURL: this.config.returnUrl,
       NeedExtraPaidInfo: 'Y',
     };
 
-    // 6. 生成 CheckMacValue
+    // 7. 加入付款方式專用參數
+    if (paymentMethod === 'ATM') {
+      tradeParams.ExpireDate = 3; // ATM 3 天內繳費
+      if (this.config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      }
+    } else if (paymentMethod === 'CVS') {
+      tradeParams.StoreExpireDate = 10080; // CVS 7 天（10080 分鐘）
+      if (this.config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      }
+    }
+
+    // 8. 生成 CheckMacValue
     const paymentData = this.crypto.createPaymentData(tradeParams);
 
-    // 7. 建立 Payment 記錄
+    // 9. 建立 Payment 記錄
     const payment = await this.prisma.payment.create({
       data: {
         orderId,
         merchantOrderNo: merchantTradeNo,
         amount,
-        paymentType: 'CREDIT',
+        paymentType: paymentMethod,
         status: 'pending',
         requestData: tradeParams as object,
       },
     });
 
-    this.logger.log(`建立付款: ${payment.id}, 訂單: ${order.orderNumber}`);
+    this.logger.log(
+      `建立付款: ${payment.id}, 訂單: ${order.orderNumber}, 方式: ${paymentMethod}`,
+    );
 
     return {
       paymentId: payment.id,
@@ -151,12 +172,29 @@ export class PaymentsService {
   }
 
   /**
+   * 對應前端付款方式到 ECPay ChoosePayment
+   */
+  private mapPaymentMethod(
+    method: PaymentMethodType,
+  ): ECPayTradeParams['ChoosePayment'] {
+    const map: Record<PaymentMethodType, ECPayTradeParams['ChoosePayment']> = {
+      CREDIT: 'Credit',
+      ATM: 'ATM',
+      CVS: 'CVS',
+    };
+    return map[method] || 'Credit';
+  }
+
+  /**
    * 使用現有付款記錄重新生成表單
    *
    * 注意：舊的付款記錄可能是其他金流系統建立的，
    * 需要確保所有綠界必要參數都存在
    */
-  private async generateFormData(paymentId: string): Promise<PaymentFormData> {
+  private async generateFormData(
+    paymentId: string,
+    paymentMethod: PaymentMethodType = 'CREDIT',
+  ): Promise<PaymentFormData> {
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
       include: { order: { include: { items: true } } },
@@ -173,6 +211,9 @@ export class PaymentsService {
       merchantTradeNo = generateMerchantTradeNo(payment.order.orderNumber);
     }
 
+    // 對應 ECPay 的付款類型
+    const ecpayPaymentType = this.mapPaymentMethod(paymentMethod);
+
     // 重新建立完整的綠界交易參數（而非依賴舊資料）
     const tradeParams: ECPayTradeParams = {
       MerchantID: this.config.merchantId,
@@ -183,20 +224,34 @@ export class PaymentsService {
       TradeDesc: encodeURIComponent('豪德製茶所訂單'),
       ItemName: this.formatItemName(payment.order.items),
       ReturnURL: this.config.notifyUrl,
-      ChoosePayment: 'Credit',
+      ChoosePayment: ecpayPaymentType,
       EncryptType: 1,
       ClientBackURL: this.config.clientBackUrl || this.config.returnUrl,
       OrderResultURL: this.config.returnUrl,
       NeedExtraPaidInfo: 'Y',
     };
 
+    // 加入付款方式專用參數
+    if (paymentMethod === 'ATM') {
+      tradeParams.ExpireDate = 3;
+      if (this.config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      }
+    } else if (paymentMethod === 'CVS') {
+      tradeParams.StoreExpireDate = 10080;
+      if (this.config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      }
+    }
+
     const paymentData = this.crypto.createPaymentData(tradeParams);
 
-    // 更新付款記錄（包含新的交易編號）
+    // 更新付款記錄（包含新的交易編號和付款類型）
     await this.prisma.payment.update({
       where: { id: paymentId },
       data: {
         merchantOrderNo: merchantTradeNo,
+        paymentType: paymentMethod,
         requestData: tradeParams as object,
       },
     });
@@ -291,7 +346,7 @@ export class PaymentsService {
           where: { id: payment.orderId },
           data: {
             paymentStatus: 'paid',
-            paymentMethod: 'CREDIT',
+            paymentMethod: payment.paymentType, // 使用實際的付款類型
             status: 'confirmed', // 付款成功後自動確認訂單
           },
         });
@@ -318,6 +373,107 @@ export class PaymentsService {
       this.logger.warn(
         `付款失敗: ${merchantTradeNo}, 原因: ${body.RtnMsg}`,
       );
+    }
+
+    return true;
+  }
+
+  /**
+   * 處理綠界取號結果通知（ATM/CVS）
+   *
+   * ATM 和 CVS 付款完成取號後，綠界會呼叫此端點
+   * 回傳虛擬帳號/繳費代碼等資訊
+   */
+  async handlePaymentInfo(
+    body: Record<string, string>,
+    ipAddress?: string,
+  ): Promise<boolean> {
+    // 1. 驗證 CheckMacValue
+    if (!this.crypto.verifyCheckMacValue(body)) {
+      this.logger.error('綠界取號通知驗證失敗');
+      await this.createPaymentLog({
+        merchantOrderNo: body.MerchantTradeNo || 'UNKNOWN',
+        logType: 'error',
+        rawData: { ...body, error: 'CheckMacValue 驗證失敗' },
+        verified: false,
+        ipAddress,
+      });
+      return false;
+    }
+
+    const merchantTradeNo = body.MerchantTradeNo;
+    const rtnCode = parseInt(body.RtnCode, 10);
+
+    // 2. 記錄取號日誌
+    const payment = await this.prisma.payment.findUnique({
+      where: { merchantOrderNo: merchantTradeNo },
+      include: { order: true },
+    });
+
+    await this.createPaymentLog({
+      paymentId: payment?.id,
+      merchantOrderNo: merchantTradeNo,
+      logType: 'payment_info',
+      rawData: body,
+      verified: true,
+      ipAddress,
+    });
+
+    if (!payment) {
+      this.logger.error(`找不到付款記錄: ${merchantTradeNo}`);
+      return false;
+    }
+
+    // 3. 檢查回應狀態（RtnCode = 1 或 2 表示成功取號）
+    // ATM: RtnCode=2 表示 ATM 取號成功
+    // CVS: RtnCode=10100073 表示超商代碼已產生
+    const isSuccess = rtnCode === 1 || rtnCode === 2 || rtnCode === 10100073;
+
+    if (isSuccess) {
+      // 4. 更新 Payment 記錄（儲存取號資訊）
+      const updateData: {
+        tradeNo?: string;
+        bankCode?: string;
+        vaAccount?: string;
+        paymentCode?: string;
+        expireDate?: Date;
+        responseData: object;
+      } = {
+        tradeNo: body.TradeNo || undefined,
+        responseData: body as object,
+      };
+
+      // ATM 取號資訊
+      if (body.BankCode) {
+        updateData.bankCode = body.BankCode;
+      }
+      if (body.vAccount) {
+        updateData.vaAccount = body.vAccount;
+      }
+
+      // CVS 取號資訊
+      if (body.PaymentNo) {
+        updateData.paymentCode = body.PaymentNo;
+      }
+
+      // 繳費期限
+      if (body.ExpireDate) {
+        // ECPay 回傳格式：yyyy/MM/dd HH:mm:ss
+        updateData.expireDate = new Date(body.ExpireDate.replace(/\//g, '-'));
+      }
+
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: updateData,
+      });
+
+      this.logger.log(
+        `取號成功: ${merchantTradeNo}, 類型: ${payment.paymentType}, ` +
+          `${body.BankCode ? `銀行: ${body.BankCode}, 帳號: ${body.vAccount}` : ''} ` +
+          `${body.PaymentNo ? `代碼: ${body.PaymentNo}` : ''}`,
+      );
+    } else {
+      this.logger.warn(`取號失敗: ${merchantTradeNo}, 原因: ${body.RtnMsg}`);
     }
 
     return true;

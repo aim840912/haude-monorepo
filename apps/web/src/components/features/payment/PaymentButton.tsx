@@ -5,6 +5,8 @@ import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 interface PaymentButtonProps {
   /** 訂單 ID */
   orderId: string
+  /** 付款方式（可選，預設為信用卡） */
+  paymentMethod?: string
   /** 是否禁用 */
   disabled?: boolean
   /** 自定義類名 */
@@ -34,6 +36,7 @@ interface PaymentButtonProps {
  */
 export function PaymentButton({
   orderId,
+  paymentMethod,
   disabled = false,
   className,
   onSuccess,
@@ -43,7 +46,7 @@ export function PaymentButton({
 
   const handleClick = async () => {
     clearError()
-    const success = await initiatePayment(orderId)
+    const success = await initiatePayment(orderId, paymentMethod)
     if (success) {
       onSuccess?.()
     } else if (error) {
