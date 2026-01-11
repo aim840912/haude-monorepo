@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { farmToursApi } from '../services/api'
+import logger from '../lib/logger'
 
 export interface FarmTour {
   id: string
@@ -63,7 +64,7 @@ export function useFarmTours(): UseFarmToursReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入觀光果園活動失敗'
       setError(message)
-      console.error('[useFarmTours] API 錯誤:', err)
+      logger.error('[useFarmTours] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -76,7 +77,7 @@ export function useFarmTours(): UseFarmToursReturn {
       await fetchFarmTours()
       return true
     } catch (err) {
-      console.error('[useFarmTours] 更新失敗:', err)
+      logger.error('[useFarmTours] 更新失敗', { error: err })
       return false
     } finally {
       setIsUpdating(false)
@@ -90,7 +91,7 @@ export function useFarmTours(): UseFarmToursReturn {
       await fetchFarmTours()
       return true
     } catch (err) {
-      console.error('[useFarmTours] 刪除失敗:', err)
+      logger.error('[useFarmTours] 刪除失敗', { error: err })
       return false
     } finally {
       setIsDeleting(false)
@@ -136,7 +137,7 @@ export function useFarmTour(tourId: string | undefined): UseFarmTourReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入活動失敗'
       setError(message)
-      console.error('[useFarmTour] API 錯誤:', err)
+      logger.error('[useFarmTour] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }

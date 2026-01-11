@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { productsApi } from '../services/api'
 import type { Product } from '@haude/types'
+import logger from '../lib/logger'
 
 export interface UpdateProductData {
   name?: string
@@ -39,7 +40,7 @@ export function useProducts(): UseProductsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入產品失敗'
       setError(message)
-      console.error('[useProducts] API 錯誤:', err)
+      logger.error('[useProducts] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -52,7 +53,7 @@ export function useProducts(): UseProductsReturn {
       await fetchProducts() // 重新取得列表
       return true
     } catch (err) {
-      console.error('[useProducts] 更新失敗:', err)
+      logger.error('[useProducts] 更新失敗', { error: err })
       return false
     } finally {
       setIsUpdating(false)
@@ -66,7 +67,7 @@ export function useProducts(): UseProductsReturn {
       await fetchProducts() // 重新取得列表
       return true
     } catch (err) {
-      console.error('[useProducts] 刪除失敗:', err)
+      logger.error('[useProducts] 刪除失敗', { error: err })
       return false
     } finally {
       setIsDeleting(false)
@@ -112,7 +113,7 @@ export function useProduct(productId: string | undefined): UseProductReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入產品失敗'
       setError(message)
-      console.error('[useProduct] API 錯誤:', err)
+      logger.error('[useProduct] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }

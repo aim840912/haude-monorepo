@@ -7,6 +7,7 @@ import { useCheckoutStore } from '@/stores/checkoutStore'
 import { useToast } from '@/components/ui/feedback/toast'
 import { ordersApi } from '@/services/api'
 import type { PaymentMethod, ShippingAddress } from '@/types/order'
+import logger from '@/lib/logger'
 
 /**
  * 結帳表單驗證錯誤
@@ -168,7 +169,7 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
         // 跳轉到訂單詳情頁（可進行付款）
         router.push(`/orders/${data.id}`)
       } catch (error) {
-        console.error('建立訂單失敗:', error)
+        logger.error('建立訂單失敗', { error })
         showError('建立訂單失敗', '請稍後再試')
       } finally {
         setIsSubmitting(false)

@@ -3,6 +3,7 @@ import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { schedulesApi } from '@/services/api'
 import type { ScheduleItem } from '@/types/schedule'
+import logger from '@/lib/logger'
 
 interface AdminSchedulesTableProps {
   onEdit: (id: string) => void
@@ -45,7 +46,7 @@ export function AdminSchedulesTable({ onEdit }: AdminSchedulesTableProps) {
       await schedulesApi.delete(id)
       setSchedules(prev => prev.filter(s => s.id !== id))
     } catch (error) {
-      console.error('刪除失敗:', error)
+      logger.error('刪除失敗', { error })
     } finally {
       setDeletingId(null)
     }

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import type { ExtendedProduct } from './types'
 import type { Product } from '@/types/product'
+import logger from '@/lib/logger'
 
 interface ProductModalActionsProps {
   /** 產品資訊 */
@@ -75,7 +76,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
 
         await addItem(productForCart, quantity)
       } catch (error) {
-        console.error('加入購物車失敗:', error)
+        logger.error('加入購物車失敗', { error })
       } finally {
         setIsAddingToCart(false)
       }

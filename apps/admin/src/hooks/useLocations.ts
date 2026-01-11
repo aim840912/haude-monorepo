@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { locationsApi } from '../services/api'
+import logger from '../lib/logger'
 
 export interface Location {
   id: string
@@ -71,7 +72,7 @@ export function useLocations(): UseLocationsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入門市據點失敗'
       setError(message)
-      console.error('[useLocations] API 錯誤:', err)
+      logger.error('[useLocations] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -84,7 +85,7 @@ export function useLocations(): UseLocationsReturn {
       await fetchLocations()
       return true
     } catch (err) {
-      console.error('[useLocations] 更新失敗:', err)
+      logger.error('[useLocations] 更新失敗', { error: err })
       return false
     } finally {
       setIsUpdating(false)
@@ -98,7 +99,7 @@ export function useLocations(): UseLocationsReturn {
       await fetchLocations()
       return true
     } catch (err) {
-      console.error('[useLocations] 刪除失敗:', err)
+      logger.error('[useLocations] 刪除失敗', { error: err })
       return false
     } finally {
       setIsDeleting(false)

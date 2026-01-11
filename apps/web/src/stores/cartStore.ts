@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { api } from '@/services/api'
 import { isAuthenticated } from '@/stores/authStore'
 import type { Product } from '@/types/product'
+import logger from '@/lib/logger'
 
 export interface CartItem {
   id: string
@@ -87,7 +88,7 @@ export const useCartStore = create<CartState>()(
             })
             set({ items: mapApiCartToItems(data), isLoading: false })
           } catch (error) {
-            console.error('加入購物車失敗:', error)
+            logger.error('加入購物車失敗', { error })
             set({ isLoading: false })
             throw error
           }
@@ -133,7 +134,7 @@ export const useCartStore = create<CartState>()(
             const { data } = await api.delete(`/cart/items/${productId}`)
             set({ items: mapApiCartToItems(data), isLoading: false })
           } catch (error) {
-            console.error('移除商品失敗:', error)
+            logger.error('移除商品失敗', { error })
             set({ isLoading: false })
             throw error
           }
@@ -158,7 +159,7 @@ export const useCartStore = create<CartState>()(
             const { data } = await api.put(`/cart/items/${productId}`, { quantity })
             set({ items: mapApiCartToItems(data), isLoading: false })
           } catch (error) {
-            console.error('更新數量失敗:', error)
+            logger.error('更新數量失敗', { error })
             set({ isLoading: false })
             throw error
           }
@@ -183,7 +184,7 @@ export const useCartStore = create<CartState>()(
             await api.delete('/cart')
             set({ items: [], isLoading: false })
           } catch (error) {
-            console.error('清空購物車失敗:', error)
+            logger.error('清空購物車失敗', { error })
             set({ isLoading: false })
             throw error
           }
@@ -211,7 +212,7 @@ export const useCartStore = create<CartState>()(
           const { data } = await api.get('/cart')
           set({ items: mapApiCartToItems(data), isLoading: false, isLoaded: true })
         } catch (error) {
-          console.error('同步購物車失敗:', error)
+          logger.error('同步購物車失敗', { error })
           set({ isLoading: false, isLoaded: true })
         }
       },
@@ -240,14 +241,14 @@ export const useCartStore = create<CartState>()(
               })
             } catch {
               // 單一商品失敗不中斷整體流程
-              console.warn(`合併商品 ${item.name} 失敗`)
+              logger.warn(`合併商品 ${item.name} 失敗`)
             }
           }
 
           // 同步最新資料
           await get().syncWithBackend()
         } catch (error) {
-          console.error('合併購物車失敗:', error)
+          logger.error('合併購物車失敗', { error })
           set({ isLoading: false })
         }
       },

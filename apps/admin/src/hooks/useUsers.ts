@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usersApi } from '../services/api'
+import logger from '../lib/logger'
 
 export type UserRole = 'USER' | 'VIP' | 'STAFF' | 'ADMIN'
 
@@ -46,7 +47,7 @@ export function useUsers(): UseUsersReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入會員失敗'
       setError(message)
-      console.error('[useUsers] API 錯誤:', err)
+      logger.error('[useUsers] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +60,7 @@ export function useUsers(): UseUsersReturn {
       await fetchUsers()
       return true
     } catch (err) {
-      console.error('[useUsers] 更新失敗:', err)
+      logger.error('[useUsers] 更新失敗', { error: err })
       return false
     } finally {
       setIsUpdating(false)
@@ -108,7 +109,7 @@ export function useUser(userId: string | undefined): UseUserReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入會員失敗'
       setError(message)
-      console.error('[useUser] API 錯誤:', err)
+      logger.error('[useUser] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { productsApi, ordersApi, usersApi } from '../services/api'
+import logger from '../lib/logger'
 
 export interface DashboardStats {
   totalProducts: number
@@ -118,7 +119,7 @@ export function useDashboard(): UseDashboardReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入儀表板資料失敗'
       setError(message)
-      console.error('[useDashboard] API 錯誤:', err)
+      logger.error('[useDashboard] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
     }

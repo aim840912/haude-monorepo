@@ -3,6 +3,7 @@ import { Pencil, Trash2, Loader2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { locationsApi } from '@/services/api'
 import type { Location } from '@/types/location'
+import logger from '@/lib/logger'
 
 interface AdminLocationsTableProps {
   onEdit: (id: string) => void
@@ -47,7 +48,7 @@ export function AdminLocationsTable({ onEdit }: AdminLocationsTableProps) {
       await locationsApi.delete(id)
       setLocations(prev => prev.filter(loc => loc.id !== id))
     } catch (error) {
-      console.error('刪除失敗:', error)
+      logger.error('刪除失敗', { error })
     } finally {
       setDeletingId(null)
     }

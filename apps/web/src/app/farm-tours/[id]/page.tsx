@@ -2,6 +2,7 @@
 
 import { use, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Calendar,
   Clock,
@@ -12,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react'
 import { useFarmTour, useFarmTourBooking } from '@/hooks/useFarmTours'
+import { useAuthStore } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
 
 interface FarmTourDetailPageProps {
@@ -27,6 +29,8 @@ interface FarmTourDetailPageProps {
  */
 export default function FarmTourDetailPage({ params }: FarmTourDetailPageProps) {
   const { id } = use(params)
+  const router = useRouter()
+  const { isAuthenticated } = useAuthStore()
   const { tour, isLoading, error } = useFarmTour(id)
   // autoFetch: false 避免未登入時自動呼叫需要認證的 API
   const { createBooking, isSubmitting, error: bookingError } = useFarmTourBooking({ autoFetch: false })
@@ -34,6 +38,13 @@ export default function FarmTourDetailPage({ params }: FarmTourDetailPageProps) 
 
   const handleBook = async () => {
     if (!id) return
+
+    // 未登入則跳轉登入頁，登入後返回此頁
+    if (!isAuthenticated) {
+      router.push(`/login?from=/farm-tours/${id}`)
+      return
+    }
+
     const result = await createBooking({
       tourId: id,
       participants: 1,
@@ -217,10 +228,12 @@ export default function FarmTourDetailPage({ params }: FarmTourDetailPageProps) 
                   </span>
                 ) : bookingSuccess ? (
                   '已預約'
-                ) : tour.status === 'upcoming' ? (
-                  '立即預約'
-                ) : (
+                ) : tour.status !== 'upcoming' ? (
                   '無法預約'
+                ) : !isAuthenticated ? (
+                  '登入後預約'
+                ) : (
+                  '立即預約'
                 )}
               </button>
 

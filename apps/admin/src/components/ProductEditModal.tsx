@@ -4,6 +4,7 @@ import type { Product } from '@haude/types'
 import type { UpdateProductData } from '../hooks/useProducts'
 import { ProductImageManager } from './ProductImageManager'
 import { productImagesApi, type ProductImage } from '../services/api'
+import logger from '../lib/logger'
 
 interface ProductEditModalProps {
   product: Product
@@ -43,7 +44,7 @@ export function ProductEditModal({
       const { data } = await productImagesApi.getImages(product.id)
       setImages(data)
     } catch (err) {
-      console.error('載入圖片失敗:', err)
+      logger.error('載入圖片失敗', { error: err })
     } finally {
       setIsLoadingImages(false)
     }
@@ -105,7 +106,7 @@ export function ProductEditModal({
       await Promise.all(
         newlyUploadedIds.map(imageId =>
           productImagesApi.deleteImage(product.id, imageId).catch(err => {
-            console.error(`刪除圖片 ${imageId} 失敗:`, err)
+            logger.error(`刪除圖片 ${imageId} 失敗`, { error: err })
           })
         )
       )
