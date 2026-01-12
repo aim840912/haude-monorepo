@@ -1,0 +1,106 @@
+{
+  "common": {
+    "brand": "Haude Tea House",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "noResults": "No results found"
+  },
+  "nav": {
+    "explore": "Explore",
+    "farmTours": "Farm Tours",
+    "products": "Products",
+    "locations": "Locations",
+    "schedule": "Market Schedule",
+    "cart": "Cart",
+    "myAccount": "My Account",
+    "myOrders": "My Orders",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "admin": "Admin"
+  },
+  "product": {
+    "title": "Products",
+    "allProducts": "All Products",
+    "price": "Price",
+    "quantity": "Quantity",
+    "stock": "Stock",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "description": "Description",
+    "reviews": "Reviews"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "itemCount": "{count} items"
+  },
+  "order": {
+    "title": "Orders",
+    "myOrders": "My Orders",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "status": {
+      "pending": "Pending Payment",
+      "paid": "Paid",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "paymentMethod": "Payment Method",
+    "shippingAddress": "Shipping Address",
+    "cancelOrder": "Cancel Order"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shippingInfo": "Shipping Information",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "paymentMethod": "Payment Method",
+    "creditCard": "Credit Card",
+    "atm": "ATM Transfer",
+    "cvs": "Convenience Store",
+    "discountCode": "Discount Code",
+    "applyDiscount": "Apply",
+    "placeOrder": "Place Order",
+    "orderSummary": "Order Summary"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "error": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Network error",
+    "unauthorized": "Please login first",
+    "notFound": "Page not found",
+    "outOfStock": "Product out of stock",
+    "paymentFailed": "Payment failed"
+  }
+}
