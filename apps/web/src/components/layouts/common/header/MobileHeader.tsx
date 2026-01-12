@@ -3,15 +3,25 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ShoppingCart, LogOut, User, Menu, X, Package, ExternalLink } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
-import { navItems } from './NavigationItems'
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 
-// 所有登入用戶可見的選單
-const userMenuItems = [
-  { href: '/account', label: '我的帳戶', icon: User },
-  { href: '/orders', label: '我的訂單', icon: Package },
-]
+// 導航項目配置（使用翻譯鍵）
+const navItemsConfig = [
+  { href: '/', labelKey: 'explore' },
+  { href: '/farm-tours', labelKey: 'farmTours' },
+  { href: '/products', labelKey: 'products' },
+  { href: '/locations', labelKey: 'locations' },
+  { href: '/schedule', labelKey: 'schedule' },
+] as const
+
+// 用戶選單配置
+const userMenuConfig = [
+  { href: '/account', labelKey: 'myAccount', icon: User },
+  { href: '/orders', labelKey: 'myOrders', icon: Package },
+] as const
 
 interface MobileHeaderProps {
   isMobileMenuOpen: boolean
@@ -33,6 +43,7 @@ export function MobileHeader({
   handleMenuItemClick,
 }: MobileHeaderProps) {
   const pathname = usePathname()
+  const t = useTranslations('nav')
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
 
@@ -62,12 +73,15 @@ export function MobileHeader({
         </Link>
 
         {/* 右側:工具按鈕組 */}
-        <div className="flex items-center flex-shrink-0 space-x-2">
+        <div className="flex items-center flex-shrink-0 space-x-1">
+          {/* 語系切換 */}
+          <LanguageSwitcher />
+
           {/* 購物車按鈕 - 所有用戶皆可見 */}
           <Link
             href="/cart"
             className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-all duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
-            title="購物車"
+            title={t('cart')}
           >
             <ShoppingCart className="w-5 h-5" />
             {/* 購物車數量 Badge */}
@@ -85,7 +99,7 @@ export function MobileHeader({
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-all duration-200 rounded-md min-h-[44px] px-2"
-              title="管理後台"
+              title={t('admin')}
             >
               <ExternalLink className="w-5 h-5" />
             </a>
@@ -115,29 +129,19 @@ export function MobileHeader({
       >
         <div className="py-4 max-w-7xl mx-auto px-4" ref={mobileMenuRef}>
           <div className="space-y-2">
-            {navItems.map(item => (
+            {navItemsConfig.map(item => (
               <div key={item.href} className="group">
-                {item.isExternal ? (
-                  <a
-                    href={item.href}
-                    className="block px-4 py-3 text-gray-700 hover:text-green-900 hover:bg-green-50 transition-colors duration-200 rounded-lg mx-2"
-                    onClick={handleMenuItemClick}
-                  >
-                    <span className="font-sans font-medium text-base">{item.label}</span>
-                  </a>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className={`block px-4 py-3 transition-colors duration-200 rounded-lg mx-2 ${
-                      isActive(item.href)
-                        ? 'text-green-900 bg-green-50 font-semibold'
-                        : 'text-gray-700 hover:text-green-900 hover:bg-green-50'
-                    }`}
-                    onClick={handleMenuItemClick}
-                  >
-                    <span className="font-sans font-medium text-base">{item.label}</span>
-                  </Link>
-                )}
+                <Link
+                  href={item.href}
+                  className={`block px-4 py-3 transition-colors duration-200 rounded-lg mx-2 ${
+                    isActive(item.href)
+                      ? 'text-green-900 bg-green-50 font-semibold'
+                      : 'text-gray-700 hover:text-green-900 hover:bg-green-50'
+                  }`}
+                  onClick={handleMenuItemClick}
+                >
+                  <span className="font-sans font-medium text-base">{t(item.labelKey)}</span>
+                </Link>
               </div>
             ))}
 
@@ -148,10 +152,10 @@ export function MobileHeader({
             {isAuthenticated ? (
               <>
                 <div className="px-4 py-2 text-sm text-gray-500">
-                  歡迎，{user?.name}
+                  {user?.name}
                 </div>
                 {/* 用戶選單項目 */}
-                {userMenuItems.map(item => {
+                {userMenuConfig.map(item => {
                   const Icon = item.icon
                   return (
                     <Link
@@ -165,7 +169,7 @@ export function MobileHeader({
                       }`}
                     >
                       <Icon className="w-5 h-5" />
-                      <span className="font-sans font-medium text-base">{item.label}</span>
+                      <span className="font-sans font-medium text-base">{t(item.labelKey)}</span>
                     </Link>
                   )
                 })}
@@ -174,7 +178,7 @@ export function MobileHeader({
                   className="flex items-center gap-2 w-full px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg mx-2"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span className="font-sans font-medium text-base">登出</span>
+                  <span className="font-sans font-medium text-base">{t('logout')}</span>
                 </button>
               </>
             ) : (
@@ -184,7 +188,7 @@ export function MobileHeader({
                 onClick={handleMenuItemClick}
               >
                 <User className="w-5 h-5" />
-                <span className="font-sans font-medium text-base">登入</span>
+                <span className="font-sans font-medium text-base">{t('login')}</span>
               </Link>
             )}
           </div>

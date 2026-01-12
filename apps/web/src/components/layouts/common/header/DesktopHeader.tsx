@@ -4,15 +4,25 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ShoppingCart, LogOut, User, ChevronDown, Package, ExternalLink } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
-import { navItems } from './NavigationItems'
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 
-// 所有登入用戶可見的選單
-const userMenuItems = [
-  { href: '/account', label: '我的帳戶', icon: User },
-  { href: '/orders', label: '我的訂單', icon: Package },
-]
+// 導航項目配置（使用翻譯鍵）
+const navItemsConfig = [
+  { href: '/', labelKey: 'explore' },
+  { href: '/farm-tours', labelKey: 'farmTours' },
+  { href: '/products', labelKey: 'products' },
+  { href: '/locations', labelKey: 'locations' },
+  { href: '/schedule', labelKey: 'schedule' },
+] as const
+
+// 用戶選單配置
+const userMenuConfig = [
+  { href: '/account', labelKey: 'myAccount', icon: User },
+  { href: '/orders', labelKey: 'myOrders', icon: Package },
+] as const
 
 /**
  * 桌面版 Header
@@ -21,6 +31,7 @@ const userMenuItems = [
  */
 export function DesktopHeader() {
   const pathname = usePathname()
+  const t = useTranslations('nav')
   const { user, isAuthenticated, logout } = useAuthStore()
   const totalItems = useTotalItems()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -62,39 +73,22 @@ export function DesktopHeader() {
 
           {/* 導航選單（緊湊版）*/}
           <div className="flex items-center space-x-2">
-            {navItems.map(item => (
+            {navItemsConfig.map(item => (
               <div key={item.href} className="group relative flex items-center min-h-[32px]">
-                {item.isExternal ? (
-                  <a href={item.href} className="block py-2 px-2">
-                    <span
-                      className={`text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm font-sans font-medium ${
-                        isActive(item.href) ? 'text-green-600' : ''
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    <div
-                      className={`absolute bottom-0 left-0 h-0.5 bg-green-600 transition-all duration-300 ${
-                        isActive(item.href) ? 'w-full' : 'w-0 group-hover:w-full'
-                      }`}
-                    ></div>
-                  </a>
-                ) : (
-                  <Link href={item.href} className="block py-2 px-2">
-                    <span
-                      className={`text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm font-sans font-medium ${
-                        isActive(item.href) ? 'text-green-600' : ''
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    <div
-                      className={`absolute bottom-0 left-0 h-0.5 bg-green-600 transition-all duration-300 ${
-                        isActive(item.href) ? 'w-full' : 'w-0 group-hover:w-full'
-                      }`}
-                    ></div>
-                  </Link>
-                )}
+                <Link href={item.href} className="block py-2 px-2">
+                  <span
+                    className={`text-gray-600 hover:text-green-600 transition-colors duration-200 text-sm font-sans font-medium ${
+                      isActive(item.href) ? 'text-green-600' : ''
+                    }`}
+                  >
+                    {t(item.labelKey)}
+                  </span>
+                  <div
+                    className={`absolute bottom-0 left-0 h-0.5 bg-green-600 transition-all duration-300 ${
+                      isActive(item.href) ? 'w-full' : 'w-0 group-hover:w-full'
+                    }`}
+                  ></div>
+                </Link>
               </div>
             ))}
           </div>
@@ -102,11 +96,14 @@ export function DesktopHeader() {
 
         {/* 右側：工具按鈕 */}
         <div className="flex items-center space-x-2 h-8">
+          {/* 語系切換 */}
+          <LanguageSwitcher />
+
           {/* 購物車按鈕 - 所有用戶皆可見 */}
           <Link
             href="/cart"
             className="relative w-10 h-10 flex items-center justify-center text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
-            title="購物車"
+            title={t('cart')}
           >
             <ShoppingCart className="w-5 h-5" />
             {/* 購物車數量 Badge */}
@@ -124,10 +121,10 @@ export function DesktopHeader() {
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-3 h-10 text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
-              title="管理後台"
+              title={t('admin')}
             >
               <ExternalLink className="w-5 h-5" />
-              <span className="text-sm font-medium">後台</span>
+              <span className="text-sm font-medium">{t('admin')}</span>
             </a>
           )}
 
@@ -146,7 +143,7 @@ export function DesktopHeader() {
               {/* 用戶下拉選單 */}
               {isUserMenuOpen && (
                 <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  {userMenuItems.map(item => {
+                  {userMenuConfig.map(item => {
                     const Icon = item.icon
                     return (
                       <Link
@@ -160,7 +157,7 @@ export function DesktopHeader() {
                         }`}
                       >
                         <Icon className="w-4 h-4" />
-                        {item.label}
+                        {t(item.labelKey)}
                       </Link>
                     )
                   })}
@@ -173,7 +170,7 @@ export function DesktopHeader() {
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    登出
+                    {t('logout')}
                   </button>
                 </div>
               )}
@@ -184,7 +181,7 @@ export function DesktopHeader() {
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
             >
               <User className="w-4 h-4" />
-              登入
+              {t('login')}
             </Link>
           )}
         </div>
