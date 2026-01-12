@@ -7,7 +7,7 @@ export type OrderStatus =
   | 'cancelled'
   | 'refunded'
 
-export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS'
+export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS' | 'WEBATM'
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expired'
 
@@ -45,6 +45,8 @@ export interface Order {
   subtotal: number // 小計
   shippingFee: number // 運費
   tax: number // 稅費
+  discountCode?: string // 折扣碼
+  discountAmount: number // 折扣金額
   totalAmount: number // 總金額
   shippingAddress: ShippingAddress
   paymentMethod?: PaymentMethod | string // 付款方式
@@ -72,6 +74,18 @@ export interface CreateOrderRequest {
   shippingAddress: ShippingAddress
   paymentMethod?: string
   notes?: string
+  discountCode?: string
+}
+
+// 折扣碼驗證結果
+export interface DiscountValidation {
+  valid: boolean
+  discountType?: 'PERCENTAGE' | 'FIXED'
+  discountValue?: number
+  discountAmount?: number
+  code?: string
+  description?: string
+  message?: string
 }
 
 export interface OrderSummary {

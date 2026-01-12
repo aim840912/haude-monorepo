@@ -12,3 +12,6 @@ export * from './order'
 
 // User
 export * from './user'
+
+// Review
+export * from './review'

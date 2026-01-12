@@ -1,277 +1,168 @@
-'use client'
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { ProductDetailClient, type ProductData } from './ProductDetailClient'
+import { ProductSchema, BreadcrumbSchema } from '@/components/seo'
 
-import { use } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, Share2, ShoppingCart, Truck, Shield, RefreshCw, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { useProduct } from '@/hooks/useProducts'
-import { useCartStore } from '@/stores/cartStore'
-import { useToast } from '@/components/ui/feedback/toast'
-import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
-import { ImageCarousel } from '@/components/ui/ImageCarousel'
-import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
-import { cn } from '@/lib/utils'
-import logger from '@/lib/logger'
-
-// 使用統一的 ProductImage 類型
-import type { ProductImage } from '@/types/product'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>
 }
 
 /**
- * 產品詳情頁
- *
- * 功能：
- * - 顯示產品完整資訊
- * - 圖片輪播
- * - 加入購物車
+ * 從 API 獲取產品資料
  */
-export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { id } = use(params)
-  const router = useRouter()
-  const { success, error: showError } = useToast()
-  const { product, isLoading, error } = useProduct(id)
-  const { addItem, isLoading: isAddingToCart } = useCartStore()
-  const [quantity, setQuantity] = useState(1)
-  const [addedToCart, setAddedToCart] = useState(false)
+async function getProduct(id: string): Promise<ProductData | null> {
+  try {
+    const res = await fetch(`${API_URL}/products/${id}`, {
+      next: { revalidate: 60 }, // 60 秒快取
+    })
 
-  // 載入狀態
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  // 錯誤狀態
-  if (error || !product) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">產品不存在</h2>
-        <p className="text-gray-600 mb-8">{error || '找不到此產品'}</p>
-        <button
-          onClick={() => router.push('/products')}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          返回產品列表
-        </button>
-      </div>
-    )
-  }
-
-  // 建構圖片 URL 陣列（供 ImageCarousel 使用）
-  const imageUrls = product.images.length > 0
-    ? product.images.map((img) => img.storageUrl).filter(Boolean)
-    : [PLACEHOLDER_IMAGES.product(product.category)] // 無圖片時使用分類 placeholder
-
-  // 取得庫存
-  const stock = product.stock
-
-  // 計算折扣
-  const discountPercent =
-    product.originalPrice && product.originalPrice > product.price
-      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-      : 0
-
-  const handleShare = async () => {
-    const shareUrl = window.location.href
-    const shareData = {
-      title: product.name,
-      text: `查看這個產品：${product.name}`,
-      url: shareUrl,
+    if (!res.ok) {
+      return null
     }
 
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData)
-      } else {
-        await navigator.clipboard.writeText(shareUrl)
-        success('連結已複製', '可以貼上分享給朋友')
-      }
-    } catch {
-      // User cancelled or error
+    return res.json()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 獲取產品評論統計（用於 Schema）
+ */
+async function getReviewStats(
+  productId: string
+): Promise<{ averageRating: number; totalReviews: number } | null> {
+  try {
+    const res = await fetch(`${API_URL}/products/${productId}/reviews/stats`, {
+      next: { revalidate: 300 }, // 5 分鐘快取
+    })
+
+    if (!res.ok) {
+      return null
+    }
+
+    return res.json()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 動態生成 Metadata（SEO）
+ *
+ * 為每個產品頁面生成獨立的 title, description, og:image 等
+ */
+export async function generateMetadata({
+  params,
+}: ProductDetailPageProps): Promise<Metadata> {
+  const { id } = await params
+  const product = await getProduct(id)
+
+  if (!product) {
+    return {
+      title: '產品不存在 | 豪德製茶所',
     }
   }
 
-  const handleAddToCart = async () => {
-    try {
-      await addItem(product, quantity)
-      setAddedToCart(true)
-      // 2 秒後重置狀態
-      setTimeout(() => setAddedToCart(false), 2000)
-    } catch (err) {
-      logger.error('加入購物車失敗', { error: err })
-      showError('加入購物車失敗', '請稍後再試')
-    }
+  const imageUrl = product.images[0]?.storageUrl || `${SITE_URL}/og-default.jpg`
+  const description =
+    product.description.length > 155
+      ? `${product.description.slice(0, 155)}...`
+      : product.description
+
+  return {
+    title: `${product.name} | 豪德製茶所`,
+    description: description,
+    keywords: [product.category, '台灣茶', '豪德製茶所', product.name],
+    openGraph: {
+      title: `${product.name} | 豪德製茶所`,
+      description: description,
+      url: `${SITE_URL}/products/${id}`,
+      siteName: '豪德製茶所',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: product.name,
+        },
+      ],
+      locale: 'zh_TW',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${product.name} | 豪德製茶所`,
+      description: description,
+      images: [imageUrl],
+    },
+    alternates: {
+      canonical: `${SITE_URL}/products/${id}`,
+    },
   }
+}
+
+/**
+ * 靜態路由生成
+ *
+ * 在建置時預先生成所有產品頁面，提升 SEO 和載入速度
+ */
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(`${API_URL}/products`)
+    if (!res.ok) return []
+
+    const products = await res.json()
+    return products
+      .filter((product: { isActive?: boolean }) => product.isActive !== false)
+      .map((product: { id: string }) => ({
+        id: product.id,
+      }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 產品詳情頁 - Server Component
+ *
+ * 負責：
+ * 1. 資料獲取（Server Side）
+ * 2. SEO Metadata 生成
+ * 3. JSON-LD Schema 結構化資料
+ * 4. 傳遞資料給 Client Component
+ */
+export default async function ProductDetailPage({
+  params,
+}: ProductDetailPageProps) {
+  const { id } = await params
+  const [product, reviewStats] = await Promise.all([
+    getProduct(id),
+    getReviewStats(id),
+  ])
+
+  if (!product) {
+    notFound()
+  }
+
+  // 麵包屑資料
+  const breadcrumbs = [
+    { name: '首頁', url: '/' },
+    { name: '產品', url: '/products' },
+    { name: product.name, url: `/products/${id}` },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 頂部導航 */}
-      <div className="bg-white border-b sticky top-[var(--header-height)] z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>返回</span>
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="分享"
-            >
-              <Share2 className="w-5 h-5" />
-              <span className="text-sm">分享</span>
-            </button>
-          </div>
-        </div>
-      </div>
+    <>
+      {/* JSON-LD 結構化資料 */}
+      <ProductSchema product={product} reviewStats={reviewStats ?? undefined} />
+      <BreadcrumbSchema items={breadcrumbs} />
 
-      {/* 主要內容 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* 左側：圖片區 - 使用 ImageCarousel */}
-          <div className="space-y-4">
-            <ImageCarousel
-              images={imageUrls}
-              productName={product.name}
-              autoPlayInterval={4000}
-              showIndicators={true}
-              showArrows={true}
-            />
-          </div>
-
-          {/* 右側：產品資訊 */}
-          <div className="space-y-6">
-            {/* 類別 */}
-            <Link
-              href={`/products?category=${product.category}`}
-              className="inline-block text-sm text-green-600 hover:text-green-700 uppercase tracking-wider"
-            >
-              {product.category}
-            </Link>
-
-            {/* 名稱 */}
-            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-
-            {/* 價格區 */}
-            <div className="flex items-baseline gap-4">
-              <span className="text-3xl font-bold text-green-900">
-                NT$ {product.price.toLocaleString()}
-                {product.priceUnit && (
-                  <span className="text-lg font-normal text-gray-600 ml-1">
-                    / {product.priceUnit}
-                  </span>
-                )}
-              </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <>
-                  <span className="text-xl text-gray-500 line-through">
-                    NT$ {product.originalPrice.toLocaleString()}
-                  </span>
-                  <span className="text-sm font-bold text-red-600 bg-red-100 px-2 py-1 rounded">
-                    -{discountPercent}%
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* 庫存 */}
-            <div className="text-sm">
-              {stock > 0 ? (
-                <span className="text-green-600">庫存充足 ({stock})</span>
-              ) : (
-                <span className="text-red-500">缺貨中</span>
-              )}
-            </div>
-
-            {/* 描述 */}
-            <div className="prose prose-gray max-w-none">
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
-            </div>
-
-            {/* 數量選擇 */}
-            <div className="flex items-center gap-4">
-              <span className="text-gray-700 font-medium">數量</span>
-              <div className="flex items-center border border-gray-300 rounded-lg">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors"
-                  disabled={quantity <= 1}
-                >
-                  -
-                </button>
-                <span className="px-4 py-2 border-x border-gray-300 min-w-[60px] text-center">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(Math.min(stock, quantity + 1))}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors"
-                  disabled={quantity >= stock}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* 購買按鈕 */}
-            <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={stock <= 0 || isAddingToCart}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-4 rounded-lg font-medium transition-colors',
-                  addedToCart
-                    ? 'bg-green-700 text-white'
-                    : stock > 0 && !isAddingToCart
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                )}
-              >
-                {isAddingToCart ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    處理中...
-                  </>
-                ) : addedToCart ? (
-                  <>
-                    <ShoppingCart className="w-5 h-5" />
-                    已加入購物車
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-5 h-5" />
-                    加入購物車
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* 服務保證 */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t">
-              <div className="flex flex-col items-center text-center">
-                <Truck className="w-6 h-6 text-green-600 mb-2" />
-                <span className="text-sm text-gray-600">免運費</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <Shield className="w-6 h-6 text-green-600 mb-2" />
-                <span className="text-sm text-gray-600">品質保證</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <RefreshCw className="w-6 h-6 text-green-600 mb-2" />
-                <span className="text-sm text-gray-600">7天退換</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* 頁面內容 */}
+      <ProductDetailClient product={product} />
+    </>
   )
 }

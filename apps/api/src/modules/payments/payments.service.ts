@@ -15,6 +15,7 @@ import {
   getTradeDate,
 } from './utils/ecpay-crypto';
 import type { PaymentMethodType } from './dto/create-payment.dto';
+import { EmailService } from '../email/email.service';
 
 /**
  * 付款表單資料（前端用於提交到綠界）
@@ -31,26 +32,70 @@ export interface PaymentFormData {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly crypto: ECPayCrypto;
-  private readonly config: ECPayConfig;
+  private readonly crypto: ECPayCrypto | null = null;
+  private readonly config: ECPayConfig | null = null;
+  private readonly isEnabled: boolean;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {
-    // 初始化綠界配置
-    this.config = {
-      merchantId: this.configService.getOrThrow('ECPAY_MERCHANT_ID'),
-      hashKey: this.configService.getOrThrow('ECPAY_HASH_KEY'),
-      hashIv: this.configService.getOrThrow('ECPAY_HASH_IV'),
-      apiUrl: this.configService.getOrThrow('ECPAY_API_URL'),
-      notifyUrl: this.configService.getOrThrow('ECPAY_NOTIFY_URL'),
-      returnUrl: this.configService.getOrThrow('ECPAY_RETURN_URL'),
-      clientBackUrl: this.configService.get('ECPAY_CLIENT_BACK_URL'),
-      paymentInfoUrl: this.configService.get('ECPAY_PAYMENT_INFO_URL'),
-    };
+    // 檢查必要的 ECPay 配置是否存在
+    const merchantId = this.configService.get<string>('ECPAY_MERCHANT_ID');
+    const hashKey = this.configService.get<string>('ECPAY_HASH_KEY');
+    const hashIv = this.configService.get<string>('ECPAY_HASH_IV');
+    const apiUrl = this.configService.get<string>('ECPAY_API_URL');
+    const notifyUrl = this.configService.get<string>('ECPAY_NOTIFY_URL');
+    const returnUrl = this.configService.get<string>('ECPAY_RETURN_URL');
 
-    this.crypto = new ECPayCrypto(this.config.hashKey, this.config.hashIv);
+    // 如果所有必要配置都存在，啟用支付功能
+    if (merchantId && hashKey && hashIv && apiUrl && notifyUrl && returnUrl) {
+      this.config = {
+        merchantId,
+        hashKey,
+        hashIv,
+        apiUrl,
+        notifyUrl,
+        returnUrl,
+        clientBackUrl: this.configService.get('ECPAY_CLIENT_BACK_URL'),
+        paymentInfoUrl: this.configService.get('ECPAY_PAYMENT_INFO_URL'),
+      };
+      this.crypto = new ECPayCrypto(hashKey, hashIv);
+      this.isEnabled = true;
+      this.logger.log('ECPay payment service initialized');
+    } else {
+      this.isEnabled = false;
+      this.logger.warn(
+        'ECPay configuration incomplete - payment service disabled. ' +
+          'Set ECPAY_MERCHANT_ID, ECPAY_HASH_KEY, ECPAY_HASH_IV, ECPAY_API_URL, ' +
+          'ECPAY_NOTIFY_URL, ECPAY_RETURN_URL to enable.',
+      );
+    }
+  }
+
+  /**
+   * 檢查支付服務是否可用並返回配置
+   */
+  private getEnabledConfig(): ECPayConfig {
+    if (!this.isEnabled || !this.config || !this.crypto) {
+      throw new BadRequestException(
+        '支付功能尚未啟用，請聯繫管理員設定支付配置',
+      );
+    }
+    return this.config;
+  }
+
+  /**
+   * 檢查支付服務是否可用並返回加密工具
+   */
+  private getEnabledCrypto(): ECPayCrypto {
+    if (!this.isEnabled || !this.config || !this.crypto) {
+      throw new BadRequestException(
+        '支付功能尚未啟用，請聯繫管理員設定支付配置',
+      );
+    }
+    return this.crypto;
   }
 
   // ========================================
@@ -70,6 +115,10 @@ export class PaymentsService {
     userId: string,
     paymentMethod: PaymentMethodType = 'CREDIT',
   ): Promise<PaymentFormData> {
+    // 驗證支付服務已啟用
+    const config = this.getEnabledConfig();
+    const crypto = this.getEnabledCrypto();
+
     // 1. 驗證訂單
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, userId },
@@ -114,36 +163,36 @@ export class PaymentsService {
 
     // 6. 建立交易參數
     const tradeParams: ECPayTradeParams = {
-      MerchantID: this.config.merchantId,
+      MerchantID: config.merchantId,
       MerchantTradeNo: merchantTradeNo,
       MerchantTradeDate: getTradeDate(),
       PaymentType: 'aio',
       TotalAmount: amount,
       TradeDesc: encodeURIComponent('豪德製茶所訂單'),
       ItemName: this.formatItemName(order.items),
-      ReturnURL: this.config.notifyUrl,
+      ReturnURL: config.notifyUrl,
       ChoosePayment: ecpayPaymentType,
       EncryptType: 1,
-      ClientBackURL: this.config.clientBackUrl || this.config.returnUrl,
-      OrderResultURL: this.config.returnUrl,
+      ClientBackURL: config.clientBackUrl || config.returnUrl,
+      OrderResultURL: config.returnUrl,
       NeedExtraPaidInfo: 'Y',
     };
 
     // 7. 加入付款方式專用參數
     if (paymentMethod === 'ATM') {
       tradeParams.ExpireDate = 3; // ATM 3 天內繳費
-      if (this.config.paymentInfoUrl) {
-        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      if (config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = config.paymentInfoUrl;
       }
     } else if (paymentMethod === 'CVS') {
       tradeParams.StoreExpireDate = 10080; // CVS 7 天（10080 分鐘）
-      if (this.config.paymentInfoUrl) {
-        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      if (config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = config.paymentInfoUrl;
       }
     }
 
     // 8. 生成 CheckMacValue
-    const paymentData = this.crypto.createPaymentData(tradeParams);
+    const paymentData = crypto.createPaymentData(tradeParams);
 
     // 9. 建立 Payment 記錄
     const payment = await this.prisma.payment.create({
@@ -164,7 +213,7 @@ export class PaymentsService {
     return {
       paymentId: payment.id,
       formData: {
-        action: this.config.apiUrl,
+        action: config.apiUrl,
         method: 'POST',
         fields: paymentData,
       },
@@ -195,6 +244,9 @@ export class PaymentsService {
     paymentId: string,
     paymentMethod: PaymentMethodType = 'CREDIT',
   ): Promise<PaymentFormData> {
+    const config = this.getEnabledConfig();
+    const crypto = this.getEnabledCrypto();
+
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
       include: { order: { include: { items: true } } },
@@ -216,35 +268,35 @@ export class PaymentsService {
 
     // 重新建立完整的綠界交易參數（而非依賴舊資料）
     const tradeParams: ECPayTradeParams = {
-      MerchantID: this.config.merchantId,
+      MerchantID: config.merchantId,
       MerchantTradeNo: merchantTradeNo,
       MerchantTradeDate: getTradeDate(),
       PaymentType: 'aio',
       TotalAmount: payment.amount,
       TradeDesc: encodeURIComponent('豪德製茶所訂單'),
       ItemName: this.formatItemName(payment.order.items),
-      ReturnURL: this.config.notifyUrl,
+      ReturnURL: config.notifyUrl,
       ChoosePayment: ecpayPaymentType,
       EncryptType: 1,
-      ClientBackURL: this.config.clientBackUrl || this.config.returnUrl,
-      OrderResultURL: this.config.returnUrl,
+      ClientBackURL: config.clientBackUrl || config.returnUrl,
+      OrderResultURL: config.returnUrl,
       NeedExtraPaidInfo: 'Y',
     };
 
     // 加入付款方式專用參數
     if (paymentMethod === 'ATM') {
       tradeParams.ExpireDate = 3;
-      if (this.config.paymentInfoUrl) {
-        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      if (config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = config.paymentInfoUrl;
       }
     } else if (paymentMethod === 'CVS') {
       tradeParams.StoreExpireDate = 10080;
-      if (this.config.paymentInfoUrl) {
-        tradeParams.PaymentInfoURL = this.config.paymentInfoUrl;
+      if (config.paymentInfoUrl) {
+        tradeParams.PaymentInfoURL = config.paymentInfoUrl;
       }
     }
 
-    const paymentData = this.crypto.createPaymentData(tradeParams);
+    const paymentData = crypto.createPaymentData(tradeParams);
 
     // 更新付款記錄（包含新的交易編號和付款類型）
     await this.prisma.payment.update({
@@ -259,7 +311,7 @@ export class PaymentsService {
     return {
       paymentId,
       formData: {
-        action: this.config.apiUrl,
+        action: config.apiUrl,
         method: 'POST',
         fields: paymentData,
       },
@@ -282,8 +334,10 @@ export class PaymentsService {
     body: Record<string, string>,
     ipAddress?: string,
   ): Promise<boolean> {
+    const crypto = this.getEnabledCrypto();
+
     // 1. 驗證 CheckMacValue
-    if (!this.crypto.verifyCheckMacValue(body)) {
+    if (!crypto.verifyCheckMacValue(body)) {
       this.logger.error('綠界回調驗證失敗');
       await this.createPaymentLog({
         merchantOrderNo: body.MerchantTradeNo || 'UNKNOWN',
@@ -355,6 +409,13 @@ export class PaymentsService {
       this.logger.log(
         `付款成功: ${merchantTradeNo}, 綠界交易號: ${body.TradeNo}`,
       );
+
+      // 發送支付成功郵件（非同步，不阻塞回應）
+      this.sendPaymentSuccessEmailAsync(
+        payment.orderId,
+        payment.order.orderNumber,
+        payment.amount,
+      );
     } else {
       // 付款失敗
       await this.prisma.payment.update({
@@ -388,8 +449,10 @@ export class PaymentsService {
     body: Record<string, string>,
     ipAddress?: string,
   ): Promise<boolean> {
+    const crypto = this.getEnabledCrypto();
+
     // 1. 驗證 CheckMacValue
-    if (!this.crypto.verifyCheckMacValue(body)) {
+    if (!crypto.verifyCheckMacValue(body)) {
       this.logger.error('綠界取號通知驗證失敗');
       await this.createPaymentLog({
         merchantOrderNo: body.MerchantTradeNo || 'UNKNOWN',
@@ -491,8 +554,10 @@ export class PaymentsService {
     orderId?: string;
     message?: string;
   }> {
+    const crypto = this.getEnabledCrypto();
+
     // 驗證 CheckMacValue
-    if (!this.crypto.verifyCheckMacValue(body)) {
+    if (!crypto.verifyCheckMacValue(body)) {
       return { success: false, message: '驗證失敗' };
     }
 
@@ -598,6 +663,42 @@ export class PaymentsService {
         processed: true,
       },
     });
+  }
+
+  /**
+   * 非同步發送支付成功郵件
+   */
+  private async sendPaymentSuccessEmailAsync(
+    orderId: string,
+    orderNumber: string,
+    amount: number,
+  ): Promise<void> {
+    try {
+      // 取得使用者資訊
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          user: {
+            select: { email: true, name: true },
+          },
+        },
+      });
+
+      if (!order?.user?.email) {
+        this.logger.warn(`無法發送支付成功郵件：找不到使用者 email`);
+        return;
+      }
+
+      await this.emailService.sendPaymentSuccessEmail(
+        order.user.email,
+        orderNumber,
+        amount,
+        order.user.name || undefined,
+      );
+    } catch (error) {
+      // 郵件發送失敗不應影響付款流程
+      this.logger.error(`發送支付成功郵件失敗: ${error}`);
+    }
   }
 
   // ========================================

@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   LogOut,
+  Tag,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 
@@ -24,6 +25,7 @@ const navItems = [
   { path: '/locations', label: '門市管理', icon: MapPin },
   { path: '/orders', label: '訂單管理', icon: ShoppingCart },
   { path: '/payments', label: '付款監控', icon: CreditCard },
+  { path: '/discounts', label: '折扣碼管理', icon: Tag },
   { path: '/users', label: '會員管理', icon: Users },
   { path: '/settings', label: '系統設定', icon: Settings },
 ]

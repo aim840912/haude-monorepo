@@ -197,7 +197,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               orderId={order.id}
               paymentMethod={order.paymentMethod || undefined}
               onError={handlePaymentError}
-              className="w-full sm:w-auto sm:min-w-[200px] sm:ml-auto sm:block"
+              className="w-full sm:w-auto sm:min-w-[200px] sm:ml-auto"
             />
           </div>
         )}

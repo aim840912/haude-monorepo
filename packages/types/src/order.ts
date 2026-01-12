@@ -49,6 +49,8 @@ export interface Order {
   subtotal: number
   shippingFee: number
   tax: number
+  discountCode?: string
+  discountAmount: number
   totalAmount: number
   shippingAddress: ShippingAddress
   paymentMethod?: PaymentMethod | string
@@ -75,6 +77,18 @@ export interface CreateOrderRequest {
   shippingAddress: ShippingAddress
   paymentMethod?: string
   notes?: string
+  discountCode?: string
+}
+
+// 折扣碼驗證結果
+export interface DiscountValidation {
+  valid: boolean
+  discountType?: 'PERCENTAGE' | 'FIXED'
+  discountValue?: number
+  discountAmount?: number
+  code?: string
+  description?: string
+  message?: string
 }
 
 export interface OrderSummary {
