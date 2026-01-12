@@ -137,3 +137,14 @@ temp/
 !CLAUDE.md
 !.claude/CLAUDE.md
 !apps/*/CLAUDE.md
+
+# Claude local data (never commit)
+.claude-mem/
+.claude/plugins/
+.claude/settings.local.json
+
+# ================================
+# Local analysis & docs (not for git)
+# ================================
+PROJECT_ANALYSIS.md
+docs/
