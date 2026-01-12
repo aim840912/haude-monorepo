@@ -69,7 +69,7 @@ export function PaymentButton({
       className={cn(
         // 基礎樣式
         'w-full min-h-[48px] rounded-lg px-6 py-3',
-        'flex items-center justify-center gap-2',
+        'flex items-center justify-center gap-2 whitespace-nowrap',
         'font-medium text-white',
         'transition-all duration-200',
         // 正常狀態 - 綠色背景

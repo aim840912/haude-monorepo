@@ -1,269 +1,138 @@
-'use client'
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { LocationDetailClient, type LocationData } from './LocationDetailClient'
+import { LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo'
 
-import { use } from 'react'
-import Link from 'next/link'
-import {
-  MapPin,
-  Phone,
-  Clock,
-  Car,
-  Train,
-  ArrowLeft,
-  Loader2,
-  MessageCircle,
-  Navigation,
-} from 'lucide-react'
-import { useLocation } from '@/hooks/useLocations'
-import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface LocationDetailPageProps {
   params: Promise<{ id: string }>
 }
 
 /**
- * 地點詳情頁
- *
- * 功能：
- * - 顯示地點完整資訊
- * - 提供導航連結（Google Maps）
- * - 顯示聯絡方式
+ * 從 API 獲取地點資料
  */
-export default function LocationDetailPage({ params }: LocationDetailPageProps) {
-  const { id } = use(params)
-  const { location, isLoading, error } = useLocation(id)
+async function getLocation(id: string): Promise<LocationData | null> {
+  try {
+    const res = await fetch(`${API_URL}/locations/${id}`, {
+      next: { revalidate: 300 }, // 5 分鐘快取（據點資料較少變動）
+    })
 
-  // Loading 狀態
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-      </div>
-    )
+    if (!res.ok) {
+      return null
+    }
+
+    return res.json()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 動態生成 Metadata（SEO）
+ */
+export async function generateMetadata({
+  params,
+}: LocationDetailPageProps): Promise<Metadata> {
+  const { id } = await params
+  const location = await getLocation(id)
+
+  if (!location) {
+    return {
+      title: '據點不存在 | 豪德製茶所',
+    }
   }
 
-  // 錯誤或找不到
-  if (error || !location) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <p className="text-red-600 mb-4">{error || '找不到此地點'}</p>
-          <Link href="/locations" className="text-green-600 hover:underline">
-            返回販售據點列表
-          </Link>
-        </div>
-      </div>
-    )
+  const title = location.title || location.name
+  const description = `豪德製茶所 ${title} - ${location.address}。${location.hours ? `營業時間：${location.hours}` : ''}`
+
+  return {
+    title: `${title} | 門市據點 | 豪德製茶所`,
+    description: description,
+    keywords: ['豪德製茶所', '門市', '據點', location.name, location.address.split(' ')[0]],
+    openGraph: {
+      title: `${title} | 豪德製茶所門市據點`,
+      description: description,
+      url: `${SITE_URL}/locations/${id}`,
+      siteName: '豪德製茶所',
+      images: [
+        {
+          url: location.image || `${SITE_URL}/og-default.jpg`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      locale: 'zh_TW',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} | 豪德製茶所門市據點`,
+      description: description,
+      images: [location.image || `${SITE_URL}/og-default.jpg`],
+    },
+    alternates: {
+      canonical: `${SITE_URL}/locations/${id}`,
+    },
+  }
+}
+
+/**
+ * 靜態路由生成
+ */
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(`${API_URL}/locations`)
+    if (!res.ok) return []
+
+    const locations = await res.json()
+    return locations
+      .filter((loc: { isActive?: boolean }) => loc.isActive !== false)
+      .map((loc: { id: string }) => ({
+        id: loc.id,
+      }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 據點詳情頁 - Server Component
+ */
+export default async function LocationDetailPage({
+  params,
+}: LocationDetailPageProps) {
+  const { id } = await params
+  const location = await getLocation(id)
+
+  if (!location) {
+    notFound()
   }
 
-  // Google Maps 導航連結
-  const googleMapsUrl = location.coordinates
-    ? `https://www.google.com/maps/dir/?api=1&destination=${location.coordinates.lat},${location.coordinates.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`
+  // 麵包屑資料
+  const breadcrumbs = [
+    { name: '首頁', url: '/' },
+    { name: '門市據點', url: '/locations' },
+    { name: location.title || location.name, url: `/locations/${id}` },
+  ]
+
+  // 轉換座標格式給 Schema
+  const schemaLocation = {
+    ...location,
+    lat: location.coordinates?.lat,
+    lng: location.coordinates?.lng,
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 返回導航 */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link
-            href="/locations"
-            className="inline-flex items-center text-gray-600 hover:text-green-600"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            返回販售據點列表
-          </Link>
-        </div>
-      </div>
+    <>
+      {/* JSON-LD 結構化資料 */}
+      <LocalBusinessSchema location={schemaLocation} />
+      <BreadcrumbSchema items={breadcrumbs} />
 
-      {/* 主要內容 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* 左側：詳細資訊 */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* 圖片 */}
-            <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden">
-              <img
-                src={location.image || PLACEHOLDER_IMAGES.location(location.id)}
-                alt={location.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* 標題 */}
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                {location.isMain && (
-                  <span className="px-3 py-1 bg-green-500 text-white text-sm font-medium rounded-full">
-                    總部
-                  </span>
-                )}
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900">{location.name}</h1>
-              <p className="text-lg text-gray-600 mt-1">{location.title}</p>
-            </div>
-
-            {/* 地址與導航 */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">地址資訊</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-gray-700">{location.address}</p>
-                    {location.landmark && (
-                      <p className="text-gray-500 text-sm mt-1">（{location.landmark}）</p>
-                    )}
-                  </div>
-                </div>
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Navigation className="w-4 h-4" />
-                  開啟 Google Maps 導航
-                </a>
-              </div>
-            </div>
-
-            {/* 營業資訊 */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">營業資訊</h2>
-              <div className="space-y-4">
-                {location.hours && (
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">營業時間</p>
-                      <p className="text-gray-700">{location.hours}</p>
-                    </div>
-                  </div>
-                )}
-                {location.closedDays && (
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">公休日</p>
-                      <p className="text-gray-700">{location.closedDays}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 交通資訊 */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">交通資訊</h2>
-              <div className="space-y-4">
-                {location.parking && (
-                  <div className="flex items-start gap-3">
-                    <Car className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">停車資訊</p>
-                      <p className="text-gray-700">{location.parking}</p>
-                    </div>
-                  </div>
-                )}
-                {location.publicTransport && (
-                  <div className="flex items-start gap-3">
-                    <Train className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">大眾運輸</p>
-                      <p className="text-gray-700">{location.publicTransport}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 特色與專長 */}
-            {((location.features && location.features.length > 0) ||
-              (location.specialties && location.specialties.length > 0)) && (
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">特色服務</h2>
-                <div className="space-y-4">
-                  {location.features && location.features.length > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">據點特色</p>
-                      <div className="flex flex-wrap gap-2">
-                        {location.features.map((feature, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
-                          >
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {location.specialties && location.specialties.length > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">販售商品</p>
-                      <div className="flex flex-wrap gap-2">
-                        {location.specialties.map((specialty, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full"
-                          >
-                            {specialty}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 右側：聯絡資訊卡片 */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-[calc(var(--header-height)+1rem)]">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">聯絡我們</h3>
-
-              <div className="space-y-4">
-                {/* 電話 */}
-                {location.phone && (
-                  <a
-                    href={`tel:${location.phone}`}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <Phone className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">電話</p>
-                      <p className="text-green-700 font-medium">{location.phone}</p>
-                    </div>
-                  </a>
-                )}
-
-                {/* Line ID */}
-                {location.lineId && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <MessageCircle className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Line ID</p>
-                      <p className="text-gray-700 font-medium">{location.lineId}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 導航按鈕 */}
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 w-full flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Navigation className="w-5 h-5" />
-                導航至此地點
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* 頁面內容 */}
+      <LocationDetailClient location={location} />
+    </>
   )
 }

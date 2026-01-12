@@ -2,15 +2,24 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto';
 import { OrderCalculator } from './utils/order-calculator';
+import { DiscountsService } from '../discounts/discounts.service';
+import { EmailService, OrderEmailData } from '../email/email.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(OrdersService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private discountsService: DiscountsService,
+    private emailService: EmailService,
+  ) {}
 
   // ========================================
   // 使用者查詢方法
@@ -196,22 +205,43 @@ export class OrdersService {
       });
     }
 
-    // 3. 計算運費和總額
+    // 3. 計算運費
     const shippingFee = OrderCalculator.calculateShippingFee(
       subtotal,
       dto.shippingAddress.city,
     );
     const tax = OrderCalculator.calculateTax(subtotal);
+
+    // 4. 驗證和計算折扣（如果有提供折扣碼）
+    let discountAmount = 0;
+    let discountCode: string | null = null;
+
+    if (dto.discountCode) {
+      const discountResult = await this.discountsService.validateDiscountCode(
+        dto.discountCode,
+        userId,
+        subtotal,
+      );
+
+      if (!discountResult.valid) {
+        throw new BadRequestException(discountResult.message || '折扣碼無效');
+      }
+
+      discountAmount = discountResult.discountAmount || 0;
+      discountCode = discountResult.code || null;
+    }
+
+    // 5. 計算總額（扣除折扣）
     const totalAmount = OrderCalculator.calculateTotal(
       subtotal,
       shippingFee,
       tax,
-    );
+    ) - discountAmount;
 
-    // 4. 生成訂單編號
+    // 6. 生成訂單編號
     const orderNumber = await this.generateOrderNumber();
 
-    // 5. 使用交易建立訂單並扣減庫存
+    // 7. 使用交易建立訂單並扣減庫存
     const order = await this.prisma.$transaction(async (tx) => {
       // 建立訂單
       const newOrder = await tx.order.create({
@@ -221,6 +251,8 @@ export class OrdersService {
           subtotal,
           shippingFee,
           tax,
+          discountCode,
+          discountAmount,
           totalAmount,
           shippingAddress: dto.shippingAddress as object,
           paymentMethod: dto.paymentMethod,
@@ -243,7 +275,72 @@ export class OrdersService {
       return newOrder;
     });
 
+    // 8. 記錄折扣使用（在交易外，避免過長交易）
+    if (discountCode && discountAmount > 0) {
+      await this.discountsService.applyDiscount(
+        discountCode,
+        userId,
+        order.id,
+        discountAmount,
+      );
+    }
+
+    // 9. 發送訂單確認郵件（非同步，不阻塞回應）
+    this.sendOrderConfirmationEmailAsync(userId, order, dto);
+
     return order;
+  }
+
+  /**
+   * 非同步發送訂單確認郵件
+   */
+  private async sendOrderConfirmationEmailAsync(
+    userId: string,
+    order: { orderNumber: string; subtotal: number; shippingFee: number; discountAmount: number; totalAmount: number; items: Array<{ productName: string; quantity: number; unitPrice: number | bigint | Prisma.Decimal; subtotal: number | bigint | Prisma.Decimal }> },
+    dto: CreateOrderDto,
+  ) {
+    try {
+      // 取得使用者資訊
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, name: true },
+      });
+
+      if (!user?.email) {
+        this.logger.warn(`無法發送訂單確認郵件：找不到使用者 ${userId} 的 email`);
+        return;
+      }
+
+      // 準備郵件資料
+      const emailData: OrderEmailData = {
+        orderNumber: order.orderNumber,
+        items: order.items.map((item) => ({
+          name: item.productName,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          subtotal: Number(item.subtotal),
+        })),
+        subtotal: order.subtotal,
+        shippingFee: order.shippingFee,
+        discountAmount: order.discountAmount || undefined,
+        totalAmount: order.totalAmount,
+        shippingAddress: {
+          name: dto.shippingAddress.name,
+          phone: dto.shippingAddress.phone,
+          address: `${dto.shippingAddress.postalCode} ${dto.shippingAddress.city}${dto.shippingAddress.street}`,
+        },
+        paymentMethod: dto.paymentMethod,
+      };
+
+      await this.emailService.sendOrderConfirmationEmail(
+        user.email,
+        emailData,
+        user.name,
+      );
+    } catch (error) {
+      // 郵件發送失敗不應影響訂單建立
+      this.logger.error(`發送訂單確認郵件失敗: ${error}`);
+    }
   }
 
   // ========================================
@@ -296,9 +393,14 @@ export class OrdersService {
    * 更新訂單狀態（管理員）
    */
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
-    // 確認訂單存在
+    // 確認訂單存在並取得使用者資訊
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
+      include: {
+        user: {
+          select: { email: true, name: true },
+        },
+      },
     });
 
     if (!order) {
@@ -311,11 +413,50 @@ export class OrdersService {
     if (dto.trackingNumber) updateData.trackingNumber = dto.trackingNumber;
     if (dto.notes) updateData.notes = dto.notes;
 
-    return this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: { id: orderId },
       data: updateData,
       include: { items: true },
     });
+
+    // 當訂單狀態變更為 shipped 且有物流追蹤號時，發送發貨通知郵件
+    if (dto.status === 'shipped' && (dto.trackingNumber || order.trackingNumber)) {
+      const trackingNumber = dto.trackingNumber || order.trackingNumber || '';
+      this.sendShippingNotificationEmailAsync(
+        order.user.email,
+        order.orderNumber,
+        trackingNumber,
+        order.user.name,
+      );
+    }
+
+    return updatedOrder;
+  }
+
+  /**
+   * 非同步發送發貨通知郵件
+   */
+  private async sendShippingNotificationEmailAsync(
+    email: string | null,
+    orderNumber: string,
+    trackingNumber: string,
+    userName: string | null,
+  ) {
+    if (!email) {
+      this.logger.warn(`無法發送發貨通知郵件：找不到 email`);
+      return;
+    }
+
+    try {
+      await this.emailService.sendShippingNotificationEmail(
+        email,
+        orderNumber,
+        trackingNumber,
+        userName || undefined,
+      );
+    } catch (error) {
+      this.logger.error(`發送發貨通知郵件失敗: ${error}`);
+    }
   }
 
   // ========================================

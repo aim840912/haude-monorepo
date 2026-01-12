@@ -60,6 +60,9 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
     paymentMethod: savedPaymentMethod,
     setShippingAddress: saveAddress,
     setPaymentMethod: savePaymentMethod,
+    discountCode,
+    discountInfo,
+    clearDiscount,
   } = useCheckoutStore()
 
   // 表單狀態（本地狀態用於即時回應）
@@ -161,10 +164,12 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
           shippingAddress,
           paymentMethod,
           notes: orderNotes || undefined,
+          discountCode: discountCode || undefined,
         })
 
-        // 清空購物車
+        // 清空購物車和折扣碼
         await clearCart()
+        clearDiscount()
 
         // 跳轉到訂單詳情頁（可進行付款）
         router.push(`/orders/${data.id}`)
@@ -175,7 +180,7 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
         setIsSubmitting(false)
       }
     },
-    [validateForm, items, shippingAddress, paymentMethod, orderNotes, clearCart, router, warning, showError]
+    [validateForm, items, shippingAddress, paymentMethod, orderNotes, discountCode, clearCart, clearDiscount, router, warning, showError]
   )
 
   return {

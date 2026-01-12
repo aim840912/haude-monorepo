@@ -1,0 +1,15 @@
+# robots.txt for 豪德製茶所
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+
+# 禁止爬取的路徑
+Disallow: /api/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /_next/
+
+# Sitemap 位置
+Sitemap: https://haude-tea.com/sitemap.xml

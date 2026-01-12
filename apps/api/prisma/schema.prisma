@@ -26,6 +26,8 @@ model User {
   farmTourBookings    FarmTourBooking[]
   cart                Cart?
   passwordResetTokens PasswordResetToken[]
+  discountUsages      DiscountUsage[]
+  reviews             Review[]
 
   @@map("users")
 }
@@ -55,6 +57,83 @@ enum Role {
 }
 
 // ========================================
+// Discounts 模組（折扣碼）
+// ========================================
+
+enum DiscountType {
+  PERCENTAGE  // 百分比折扣
+  FIXED       // 固定金額折扣
+}
+
+model DiscountCode {
+  id             String       @id @default(uuid())
+  code           String       @unique                        // 折扣碼（大寫）
+  description    String?                                     // 描述
+  discountType   DiscountType @map("discount_type")          // 折扣類型
+  discountValue  Int          @map("discount_value")         // 折扣值（百分比或固定金額）
+  minOrderAmount Int?         @map("min_order_amount")       // 最低訂單金額
+  maxDiscount    Int?         @map("max_discount")           // 最高折扣金額（百分比折扣用）
+  usageLimit     Int?         @map("usage_limit")            // 總使用次數限制
+  usageCount     Int          @default(0) @map("usage_count") // 已使用次數
+  perUserLimit   Int          @default(1) @map("per_user_limit") // 每人使用次數
+  startDate      DateTime?    @map("start_date")             // 開始日期
+  endDate        DateTime?    @map("end_date")               // 結束日期
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // 關聯
+  usages DiscountUsage[]
+
+  @@map("discount_codes")
+}
+
+model DiscountUsage {
+  id             String   @id @default(uuid())
+  discountCodeId String   @map("discount_code_id")
+  userId         String   @map("user_id")
+  orderId        String   @unique @map("order_id")  // 一個訂單只能使用一個折扣碼
+  discountAmount Int      @map("discount_amount")   // 實際折扣金額
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // 關聯
+  discountCode DiscountCode @relation(fields: [discountCodeId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  order        Order        @relation(fields: [orderId], references: [id])
+
+  @@index([discountCodeId])
+  @@index([userId])
+  @@map("discount_usages")
+}
+
+// ========================================
+// Reviews 模組（產品評論）
+// ========================================
+
+model Review {
+  id         String   @id @default(uuid())
+  productId  String   @map("product_id")
+  userId     String   @map("user_id")
+  rating     Int                              // 1-5 星評分
+  title      String                           // 評論標題
+  content    String   @db.Text                // 評論內容
+  isVerified Boolean  @default(false) @map("is_verified") // 是否為已購買用戶
+  isApproved Boolean  @default(true) @map("is_approved")  // 是否通過審核
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 一個用戶對一個產品只能評論一次
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+// ========================================
 // Products 模組
 // ========================================
 
@@ -79,6 +158,7 @@ model Product {
   images     ProductImage[]
   orderItems OrderItem[]
   cartItems  CartItem[]
+  reviews    Review[]
 
   @@map("products")
 }
@@ -165,7 +245,9 @@ model Order {
   subtotal        Int           // 小計（台幣整數）
   shippingFee     Int           @map("shipping_fee") // 運費
   tax             Int           @default(0) // 稅費
-  totalAmount     Int           @map("total_amount") // 總金額
+  discountCode    String?       @map("discount_code") // 使用的折扣碼
+  discountAmount  Int           @default(0) @map("discount_amount") // 折扣金額
+  totalAmount     Int           @map("total_amount") // 總金額（扣除折扣後）
   shippingAddress Json          @map("shipping_address") // 配送地址
   paymentMethod   String?       @map("payment_method") // 付款方式
   paymentStatus   PaymentStatus @default(pending) @map("payment_status") // 付款狀態
@@ -175,9 +257,10 @@ model Order {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // 關聯
-  user     User        @relation(fields: [userId], references: [id])
-  items    OrderItem[]
-  payments Payment[]
+  user          User           @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+  payments      Payment[]
+  discountUsage DiscountUsage?
 
   @@index([userId])
   @@index([status])

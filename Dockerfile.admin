@@ -1,0 +1,78 @@
+# ==============================================================================
+# Haude Admin - Production Dockerfile (Vite + Nginx)
+# ==============================================================================
+# 使用方式：從根目錄建置
+#   docker build -f Dockerfile.admin -t haude-admin .
+#
+# 雲端平台設定：
+#   - Dockerfile Path: Dockerfile.admin
+#   - Docker Context Directory: . (根目錄)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Stage 1: Base - 安裝 pnpm
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS base
+
+# 安裝 pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+# 設定工作目錄
+WORKDIR /app
+
+# ------------------------------------------------------------------------------
+# Stage 2: Dependencies - 安裝依賴
+# ------------------------------------------------------------------------------
+FROM base AS deps
+
+# 複製 workspace 配置檔案
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
+# 複製各 package 的 package.json（保持目錄結構）
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/types/package.json ./packages/types/
+
+# 安裝所有依賴（包含 devDependencies，因為需要建置）
+RUN pnpm install --frozen-lockfile
+
+# ------------------------------------------------------------------------------
+# Stage 3: Builder - 建置應用
+# ------------------------------------------------------------------------------
+FROM base AS builder
+
+WORKDIR /app
+
+# 複製依賴
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/admin/node_modules ./apps/admin/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
+
+# 複製原始碼
+COPY . .
+
+# 建置 types 套件（Admin 依賴它，忽略錯誤以防萬一）
+RUN pnpm --filter=@haude/types build || true
+
+# 建置 Vite 應用（輸出到 apps/admin/dist）
+RUN pnpm --filter=@haude/admin build
+
+# ------------------------------------------------------------------------------
+# Stage 4: Runner - Nginx 靜態服務
+# ------------------------------------------------------------------------------
+FROM nginx:alpine AS runner
+
+# 複製 nginx 配置
+COPY apps/admin/nginx.conf /etc/nginx/conf.d/default.conf
+
+# 複製建置產物到 nginx 預設目錄
+COPY --from=builder /app/apps/admin/dist /usr/share/nginx/html
+
+# 暴露端口
+EXPOSE 80
+
+# 健康檢查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+
+# 啟動 nginx
+CMD ["nginx", "-g", "daemon off;"]
