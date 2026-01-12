@@ -1,13 +1,21 @@
-version: '3.8'
-
-# Haude V2 - Full Stack Docker Compose
-# Run: docker-compose up -d
+# ==============================================================================
+# Haude Monorepo - Docker Compose
+# ==============================================================================
+# 使用方式：
+#   docker-compose up -d postgres      # 只啟動資料庫（本地開發推薦）
+#   docker-compose up -d               # 啟動所有服務
+#   docker-compose up --build          # 重新建置並啟動
+#   docker-compose down                # 停止所有服務
+#   docker-compose logs -f api         # 查看 API 日誌
+# ==============================================================================
 
 services:
-  # PostgreSQL database
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 資料庫
+  # ----------------------------------------------------------------------------
   postgres:
     image: postgres:15-alpine
-    container_name: haude-v2-db
+    container_name: haude-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -22,31 +30,55 @@ services:
       timeout: 5s
       retries: 5
 
-  # Backend API (NestJS)
-  backend:
-    build: ./haude-v2-backend
-    container_name: haude-v2-backend
+  # ----------------------------------------------------------------------------
+  # NestJS 後端 API
+  # ----------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: haude-api
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/haude_v2?schema=public
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/haude_v2
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
       - JWT_EXPIRES_IN=7d
       - PORT=3001
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=http://localhost:5173
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
 
-  # Frontend (React + Vite)
-  frontend:
-    build: ./haude-v2-frontend
-    container_name: haude-v2-frontend
+  # ----------------------------------------------------------------------------
+  # Next.js 用戶端前端
+  # ----------------------------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: haude-web
     ports:
-      - "3000:80"
+      - "5173:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
     depends_on:
-      - backend
+      - api
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------------------
+  # Vite 管理後台
+  # ----------------------------------------------------------------------------
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    container_name: haude-admin
+    ports:
+      - "5174:80"
+    depends_on:
+      - api
     restart: unless-stopped
 
 volumes:

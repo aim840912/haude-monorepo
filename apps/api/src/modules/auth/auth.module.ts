@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,6 +7,28 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { UsersModule } from '../users/users.module';
+
+// 動態提供 GoogleStrategy（僅在配置完整時啟用）
+const googleStrategyProvider = {
+  provide: GoogleStrategy,
+  useFactory: (configService: ConfigService, authService: AuthService) => {
+    const logger = new Logger('AuthModule');
+    const clientId = configService.get<string>('GOOGLE_CLIENT_ID');
+    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
+
+    if (clientId && clientSecret) {
+      logger.log('Google OAuth enabled');
+      return new GoogleStrategy(configService, authService);
+    }
+
+    logger.warn(
+      'Google OAuth disabled - GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET not configured',
+    );
+    // 返回一個空的占位符，不會被使用
+    return null;
+  },
+  inject: [ConfigService, AuthService],
+};
 
 @Module({
   imports: [
@@ -25,7 +47,7 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [AuthService, JwtStrategy, googleStrategyProvider],
   exports: [AuthService],
 })
 export class AuthModule {}

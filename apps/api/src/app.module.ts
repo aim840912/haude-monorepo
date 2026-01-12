@@ -15,6 +15,8 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
 import { CartModule } from './modules/cart/cart.module';
 import { EmailModule } from './modules/email/email.module';
+import { DiscountsModule } from './modules/discounts/discounts.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { EmailModule } from './modules/email/email.module';
     LocationsModule,
     SchedulesModule,
     CartModule,
+    DiscountsModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

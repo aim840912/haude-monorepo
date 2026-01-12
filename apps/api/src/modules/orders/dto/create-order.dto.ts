@@ -101,4 +101,9 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: '折扣碼', example: 'SAVE10' })
+  @IsOptional()
+  @IsString()
+  discountCode?: string;
 }
