@@ -219,8 +219,9 @@ export class OrdersService {
       throw new BadRequestException('訂單至少需要一個商品');
     }
 
-    // 2. 取得產品資訊並驗證庫存
+    // 2. 取得產品資訊並驗證庫存（提前失敗機制）
     const orderItems: Prisma.OrderItemCreateWithoutOrderInput[] = [];
+    const productNameMap = new Map<string, string>(); // 用於錯誤訊息
     let subtotal = 0;
 
     for (const item of dto.items) {
@@ -238,10 +239,14 @@ export class OrdersService {
         throw new BadRequestException(`產品不存在: ${item.productId}`);
       }
 
+      // 提前檢查庫存（非原子操作，僅作為提前失敗機制）
       const availableStock = product.stock - product.reservedStock;
       if (availableStock < item.quantity) {
         throw new BadRequestException(`產品庫存不足: ${product.name}`);
       }
+
+      // 儲存產品名稱用於交易內的錯誤訊息
+      productNameMap.set(item.productId, product.name);
 
       const itemSubtotal = Number(product.price) * item.quantity;
       subtotal += itemSubtotal;
@@ -316,12 +321,24 @@ export class OrdersService {
         include: { items: true },
       });
 
-      // 扣減庫存
+      // 扣減庫存（原子操作，包含庫存檢查防止競態條件）
       for (const item of dto.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
+        const updateResult = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            stock: { gte: item.quantity }, // 條件：庫存 >= 購買數量
+          },
+          data: {
+            stock: { decrement: item.quantity },
+          },
         });
+
+        // 如果沒有更新任何記錄，表示庫存不足（被其他交易搶先扣減）
+        if (updateResult.count === 0) {
+          throw new BadRequestException(
+            `產品庫存不足: ${productNameMap.get(item.productId)}`,
+          );
+        }
       }
 
       return newOrder;
