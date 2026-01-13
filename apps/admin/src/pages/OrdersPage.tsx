@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Eye, RefreshCw, Edit, Loader2 } from 'lucide-react'
+import { Search, Eye, RefreshCw, Edit, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useOrders, Order, PaymentStatus } from '../hooks/useOrders'
 import { OrderStatusModal } from '../components/OrderStatusModal'
 import { OrderDetailModal, OrderDetail } from '../components/OrderDetailModal'
@@ -47,7 +47,18 @@ export function OrdersPage() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [viewingOrder, setViewingOrder] = useState<OrderDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const { orders, isLoading, error, refetch, updateOrderStatus, isUpdating } = useOrders()
+  const {
+    orders,
+    isLoading,
+    error,
+    refetch,
+    updateOrderStatus,
+    isUpdating,
+    pagination,
+    nextPage,
+    prevPage,
+    setPageSize,
+  } = useOrders()
 
   // 查看訂單詳情
   const handleViewDetail = async (orderId: string) => {
@@ -220,10 +231,43 @@ export function OrdersPage() {
         )}
       </div>
 
-      {/* 訂單數量統計 */}
-      <div className="mt-4 text-sm text-gray-500">
-        共 {filteredOrders.length} 筆訂單
-        {searchQuery && ` (搜尋結果)`}
+      {/* 分頁控制 */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500">
+            共 {pagination.total} 筆訂單，第 {pagination.currentPage} / {pagination.totalPages} 頁
+            {searchQuery && `（目前頁面顯示 ${filteredOrders.length} 筆搜尋結果）`}
+          </span>
+          {/* 每頁筆數選擇器 */}
+          <select
+            value={pagination.limit}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="appearance-none border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
+          >
+            <option value={10}>10 筆/頁</option>
+            <option value={20}>20 筆/頁</option>
+            <option value={50}>50 筆/頁</option>
+            <option value={100}>100 筆/頁</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={prevPage}
+            disabled={pagination.currentPage <= 1 || isLoading}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            上一頁
+          </button>
+          <button
+            onClick={nextPage}
+            disabled={!pagination.hasMore || isLoading}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            下一頁
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* 狀態更新 Modal */}

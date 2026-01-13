@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
-import type { Schedule, UpdateScheduleData } from '../hooks/useSchedules'
+import type { Schedule, CreateScheduleData, UpdateScheduleData } from '../hooks/useSchedules'
 
 interface ScheduleEditModalProps {
-  schedule: Schedule
+  schedule: Schedule | null  // null = 新增模式
   isOpen: boolean
-  isUpdating: boolean
+  isLoading: boolean
   onClose: () => void
-  onSave: (id: string, data: UpdateScheduleData) => Promise<boolean>
+  onCreate?: (data: CreateScheduleData) => Promise<boolean>
+  onUpdate?: (id: string, data: UpdateScheduleData) => Promise<boolean>
 }
 
 const statusOptions = [
@@ -19,10 +20,13 @@ const statusOptions = [
 export function ScheduleEditModal({
   schedule,
   isOpen,
-  isUpdating,
+  isLoading,
   onClose,
-  onSave,
+  onCreate,
+  onUpdate,
 }: ScheduleEditModalProps) {
+  const isEditMode = schedule !== null
+
   const [formData, setFormData] = useState({
     title: '',
     location: '',
@@ -39,7 +43,8 @@ export function ScheduleEditModal({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (schedule) {
+    if (isEditMode && schedule) {
+      // 編輯模式：載入現有行程資料
       setFormData({
         title: schedule.title || '',
         location: schedule.location || '',
@@ -54,8 +59,24 @@ export function ScheduleEditModal({
       })
       setProductsInput((schedule.products || []).join(', '))
       setError(null)
+    } else {
+      // 新增模式：重置為空表單
+      setFormData({
+        title: '',
+        location: '',
+        date: '',
+        time: '',
+        status: 'upcoming',
+        products: [],
+        description: '',
+        contact: '',
+        specialOffer: '',
+        weatherNote: '',
+      })
+      setProductsInput('')
+      setError(null)
     }
-  }, [schedule])
+  }, [schedule, isEditMode])
 
   if (!isOpen) return null
 
@@ -82,28 +103,46 @@ export function ScheduleEditModal({
       .map((p) => p.trim())
       .filter((p) => p.length > 0)
 
-    const success = await onSave(schedule.id, {
-      title: formData.title.trim(),
-      location: formData.location.trim(),
-      date: formData.date,
-      time: formData.time,
-      status: formData.status,
-      products,
-      description: formData.description.trim(),
-      contact: formData.contact.trim(),
-      specialOffer: formData.specialOffer.trim() || undefined,
-      weatherNote: formData.weatherNote.trim() || undefined,
-    })
+    let success = false
+
+    if (isEditMode && schedule && onUpdate) {
+      // 編輯模式
+      success = await onUpdate(schedule.id, {
+        title: formData.title.trim(),
+        location: formData.location.trim(),
+        date: formData.date,
+        time: formData.time,
+        status: formData.status,
+        products,
+        description: formData.description.trim(),
+        contact: formData.contact.trim(),
+        specialOffer: formData.specialOffer.trim() || undefined,
+        weatherNote: formData.weatherNote.trim() || undefined,
+      })
+    } else if (!isEditMode && onCreate) {
+      // 新增模式
+      success = await onCreate({
+        title: formData.title.trim(),
+        location: formData.location.trim(),
+        date: formData.date,
+        time: formData.time,
+        products,
+        description: formData.description.trim(),
+        contact: formData.contact.trim(),
+        specialOffer: formData.specialOffer.trim() || undefined,
+        weatherNote: formData.weatherNote.trim() || undefined,
+      })
+    }
 
     if (success) {
       onClose()
     } else {
-      setError('更新失敗，請稍後再試')
+      setError(isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
     }
   }
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isUpdating) {
+    if (e.target === e.currentTarget && !isLoading) {
       onClose()
     }
   }
@@ -120,10 +159,12 @@ export function ScheduleEditModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
-          <h2 className="text-lg font-semibold text-gray-900">編輯行程</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {isEditMode ? '編輯行程' : '新增行程'}
+          </h2>
           <button
             onClick={onClose}
-            disabled={isUpdating}
+            disabled={isLoading}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -148,7 +189,7 @@ export function ScheduleEditModal({
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -163,7 +204,7 @@ export function ScheduleEditModal({
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -176,7 +217,7 @@ export function ScheduleEditModal({
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 placeholder="例：09:00 - 17:00"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -191,7 +232,7 @@ export function ScheduleEditModal({
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -207,7 +248,7 @@ export function ScheduleEditModal({
                 onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
                 placeholder="例：0912-345-678"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -218,7 +259,7 @@ export function ScheduleEditModal({
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as Schedule['status'] })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               >
                 {statusOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -238,7 +279,7 @@ export function ScheduleEditModal({
               onChange={(e) => setProductsInput(e.target.value)}
               placeholder="以逗號分隔，例：高山茶, 烏龍茶, 紅茶"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
             <p className="mt-1 text-xs text-gray-500">多個產品請用逗號分隔</p>
           </div>
@@ -254,7 +295,7 @@ export function ScheduleEditModal({
               onChange={(e) => setFormData({ ...formData, specialOffer: e.target.value })}
               placeholder="例：現場購買享 9 折優惠"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -269,7 +310,7 @@ export function ScheduleEditModal({
               onChange={(e) => setFormData({ ...formData, weatherNote: e.target.value })}
               placeholder="例：雨天照常營業"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -283,7 +324,7 @@ export function ScheduleEditModal({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -292,18 +333,18 @@ export function ScheduleEditModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={isUpdating}
+              disabled={isLoading}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >
               取消
             </button>
             <button
               type="submit"
-              disabled={isUpdating}
+              disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
-              {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isUpdating ? '儲存中...' : '儲存變更'}
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isLoading ? '儲存中...' : isEditMode ? '儲存變更' : '新增行程'}
             </button>
           </div>
         </form>

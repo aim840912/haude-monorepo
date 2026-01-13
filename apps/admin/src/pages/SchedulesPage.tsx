@@ -20,9 +20,10 @@ const statusLabels: Record<Schedule['status'], string> = {
 
 export function SchedulesPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [deletingSchedule, setDeletingSchedule] = useState<Schedule | null>(null)
-  const { schedules, isLoading, error, refetch, updateSchedule, deleteSchedule, isUpdating, isDeleting } = useSchedules()
+  const { schedules, isLoading, error, refetch, createSchedule, updateSchedule, deleteSchedule, isCreating, isUpdating, isDeleting } = useSchedules()
 
   // 過濾行程
   const filteredSchedules = schedules.filter(
@@ -66,7 +67,10 @@ export function SchedulesPage() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
             <Plus className="w-5 h-5" />
             新增行程
           </button>
@@ -203,14 +207,25 @@ export function SchedulesPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
+      {/* 新增行程 Modal */}
+      {isCreateModalOpen && (
+        <ScheduleEditModal
+          schedule={null}
+          isOpen={isCreateModalOpen}
+          isLoading={isCreating}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={createSchedule}
+        />
+      )}
+
       {/* 編輯行程 Modal */}
       {editingSchedule && (
         <ScheduleEditModal
           schedule={editingSchedule}
           isOpen={!!editingSchedule}
-          isUpdating={isUpdating}
+          isLoading={isUpdating}
           onClose={() => setEditingSchedule(null)}
-          onSave={updateSchedule}
+          onUpdate={updateSchedule}
         />
       )}
 

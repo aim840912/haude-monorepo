@@ -1,22 +1,26 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
-import type { Location, UpdateLocationData } from '../hooks/useLocations'
+import type { Location, CreateLocationData, UpdateLocationData } from '../hooks/useLocations'
 
 interface LocationEditModalProps {
-  location: Location
+  location: Location | null  // null = 新增模式
   isOpen: boolean
-  isUpdating: boolean
+  isLoading: boolean
   onClose: () => void
-  onSave: (id: string, data: UpdateLocationData) => Promise<boolean>
+  onCreate?: (data: CreateLocationData) => Promise<boolean>
+  onUpdate?: (id: string, data: UpdateLocationData) => Promise<boolean>
 }
 
 export function LocationEditModal({
   location,
   isOpen,
-  isUpdating,
+  isLoading,
   onClose,
-  onSave,
+  onCreate,
+  onUpdate,
 }: LocationEditModalProps) {
+  const isEditMode = location !== null
+
   const [formData, setFormData] = useState({
     name: '',
     title: '',
@@ -35,7 +39,8 @@ export function LocationEditModal({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (location) {
+    if (isEditMode && location) {
+      // 編輯模式：載入現有門市資料
       setFormData({
         name: location.name || '',
         title: location.title || '',
@@ -52,8 +57,26 @@ export function LocationEditModal({
         isActive: location.isActive ?? true,
       })
       setError(null)
+    } else {
+      // 新增模式：重置為空表單
+      setFormData({
+        name: '',
+        title: '',
+        address: '',
+        landmark: '',
+        phone: '',
+        lineId: '',
+        hours: '',
+        closedDays: '',
+        parking: '',
+        publicTransport: '',
+        image: '',
+        isMain: false,
+        isActive: true,
+      })
+      setError(null)
     }
-  }, [location])
+  }, [location, isEditMode])
 
   if (!isOpen) return null
 
@@ -70,31 +93,53 @@ export function LocationEditModal({
       return
     }
 
-    const success = await onSave(location.id, {
-      name: formData.name.trim(),
-      title: formData.title.trim() || undefined,
-      address: formData.address.trim(),
-      landmark: formData.landmark.trim() || undefined,
-      phone: formData.phone.trim() || undefined,
-      lineId: formData.lineId.trim() || undefined,
-      hours: formData.hours.trim() || undefined,
-      closedDays: formData.closedDays.trim() || undefined,
-      parking: formData.parking.trim() || undefined,
-      publicTransport: formData.publicTransport.trim() || undefined,
-      image: formData.image.trim() || undefined,
-      isMain: formData.isMain,
-      isActive: formData.isActive,
-    })
+    let success = false
+
+    if (isEditMode && location && onUpdate) {
+      // 編輯模式
+      success = await onUpdate(location.id, {
+        name: formData.name.trim(),
+        title: formData.title.trim() || undefined,
+        address: formData.address.trim(),
+        landmark: formData.landmark.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        lineId: formData.lineId.trim() || undefined,
+        hours: formData.hours.trim() || undefined,
+        closedDays: formData.closedDays.trim() || undefined,
+        parking: formData.parking.trim() || undefined,
+        publicTransport: formData.publicTransport.trim() || undefined,
+        image: formData.image.trim() || undefined,
+        isMain: formData.isMain,
+        isActive: formData.isActive,
+      })
+    } else if (!isEditMode && onCreate) {
+      // 新增模式
+      success = await onCreate({
+        name: formData.name.trim(),
+        address: formData.address.trim(),
+        title: formData.title.trim() || undefined,
+        landmark: formData.landmark.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        lineId: formData.lineId.trim() || undefined,
+        hours: formData.hours.trim() || undefined,
+        closedDays: formData.closedDays.trim() || undefined,
+        parking: formData.parking.trim() || undefined,
+        publicTransport: formData.publicTransport.trim() || undefined,
+        image: formData.image.trim() || undefined,
+        isMain: formData.isMain,
+        isActive: formData.isActive,
+      })
+    }
 
     if (success) {
       onClose()
     } else {
-      setError('更新失敗，請稍後再試')
+      setError(isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
     }
   }
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isUpdating) {
+    if (e.target === e.currentTarget && !isLoading) {
       onClose()
     }
   }
@@ -111,10 +156,12 @@ export function LocationEditModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
-          <h2 className="text-lg font-semibold text-gray-900">編輯門市據點</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {isEditMode ? '編輯門市據點' : '新增門市據點'}
+          </h2>
           <button
             onClick={onClose}
-            disabled={isUpdating}
+            disabled={isLoading}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -140,7 +187,7 @@ export function LocationEditModal({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -153,7 +200,7 @@ export function LocationEditModal({
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="例：總店"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -168,7 +215,7 @@ export function LocationEditModal({
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -183,7 +230,7 @@ export function LocationEditModal({
               onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
               placeholder="例：7-11 旁邊"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -198,7 +245,7 @@ export function LocationEditModal({
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -210,7 +257,7 @@ export function LocationEditModal({
                 value={formData.lineId}
                 onChange={(e) => setFormData({ ...formData, lineId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -227,7 +274,7 @@ export function LocationEditModal({
                 onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
                 placeholder="例：09:00 - 18:00"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -240,7 +287,7 @@ export function LocationEditModal({
                 onChange={(e) => setFormData({ ...formData, closedDays: e.target.value })}
                 placeholder="例：週一公休"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -257,7 +304,7 @@ export function LocationEditModal({
                 onChange={(e) => setFormData({ ...formData, parking: e.target.value })}
                 placeholder="例：有專屬停車場"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -270,7 +317,7 @@ export function LocationEditModal({
                 onChange={(e) => setFormData({ ...formData, publicTransport: e.target.value })}
                 placeholder="例：捷運站步行 5 分鐘"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -286,7 +333,7 @@ export function LocationEditModal({
               onChange={(e) => setFormData({ ...formData, image: e.target.value })}
               placeholder="https://example.com/image.jpg"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
             {formData.image && (
               <div className="mt-3">
@@ -313,7 +360,7 @@ export function LocationEditModal({
                 checked={formData.isMain}
                 onChange={(e) => setFormData({ ...formData, isMain: e.target.checked })}
                 className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
               <span className="text-sm text-gray-700">設為主要門市</span>
             </label>
@@ -327,7 +374,7 @@ export function LocationEditModal({
                   checked={formData.isActive}
                   onChange={() => setFormData({ ...formData, isActive: true })}
                   className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
-                  disabled={isUpdating}
+                  disabled={isLoading}
                 />
                 <span className="text-sm text-gray-700">營業中</span>
               </label>
@@ -338,7 +385,7 @@ export function LocationEditModal({
                   checked={!formData.isActive}
                   onChange={() => setFormData({ ...formData, isActive: false })}
                   className="w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-                  disabled={isUpdating}
+                  disabled={isLoading}
                 />
                 <span className="text-sm text-gray-700">已關閉</span>
               </label>
@@ -350,18 +397,18 @@ export function LocationEditModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={isUpdating}
+              disabled={isLoading}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >
               取消
             </button>
             <button
               type="submit"
-              disabled={isUpdating}
+              disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
-              {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isUpdating ? '儲存中...' : '儲存變更'}
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isLoading ? '儲存中...' : isEditMode ? '儲存變更' : '新增門市'}
             </button>
           </div>
         </form>

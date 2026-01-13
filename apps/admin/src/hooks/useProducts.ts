@@ -3,6 +3,15 @@ import { productsApi } from '../services/api'
 import type { Product } from '@haude/types'
 import logger from '../lib/logger'
 
+export interface CreateProductData {
+  name: string
+  description?: string
+  price: number
+  category?: string
+  stock?: number
+  isActive?: boolean
+}
+
 export interface UpdateProductData {
   name?: string
   description?: string
@@ -17,8 +26,10 @@ interface UseProductsReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createProduct: (data: CreateProductData) => Promise<boolean>
   updateProduct: (id: string, data: UpdateProductData) => Promise<boolean>
   deleteProduct: (id: string) => Promise<{ success: boolean; error?: string }>
+  isCreating: boolean
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -27,6 +38,7 @@ export function useProducts(): UseProductsReturn {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -45,6 +57,27 @@ export function useProducts(): UseProductsReturn {
       setIsLoading(false)
     }
   }, [])
+
+  const createProduct = useCallback(async (data: CreateProductData): Promise<boolean> => {
+    setIsCreating(true)
+    try {
+      // API 使用 inventory，前端使用 stock
+      await productsApi.create({
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        inventory: data.stock,
+      })
+      await fetchProducts() // 重新取得列表
+      return true
+    } catch (err) {
+      logger.error('[useProducts] 新增失敗', { error: err })
+      return false
+    } finally {
+      setIsCreating(false)
+    }
+  }, [fetchProducts])
 
   const updateProduct = useCallback(async (id: string, data: UpdateProductData): Promise<boolean> => {
     setIsUpdating(true)
@@ -86,8 +119,10 @@ export function useProducts(): UseProductsReturn {
     isLoading,
     error,
     refetch: fetchProducts,
+    createProduct,
     updateProduct,
     deleteProduct,
+    isCreating,
     isUpdating,
     isDeleting,
   }

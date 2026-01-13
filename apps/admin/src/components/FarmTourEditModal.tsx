@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
-import type { FarmTour, UpdateFarmTourData } from '../hooks/useFarmTours'
+import type { FarmTour, CreateFarmTourData, UpdateFarmTourData } from '../hooks/useFarmTours'
 
 interface FarmTourEditModalProps {
-  farmTour: FarmTour
+  farmTour: FarmTour | null  // null = 新增模式
   isOpen: boolean
-  isUpdating: boolean
+  isLoading: boolean
   onClose: () => void
-  onSave: (id: string, data: UpdateFarmTourData) => Promise<boolean>
+  onCreate?: (data: CreateFarmTourData) => Promise<boolean>
+  onUpdate?: (id: string, data: UpdateFarmTourData) => Promise<boolean>
 }
 
 const typeOptions = [
@@ -27,10 +28,13 @@ const statusOptions = [
 export function FarmTourEditModal({
   farmTour,
   isOpen,
-  isUpdating,
+  isLoading,
   onClose,
-  onSave,
+  onCreate,
+  onUpdate,
 }: FarmTourEditModalProps) {
+  const isEditMode = farmTour !== null
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -47,7 +51,8 @@ export function FarmTourEditModal({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (farmTour) {
+    if (isEditMode && farmTour) {
+      // 編輯模式：載入現有活動資料
       setFormData({
         name: farmTour.name || '',
         description: farmTour.description || '',
@@ -62,8 +67,24 @@ export function FarmTourEditModal({
         status: farmTour.status || 'upcoming',
       })
       setError(null)
+    } else {
+      // 新增模式：重置為空表單
+      setFormData({
+        name: '',
+        description: '',
+        date: '',
+        startTime: '',
+        endTime: '',
+        price: 0,
+        maxParticipants: 20,
+        location: '',
+        imageUrl: '',
+        type: 'tour',
+        status: 'upcoming',
+      })
+      setError(null)
     }
-  }, [farmTour])
+  }, [farmTour, isEditMode])
 
   if (!isOpen) return null
 
@@ -88,29 +109,48 @@ export function FarmTourEditModal({
       return
     }
 
-    const success = await onSave(farmTour.id, {
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      date: formData.date,
-      startTime: formData.startTime,
-      endTime: formData.endTime,
-      price: formData.price,
-      maxParticipants: formData.maxParticipants,
-      location: formData.location.trim(),
-      imageUrl: formData.imageUrl.trim() || undefined,
-      type: formData.type,
-      status: formData.status,
-    })
+    let success = false
+
+    if (isEditMode && farmTour && onUpdate) {
+      // 編輯模式
+      success = await onUpdate(farmTour.id, {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        date: formData.date,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        price: formData.price,
+        maxParticipants: formData.maxParticipants,
+        location: formData.location.trim(),
+        imageUrl: formData.imageUrl.trim() || undefined,
+        type: formData.type,
+        status: formData.status,
+      })
+    } else if (!isEditMode && onCreate) {
+      // 新增模式
+      success = await onCreate({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        date: formData.date,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        price: formData.price,
+        maxParticipants: formData.maxParticipants,
+        location: formData.location.trim(),
+        imageUrl: formData.imageUrl.trim() || undefined,
+        type: formData.type,
+      })
+    }
 
     if (success) {
       onClose()
     } else {
-      setError('更新失敗，請稍後再試')
+      setError(isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
     }
   }
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isUpdating) {
+    if (e.target === e.currentTarget && !isLoading) {
       onClose()
     }
   }
@@ -127,10 +167,12 @@ export function FarmTourEditModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
-          <h2 className="text-lg font-semibold text-gray-900">編輯活動</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {isEditMode ? '編輯活動' : '新增活動'}
+          </h2>
           <button
             onClick={onClose}
-            disabled={isUpdating}
+            disabled={isLoading}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -155,7 +197,7 @@ export function FarmTourEditModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -169,7 +211,7 @@ export function FarmTourEditModal({
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as FarmTour['type'] })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               >
                 {typeOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -184,7 +226,7 @@ export function FarmTourEditModal({
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as FarmTour['status'] })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               >
                 {statusOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -204,7 +246,7 @@ export function FarmTourEditModal({
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -216,7 +258,7 @@ export function FarmTourEditModal({
                 value={formData.startTime}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -228,7 +270,7 @@ export function FarmTourEditModal({
                 value={formData.endTime}
                 onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -243,7 +285,7 @@ export function FarmTourEditModal({
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -259,7 +301,7 @@ export function FarmTourEditModal({
                 onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 min="0"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -272,7 +314,7 @@ export function FarmTourEditModal({
                 onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 min="1"
-                disabled={isUpdating}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -287,7 +329,7 @@ export function FarmTourEditModal({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
           </div>
 
@@ -302,7 +344,7 @@ export function FarmTourEditModal({
               onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
               placeholder="https://example.com/image.jpg"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isUpdating}
+              disabled={isLoading}
             />
             {/* 圖片預覽 */}
             {formData.imageUrl && (
@@ -331,18 +373,18 @@ export function FarmTourEditModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={isUpdating}
+              disabled={isLoading}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >
               取消
             </button>
             <button
               type="submit"
-              disabled={isUpdating}
+              disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
-              {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isUpdating ? '儲存中...' : '儲存變更'}
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isLoading ? '儲存中...' : isEditMode ? '儲存變更' : '新增活動'}
             </button>
           </div>
         </form>

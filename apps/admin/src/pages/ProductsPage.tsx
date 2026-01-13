@@ -8,10 +8,11 @@ import type { Product } from '@haude/types'
 
 export function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const { products, isLoading, error, refetch, updateProduct, deleteProduct, isUpdating, isDeleting } = useProducts()
+  const { products, isLoading, error, refetch, createProduct, updateProduct, deleteProduct, isCreating, isUpdating, isDeleting } = useProducts()
 
   // 過濾產品
   const filteredProducts = products.filter((product) =>
@@ -53,7 +54,10 @@ export function ProductsPage() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
             <Plus className="w-5 h-5" />
             新增產品
           </button>
@@ -177,14 +181,25 @@ export function ProductsPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
+      {/* 新增產品 Modal */}
+      {isCreateModalOpen && (
+        <ProductEditModal
+          product={null}
+          isOpen={isCreateModalOpen}
+          isLoading={isCreating}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={createProduct}
+        />
+      )}
+
       {/* 編輯產品 Modal */}
       {editingProduct && (
         <ProductEditModal
           product={editingProduct}
           isOpen={!!editingProduct}
-          isUpdating={isUpdating}
+          isLoading={isUpdating}
           onClose={() => setEditingProduct(null)}
-          onSave={updateProduct}
+          onUpdate={updateProduct}
         />
       )}
 
