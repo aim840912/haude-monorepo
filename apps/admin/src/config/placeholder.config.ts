@@ -51,9 +51,9 @@ export function getProductPlaceholder(
  * @param category - 產品分類（用於 placeholder）
  */
 export function getProductImageUrl(
-  images?: { storageUrl?: string; storage_url?: string }[],
+  images?: { storageUrl?: string }[],
   category?: string
 ): string {
   const primaryImage = images?.[0]
-  return primaryImage?.storageUrl || primaryImage?.storage_url || getProductPlaceholder(category)
+  return primaryImage?.storageUrl || getProductPlaceholder(category)
 }
