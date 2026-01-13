@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { MessageSquare, Loader2, ChevronDown, ShoppingBag, Package } from 'lucide-react'
 import { reviewsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -189,9 +190,9 @@ export function ReviewSection({ productId, productName, className }: ReviewSecti
       {!isAuthenticated && (
         <div className="mb-6 bg-gray-50 rounded-xl p-4 text-center">
           <p className="text-gray-600">
-            <a href="/login" className="text-green-600 hover:underline font-medium">
+            <Link href="/login" className="text-green-600 hover:underline font-medium">
               登入
-            </a>
+            </Link>
             {' '}後即可發表評論
           </p>
         </div>
