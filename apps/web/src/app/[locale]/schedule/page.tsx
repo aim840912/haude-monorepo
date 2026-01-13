@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ScheduleCalendar, UpcomingSchedule } from '@/components/features/calendar'
-import { PageHeader } from '@/components/ui/sections'
+import { Breadcrumb } from '@/components/ui/navigation'
 import type { ScheduleItem } from '@/types/schedule'
 
 /**
@@ -28,10 +28,9 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="活動日程" subtitle="查看即將舉辦的活動和市集時間" />
-
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumb items={[{ label: '活動日程' }]} className="mb-6" />
         <div className="grid lg:grid-cols-3 gap-8">
           {/* 日曆 */}
           <div className="lg:col-span-2">
