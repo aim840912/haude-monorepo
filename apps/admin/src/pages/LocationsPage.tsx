@@ -6,9 +6,10 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 
 export function LocationsPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
   const [deletingLocation, setDeletingLocation] = useState<Location | null>(null)
-  const { locations, isLoading, error, refetch, updateLocation, deleteLocation, isUpdating, isDeleting } = useLocations()
+  const { locations, isLoading, error, refetch, createLocation, updateLocation, deleteLocation, isCreating, isUpdating, isDeleting } = useLocations()
 
   // 過濾門市
   const filteredLocations = locations.filter((location) =>
@@ -51,7 +52,10 @@ export function LocationsPage() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
             <Plus className="w-5 h-5" />
             新增門市
           </button>
@@ -186,14 +190,25 @@ export function LocationsPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
+      {/* 新增門市 Modal */}
+      {isCreateModalOpen && (
+        <LocationEditModal
+          location={null}
+          isOpen={isCreateModalOpen}
+          isLoading={isCreating}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={createLocation}
+        />
+      )}
+
       {/* 編輯門市 Modal */}
       {editingLocation && (
         <LocationEditModal
           location={editingLocation}
           isOpen={!!editingLocation}
-          isUpdating={isUpdating}
+          isLoading={isUpdating}
           onClose={() => setEditingLocation(null)}
-          onSave={updateLocation}
+          onUpdate={updateLocation}
         />
       )}
 

@@ -30,9 +30,10 @@ const typeLabels: Record<FarmTour['type'], string> = {
 
 export function FarmToursPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingTour, setEditingTour] = useState<FarmTour | null>(null)
   const [deletingTour, setDeletingTour] = useState<FarmTour | null>(null)
-  const { farmTours, isLoading, error, refetch, updateFarmTour, deleteFarmTour, isUpdating, isDeleting } = useFarmTours()
+  const { farmTours, isLoading, error, refetch, createFarmTour, updateFarmTour, deleteFarmTour, isCreating, isUpdating, isDeleting } = useFarmTours()
 
   // 過濾活動
   const filteredTours = farmTours.filter((tour) =>
@@ -75,7 +76,10 @@ export function FarmToursPage() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
             <Plus className="w-5 h-5" />
             新增活動
           </button>
@@ -214,14 +218,25 @@ export function FarmToursPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
+      {/* 新增活動 Modal */}
+      {isCreateModalOpen && (
+        <FarmTourEditModal
+          farmTour={null}
+          isOpen={isCreateModalOpen}
+          isLoading={isCreating}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={createFarmTour}
+        />
+      )}
+
       {/* 編輯活動 Modal */}
       {editingTour && (
         <FarmTourEditModal
           farmTour={editingTour}
           isOpen={!!editingTour}
-          isUpdating={isUpdating}
+          isLoading={isUpdating}
           onClose={() => setEditingTour(null)}
-          onSave={updateFarmTour}
+          onUpdate={updateFarmTour}
         />
       )}
 

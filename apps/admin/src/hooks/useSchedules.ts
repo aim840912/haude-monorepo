@@ -18,6 +18,18 @@ export interface Schedule {
   updatedAt: string
 }
 
+export interface CreateScheduleData {
+  title: string
+  location: string
+  date: string
+  time: string
+  products?: string[]
+  description?: string
+  contact?: string
+  specialOffer?: string
+  weatherNote?: string
+}
+
 export interface UpdateScheduleData {
   title?: string
   location?: string
@@ -36,8 +48,10 @@ interface UseSchedulesReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createSchedule: (data: CreateScheduleData) => Promise<boolean>
   updateSchedule: (id: string, data: UpdateScheduleData) => Promise<boolean>
   deleteSchedule: (id: string) => Promise<boolean>
+  isCreating: boolean
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -46,6 +60,7 @@ export function useSchedules(): UseSchedulesReturn {
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -64,6 +79,25 @@ export function useSchedules(): UseSchedulesReturn {
       setIsLoading(false)
     }
   }, [])
+
+  const createSchedule = useCallback(async (data: CreateScheduleData): Promise<boolean> => {
+    setIsCreating(true)
+    try {
+      await schedulesApi.create({
+        ...data,
+        products: data.products ?? [],
+        description: data.description ?? '',
+        contact: data.contact ?? '',
+      })
+      await fetchSchedules()
+      return true
+    } catch (err) {
+      logger.error('[useSchedules] 新增失敗', { error: err })
+      return false
+    } finally {
+      setIsCreating(false)
+    }
+  }, [fetchSchedules])
 
   const updateSchedule = useCallback(async (id: string, data: UpdateScheduleData): Promise<boolean> => {
     setIsUpdating(true)
@@ -102,8 +136,10 @@ export function useSchedules(): UseSchedulesReturn {
     isLoading,
     error,
     refetch: fetchSchedules,
+    createSchedule,
     updateSchedule,
     deleteSchedule,
+    isCreating,
     isUpdating,
     isDeleting,
   }

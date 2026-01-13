@@ -25,6 +25,26 @@ export interface Location {
   updatedAt: string
 }
 
+export interface CreateLocationData {
+  name: string
+  address: string
+  title?: string
+  landmark?: string
+  phone?: string
+  lineId?: string
+  hours?: string
+  closedDays?: string
+  parking?: string
+  publicTransport?: string
+  features?: string[]
+  specialties?: string[]
+  lat?: number
+  lng?: number
+  image?: string
+  isMain?: boolean
+  isActive?: boolean
+}
+
 export interface UpdateLocationData {
   name?: string
   title?: string
@@ -50,8 +70,10 @@ interface UseLocationsReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createLocation: (data: CreateLocationData) => Promise<boolean>
   updateLocation: (id: string, data: UpdateLocationData) => Promise<boolean>
   deleteLocation: (id: string) => Promise<boolean>
+  isCreating: boolean
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -60,6 +82,7 @@ export function useLocations(): UseLocationsReturn {
   const [locations, setLocations] = useState<Location[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -77,6 +100,20 @@ export function useLocations(): UseLocationsReturn {
       setIsLoading(false)
     }
   }, [])
+
+  const createLocation = useCallback(async (data: CreateLocationData): Promise<boolean> => {
+    setIsCreating(true)
+    try {
+      await locationsApi.create(data)
+      await fetchLocations()
+      return true
+    } catch (err) {
+      logger.error('[useLocations] 新增失敗', { error: err })
+      return false
+    } finally {
+      setIsCreating(false)
+    }
+  }, [fetchLocations])
 
   const updateLocation = useCallback(async (id: string, data: UpdateLocationData): Promise<boolean> => {
     setIsUpdating(true)
@@ -115,8 +152,10 @@ export function useLocations(): UseLocationsReturn {
     isLoading,
     error,
     refetch: fetchLocations,
+    createLocation,
     updateLocation,
     deleteLocation,
+    isCreating,
     isUpdating,
     isDeleting,
   }

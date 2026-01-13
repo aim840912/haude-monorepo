@@ -29,6 +29,15 @@ export interface Order {
   updatedAt: string
 }
 
+interface Pagination {
+  total: number
+  limit: number
+  offset: number
+  hasMore: boolean
+  currentPage: number
+  totalPages: number
+}
+
 interface UseOrdersReturn {
   orders: Order[]
   isLoading: boolean
@@ -36,7 +45,15 @@ interface UseOrdersReturn {
   refetch: () => Promise<void>
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<boolean>
   isUpdating: boolean
+  // 分頁相關
+  pagination: Pagination
+  goToPage: (page: number) => void
+  nextPage: () => void
+  prevPage: () => void
+  setPageSize: (size: number) => void
 }
+
+const DEFAULT_PAGE_SIZE = 20
 
 export function useOrders(): UseOrdersReturn {
   const [orders, setOrders] = useState<Order[]>([])
@@ -44,13 +61,36 @@ export function useOrders(): UseOrdersReturn {
   const [error, setError] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const fetchOrders = useCallback(async () => {
+  // 分頁狀態
+  const [pagination, setPagination] = useState<Pagination>({
+    total: 0,
+    limit: DEFAULT_PAGE_SIZE,
+    offset: 0,
+    hasMore: false,
+    currentPage: 1,
+    totalPages: 1,
+  })
+
+  const fetchOrders = useCallback(async (limit = pagination.limit, offset = pagination.offset) => {
     setIsLoading(true)
     setError(null)
     try {
-      const { data } = await ordersApi.getAll()
+      const { data } = await ordersApi.getAll(limit, offset)
       // API 回傳格式: { orders, total, limit, offset, hasMore }
       setOrders(data.orders || [])
+
+      const total = data.total || 0
+      const totalPages = Math.ceil(total / limit) || 1
+      const currentPage = Math.floor(offset / limit) + 1
+
+      setPagination({
+        total,
+        limit,
+        offset,
+        hasMore: data.hasMore ?? false,
+        currentPage,
+        totalPages,
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : '載入訂單失敗'
       setError(message)
@@ -58,13 +98,13 @@ export function useOrders(): UseOrdersReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [pagination.limit, pagination.offset])
 
   const updateOrderStatus = useCallback(async (id: string, status: OrderStatus): Promise<boolean> => {
     setIsUpdating(true)
     try {
       await ordersApi.updateStatus(id, status)
-      await fetchOrders()
+      await fetchOrders(pagination.limit, pagination.offset)
       return true
     } catch (err) {
       logger.error('[useOrders] 更新狀態失敗', { error: err })
@@ -72,19 +112,48 @@ export function useOrders(): UseOrdersReturn {
     } finally {
       setIsUpdating(false)
     }
+  }, [fetchOrders, pagination.limit, pagination.offset])
+
+  // 分頁方法
+  const goToPage = useCallback((page: number) => {
+    const newOffset = (page - 1) * pagination.limit
+    fetchOrders(pagination.limit, newOffset)
+  }, [fetchOrders, pagination.limit])
+
+  const nextPage = useCallback(() => {
+    if (pagination.hasMore) {
+      goToPage(pagination.currentPage + 1)
+    }
+  }, [goToPage, pagination.hasMore, pagination.currentPage])
+
+  const prevPage = useCallback(() => {
+    if (pagination.currentPage > 1) {
+      goToPage(pagination.currentPage - 1)
+    }
+  }, [goToPage, pagination.currentPage])
+
+  const setPageSize = useCallback((size: number) => {
+    // 切換每頁筆數時回到第一頁
+    fetchOrders(size, 0)
   }, [fetchOrders])
 
   useEffect(() => {
-    fetchOrders()
-  }, [fetchOrders])
+    fetchOrders(DEFAULT_PAGE_SIZE, 0)
+  }, []) // 只在首次載入時執行
 
   return {
     orders,
     isLoading,
     error,
-    refetch: fetchOrders,
+    refetch: () => fetchOrders(pagination.limit, pagination.offset),
     updateOrderStatus,
     isUpdating,
+    // 分頁相關
+    pagination,
+    goToPage,
+    nextPage,
+    prevPage,
+    setPageSize,
   }
 }
 

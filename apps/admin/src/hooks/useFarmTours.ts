@@ -21,6 +21,20 @@ export interface FarmTour {
   updatedAt: string
 }
 
+export interface CreateFarmTourData {
+  name: string
+  description: string
+  date: string
+  startTime: string
+  endTime: string
+  price: number
+  maxParticipants: number
+  location: string
+  imageUrl?: string
+  type: 'harvest' | 'workshop' | 'tour' | 'tasting'
+  tags?: string[]
+}
+
 export interface UpdateFarmTourData {
   name?: string
   description?: string
@@ -41,8 +55,10 @@ interface UseFarmToursReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createFarmTour: (data: CreateFarmTourData) => Promise<boolean>
   updateFarmTour: (id: string, data: UpdateFarmTourData) => Promise<boolean>
   deleteFarmTour: (id: string) => Promise<boolean>
+  isCreating: boolean
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -51,6 +67,7 @@ export function useFarmTours(): UseFarmToursReturn {
   const [farmTours, setFarmTours] = useState<FarmTour[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -69,6 +86,20 @@ export function useFarmTours(): UseFarmToursReturn {
       setIsLoading(false)
     }
   }, [])
+
+  const createFarmTour = useCallback(async (data: CreateFarmTourData): Promise<boolean> => {
+    setIsCreating(true)
+    try {
+      await farmToursApi.create(data)
+      await fetchFarmTours()
+      return true
+    } catch (err) {
+      logger.error('[useFarmTours] 新增失敗', { error: err })
+      return false
+    } finally {
+      setIsCreating(false)
+    }
+  }, [fetchFarmTours])
 
   const updateFarmTour = useCallback(async (id: string, data: UpdateFarmTourData): Promise<boolean> => {
     setIsUpdating(true)
@@ -107,8 +138,10 @@ export function useFarmTours(): UseFarmToursReturn {
     isLoading,
     error,
     refetch: fetchFarmTours,
+    createFarmTour,
     updateFarmTour,
     deleteFarmTour,
+    isCreating,
     isUpdating,
     isDeleting,
   }

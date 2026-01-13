@@ -121,7 +121,8 @@ export const productImagesApi = {
 
 // Orders API (Admin)
 export const ordersApi = {
-  getAll: () => api.get('/admin/orders'),
+  getAll: (limit = 20, offset = 0) =>
+    api.get(`/admin/orders?limit=${limit}&offset=${offset}`),
   getStats: () => api.get('/admin/orders/stats'),
   getById: (id: string) => api.get(`/admin/orders/${id}`),
   updateStatus: (id: string, status: string) =>
