@@ -17,6 +17,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { EmailModule } from './modules/email/email.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { SocialPostsModule } from './modules/social-posts/social-posts.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     CartModule,
     DiscountsModule,
     ReviewsModule,
+    SocialPostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

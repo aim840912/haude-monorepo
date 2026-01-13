@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
 import {
@@ -196,9 +200,21 @@ export class ProductsService {
     // 確認產品存在
     await this.findOne(id);
 
-    await this.prisma.product.delete({ where: { id } });
-
-    return { message: '產品已刪除' };
+    try {
+      await this.prisma.product.delete({ where: { id } });
+      return { message: '產品已刪除' };
+    } catch (error) {
+      // 處理外鍵約束錯誤（產品被訂單引用）
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          '此產品已有訂單記錄，無法刪除。建議改用「下架」功能。',
+        );
+      }
+      throw error;
+    }
   }
 
   /**

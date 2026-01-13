@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Search, Eye, RefreshCw, Edit } from 'lucide-react'
+import { Search, Eye, RefreshCw, Edit, Loader2 } from 'lucide-react'
 import { useOrders, Order, PaymentStatus } from '../hooks/useOrders'
 import { OrderStatusModal } from '../components/OrderStatusModal'
+import { OrderDetailModal, OrderDetail } from '../components/OrderDetailModal'
+import { ordersApi } from '../services/api'
 import type { OrderStatus } from '@haude/types'
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -43,7 +45,23 @@ const paymentStatusColors: Record<PaymentStatus, string> = {
 export function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [viewingOrder, setViewingOrder] = useState<OrderDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
   const { orders, isLoading, error, refetch, updateOrderStatus, isUpdating } = useOrders()
+
+  // 查看訂單詳情
+  const handleViewDetail = async (orderId: string) => {
+    setDetailLoading(true)
+    try {
+      const { data } = await ordersApi.getById(orderId)
+      setViewingOrder(data)
+    } catch {
+      // 錯誤時關閉 Modal
+      setViewingOrder(null)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
 
   // 過濾訂單
   const filteredOrders = orders.filter(
@@ -183,10 +201,16 @@ export function OrdersPage() {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      onClick={() => handleViewDetail(order.id)}
+                      disabled={detailLoading}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
                       title="查看詳情"
                     >
-                      <Eye className="w-4 h-4" />
+                      {detailLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -212,6 +236,14 @@ export function OrdersPage() {
           onSave={updateOrderStatus}
         />
       )}
+
+      {/* 訂單詳情 Modal */}
+      <OrderDetailModal
+        order={viewingOrder}
+        isOpen={!!viewingOrder || detailLoading}
+        isLoading={detailLoading}
+        onClose={() => setViewingOrder(null)}
+      />
     </div>
   )
 }

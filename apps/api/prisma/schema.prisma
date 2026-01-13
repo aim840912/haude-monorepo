@@ -472,3 +472,27 @@ model Schedule {
   @@index([status])
   @@map("schedules")
 }
+
+// ========================================
+// Social Posts 模組（社群貼文嵌入）
+// ========================================
+
+enum SocialPlatform {
+  facebook
+  instagram
+}
+
+model SocialPost {
+  id        String         @id @default(uuid())
+  platform  SocialPlatform // facebook | instagram
+  url       String         // 貼文 URL
+  title     String?        // 選填標題/描述
+  sortOrder Int            @default(0) @map("sort_order") // 排序順序
+  isActive  Boolean        @default(true) @map("is_active")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  @@index([platform])
+  @@index([isActive])
+  @@map("social_posts")
+}

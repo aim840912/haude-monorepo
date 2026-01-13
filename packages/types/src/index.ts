@@ -15,3 +15,6 @@ export * from './user'
 
 // Review
 export * from './review'
+
+// Social Post
+export * from './social-post'

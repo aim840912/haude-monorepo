@@ -123,7 +123,7 @@ export const productImagesApi = {
 export const ordersApi = {
   getAll: () => api.get('/admin/orders'),
   getStats: () => api.get('/admin/orders/stats'),
-  getById: (id: string) => api.get(`/orders/${id}`),
+  getById: (id: string) => api.get(`/admin/orders/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/admin/orders/${id}`, { status }),
 }
@@ -328,4 +328,43 @@ export const locationsApi = {
     }
   ) => api.put(`/admin/locations/${id}`, data),
   delete: (id: string) => api.delete(`/admin/locations/${id}`),
+}
+
+// Social Posts API (社群貼文)
+export interface SocialPost {
+  id: string
+  platform: 'facebook' | 'instagram'
+  url: string
+  title?: string
+  sortOrder: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export const socialPostsApi = {
+  // 公開 API
+  getAll: () => api.get<SocialPost[]>('/social-posts'),
+  getById: (id: string) => api.get<SocialPost>(`/social-posts/${id}`),
+  // 管理員 API
+  getAllAdmin: () => api.get<SocialPost[]>('/admin/social-posts'),
+  create: (data: {
+    platform: 'facebook' | 'instagram'
+    url: string
+    title?: string
+    sortOrder?: number
+    isActive?: boolean
+  }) => api.post<SocialPost>('/admin/social-posts', data),
+  update: (
+    id: string,
+    data: {
+      platform?: 'facebook' | 'instagram'
+      url?: string
+      title?: string
+      sortOrder?: number
+      isActive?: boolean
+    }
+  ) => api.put<SocialPost>(`/admin/social-posts/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/social-posts/${id}`),
+  reorder: (ids: string[]) => api.put<SocialPost[]>('/admin/social-posts/reorder', { ids }),
 }
