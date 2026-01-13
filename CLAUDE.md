@@ -140,18 +140,9 @@ haude-v2/                     # Monorepo 根目錄
 
 ### 多代理並行工作
 
-> 詳見：`.claude/MULTI_AGENT_GUIDE.md`
+> 詳見全域規則：`~/.claude/rules/multi-agent-workflow.md`
 
-本專案的 Monorepo 結構天然支持多代理並行：
-
-| 工作區域 | 目錄 | 說明 |
-|----------|------|------|
-| Web 實例 | `apps/web` | 用戶端前端開發 |
-| Admin 實例 | `apps/admin` | 管理後台開發 |
-| API 實例 | `apps/api` | 後端 API 開發 |
-| 驗證實例 | 全專案 | 測試、驗證、Review |
-
-**核心原則**：不同 Claude 實例不應同時編輯同一個檔案
+**本專案分配**：Web → `apps/web`、Admin → `apps/admin`、API → `apps/api`
 
 ### Monorepo 規範
 
@@ -167,7 +158,10 @@ haude-v2/                     # Monorepo 根目錄
 > - **Claude 行為準則** - 執行原則、Git 提交流程、TodoWrite 使用規範
 > - **開發理念** - 核心信念、永不與始終、決策框架
 > - **程式碼品質標準** - 架構原則、品質標準、測試指南
+> - **驗證原則** - 變更後驗證工作流程
+> - **常見錯誤追蹤** - 通用錯誤表格
 > - **UI/UX 設計規範** - 禁止漸層、禁止 Emoji、使用 SVG 圖示
+> - **Next.js 規範** - Client/Server Components、Next.js 15+ 注意事項
 
 ---
 
@@ -270,37 +264,28 @@ VITE_API_URL=http://localhost:3001
 
 ---
 
-## Claude 常見錯誤（持續更新）
+## 專案特定錯誤
 
-> **使用方式**：每當 Claude 做錯事，將錯誤加到這裡，避免未來重複犯錯。
->
-> 📌 這是 Boris Cherny（Claude Code 創造者）強調的最重要做法：「每個錯誤都變成規則」
+> 通用錯誤請見：`~/.claude/CLAUDE.md`（常見錯誤追蹤區塊）
+> Next.js 錯誤請見：`~/.claude/rules/nextjs-components.md`
 
-### 型別與 API 回應
+### 型別與 API 回應（本專案特定）
 
 | 錯誤 | 正確做法 |
 |------|----------|
 | 直接使用 `product.inventory` | 使用 fallback chain：`product.stock ?? product.inventory ?? 0` |
 | 使用 `image.storage_url` (snake_case) | 使用 camelCase：`image.storageUrl` |
-| 假設 API 回傳欄位存在 | 先檢查欄位，使用 optional chaining 和 fallback |
 
-### 檔案與架構
+### Monorepo 架構（本專案特定）
 
 | 錯誤 | 正確做法 |
 |------|----------|
-| 建立新檔案前沒確認是否已存在 | 先 grep 或 glob 搜尋現有實作 |
 | 在 apps/ 建立共用型別 | 共用型別放 `packages/types/` |
-
-### Next.js 相關
-
-| 錯誤 | 正確做法 |
-|------|----------|
-| 動態路由直接用 `params.id` | Next.js 15+ 需要 `use(params)` 或 `await params` |
-| 使用 `useSearchParams` 不包 Suspense | 必須用 `<Suspense>` 包裹使用該 hook 的元件 |
 
 ---
 
 ## 相關文件
 
 - **全域規範**：`~/.claude/CLAUDE.md`
+- **全域規則**：`~/.claude/rules/`（Next.js、UI/UX、API、多代理工作流等）
 - **用戶端規範**：`apps/web/CLAUDE.md`

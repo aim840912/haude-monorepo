@@ -4,17 +4,17 @@
 
 export interface ProductImage {
   id: string
-  entity_id: string
-  storage_url: string
-  file_path: string
-  alt_text?: string | null
-  display_position: number
+  entityId: string
+  storageUrl: string
+  filePath: string
+  altText?: string | null
+  displayPosition: number
   size: 'thumbnail' | 'medium' | 'large'
   width?: number | null
   height?: number | null
-  file_size?: number | null
-  created_at: string
-  updated_at: string
+  fileSize?: number | null
+  createdAt: string
+  updatedAt: string
   module: string
 }
 

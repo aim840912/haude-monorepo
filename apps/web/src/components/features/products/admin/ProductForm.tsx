@@ -41,7 +41,7 @@ export function ProductForm({
         originalPrice: initialData.originalPrice ?? '',
         isOnSale: initialData.isOnSale ?? false,
         saleEndDate: initialData.saleEndDate ?? '',
-        inventory: initialData.stock,
+        stock: initialData.stock,
         isActive: initialData.isActive,
       }
     }
@@ -100,10 +100,10 @@ export function ProductForm({
     }
 
     // 庫存驗證
-    if (values.inventory === '' || values.inventory === undefined) {
-      newErrors.inventory = '請輸入庫存數量'
-    } else if (Number(values.inventory) < 0) {
-      newErrors.inventory = '庫存不可為負數'
+    if (values.stock === '' || values.stock === undefined) {
+      newErrors.stock = '請輸入庫存數量'
+    } else if (Number(values.stock) < 0) {
+      newErrors.stock = '庫存不可為負數'
     }
 
     // 促銷驗證
@@ -157,7 +157,7 @@ export function ProductForm({
         : undefined,
       isOnSale: values.isOnSale,
       saleEndDate: values.isOnSale ? values.saleEndDate : undefined,
-      stock: Number(values.inventory), // 內部表單用 inventory，API 用 stock
+      stock: Number(values.stock),
       isActive: values.isActive,
     }
 

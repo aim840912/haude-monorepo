@@ -14,7 +14,7 @@ export interface ProductFormValues {
   originalPrice: number | ''
   isOnSale: boolean
   saleEndDate: string
-  inventory: number | ''
+  stock: number | ''
   isActive: boolean
 }
 
@@ -30,7 +30,7 @@ export interface ProductFormErrors {
   unitQuantity?: string
   originalPrice?: string
   saleEndDate?: string
-  inventory?: string
+  stock?: string
 }
 
 /**
@@ -65,7 +65,7 @@ export const DEFAULT_FORM_VALUES: ProductFormValues = {
   originalPrice: '',
   isOnSale: false,
   saleEndDate: '',
-  inventory: '',
+  stock: '',
   isActive: true,
 }
 

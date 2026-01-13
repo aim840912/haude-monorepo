@@ -66,16 +66,17 @@ export function ProductEditModal({
       setNewlyUploadedIds([])
       // 如果產品有預載入的圖片，使用它們；否則從 API 載入
       if (product.productImages && product.productImages.length > 0) {
+        // API 已返回 camelCase，直接使用
         setImages(product.productImages.map(img => ({
           id: img.id,
           productId: product.id,
-          storageUrl: img.storage_url,
-          filePath: img.file_path,
-          altText: img.alt_text || undefined,
-          displayPosition: img.display_position,
+          storageUrl: img.storageUrl,
+          filePath: img.filePath,
+          altText: img.altText || undefined,
+          displayPosition: img.displayPosition,
           size: img.size as 'thumbnail' | 'medium' | 'large',
-          createdAt: img.created_at,
-          updatedAt: img.updated_at,
+          createdAt: img.createdAt,
+          updatedAt: img.updatedAt,
         })))
       } else {
         loadImages()

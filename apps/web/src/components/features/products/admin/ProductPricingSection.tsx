@@ -39,22 +39,22 @@ export function ProductPricingSection({
 
         {/* 庫存 */}
         <div>
-          <label htmlFor="inventory" className="label">
+          <label htmlFor="stock" className="label">
             庫存數量 <span className="text-red-500">*</span>
           </label>
           <input
-            id="inventory"
+            id="stock"
             type="number"
-            value={values.inventory}
-            onChange={e => setValue('inventory', e.target.value === '' ? '' : Number(e.target.value))}
-            onBlur={() => setFieldTouched('inventory')}
-            className={cn('input', getFieldError('inventory') && 'border-red-500')}
+            value={values.stock}
+            onChange={e => setValue('stock', e.target.value === '' ? '' : Number(e.target.value))}
+            onBlur={() => setFieldTouched('stock')}
+            className={cn('input', getFieldError('stock') && 'border-red-500')}
             placeholder="0"
             min="0"
             step="1"
           />
-          {getFieldError('inventory') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError('inventory')}</p>
+          {getFieldError('stock') && (
+            <p className="mt-1 text-sm text-red-500">{getFieldError('stock')}</p>
           )}
         </div>
 
