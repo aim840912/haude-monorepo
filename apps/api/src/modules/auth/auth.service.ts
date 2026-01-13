@@ -81,7 +81,12 @@ export class AuthService {
   /**
    * 處理 Google OAuth 登入，返回 JWT Token
    */
-  async googleLogin(user: { id: string; email: string; name: string; role: string }) {
+  async googleLogin(user: { id: string; email: string; name: string; role: string; isActive: boolean }) {
+    // 檢查帳號是否停用
+    if (!user.isActive) {
+      throw new UnauthorizedException('您的帳號已被停用，請聯絡客服');
+    }
+
     const accessToken = this.generateToken(user.id, user.email);
 
     return {
@@ -157,6 +162,11 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 檢查帳號是否停用
+    if (!user.isActive) {
+      throw new UnauthorizedException('您的帳號已被停用，請聯絡客服');
     }
 
     // Generate token

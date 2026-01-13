@@ -130,7 +130,7 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @ApiExcludeEndpoint() // 不在 Swagger 中顯示
   async googleAuthCallback(
-    @Request() req: ExpressRequest & { user: { id: string; email: string; name: string; role: string; oauthState?: string } },
+    @Request() req: ExpressRequest & { user: { id: string; email: string; name: string; role: string; isActive: boolean; oauthState?: string } },
     @Res() res: Response,
   ) {
     // 從 user 物件取得 oauthState（由 GoogleStrategy 附加）
