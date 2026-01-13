@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
-import { PageHeader } from '@/components/ui/sections'
+import { Breadcrumb } from '@/components/ui/navigation'
 import { cn } from '@/lib/utils'
 
 /**
@@ -22,10 +22,9 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <PageHeader title="購物車" subtitle="查看您的購物清單" />
-
         {/* 空購物車 */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Breadcrumb items={[{ label: '購物車' }]} className="mb-8" />
           <div className="text-center">
             <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-medium text-gray-900 mb-2">購物車是空的</h2>
@@ -45,10 +44,9 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="購物車" subtitle={`共 ${totalItems} 件商品`} />
-
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumb items={[{ label: '購物車' }]} className="mb-6" />
         <div className="grid lg:grid-cols-3 gap-8">
           {/* 購物車項目列表 */}
           <div className="lg:col-span-2 space-y-4">

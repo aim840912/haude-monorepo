@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { ProductGrid } from '@/components/features/products/ProductGrid'
 import { ProductFilter } from '@/components/features/products/ProductFilter'
-import { PageHeader } from '@/components/ui/sections'
+import { Breadcrumb } from '@/components/ui/navigation'
 import { useProducts, useCategories } from '@/hooks/useProducts'
 import type { Product } from '@/types/product'
 
@@ -72,10 +72,13 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="產品列表" subtitle="探索我們的優質農產品" />
-
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 麵包屑導航 */}
+        <Breadcrumb
+          items={[{ label: '產品' }]}
+          className="mb-6"
+        />
         {/* 篩選區 */}
         <div className="mb-8">
           <ProductFilter
