@@ -102,5 +102,16 @@
     "notFound": "Page not found",
     "outOfStock": "Product out of stock",
     "paymentFailed": "Payment failed"
+  },
+  "social": {
+    "title": "Social Media",
+    "subtitle": "Follow our latest news and updates",
+    "all": "All",
+    "facebook": "Facebook",
+    "instagram": "Instagram",
+    "loading": "Loading...",
+    "error": "Failed to load social posts",
+    "retry": "Retry",
+    "empty": "No social posts available"
   }
 }

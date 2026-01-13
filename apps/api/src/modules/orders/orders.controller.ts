@@ -123,6 +123,16 @@ export class AdminOrdersController {
     return this.ordersService.getOrderStats();
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: '取得訂單詳情（管理員）' })
+  @ApiResponse({ status: 200, description: '成功取得訂單詳情' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  @ApiResponse({ status: 404, description: '訂單不存在' })
+  getOrderById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.ordersService.getOrderByIdForAdmin(id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新訂單狀態（管理員）' })
   @ApiResponse({ status: 200, description: '訂單更新成功' })

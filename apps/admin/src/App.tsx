@@ -9,6 +9,7 @@ import { LocationsPage } from './pages/LocationsPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { PaymentsPage } from './pages/PaymentsPage'
 import { DiscountsPage } from './pages/DiscountsPage'
+import { SocialPostsPage } from './pages/SocialPostsPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { Layout } from './components/Layout'
@@ -38,6 +39,7 @@ function App() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/discounts" element={<DiscountsPage />} />
+          <Route path="/social-posts" element={<SocialPostsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

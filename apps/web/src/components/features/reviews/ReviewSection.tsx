@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { MessageSquare, Loader2, ChevronDown, ShoppingBag, Package } from 'lucide-react'
 import { reviewsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -53,6 +54,7 @@ interface EligibilityStatus {
  * 評論區容器元件
  */
 export function ReviewSection({ productId, productName, className }: ReviewSectionProps) {
+  const pathname = usePathname()
   const { isAuthenticated, user } = useAuthStore()
   const { success, error: showError } = useToast()
 
@@ -190,7 +192,10 @@ export function ReviewSection({ productId, productName, className }: ReviewSecti
       {!isAuthenticated && (
         <div className="mb-6 bg-gray-50 rounded-xl p-4 text-center">
           <p className="text-gray-600">
-            <Link href="/login" className="text-green-600 hover:underline font-medium">
+            <Link
+              href={`/login?from=${encodeURIComponent(pathname + '#reviews')}`}
+              className="text-green-600 hover:underline font-medium"
+            >
               登入
             </Link>
             {' '}後即可發表評論

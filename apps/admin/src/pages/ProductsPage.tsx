@@ -10,6 +10,7 @@ export function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const { products, isLoading, error, refetch, updateProduct, deleteProduct, isUpdating, isDeleting } = useProducts()
 
   // 過濾產品
@@ -193,17 +194,27 @@ export function ProductsPage() {
           isOpen={!!deletingProduct}
           isLoading={isDeleting}
           title="確認刪除"
-          message={`確定要刪除「${deletingProduct.name}」嗎？此操作無法復原。`}
-          confirmText="確認刪除"
+          message={
+            deleteError
+              ? deleteError
+              : `確定要刪除「${deletingProduct.name}」嗎？此操作無法復原。`
+          }
+          confirmText={deleteError ? '重試' : '確認刪除'}
           cancelText="取消"
           variant="danger"
           onConfirm={async () => {
-            const success = await deleteProduct(deletingProduct.id)
-            if (success) {
+            setDeleteError(null)
+            const result = await deleteProduct(deletingProduct.id)
+            if (result.success) {
               setDeletingProduct(null)
+            } else {
+              setDeleteError(result.error || '刪除失敗')
             }
           }}
-          onCancel={() => setDeletingProduct(null)}
+          onCancel={() => {
+            setDeletingProduct(null)
+            setDeleteError(null)
+          }}
         />
       )}
     </div>

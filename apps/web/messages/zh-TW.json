@@ -102,5 +102,16 @@
     "notFound": "找不到此頁面",
     "outOfStock": "商品庫存不足",
     "paymentFailed": "付款失敗"
+  },
+  "social": {
+    "title": "社群動態",
+    "subtitle": "追蹤我們的最新消息與分享",
+    "all": "全部",
+    "facebook": "Facebook",
+    "instagram": "Instagram",
+    "loading": "載入中...",
+    "error": "無法載入社群貼文",
+    "retry": "重試",
+    "empty": "目前沒有社群貼文"
   }
 }

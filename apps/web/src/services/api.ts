@@ -335,6 +335,26 @@ const paymentMethodMap: Record<string, string> = {
   CVS: 'CVS',
 }
 
+// Social Posts API
+export const socialPostsApi = {
+  /**
+   * 取得所有啟用的社群貼文（公開端點）
+   */
+  getAll: () =>
+    api.get<
+      Array<{
+        id: string
+        platform: 'facebook' | 'instagram'
+        url: string
+        title?: string
+        sortOrder: number
+        isActive: boolean
+        createdAt: string
+        updatedAt: string
+      }>
+    >('/social-posts'),
+}
+
 // Payments API
 export const paymentsApi = {
   /**

@@ -18,7 +18,7 @@ interface UseProductsReturn {
   error: string | null
   refetch: () => Promise<void>
   updateProduct: (id: string, data: UpdateProductData) => Promise<boolean>
-  deleteProduct: (id: string) => Promise<boolean>
+  deleteProduct: (id: string) => Promise<{ success: boolean; error?: string }>
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -60,15 +60,18 @@ export function useProducts(): UseProductsReturn {
     }
   }, [fetchProducts])
 
-  const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
+  const deleteProduct = useCallback(async (id: string): Promise<{ success: boolean; error?: string }> => {
     setIsDeleting(true)
     try {
       await productsApi.delete(id)
       await fetchProducts() // 重新取得列表
-      return true
+      return { success: true }
     } catch (err) {
       logger.error('[useProducts] 刪除失敗', { error: err })
-      return false
+      // 提取後端回傳的錯誤訊息
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMessage = (err as any)?.response?.data?.message || '刪除失敗'
+      return { success: false, error: errorMessage }
     } finally {
       setIsDeleting(false)
     }

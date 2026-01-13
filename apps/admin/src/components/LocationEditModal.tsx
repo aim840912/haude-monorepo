@@ -317,16 +317,32 @@ export function LocationEditModal({
               />
               <span className="text-sm text-gray-700">設為主要門市</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                disabled={isUpdating}
-              />
-              <span className="text-sm text-gray-700">啟用</span>
-            </label>
+            {/* 營業狀態 */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-700">營業狀態</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={() => setFormData({ ...formData, isActive: true })}
+                  className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                  disabled={isUpdating}
+                />
+                <span className="text-sm text-gray-700">營業中</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isActive"
+                  checked={!formData.isActive}
+                  onChange={() => setFormData({ ...formData, isActive: false })}
+                  className="w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-500"
+                  disabled={isUpdating}
+                />
+                <span className="text-sm text-gray-700">已關閉</span>
+              </label>
+            </div>
           </div>
 
           {/* Actions */}
