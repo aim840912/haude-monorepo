@@ -3,6 +3,8 @@ import { ordersApi } from '../services/api'
 import type { OrderStatus } from '@haude/types'
 import logger from '../lib/logger'
 
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expired'
+
 export interface Order {
   id: string
   orderNumber: string
@@ -18,6 +20,8 @@ export interface Order {
   }[]
   totalAmount: number
   status: OrderStatus
+  paymentStatus?: PaymentStatus
+  paymentMethod?: string
   shippingAddress?: string
   shippingPhone?: string
   note?: string

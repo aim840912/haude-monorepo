@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search, Eye, RefreshCw, Edit } from 'lucide-react'
-import { useOrders, Order } from '../hooks/useOrders'
+import { useOrders, Order, PaymentStatus } from '../hooks/useOrders'
 import { OrderStatusModal } from '../components/OrderStatusModal'
 import type { OrderStatus } from '@haude/types'
 
@@ -22,6 +22,22 @@ const statusColors: Record<OrderStatus, string> = {
   delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-gray-100 text-gray-800',
   refunded: 'bg-red-100 text-red-800',
+}
+
+const paymentStatusLabels: Record<PaymentStatus, string> = {
+  pending: '待付款',
+  paid: '已付款',
+  failed: '付款失敗',
+  refunded: '已退款',
+  expired: '已過期',
+}
+
+const paymentStatusColors: Record<PaymentStatus, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  paid: 'bg-green-100 text-green-800',
+  failed: 'bg-red-100 text-red-800',
+  refunded: 'bg-purple-100 text-purple-800',
+  expired: 'bg-gray-100 text-gray-800',
 }
 
 export function OrdersPage() {
@@ -110,7 +126,10 @@ export function OrdersPage() {
                   金額
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  狀態
+                  訂單狀態
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  付款狀態
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
@@ -141,6 +160,19 @@ export function OrdersPage() {
                     >
                       {statusLabels[order.status] || order.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {order.paymentStatus ? (
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          paymentStatusColors[order.paymentStatus] || 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-sm">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <button
