@@ -151,6 +151,7 @@ model Product {
   stock         Int       @default(0) // 實際庫存
   reservedStock Int       @default(0) @map("reserved_stock") // 保留庫存
   isActive      Boolean   @default(true) @map("is_active") // 是否啟用
+  isDraft       Boolean   @default(false) @map("is_draft") // 是否為草稿
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -374,15 +375,34 @@ model FarmTour {
   type                FarmTourType   @default(tour)
   tags                String[]       @default([])
   isActive            Boolean        @default(true) @map("is_active")
+  isDraft             Boolean        @default(false) @map("is_draft")
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @updatedAt @map("updated_at")
 
   // 關聯
   bookings FarmTourBooking[]
+  images   FarmTourImage[]
 
   @@index([date])
   @@index([status])
   @@map("farm_tours")
+}
+
+model FarmTourImage {
+  id              String   @id @default(uuid())
+  farmTourId      String   @map("farm_tour_id")
+  storageUrl      String   @map("storage_url")
+  filePath        String   @map("file_path")
+  altText         String?  @map("alt_text")
+  displayPosition Int      @default(0) @map("display_position")
+  size            String   @default("medium")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  farmTour FarmTour @relation(fields: [farmTourId], references: [id], onDelete: Cascade)
+
+  @@map("farm_tour_images")
 }
 
 enum BookingStatus {
@@ -435,10 +455,31 @@ model Location {
   image           String?
   isMain          Boolean  @default(false) @map("is_main")
   isActive        Boolean  @default(true) @map("is_active")
+  isDraft         Boolean  @default(false) @map("is_draft")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
+  // 關聯
+  images LocationImage[]
+
   @@map("locations")
+}
+
+model LocationImage {
+  id              String   @id @default(uuid())
+  locationId      String   @map("location_id")
+  storageUrl      String   @map("storage_url")
+  filePath        String   @map("file_path")
+  altText         String?  @map("alt_text")
+  displayPosition Int      @default(0) @map("display_position")
+  size            String   @default("medium")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@map("location_images")
 }
 
 // ========================================

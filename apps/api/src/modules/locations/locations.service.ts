@@ -1,11 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateLocationDto, UpdateLocationDto } from './dto';
+import { SupabaseService } from '@/common/supabase';
+import {
+  CreateLocationDto,
+  UpdateLocationDto,
+  CreateLocationImageDto,
+  UpdateLocationImageDto,
+} from './dto';
 import { Prisma } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+
+// Storage bucket 名稱
+const LOCATION_IMAGES_BUCKET = 'location-images';
 
 @Injectable()
 export class LocationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private supabase: SupabaseService,
+  ) {}
 
   // ========================================
   // 查詢方法（Query Operations）
@@ -63,6 +76,22 @@ export class LocationsService {
   // ========================================
   // 命令方法（Command Operations）
   // ========================================
+
+  /**
+   * 建立草稿（用於新增時先取得 ID，讓圖片上傳可運作）
+   */
+  async createDraft() {
+    return this.prisma.location.create({
+      data: {
+        name: '未命名門市',
+        address: '',
+        isMain: false,
+        isActive: true,
+        isDraft: true,
+      },
+      include: { images: true },
+    });
+  }
 
   /**
    * 建立據點
@@ -146,5 +175,153 @@ export class LocationsService {
     await this.findOne(id);
     await this.prisma.location.delete({ where: { id } });
     return { message: '據點已刪除' };
+  }
+
+  // ========================================
+  // 圖片管理方法（Image Operations）
+  // ========================================
+
+  /**
+   * 取得簽名上傳 URL（讓前端直傳到 Supabase Storage）
+   */
+  async getUploadUrl(locationId: string, fileName: string) {
+    // 確認據點存在
+    await this.findOne(locationId);
+
+    // 生成唯一檔名，避免覆蓋
+    const ext = fileName.split('.').pop() || 'jpg';
+    const uniqueFileName = `${uuidv4()}.${ext}`;
+    const filePath = `${locationId}/${uniqueFileName}`;
+
+    const { signedUrl, path } = await this.supabase.createSignedUploadUrl(
+      LOCATION_IMAGES_BUCKET,
+      filePath,
+    );
+
+    // 取得公開 URL
+    const publicUrl = this.supabase.getPublicUrl(LOCATION_IMAGES_BUCKET, path);
+
+    return {
+      uploadUrl: signedUrl,
+      filePath: path,
+      publicUrl,
+    };
+  }
+
+  /**
+   * 新增據點圖片記錄
+   */
+  async addImage(locationId: string, dto: CreateLocationImageDto) {
+    // 確認據點存在
+    await this.findOne(locationId);
+
+    // 如果沒有指定 displayPosition，放到最後
+    if (dto.displayPosition === undefined) {
+      const maxPosition = await this.prisma.locationImage.aggregate({
+        where: { locationId },
+        _max: { displayPosition: true },
+      });
+      dto.displayPosition = (maxPosition._max.displayPosition ?? -1) + 1;
+    }
+
+    return this.prisma.locationImage.create({
+      data: {
+        locationId,
+        storageUrl: dto.storageUrl,
+        filePath: dto.filePath,
+        altText: dto.altText,
+        displayPosition: dto.displayPosition,
+        size: dto.size || 'medium',
+      },
+    });
+  }
+
+  /**
+   * 更新據點圖片
+   */
+  async updateImage(
+    locationId: string,
+    imageId: string,
+    dto: UpdateLocationImageDto,
+  ) {
+    // 確認圖片存在
+    const image = await this.prisma.locationImage.findFirst({
+      where: { id: imageId, locationId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`圖片不存在: ${imageId}`);
+    }
+
+    return this.prisma.locationImage.update({
+      where: { id: imageId },
+      data: dto,
+    });
+  }
+
+  /**
+   * 刪除據點圖片
+   */
+  async removeImage(locationId: string, imageId: string) {
+    // 確認圖片存在並取得檔案路徑
+    const image = await this.prisma.locationImage.findFirst({
+      where: { id: imageId, locationId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`圖片不存在: ${imageId}`);
+    }
+
+    // 從 Supabase Storage 刪除檔案
+    try {
+      await this.supabase.deleteFile(LOCATION_IMAGES_BUCKET, image.filePath);
+    } catch (error) {
+      // 檔案可能不存在，記錄但不阻止刪除記錄
+      console.warn(`Failed to delete file from storage: ${image.filePath}`, error);
+    }
+
+    // 刪除資料庫記錄
+    await this.prisma.locationImage.delete({
+      where: { id: imageId },
+    });
+
+    return { message: '圖片已刪除' };
+  }
+
+  /**
+   * 重新排序圖片
+   */
+  async reorderImages(locationId: string, imageIds: string[]) {
+    // 確認據點存在
+    await this.findOne(locationId);
+
+    // 批次更新排序
+    const updates = imageIds.map((id, index) =>
+      this.prisma.locationImage.updateMany({
+        where: { id, locationId },
+        data: { displayPosition: index },
+      }),
+    );
+
+    await this.prisma.$transaction(updates);
+
+    // 回傳更新後的圖片列表
+    return this.prisma.locationImage.findMany({
+      where: { locationId },
+      orderBy: { displayPosition: 'asc' },
+    });
+  }
+
+  /**
+   * 取得據點的所有圖片
+   */
+  async getImages(locationId: string) {
+    // 確認據點存在
+    await this.findOne(locationId);
+
+    return this.prisma.locationImage.findMany({
+      where: { locationId },
+      orderBy: { displayPosition: 'asc' },
+    });
   }
 }

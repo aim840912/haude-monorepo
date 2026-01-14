@@ -150,6 +150,52 @@ haude-v2/                     # Monorepo 根目錄
 - **內部依賴**：在 package.json 使用 `"@haude/types": "workspace:*"`
 - **啟動指令**：使用 `pnpm dev` 統一啟動，或用 `--filter` 指定專案
 
+### 跨專案協作指南
+
+#### 依賴關係圖
+
+```
+packages/types (共用基礎)
+       ↓
+       ├─→ apps/web   (Next.js 用戶端)
+       ├─→ apps/api   (NestJS 後端)
+       └─→ apps/admin (Vite 管理後台)
+```
+
+#### 影響範圍判定
+
+| 變更類型 | 影響專案 | 驗證順序 |
+|---------|---------|---------|
+| `packages/types` 變更 | **全部** | types → api → web → admin |
+| `apps/api` schema 變更 | api, web, admin | api → `prisma generate` → web → admin |
+| `apps/web` 元件變更 | web | 本地驗證即可 |
+| `apps/admin` 元件變更 | admin | 本地驗證即可 |
+
+#### 跨專案修改檢查清單
+
+修改共用程式碼時，請確認：
+
+- [ ] 確認修改的影響範圍（參考上表）
+- [ ] 在基礎層（types）開始修改
+- [ ] 按依賴順序在各專案驗證
+- [ ] 執行全端建置：`pnpm build`
+- [ ] 所有專案型別檢查通過
+
+#### 常見跨專案操作
+
+```bash
+# 修改 types 後的完整驗證流程
+pnpm --filter @haude/types build   # 1. 重建 types
+pnpm type-check                     # 2. 全專案型別檢查
+pnpm build                          # 3. 全專案建置
+
+# 修改 API schema 後
+cd apps/api
+npx prisma generate                 # 1. 重新生成 Prisma Client
+cd ../..
+pnpm type-check                     # 2. 檢查前端型別
+```
+
 ### 全域規範
 
 > **詳見全域規範：`~/.claude/CLAUDE.md`**

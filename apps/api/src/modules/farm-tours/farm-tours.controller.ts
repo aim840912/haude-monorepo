@@ -9,9 +9,18 @@ import {
   Param,
   UseGuards,
   Request,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { FarmToursService } from './farm-tours.service';
-import { CreateFarmTourDto, UpdateFarmTourDto, CreateBookingDto } from './dto';
+import {
+  CreateFarmTourDto,
+  UpdateFarmTourDto,
+  CreateBookingDto,
+  CreateFarmTourImageDto,
+  UpdateFarmTourImageDto,
+  ReorderFarmTourImagesDto,
+  GetFarmTourUploadUrlDto,
+} from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
@@ -72,6 +81,11 @@ export class AdminFarmToursController {
     return this.farmToursService.findAllAdmin();
   }
 
+  @Post('draft')
+  createDraft() {
+    return this.farmToursService.createDraft();
+  }
+
   @Post()
   create(@Body() dto: CreateFarmTourDto) {
     return this.farmToursService.create(dto);
@@ -85,5 +99,55 @@ export class AdminFarmToursController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.farmToursService.remove(id);
+  }
+
+  // ========================================
+  // 圖片管理 API
+  // ========================================
+
+  @Get(':id/images')
+  getImages(@Param('id', ParseUUIDPipe) id: string) {
+    return this.farmToursService.getImages(id);
+  }
+
+  @Post(':id/images/upload-url')
+  getUploadUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: GetFarmTourUploadUrlDto,
+  ) {
+    return this.farmToursService.getUploadUrl(id, dto.fileName);
+  }
+
+  @Post(':id/images')
+  addImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateFarmTourImageDto,
+  ) {
+    return this.farmToursService.addImage(id, dto);
+  }
+
+  @Put(':id/images/:imageId')
+  updateImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+    @Body() dto: UpdateFarmTourImageDto,
+  ) {
+    return this.farmToursService.updateImage(id, imageId, dto);
+  }
+
+  @Delete(':id/images/:imageId')
+  removeImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+  ) {
+    return this.farmToursService.removeImage(id, imageId);
+  }
+
+  @Put(':id/images/reorder')
+  reorderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReorderFarmTourImagesDto,
+  ) {
+    return this.farmToursService.reorderImages(id, dto.imageIds);
   }
 }

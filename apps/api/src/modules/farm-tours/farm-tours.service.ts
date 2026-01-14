@@ -1,11 +1,25 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateFarmTourDto, UpdateFarmTourDto, CreateBookingDto } from './dto';
+import { SupabaseService } from '@/common/supabase';
+import {
+  CreateFarmTourDto,
+  UpdateFarmTourDto,
+  CreateBookingDto,
+  CreateFarmTourImageDto,
+  UpdateFarmTourImageDto,
+} from './dto';
 import { Prisma, FarmTourStatus } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+
+// Storage bucket 名稱
+const FARM_TOUR_IMAGES_BUCKET = 'farm-tour-images';
 
 @Injectable()
 export class FarmToursService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private supabase: SupabaseService,
+  ) {}
 
   // ========================================
   // 查詢方法（Query Operations）
@@ -67,6 +81,28 @@ export class FarmToursService {
   // ========================================
   // 命令方法（Command Operations）
   // ========================================
+
+  /**
+   * 建立草稿（用於新增時先取得 ID，讓圖片上傳可運作）
+   */
+  async createDraft() {
+    return this.prisma.farmTour.create({
+      data: {
+        name: '未命名活動',
+        description: '',
+        date: new Date(),
+        startTime: '',
+        endTime: '',
+        price: 0,
+        maxParticipants: 20,
+        location: '',
+        type: 'tour',
+        status: 'upcoming',
+        isDraft: true,
+      },
+      include: { images: true },
+    });
+  }
 
   /**
    * 建立農場體驗
@@ -208,5 +244,153 @@ export class FarmToursService {
     ]);
 
     return { message: '預約已取消' };
+  }
+
+  // ========================================
+  // 圖片管理方法（Image Operations）
+  // ========================================
+
+  /**
+   * 取得簽名上傳 URL（讓前端直傳到 Supabase Storage）
+   */
+  async getUploadUrl(farmTourId: string, fileName: string) {
+    // 確認農場體驗存在
+    await this.findOne(farmTourId);
+
+    // 生成唯一檔名，避免覆蓋
+    const ext = fileName.split('.').pop() || 'jpg';
+    const uniqueFileName = `${uuidv4()}.${ext}`;
+    const filePath = `${farmTourId}/${uniqueFileName}`;
+
+    const { signedUrl, path } = await this.supabase.createSignedUploadUrl(
+      FARM_TOUR_IMAGES_BUCKET,
+      filePath,
+    );
+
+    // 取得公開 URL
+    const publicUrl = this.supabase.getPublicUrl(FARM_TOUR_IMAGES_BUCKET, path);
+
+    return {
+      uploadUrl: signedUrl,
+      filePath: path,
+      publicUrl,
+    };
+  }
+
+  /**
+   * 新增農場體驗圖片記錄
+   */
+  async addImage(farmTourId: string, dto: CreateFarmTourImageDto) {
+    // 確認農場體驗存在
+    await this.findOne(farmTourId);
+
+    // 如果沒有指定 displayPosition，放到最後
+    if (dto.displayPosition === undefined) {
+      const maxPosition = await this.prisma.farmTourImage.aggregate({
+        where: { farmTourId },
+        _max: { displayPosition: true },
+      });
+      dto.displayPosition = (maxPosition._max.displayPosition ?? -1) + 1;
+    }
+
+    return this.prisma.farmTourImage.create({
+      data: {
+        farmTourId,
+        storageUrl: dto.storageUrl,
+        filePath: dto.filePath,
+        altText: dto.altText,
+        displayPosition: dto.displayPosition,
+        size: dto.size || 'medium',
+      },
+    });
+  }
+
+  /**
+   * 更新農場體驗圖片
+   */
+  async updateImage(
+    farmTourId: string,
+    imageId: string,
+    dto: UpdateFarmTourImageDto,
+  ) {
+    // 確認圖片存在
+    const image = await this.prisma.farmTourImage.findFirst({
+      where: { id: imageId, farmTourId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`圖片不存在: ${imageId}`);
+    }
+
+    return this.prisma.farmTourImage.update({
+      where: { id: imageId },
+      data: dto,
+    });
+  }
+
+  /**
+   * 刪除農場體驗圖片
+   */
+  async removeImage(farmTourId: string, imageId: string) {
+    // 確認圖片存在並取得檔案路徑
+    const image = await this.prisma.farmTourImage.findFirst({
+      where: { id: imageId, farmTourId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`圖片不存在: ${imageId}`);
+    }
+
+    // 從 Supabase Storage 刪除檔案
+    try {
+      await this.supabase.deleteFile(FARM_TOUR_IMAGES_BUCKET, image.filePath);
+    } catch (error) {
+      // 檔案可能不存在，記錄但不阻止刪除記錄
+      console.warn(`Failed to delete file from storage: ${image.filePath}`, error);
+    }
+
+    // 刪除資料庫記錄
+    await this.prisma.farmTourImage.delete({
+      where: { id: imageId },
+    });
+
+    return { message: '圖片已刪除' };
+  }
+
+  /**
+   * 重新排序圖片
+   */
+  async reorderImages(farmTourId: string, imageIds: string[]) {
+    // 確認農場體驗存在
+    await this.findOne(farmTourId);
+
+    // 批次更新排序
+    const updates = imageIds.map((id, index) =>
+      this.prisma.farmTourImage.updateMany({
+        where: { id, farmTourId },
+        data: { displayPosition: index },
+      }),
+    );
+
+    await this.prisma.$transaction(updates);
+
+    // 回傳更新後的圖片列表
+    return this.prisma.farmTourImage.findMany({
+      where: { farmTourId },
+      orderBy: { displayPosition: 'asc' },
+    });
+  }
+
+  /**
+   * 取得農場體驗的所有圖片
+   */
+  async getImages(farmTourId: string) {
+    // 確認農場體驗存在
+    await this.findOne(farmTourId);
+
+    return this.prisma.farmTourImage.findMany({
+      where: { farmTourId },
+      orderBy: { displayPosition: 'asc' },
+    });
   }
 }

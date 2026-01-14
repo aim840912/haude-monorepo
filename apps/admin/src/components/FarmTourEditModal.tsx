@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { FarmTour, CreateFarmTourData, UpdateFarmTourData } from '../hooks/useFarmTours'
+import { FarmTourImageManager } from './FarmTourImageManager'
+import { farmTourImagesApi, type FarmTourImage } from '../services/api'
 
 interface FarmTourEditModalProps {
   farmTour: FarmTour | null  // null = 新增模式
@@ -9,6 +11,7 @@ interface FarmTourEditModalProps {
   onClose: () => void
   onCreate?: (data: CreateFarmTourData) => Promise<boolean>
   onUpdate?: (id: string, data: UpdateFarmTourData) => Promise<boolean>
+  onDelete?: (id: string) => Promise<boolean>  // 用於草稿取消時刪除
 }
 
 const typeOptions = [
@@ -32,8 +35,10 @@ export function FarmTourEditModal({
   onClose,
   onCreate,
   onUpdate,
+  onDelete,
 }: FarmTourEditModalProps) {
   const isEditMode = farmTour !== null
+  const isDraftMode = farmTour?.isDraft === true  // 草稿模式（新增時建立的草稿）
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,26 +54,52 @@ export function FarmTourEditModal({
     status: 'upcoming' as FarmTour['status'],
   })
   const [error, setError] = useState<string | null>(null)
+  const [images, setImages] = useState<FarmTourImage[]>([])
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
+
+  // 載入圖片
+  const loadImages = useCallback(async (farmTourId: string) => {
+    setIsLoadingImages(true)
+    try {
+      const { data } = await farmTourImagesApi.getImages(farmTourId)
+      setImages(data)
+    } catch (err) {
+      console.error('載入圖片失敗', err)
+    } finally {
+      setIsLoadingImages(false)
+    }
+  }, [])
+
+  // 圖片變更處理
+  const handleImagesChange = useCallback(() => {
+    if (farmTour?.id) {
+      loadImages(farmTour.id)
+    }
+  }, [farmTour?.id, loadImages])
 
   useEffect(() => {
     if (isEditMode && farmTour) {
-      // 編輯模式：載入現有活動資料
+      // 編輯模式或草稿模式：載入現有活動資料
+      // 草稿模式下，name 可能是「未命名活動」，這裡清空讓用戶填寫
       setFormData({
-        name: farmTour.name || '',
+        name: isDraftMode ? '' : (farmTour.name || ''),
         description: farmTour.description || '',
-        date: farmTour.date || '',
+        date: farmTour.date ? farmTour.date.split('T')[0] : '',  // 處理 ISO 日期
         startTime: farmTour.startTime || '',
         endTime: farmTour.endTime || '',
         price: farmTour.price || 0,
-        maxParticipants: farmTour.maxParticipants || 0,
+        maxParticipants: farmTour.maxParticipants || 20,
         location: farmTour.location || '',
         imageUrl: farmTour.imageUrl || '',
         type: farmTour.type || 'tour',
         status: farmTour.status || 'upcoming',
       })
       setError(null)
+      // 載入圖片
+      loadImages(farmTour.id)
     } else {
-      // 新增模式：重置為空表單
+      // 純新增模式（無草稿）：重置為空表單
       setFormData({
         name: '',
         description: '',
@@ -83,8 +114,9 @@ export function FarmTourEditModal({
         status: 'upcoming',
       })
       setError(null)
+      setImages([])
     }
-  }, [farmTour, isEditMode])
+  }, [farmTour, isEditMode, isDraftMode, loadImages])
 
   if (!isOpen) return null
 
@@ -112,7 +144,7 @@ export function FarmTourEditModal({
     let success = false
 
     if (isEditMode && farmTour && onUpdate) {
-      // 編輯模式
+      // 編輯模式或草稿模式：都使用 update
       success = await onUpdate(farmTour.id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -125,9 +157,11 @@ export function FarmTourEditModal({
         imageUrl: formData.imageUrl.trim() || undefined,
         type: formData.type,
         status: formData.status,
-      })
+        // 草稿模式提交時，設置 isDraft: false 轉為正式資料
+        ...(isDraftMode && { isDraft: false }),
+      } as UpdateFarmTourData)
     } else if (!isEditMode && onCreate) {
-      // 新增模式
+      // 純新增模式（無草稿）
       success = await onCreate({
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -149,9 +183,19 @@ export function FarmTourEditModal({
     }
   }
 
+  // 處理取消（草稿模式需要刪除草稿）
+  const handleCancel = async () => {
+    if (isDraftMode && farmTour && onDelete) {
+      setIsCancelling(true)
+      await onDelete(farmTour.id)
+      setIsCancelling(false)
+    }
+    onClose()
+  }
+
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isLoading) {
-      onClose()
+    if (e.target === e.currentTarget && !isLoading && !isCancelling) {
+      handleCancel()
     }
   }
 
@@ -168,11 +212,11 @@ export function FarmTourEditModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
           <h2 className="text-lg font-semibold text-gray-900">
-            {isEditMode ? '編輯活動' : '新增活動'}
+            {isDraftMode ? '新增活動' : isEditMode ? '編輯活動' : '新增活動'}
           </h2>
           <button
-            onClick={onClose}
-            disabled={isLoading}
+            onClick={handleCancel}
+            disabled={isLoading || isCancelling}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -333,58 +377,82 @@ export function FarmTourEditModal({
             />
           </div>
 
-          {/* 活動圖片 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              活動圖片 URL
-            </label>
-            <input
-              type="url"
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              placeholder="https://example.com/image.jpg"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isLoading}
-            />
-            {/* 圖片預覽 */}
-            {formData.imageUrl && (
-              <div className="mt-3">
-                <p className="text-xs text-gray-500 mb-2">圖片預覽：</p>
-                <div className="relative w-full max-w-xs aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={formData.imageUrl}
-                    alt="活動圖片預覽"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                    }}
-                  />
-                  <div className="hidden absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                    圖片載入失敗
+          {/* 活動圖片 - 編輯模式和草稿模式都顯示上傳器 */}
+          {farmTour ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                活動圖片
+              </label>
+              {isLoadingImages ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <FarmTourImageManager
+                  farmTourId={farmTour.id}
+                  images={images}
+                  onImagesChange={handleImagesChange}
+                  disabled={isLoading || isCancelling}
+                />
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                活動圖片 URL
+              </label>
+              <input
+                type="url"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="https://example.com/image.jpg"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                儲存後可上傳多張圖片
+              </p>
+              {/* 圖片預覽 */}
+              {formData.imageUrl && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-2">圖片預覽：</p>
+                  <div className="relative w-full max-w-xs aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <img
+                      src={formData.imageUrl}
+                      alt="活動圖片預覽"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                    <div className="hidden absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                      圖片載入失敗
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              onClick={handleCancel}
+              disabled={isLoading || isCancelling}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >
+              {isCancelling && <Loader2 className="w-4 h-4 animate-spin" />}
               取消
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isCancelling}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isLoading ? '儲存中...' : isEditMode ? '儲存變更' : '新增活動'}
+              {isLoading ? '儲存中...' : isDraftMode ? '新增活動' : isEditMode ? '儲存變更' : '新增活動'}
             </button>
           </div>
         </form>

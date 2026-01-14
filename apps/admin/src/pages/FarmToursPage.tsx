@@ -30,10 +30,20 @@ const typeLabels: Record<FarmTour['type'], string> = {
 
 export function FarmToursPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingTour, setEditingTour] = useState<FarmTour | null>(null)
   const [deletingTour, setDeletingTour] = useState<FarmTour | null>(null)
-  const { farmTours, isLoading, error, refetch, createFarmTour, updateFarmTour, deleteFarmTour, isCreating, isUpdating, isDeleting } = useFarmTours()
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false)
+  const { farmTours, isLoading, error, refetch, createDraft, updateFarmTour, deleteFarmTour, isUpdating, isDeleting } = useFarmTours()
+
+  // 新增活動（先建立草稿取得 ID，讓圖片上傳可運作）
+  const handleCreateNew = async () => {
+    setIsCreatingDraft(true)
+    const draft = await createDraft()
+    setIsCreatingDraft(false)
+    if (draft) {
+      setEditingTour(draft) // 用草稿打開編輯 Modal
+    }
+  }
 
   // 過濾活動
   const filteredTours = farmTours.filter((tour) =>
@@ -77,10 +87,15 @@ export function FarmToursPage() {
             <RefreshCw className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            onClick={handleCreateNew}
+            disabled={isCreatingDraft}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            <Plus className="w-5 h-5" />
+            {isCreatingDraft ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
             新增活動
           </button>
         </div>
@@ -218,25 +233,18 @@ export function FarmToursPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
-      {/* 新增活動 Modal */}
-      {isCreateModalOpen && (
-        <FarmTourEditModal
-          farmTour={null}
-          isOpen={isCreateModalOpen}
-          isLoading={isCreating}
-          onClose={() => setIsCreateModalOpen(false)}
-          onCreate={createFarmTour}
-        />
-      )}
-
-      {/* 編輯活動 Modal */}
+      {/* 編輯/新增活動 Modal（草稿模式也使用編輯 Modal） */}
       {editingTour && (
         <FarmTourEditModal
           farmTour={editingTour}
           isOpen={!!editingTour}
           isLoading={isUpdating}
-          onClose={() => setEditingTour(null)}
+          onClose={() => {
+            setEditingTour(null)
+            refetch() // 刷新列表（如果草稿被刪除或保存）
+          }}
           onUpdate={updateFarmTour}
+          onDelete={deleteFarmTour}
         />
       )}
 

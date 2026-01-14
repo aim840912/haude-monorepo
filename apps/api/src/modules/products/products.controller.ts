@@ -145,12 +145,21 @@ export class AdminProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: '取得所有產品（含下架）' })
+  @ApiOperation({ summary: '取得所有產品（含下架，預設排除草稿）' })
   @ApiResponse({ status: 200, description: '成功取得所有產品列表' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   findAll() {
     return this.productsService.findAllAdmin();
+  }
+
+  @Post('draft')
+  @ApiOperation({ summary: '建立草稿產品（用於新增時先取得 productId）' })
+  @ApiResponse({ status: 201, description: '草稿產品建立成功' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  createDraft() {
+    return this.productsService.createDraft();
   }
 
   // ========================================

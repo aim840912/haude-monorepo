@@ -33,6 +33,7 @@ export interface Product {
   reservedStock?: number
   availableStock?: number
   isActive: boolean
+  isDraft?: boolean
   createdAt: string
   updatedAt: string
   productImages: ProductImage[]
@@ -64,6 +65,7 @@ export interface UpdateProductData {
   saleEndDate?: string
   stock?: number
   isActive?: boolean
+  isDraft?: boolean
 }
 
 export interface InventoryStatus {

@@ -21,6 +21,7 @@ export interface Location {
   image?: string
   isMain: boolean
   isActive: boolean
+  isDraft?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -70,6 +71,7 @@ interface UseLocationsReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createDraft: () => Promise<Location | null>
   createLocation: (data: CreateLocationData) => Promise<boolean>
   updateLocation: (id: string, data: UpdateLocationData) => Promise<boolean>
   deleteLocation: (id: string) => Promise<boolean>
@@ -98,6 +100,16 @@ export function useLocations(): UseLocationsReturn {
       logger.error('[useLocations] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
+    }
+  }, [])
+
+  const createDraft = useCallback(async (): Promise<Location | null> => {
+    try {
+      const { data } = await locationsApi.createDraft()
+      return data
+    } catch (err) {
+      logger.error('[useLocations] 建立草稿失敗', { error: err })
+      return null
     }
   }, [])
 
@@ -152,6 +164,7 @@ export function useLocations(): UseLocationsReturn {
     isLoading,
     error,
     refetch: fetchLocations,
+    createDraft,
     createLocation,
     updateLocation,
     deleteLocation,

@@ -35,6 +35,7 @@ export const productsApi = {
   getAll: () => api.get('/products'),
   getAllAdmin: () => api.get('/admin/products'),
   getById: (id: string) => api.get(`/products/${id}`),
+  createDraft: () => api.post('/admin/products/draft'),
   create: (data: {
     name: string
     description?: string
@@ -51,6 +52,7 @@ export const productsApi = {
       category?: string
       stock?: number
       isActive?: boolean
+      isDraft?: boolean
     }
   ) => api.put(`/products/${id}`, data),
   delete: (id: string) => api.delete(`/products/${id}`),
@@ -146,6 +148,7 @@ export const farmToursApi = {
   getById: (id: string) => api.get(`/farm-tours/${id}`),
   // 管理員 API
   getAllAdmin: () => api.get('/admin/farm-tours'),
+  createDraft: () => api.post('/admin/farm-tours/draft'),
   create: (data: {
     name: string
     description: string
@@ -177,6 +180,63 @@ export const farmToursApi = {
     }
   ) => api.put(`/admin/farm-tours/${id}`, data),
   delete: (id: string) => api.delete(`/admin/farm-tours/${id}`),
+}
+
+// Farm Tour Images API
+export interface FarmTourImage {
+  id: string
+  farmTourId: string
+  storageUrl: string
+  filePath: string
+  altText?: string
+  displayPosition: number
+  size: 'thumbnail' | 'medium' | 'large'
+  createdAt: string
+  updatedAt: string
+}
+
+export const farmTourImagesApi = {
+  // 取得農場體驗的所有圖片
+  getImages: (farmTourId: string) =>
+    api.get<FarmTourImage[]>(`/admin/farm-tours/${farmTourId}/images`),
+
+  // 取得上傳 URL（用於前端直傳到 Supabase）
+  getUploadUrl: (farmTourId: string, fileName: string) =>
+    api.post<UploadUrlResponse>(`/admin/farm-tours/${farmTourId}/images/upload-url`, {
+      fileName,
+    }),
+
+  // 新增圖片記錄（上傳完成後呼叫）
+  addImage: (
+    farmTourId: string,
+    data: {
+      storageUrl: string
+      filePath: string
+      altText?: string
+      displayPosition?: number
+      size?: 'thumbnail' | 'medium' | 'large'
+    }
+  ) => api.post<FarmTourImage>(`/admin/farm-tours/${farmTourId}/images`, data),
+
+  // 更新圖片資訊
+  updateImage: (
+    farmTourId: string,
+    imageId: string,
+    data: {
+      altText?: string
+      displayPosition?: number
+    }
+  ) => api.put<FarmTourImage>(`/admin/farm-tours/${farmTourId}/images/${imageId}`, data),
+
+  // 刪除圖片
+  deleteImage: (farmTourId: string, imageId: string) =>
+    api.delete(`/admin/farm-tours/${farmTourId}/images/${imageId}`),
+
+  // 重新排序圖片
+  reorderImages: (farmTourId: string, imageIds: string[]) =>
+    api.put<FarmTourImage[]>(`/admin/farm-tours/${farmTourId}/images/reorder`, {
+      imageIds,
+    }),
 }
 
 // Schedules API (擺攤行程)
@@ -287,6 +347,7 @@ export const locationsApi = {
   getById: (id: string) => api.get(`/locations/${id}`),
   // 管理員 API
   getAllAdmin: () => api.get('/admin/locations'),
+  createDraft: () => api.post('/admin/locations/draft'),
   create: (data: {
     name: string
     address: string
@@ -329,6 +390,63 @@ export const locationsApi = {
     }
   ) => api.put(`/admin/locations/${id}`, data),
   delete: (id: string) => api.delete(`/admin/locations/${id}`),
+}
+
+// Location Images API
+export interface LocationImage {
+  id: string
+  locationId: string
+  storageUrl: string
+  filePath: string
+  altText?: string
+  displayPosition: number
+  size: 'thumbnail' | 'medium' | 'large'
+  createdAt: string
+  updatedAt: string
+}
+
+export const locationImagesApi = {
+  // 取得據點的所有圖片
+  getImages: (locationId: string) =>
+    api.get<LocationImage[]>(`/admin/locations/${locationId}/images`),
+
+  // 取得上傳 URL（用於前端直傳到 Supabase）
+  getUploadUrl: (locationId: string, fileName: string) =>
+    api.post<UploadUrlResponse>(`/admin/locations/${locationId}/images/upload-url`, {
+      fileName,
+    }),
+
+  // 新增圖片記錄（上傳完成後呼叫）
+  addImage: (
+    locationId: string,
+    data: {
+      storageUrl: string
+      filePath: string
+      altText?: string
+      displayPosition?: number
+      size?: 'thumbnail' | 'medium' | 'large'
+    }
+  ) => api.post<LocationImage>(`/admin/locations/${locationId}/images`, data),
+
+  // 更新圖片資訊
+  updateImage: (
+    locationId: string,
+    imageId: string,
+    data: {
+      altText?: string
+      displayPosition?: number
+    }
+  ) => api.put<LocationImage>(`/admin/locations/${locationId}/images/${imageId}`, data),
+
+  // 刪除圖片
+  deleteImage: (locationId: string, imageId: string) =>
+    api.delete(`/admin/locations/${locationId}/images/${imageId}`),
+
+  // 重新排序圖片
+  reorderImages: (locationId: string, imageIds: string[]) =>
+    api.put<LocationImage[]>(`/admin/locations/${locationId}/images/reorder`, {
+      imageIds,
+    }),
 }
 
 // Social Posts API (社群貼文)
