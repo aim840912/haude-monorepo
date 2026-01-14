@@ -8,11 +8,21 @@ import type { Product } from '@haude/types'
 
 export function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const { products, isLoading, error, refetch, createProduct, updateProduct, deleteProduct, isCreating, isUpdating, isDeleting } = useProducts()
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false)
+  const { products, isLoading, error, refetch, createDraft, updateProduct, deleteProduct, isUpdating, isDeleting } = useProducts()
+
+  // 新增產品：先建立草稿再開啟編輯 Modal
+  const handleCreateNew = async () => {
+    setIsCreatingDraft(true)
+    const draftProduct = await createDraft()
+    setIsCreatingDraft(false)
+    if (draftProduct) {
+      setEditingProduct(draftProduct)
+    }
+  }
 
   // 過濾產品
   const filteredProducts = products.filter((product) =>
@@ -55,11 +65,16 @@ export function ProductsPage() {
             <RefreshCw className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            onClick={handleCreateNew}
+            disabled={isCreatingDraft}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            <Plus className="w-5 h-5" />
-            新增產品
+            {isCreatingDraft ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
+            {isCreatingDraft ? '準備中...' : '新增產品'}
           </button>
         </div>
       </div>
@@ -181,25 +196,18 @@ export function ProductsPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
-      {/* 新增產品 Modal */}
-      {isCreateModalOpen && (
-        <ProductEditModal
-          product={null}
-          isOpen={isCreateModalOpen}
-          isLoading={isCreating}
-          onClose={() => setIsCreateModalOpen(false)}
-          onCreate={createProduct}
-        />
-      )}
-
-      {/* 編輯產品 Modal */}
+      {/* 編輯/新增產品 Modal */}
       {editingProduct && (
         <ProductEditModal
           product={editingProduct}
           isOpen={!!editingProduct}
           isLoading={isUpdating}
-          onClose={() => setEditingProduct(null)}
+          onClose={() => {
+            setEditingProduct(null)
+            refetch() // 重新載入產品列表
+          }}
           onUpdate={updateProduct}
+          onDelete={deleteProduct}
         />
       )}
 

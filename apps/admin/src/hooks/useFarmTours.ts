@@ -17,6 +17,7 @@ export interface FarmTour {
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
   type: 'harvest' | 'workshop' | 'tour' | 'tasting'
   tags?: string[]
+  isDraft?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -55,6 +56,7 @@ interface UseFarmToursReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createDraft: () => Promise<FarmTour | null>
   createFarmTour: (data: CreateFarmTourData) => Promise<boolean>
   updateFarmTour: (id: string, data: UpdateFarmTourData) => Promise<boolean>
   deleteFarmTour: (id: string) => Promise<boolean>
@@ -84,6 +86,16 @@ export function useFarmTours(): UseFarmToursReturn {
       logger.error('[useFarmTours] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
+    }
+  }, [])
+
+  const createDraft = useCallback(async (): Promise<FarmTour | null> => {
+    try {
+      const { data } = await farmToursApi.createDraft()
+      return data
+    } catch (err) {
+      logger.error('[useFarmTours] 建立草稿失敗', { error: err })
+      return null
     }
   }, [])
 
@@ -138,6 +150,7 @@ export function useFarmTours(): UseFarmToursReturn {
     isLoading,
     error,
     refetch: fetchFarmTours,
+    createDraft,
     createFarmTour,
     updateFarmTour,
     deleteFarmTour,

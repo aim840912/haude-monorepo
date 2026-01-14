@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { Location, CreateLocationData, UpdateLocationData } from '../hooks/useLocations'
+import { LocationImageManager } from './LocationImageManager'
+import { locationImagesApi, type LocationImage } from '../services/api'
 
 interface LocationEditModalProps {
   location: Location | null  // null = 新增模式
@@ -9,6 +11,7 @@ interface LocationEditModalProps {
   onClose: () => void
   onCreate?: (data: CreateLocationData) => Promise<boolean>
   onUpdate?: (id: string, data: UpdateLocationData) => Promise<boolean>
+  onDelete?: (id: string) => Promise<boolean>  // 用於草稿取消時刪除
 }
 
 export function LocationEditModal({
@@ -18,8 +21,10 @@ export function LocationEditModal({
   onClose,
   onCreate,
   onUpdate,
+  onDelete,
 }: LocationEditModalProps) {
   const isEditMode = location !== null
+  const isDraftMode = location?.isDraft === true  // 草稿模式（新增時建立的草稿）
 
   const [formData, setFormData] = useState({
     name: '',
@@ -37,12 +42,36 @@ export function LocationEditModal({
     isActive: true,
   })
   const [error, setError] = useState<string | null>(null)
+  const [images, setImages] = useState<LocationImage[]>([])
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
+
+  // 載入圖片
+  const loadImages = useCallback(async (locationId: string) => {
+    setIsLoadingImages(true)
+    try {
+      const { data } = await locationImagesApi.getImages(locationId)
+      setImages(data)
+    } catch (err) {
+      console.error('載入圖片失敗', err)
+    } finally {
+      setIsLoadingImages(false)
+    }
+  }, [])
+
+  // 圖片變更處理
+  const handleImagesChange = useCallback(() => {
+    if (location?.id) {
+      loadImages(location.id)
+    }
+  }, [location?.id, loadImages])
 
   useEffect(() => {
     if (isEditMode && location) {
-      // 編輯模式：載入現有門市資料
+      // 編輯模式或草稿模式：載入現有門市資料
+      // 草稿模式下，name 可能是「未命名門市」，這裡清空讓用戶填寫
       setFormData({
-        name: location.name || '',
+        name: isDraftMode ? '' : (location.name || ''),
         title: location.title || '',
         address: location.address || '',
         landmark: location.landmark || '',
@@ -57,8 +86,10 @@ export function LocationEditModal({
         isActive: location.isActive ?? true,
       })
       setError(null)
+      // 載入圖片
+      loadImages(location.id)
     } else {
-      // 新增模式：重置為空表單
+      // 純新增模式（無草稿）：重置為空表單
       setFormData({
         name: '',
         title: '',
@@ -75,8 +106,9 @@ export function LocationEditModal({
         isActive: true,
       })
       setError(null)
+      setImages([])
     }
-  }, [location, isEditMode])
+  }, [location, isEditMode, isDraftMode, loadImages])
 
   if (!isOpen) return null
 
@@ -96,7 +128,7 @@ export function LocationEditModal({
     let success = false
 
     if (isEditMode && location && onUpdate) {
-      // 編輯模式
+      // 編輯模式或草稿模式：都使用 update
       success = await onUpdate(location.id, {
         name: formData.name.trim(),
         title: formData.title.trim() || undefined,
@@ -111,9 +143,11 @@ export function LocationEditModal({
         image: formData.image.trim() || undefined,
         isMain: formData.isMain,
         isActive: formData.isActive,
-      })
+        // 草稿模式提交時，設置 isDraft: false 轉為正式資料
+        ...(isDraftMode && { isDraft: false }),
+      } as UpdateLocationData)
     } else if (!isEditMode && onCreate) {
-      // 新增模式
+      // 純新增模式（無草稿）
       success = await onCreate({
         name: formData.name.trim(),
         address: formData.address.trim(),
@@ -138,9 +172,19 @@ export function LocationEditModal({
     }
   }
 
+  // 處理取消（草稿模式需要刪除草稿）
+  const handleCancel = async () => {
+    if (isDraftMode && location && onDelete) {
+      setIsCancelling(true)
+      await onDelete(location.id)
+      setIsCancelling(false)
+    }
+    onClose()
+  }
+
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isLoading) {
-      onClose()
+    if (e.target === e.currentTarget && !isLoading && !isCancelling) {
+      handleCancel()
     }
   }
 
@@ -157,11 +201,11 @@ export function LocationEditModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
           <h2 className="text-lg font-semibold text-gray-900">
-            {isEditMode ? '編輯門市據點' : '新增門市據點'}
+            {isDraftMode ? '新增門市據點' : isEditMode ? '編輯門市據點' : '新增門市據點'}
           </h2>
           <button
-            onClick={onClose}
-            disabled={isLoading}
+            onClick={handleCancel}
+            disabled={isLoading || isCancelling}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -322,35 +366,58 @@ export function LocationEditModal({
             </div>
           </div>
 
-          {/* 圖片 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              門市圖片 URL
-            </label>
-            <input
-              type="url"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              placeholder="https://example.com/image.jpg"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={isLoading}
-            />
-            {formData.image && (
-              <div className="mt-3">
-                <p className="text-xs text-gray-500 mb-2">圖片預覽：</p>
-                <div className="relative w-full max-w-xs aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={formData.image}
-                    alt="門市圖片預覽"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
+          {/* 圖片 - 編輯模式和草稿模式都顯示上傳器 */}
+          {location ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                門市圖片
+              </label>
+              {isLoadingImages ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <LocationImageManager
+                  locationId={location.id}
+                  images={images}
+                  onImagesChange={handleImagesChange}
+                  disabled={isLoading || isCancelling}
+                />
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                門市圖片 URL
+              </label>
+              <input
+                type="url"
+                value={formData.image}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                placeholder="https://example.com/image.jpg"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                儲存後可上傳多張圖片
+              </p>
+              {formData.image && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-2">圖片預覽：</p>
+                  <div className="relative w-full max-w-xs aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <img
+                      src={formData.image}
+                      alt="門市圖片預覽"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 狀態選項 */}
           <div className="flex gap-6">
@@ -396,19 +463,20 @@ export function LocationEditModal({
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              onClick={handleCancel}
+              disabled={isLoading || isCancelling}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
             >
+              {isCancelling && <Loader2 className="w-4 h-4 animate-spin" />}
               取消
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isCancelling}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isLoading ? '儲存中...' : isEditMode ? '儲存變更' : '新增門市'}
+              {isLoading ? '儲存中...' : isDraftMode ? '新增門市' : isEditMode ? '儲存變更' : '新增門市'}
             </button>
           </div>
         </form>

@@ -7,12 +7,13 @@ import { productImagesApi, type ProductImage } from '../services/api'
 import logger from '../lib/logger'
 
 interface ProductEditModalProps {
-  product: Product | null  // null = 新增模式
+  product: Product | null  // null = 新增模式，isDraft=true = 草稿模式
   isOpen: boolean
   isLoading: boolean
   onClose: () => void
   onCreate?: (data: CreateProductData) => Promise<boolean>
   onUpdate?: (id: string, data: UpdateProductData) => Promise<boolean>
+  onDelete?: (id: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export function ProductEditModal({
@@ -22,8 +23,10 @@ export function ProductEditModal({
   onClose,
   onCreate,
   onUpdate,
+  onDelete,
 }: ProductEditModalProps) {
   const isEditMode = product !== null
+  const isDraftMode = product?.isDraft === true
 
   const [formData, setFormData] = useState({
     name: '',
@@ -108,8 +111,24 @@ export function ProductEditModal({
     loadImages()
   }, [loadImages])
 
-  // 取消時清理新上傳的圖片
+  // 取消時清理：草稿模式刪除整個產品，否則只刪除新上傳的圖片
   const handleCancel = useCallback(async () => {
+    // 草稿模式：刪除整個草稿產品
+    if (isDraftMode && product?.id && onDelete) {
+      setIsCancelling(true)
+      try {
+        await onDelete(product.id)
+      } catch (err) {
+        logger.error('刪除草稿產品失敗', { error: err })
+      } finally {
+        setIsCancelling(false)
+        setNewlyUploadedIds([])
+        onClose()
+      }
+      return
+    }
+
+    // 非草稿模式：只刪除新上傳的圖片
     if (newlyUploadedIds.length === 0 || !product?.id) {
       onClose()
       return
@@ -129,7 +148,7 @@ export function ProductEditModal({
       setNewlyUploadedIds([])
       onClose()
     }
-  }, [newlyUploadedIds, product?.id, onClose])
+  }, [isDraftMode, newlyUploadedIds, product?.id, onClose, onDelete])
 
   if (!isOpen) return null
 
@@ -154,7 +173,7 @@ export function ProductEditModal({
     let success = false
 
     if (isEditMode && product && onUpdate) {
-      // 編輯模式
+      // 編輯模式（含草稿模式）
       success = await onUpdate(product.id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -162,9 +181,11 @@ export function ProductEditModal({
         price: formData.price,
         stock: formData.stock,
         isActive: formData.isActive,
+        // 草稿模式：提交時設置 isDraft: false
+        ...(isDraftMode && { isDraft: false }),
       })
     } else if (!isEditMode && onCreate) {
-      // 新增模式
+      // 純新增模式（沒有 product）
       success = await onCreate({
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -179,7 +200,7 @@ export function ProductEditModal({
       setNewlyUploadedIds([])
       onClose()
     } else {
-      setError(isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
+      setError(isDraftMode ? '儲存失敗，請稍後再試' : isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
     }
   }
 
@@ -202,7 +223,7 @@ export function ProductEditModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            {isEditMode ? '編輯產品' : '新增產品'}
+            {isDraftMode ? '新增產品' : isEditMode ? '編輯產品' : '新增產品'}
           </h2>
           <button
             onClick={handleCancel}
@@ -324,7 +345,7 @@ export function ProductEditModal({
             </div>
           </div>
 
-          {/* 產品圖片（僅編輯模式顯示） */}
+          {/* 產品圖片（編輯模式和草稿模式都顯示） */}
           {isEditMode && product && (
             <div className="pt-4 border-t border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -346,15 +367,6 @@ export function ProductEditModal({
             </div>
           )}
 
-          {/* 新增模式提示 */}
-          {!isEditMode && (
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                產品圖片可在新增完成後，於編輯模式中上傳。
-              </p>
-            </div>
-          )}
-
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
@@ -372,7 +384,7 @@ export function ProductEditModal({
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isLoading ? '儲存中...' : isEditMode ? '儲存變更' : '新增產品'}
+              {isLoading ? '儲存中...' : isDraftMode ? '新增產品' : isEditMode ? '儲存變更' : '新增產品'}
             </button>
           </div>
         </form>

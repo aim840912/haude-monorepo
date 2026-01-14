@@ -19,6 +19,7 @@ export interface UpdateProductData {
   category?: string
   stock?: number
   isActive?: boolean
+  isDraft?: boolean
 }
 
 interface UseProductsReturn {
@@ -26,6 +27,7 @@ interface UseProductsReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
+  createDraft: () => Promise<Product | null>
   createProduct: (data: CreateProductData) => Promise<boolean>
   updateProduct: (id: string, data: UpdateProductData) => Promise<boolean>
   deleteProduct: (id: string) => Promise<{ success: boolean; error?: string }>
@@ -55,6 +57,19 @@ export function useProducts(): UseProductsReturn {
       logger.error('[useProducts] API 錯誤', { error: err })
     } finally {
       setIsLoading(false)
+    }
+  }, [])
+
+  const createDraft = useCallback(async (): Promise<Product | null> => {
+    setIsCreating(true)
+    try {
+      const { data } = await productsApi.createDraft()
+      return data as Product
+    } catch (err) {
+      logger.error('[useProducts] 建立草稿失敗', { error: err })
+      return null
+    } finally {
+      setIsCreating(false)
     }
   }, [])
 
@@ -119,6 +134,7 @@ export function useProducts(): UseProductsReturn {
     isLoading,
     error,
     refetch: fetchProducts,
+    createDraft,
     createProduct,
     updateProduct,
     deleteProduct,

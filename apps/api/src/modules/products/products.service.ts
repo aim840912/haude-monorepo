@@ -29,11 +29,11 @@ export class ProductsService {
   // ========================================
 
   /**
-   * 取得所有啟用的產品（公開 API）
+   * 取得所有啟用的產品（公開 API，排除草稿）
    */
   async findAll() {
     return this.prisma.product.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDraft: false },
       include: {
         images: {
           orderBy: { displayPosition: 'asc' },
@@ -44,10 +44,11 @@ export class ProductsService {
   }
 
   /**
-   * 取得所有產品（管理員用，含下架產品）
+   * 取得所有產品（管理員用，含下架產品，預設排除草稿）
    */
-  async findAllAdmin() {
+  async findAllAdmin(includeDrafts = false) {
     return this.prisma.product.findMany({
+      where: includeDrafts ? {} : { isDraft: false },
       include: {
         images: {
           orderBy: { displayPosition: 'asc' },
@@ -140,6 +141,24 @@ export class ProductsService {
   // ========================================
 
   /**
+   * 建立草稿產品（用於新增時先取得 productId）
+   */
+  async createDraft() {
+    return this.prisma.product.create({
+      data: {
+        name: '新產品',
+        description: '',
+        category: '未分類',
+        price: 0,
+        stock: 0,
+        isActive: false,
+        isDraft: true,
+      },
+      include: { images: true },
+    });
+  }
+
+  /**
    * 建立產品
    */
   async create(dto: CreateProductDto) {
@@ -185,6 +204,7 @@ export class ProductsService {
     }
     if (dto.stock !== undefined) data.stock = dto.stock;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
+    if (dto.isDraft !== undefined) data.isDraft = dto.isDraft;
 
     return this.prisma.product.update({
       where: { id },

@@ -6,10 +6,20 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 
 export function LocationsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
   const [deletingLocation, setDeletingLocation] = useState<Location | null>(null)
-  const { locations, isLoading, error, refetch, createLocation, updateLocation, deleteLocation, isCreating, isUpdating, isDeleting } = useLocations()
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false)
+  const { locations, isLoading, error, refetch, createDraft, updateLocation, deleteLocation, isUpdating, isDeleting } = useLocations()
+
+  // 新增門市（先建立草稿取得 ID，讓圖片上傳可運作）
+  const handleCreateNew = async () => {
+    setIsCreatingDraft(true)
+    const draft = await createDraft()
+    setIsCreatingDraft(false)
+    if (draft) {
+      setEditingLocation(draft) // 用草稿打開編輯 Modal
+    }
+  }
 
   // 過濾門市
   const filteredLocations = locations.filter((location) =>
@@ -53,10 +63,15 @@ export function LocationsPage() {
             <RefreshCw className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            onClick={handleCreateNew}
+            disabled={isCreatingDraft}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            <Plus className="w-5 h-5" />
+            {isCreatingDraft ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
             新增門市
           </button>
         </div>
@@ -190,25 +205,18 @@ export function LocationsPage() {
         {searchQuery && ` (搜尋結果)`}
       </div>
 
-      {/* 新增門市 Modal */}
-      {isCreateModalOpen && (
-        <LocationEditModal
-          location={null}
-          isOpen={isCreateModalOpen}
-          isLoading={isCreating}
-          onClose={() => setIsCreateModalOpen(false)}
-          onCreate={createLocation}
-        />
-      )}
-
-      {/* 編輯門市 Modal */}
+      {/* 編輯/新增門市 Modal（草稿模式也使用編輯 Modal） */}
       {editingLocation && (
         <LocationEditModal
           location={editingLocation}
           isOpen={!!editingLocation}
           isLoading={isUpdating}
-          onClose={() => setEditingLocation(null)}
+          onClose={() => {
+            setEditingLocation(null)
+            refetch() // 刷新列表（如果草稿被刪除或保存）
+          }}
           onUpdate={updateLocation}
+          onDelete={deleteLocation}
         />
       )}
 
