@@ -41,6 +41,8 @@ export function ProductEditModal({
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   // 追蹤本次新上傳的圖片 ID（取消時需要刪除）
   const [newlyUploadedIds, setNewlyUploadedIds] = useState<string[]>([])
+  // 追蹤待刪除的圖片 ID（儲存時才真正刪除）
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([])
   const [isCancelling, setIsCancelling] = useState(false)
 
   // 載入產品圖片（僅編輯模式）
@@ -71,6 +73,7 @@ export function ProductEditModal({
       })
       setError(null)
       setNewlyUploadedIds([])
+      setPendingDeleteIds([])
       // 載入圖片
       if (product.productImages && product.productImages.length > 0) {
         setImages(product.productImages.map(img => ({
@@ -100,6 +103,7 @@ export function ProductEditModal({
       setError(null)
       setImages([])
       setNewlyUploadedIds([])
+      setPendingDeleteIds([])
     }
   }, [product, isEditMode, loadImages])
 
@@ -110,6 +114,21 @@ export function ProductEditModal({
     }
     loadImages()
   }, [loadImages])
+
+  // 標記圖片為待刪除
+  const handleMarkForDelete = useCallback((imageId: string) => {
+    // 如果是新上傳的圖片，從 newlyUploadedIds 移除
+    if (newlyUploadedIds.includes(imageId)) {
+      setNewlyUploadedIds(prev => prev.filter(id => id !== imageId))
+    }
+    // 加入待刪除列表
+    setPendingDeleteIds(prev => [...prev, imageId])
+  }, [newlyUploadedIds])
+
+  // 復原圖片（取消待刪除標記）
+  const handleRestoreImage = useCallback((imageId: string) => {
+    setPendingDeleteIds(prev => prev.filter(id => id !== imageId))
+  }, [])
 
   // 取消時清理：草稿模式刪除整個產品，否則只刪除新上傳的圖片
   const handleCancel = useCallback(async () => {
@@ -123,13 +142,17 @@ export function ProductEditModal({
       } finally {
         setIsCancelling(false)
         setNewlyUploadedIds([])
+        setPendingDeleteIds([])
         onClose()
       }
       return
     }
 
-    // 非草稿模式：只刪除新上傳的圖片
+    // 非草稿模式：
+    // - pendingDeleteIds → 直接清空（還沒真正刪除）
+    // - newlyUploadedIds → 需要調用 API 刪除
     if (newlyUploadedIds.length === 0 || !product?.id) {
+      setPendingDeleteIds([])
       onClose()
       return
     }
@@ -146,6 +169,7 @@ export function ProductEditModal({
     } finally {
       setIsCancelling(false)
       setNewlyUploadedIds([])
+      setPendingDeleteIds([])
       onClose()
     }
   }, [isDraftMode, newlyUploadedIds, product?.id, onClose, onDelete])
@@ -168,6 +192,21 @@ export function ProductEditModal({
     if (formData.stock < 0) {
       setError('庫存不能為負數')
       return
+    }
+
+    // 步驟 1: 先刪除被標記的圖片
+    if (pendingDeleteIds.length > 0 && product?.id) {
+      try {
+        await Promise.all(
+          pendingDeleteIds.map(imageId =>
+            productImagesApi.deleteImage(product.id, imageId)
+          )
+        )
+      } catch (err) {
+        logger.error('刪除圖片失敗', { error: err })
+        setError('部分圖片刪除失敗，請稍後再試')
+        return
+      }
     }
 
     let success = false
@@ -198,6 +237,7 @@ export function ProductEditModal({
 
     if (success) {
       setNewlyUploadedIds([])
+      setPendingDeleteIds([])
       onClose()
     } else {
       setError(isDraftMode ? '儲存失敗，請稍後再試' : isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
@@ -362,6 +402,9 @@ export function ProductEditModal({
                   images={images}
                   onImagesChange={handleImagesChange}
                   disabled={isLoading || isCancelling}
+                  pendingDeleteIds={pendingDeleteIds}
+                  onMarkForDelete={handleMarkForDelete}
+                  onRestoreImage={handleRestoreImage}
                 />
               )}
             </div>

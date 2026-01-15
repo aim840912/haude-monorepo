@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Upload, X, Loader2, GripVertical, Image as ImageIcon } from 'lucide-react'
+import { Upload, X, Loader2, GripVertical, Image as ImageIcon, RotateCcw } from 'lucide-react'
 import { farmTourImagesApi, type FarmTourImage } from '../services/api'
 import logger from '../lib/logger'
 
@@ -8,6 +8,10 @@ interface FarmTourImageManagerProps {
   images: FarmTourImage[]
   onImagesChange: (newImageIds?: string[]) => void
   disabled?: boolean
+  // 延遲刪除相關
+  pendingDeleteIds: string[]
+  onMarkForDelete: (imageId: string) => void
+  onRestoreImage: (imageId: string) => void
 }
 
 export function FarmTourImageManager({
@@ -15,14 +19,14 @@ export function FarmTourImageManager({
   images,
   onImagesChange,
   disabled = false,
+  pendingDeleteIds,
+  onMarkForDelete,
+  onRestoreImage,
 }: FarmTourImageManagerProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  // 刪除確認狀態
-  const [deletingImageId, setDeletingImageId] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
 
   // 處理檔案上傳
   const handleUpload = useCallback(
@@ -101,33 +105,6 @@ export function FarmTourImageManager({
     },
     [farmTourId, onImagesChange]
   )
-
-  // 處理刪除 - 顯示確認 UI
-  const handleDeleteClick = useCallback((imageId: string) => {
-    setDeletingImageId(imageId)
-  }, [])
-
-  // 確認刪除
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deletingImageId) return
-
-    setIsDeleting(true)
-    try {
-      await farmTourImagesApi.deleteImage(farmTourId, deletingImageId)
-      setDeletingImageId(null)
-      onImagesChange()
-    } catch (err) {
-      logger.error('刪除失敗', { error: err })
-      setError('刪除失敗，請稍後再試')
-    } finally {
-      setIsDeleting(false)
-    }
-  }, [deletingImageId, farmTourId, onImagesChange])
-
-  // 取消刪除
-  const handleCancelDelete = useCallback(() => {
-    setDeletingImageId(null)
-  }, [])
 
   // 拖放處理
   const handleDragOver = (e: React.DragEvent) => {
@@ -221,71 +198,70 @@ export function FarmTourImageManager({
             <p className="text-sm font-medium text-gray-700">
               已上傳圖片 ({images.length})
             </p>
-            <p className="text-xs text-amber-600">
-              新圖片需點擊「儲存變更」才會保留
-            </p>
+            <div className="text-xs text-amber-600">
+              {pendingDeleteIds.length > 0 ? (
+                <span className="text-red-600">{pendingDeleteIds.length} 張圖片待刪除（儲存後生效）</span>
+              ) : (
+                <span>新圖片需點擊「儲存變更」才會保留</span>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {images.map((image, index) => (
-              <div
-                key={image.id}
-                className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square"
-              >
-                <img
-                  src={image.storageUrl}
-                  alt={image.altText || `農場體驗圖片 ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                {/* 排序標籤 */}
-                <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                  <GripVertical className="w-3 h-3" />
-                  {index + 1}
-                </div>
+            {images.map((image, index) => {
+              const isPendingDelete = pendingDeleteIds.includes(image.id)
 
-                {/* 刪除確認 UI */}
-                {deletingImageId === image.id ? (
-                  <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-2 p-2">
-                    <p className="text-white text-xs text-center">確定刪除？</p>
-                    <div className="flex gap-2">
+              return (
+                <div
+                  key={image.id}
+                  className={`relative group bg-gray-100 rounded-lg overflow-hidden aspect-square ${
+                    isPendingDelete ? 'opacity-60' : ''
+                  }`}
+                >
+                  <img
+                    src={image.storageUrl}
+                    alt={image.altText || `農場體驗圖片 ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  {/* 排序標籤 */}
+                  <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                    <GripVertical className="w-3 h-3" />
+                    {index + 1}
+                  </div>
+
+                  {/* 待刪除狀態 UI */}
+                  {isPendingDelete ? (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 p-2">
+                      <p className="text-white text-xs text-center">已標記刪除</p>
+                      <p className="text-white/70 text-xs text-center">儲存後生效</p>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleConfirmDelete()
+                          onRestoreImage(image.id)
                         }}
-                        disabled={isDeleting}
-                        className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 disabled:opacity-50 flex items-center gap-1"
+                        disabled={disabled}
+                        className="px-3 py-1 bg-amber-500 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50 flex items-center gap-1"
                       >
-                        {isDeleting && <Loader2 className="w-3 h-3 animate-spin" />}
-                        {isDeleting ? '刪除中' : '確定'}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleCancelDelete()
-                        }}
-                        disabled={isDeleting}
-                        className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 disabled:opacity-50"
-                      >
-                        取消
+                        <RotateCcw className="w-3 h-3" />
+                        復原
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  /* 刪除按鈕 */
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteClick(image.id)
-                    }}
-                    disabled={disabled || deletingImageId !== null}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
+                  ) : (
+                    /* 刪除按鈕 */
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onMarkForDelete(image.id)
+                      }}
+                      disabled={disabled}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
