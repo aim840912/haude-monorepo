@@ -1,10 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Crown, Award, Star } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
+import { useAuthStore } from '@/stores/authStore'
 import { Breadcrumb } from '@/components/ui/navigation'
 import { cn } from '@/lib/utils'
+import type { MemberLevel } from '@haude/types'
+
+// 會員折扣本地配置（與後端 MemberLevelConfig 同步）
+const MEMBER_DISCOUNT_CONFIG: Record<MemberLevel, {
+  discountPercent: number
+  displayName: string
+  freeShipping: boolean
+  icon: typeof Crown
+  color: string
+}> = {
+  NORMAL: { discountPercent: 0, displayName: '普通會員', freeShipping: false, icon: Star, color: 'text-gray-500' },
+  BRONZE: { discountPercent: 5, displayName: '銅卡會員', freeShipping: false, icon: Award, color: 'text-amber-600' },
+  SILVER: { discountPercent: 10, displayName: '銀卡會員', freeShipping: false, icon: Award, color: 'text-slate-500' },
+  GOLD: { discountPercent: 15, displayName: '金卡會員', freeShipping: true, icon: Crown, color: 'text-yellow-600' },
+}
 
 /**
  * 購物車頁面
@@ -16,8 +32,17 @@ import { cn } from '@/lib/utils'
  */
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart } = useCartStore()
+  const { user, isAuthenticated } = useAuthStore()
   const totalItems = useTotalItems()
   const totalPrice = useTotalPrice()
+
+  // 取得會員等級與折扣資訊
+  const memberLevel = (user?.memberLevel || 'NORMAL') as MemberLevel
+  const memberConfig = MEMBER_DISCOUNT_CONFIG[memberLevel]
+  const memberDiscount = Math.floor(totalPrice * memberConfig.discountPercent / 100)
+  const hasMemberDiscount = isAuthenticated && memberConfig.discountPercent > 0
+  const hasFreeShipping = isAuthenticated && memberConfig.freeShipping
+  const MemberIcon = memberConfig.icon
 
   if (items.length === 0) {
     return (
@@ -133,18 +158,60 @@ export default function CartPage() {
               <h2 className="text-lg font-medium text-gray-900 mb-4">訂單摘要</h2>
 
               <div className="space-y-3 text-sm">
+                {/* 會員等級標籤 */}
+                {isAuthenticated && (
+                  <div className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg',
+                    memberConfig.discountPercent > 0 ? 'bg-green-50' : 'bg-gray-50'
+                  )}>
+                    <MemberIcon className={cn('w-4 h-4', memberConfig.color)} />
+                    <span className={cn('text-sm font-medium', memberConfig.color)}>
+                      {memberConfig.displayName}
+                    </span>
+                    {memberConfig.discountPercent > 0 && (
+                      <span className="text-green-600 text-xs ml-auto">
+                        享 {100 - memberConfig.discountPercent} 折
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex justify-between text-gray-600">
                   <span>小計 ({totalItems} 件)</span>
                   <span>NT$ {totalPrice.toLocaleString()}</span>
                 </div>
+
+                {/* 會員折扣 */}
+                {hasMemberDiscount && (
+                  <div className="flex justify-between text-green-600">
+                    <span>會員折扣 ({100 - memberConfig.discountPercent} 折)</span>
+                    <span>-NT$ {memberDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-gray-600">
                   <span>運費</span>
-                  <span className="text-green-600">免運費</span>
+                  <span className={hasFreeShipping ? 'text-green-600' : ''}>
+                    {hasFreeShipping ? '金卡免運' : '免運費'}
+                  </span>
                 </div>
+
                 <div className="border-t pt-3 flex justify-between font-medium text-lg">
                   <span>總計</span>
-                  <span className="text-green-600">NT$ {totalPrice.toLocaleString()}</span>
+                  <span className="text-green-600">
+                    NT$ {(totalPrice - memberDiscount).toLocaleString()}
+                  </span>
                 </div>
+
+                {/* 未登入提示 */}
+                {!isAuthenticated && (
+                  <div className="text-xs text-gray-500 text-center pt-2">
+                    <Link href="/login" className="text-green-600 hover:underline">
+                      登入
+                    </Link>
+                    {' '}後可享會員專屬折扣
+                  </div>
+                )}
               </div>
 
               <Link

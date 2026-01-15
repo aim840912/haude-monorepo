@@ -11,7 +11,9 @@ import { PaymentsPage } from './pages/PaymentsPage'
 import { DiscountsPage } from './pages/DiscountsPage'
 import { SocialPostsPage } from './pages/SocialPostsPage'
 import { UsersPage } from './pages/UsersPage'
+import { UserDetailPage } from './pages/UserDetailPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -41,6 +43,8 @@ function App() {
           <Route path="/discounts" element={<DiscountsPage />} />
           <Route path="/social-posts" element={<SocialPostsPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/users/:id" element={<UserDetailPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

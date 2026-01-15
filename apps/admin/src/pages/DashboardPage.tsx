@@ -1,5 +1,11 @@
 import { Package, ShoppingCart, Users, TrendingUp, RefreshCw, Clock, UserPlus } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
+import {
+  AnimatedNumber,
+  RevenueChart,
+  OrderStatusPieChart,
+  TopProductsChart,
+} from '../components/charts'
 
 // 訂單狀態中文名稱
 const orderStatusLabels: Record<string, string> = {
@@ -40,13 +46,26 @@ function formatCurrency(amount: number): string {
 }
 
 export function DashboardPage() {
-  const { stats, recentOrders, recentUsers, isLoading, error, refetch } = useDashboard()
+  const {
+    stats,
+    recentOrders,
+    recentUsers,
+    revenueTrend,
+    orderStatus,
+    topProducts,
+    revenuePeriod,
+    setRevenuePeriod,
+    isLoading,
+    isChartLoading,
+    error,
+    refetch,
+  } = useDashboard()
 
   const statCards = [
-    { label: '總產品數', value: stats.totalProducts.toString(), icon: Package, color: 'bg-blue-500' },
-    { label: '總訂單數', value: stats.totalOrders.toString(), icon: ShoppingCart, color: 'bg-green-500' },
-    { label: '註冊會員', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'bg-purple-500' },
-    { label: '總營收', value: formatCurrency(stats.totalRevenue), icon: TrendingUp, color: 'bg-orange-500' },
+    { label: '總產品數', value: stats.totalProducts, icon: Package, color: 'bg-blue-500' },
+    { label: '總訂單數', value: stats.totalOrders, icon: ShoppingCart, color: 'bg-green-500' },
+    { label: '註冊會員', value: stats.totalUsers, icon: Users, color: 'bg-purple-500' },
+    { label: '總營收', value: stats.totalRevenue, icon: TrendingUp, color: 'bg-orange-500', isCurrency: true },
   ]
 
   if (isLoading) {
@@ -85,7 +104,7 @@ export function DashboardPage() {
         </button>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid with AnimatedNumber */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statCards.map((stat) => {
           const Icon = stat.icon
@@ -97,7 +116,11 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <AnimatedNumber
+                    value={stat.value}
+                    className="text-2xl font-bold text-gray-900"
+                    prefix={stat.isCurrency ? 'NT$ ' : undefined}
+                  />
                 </div>
               </div>
             </div>
@@ -179,6 +202,23 @@ export function DashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="mt-8 space-y-6">
+        {/* Revenue Trend Chart - Full Width */}
+        <RevenueChart
+          data={revenueTrend}
+          period={revenuePeriod}
+          onPeriodChange={setRevenuePeriod}
+          isLoading={isChartLoading}
+        />
+
+        {/* Order Status & Top Products - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <OrderStatusPieChart data={orderStatus} isLoading={isChartLoading} />
+          <TopProductsChart data={topProducts} isLoading={isChartLoading} />
         </div>
       </div>
     </div>

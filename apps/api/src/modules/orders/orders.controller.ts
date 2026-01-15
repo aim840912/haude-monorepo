@@ -146,3 +146,48 @@ export class AdminOrdersController {
     return this.ordersService.updateOrderStatus(id, dto);
   }
 }
+
+// ========================================
+// 儀表板統計 API (STAFF 和 ADMIN 可存取)
+// ========================================
+
+@ApiTags('admin/dashboard')
+@Controller('admin/dashboard')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.STAFF, Role.ADMIN)
+@ApiBearerAuth()
+export class AdminDashboardController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @Get('revenue-trend')
+  @ApiOperation({ summary: '取得營收趨勢（儀表板）' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['day', 'week', 'month'],
+    example: 'day',
+  })
+  @ApiResponse({ status: 200, description: '成功取得營收趨勢' })
+  getRevenueTrend(
+    @Query('period') period: 'day' | 'week' | 'month' = 'day',
+  ) {
+    return this.ordersService.getRevenueTrend(period);
+  }
+
+  @Get('order-status')
+  @ApiOperation({ summary: '取得訂單狀態分布（儀表板）' })
+  @ApiResponse({ status: 200, description: '成功取得訂單狀態分布' })
+  getOrderStatusDistribution() {
+    return this.ordersService.getOrderStatusDistribution();
+  }
+
+  @Get('top-products')
+  @ApiOperation({ summary: '取得熱銷產品（儀表板）' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiResponse({ status: 200, description: '成功取得熱銷產品' })
+  getTopProducts(
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.ordersService.getTopProducts(limit);
+  }
+}

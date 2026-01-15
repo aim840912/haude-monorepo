@@ -312,7 +312,7 @@ describe('DiscountsService', () => {
           usageCount: 0,
           perUserLimit: 1,
           minOrderAmount: null,
-          discountType: DiscountType.FIXED_AMOUNT,
+          discountType: DiscountType.FIXED,
           discountValue: 100,
           maxDiscount: null,
           usages: [],
@@ -334,7 +334,7 @@ describe('DiscountsService', () => {
           usageCount: 0,
           perUserLimit: 1,
           minOrderAmount: null,
-          discountType: DiscountType.FIXED_AMOUNT,
+          discountType: DiscountType.FIXED,
           discountValue: 500, // 折 500 元
           maxDiscount: null,
           usages: [],

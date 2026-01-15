@@ -18,6 +18,10 @@ import { EmailModule } from './modules/email/email.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SocialPostsModule } from './modules/social-posts/social-posts.module';
+import { SearchModule } from './modules/search/search.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { MembersModule } from './modules/members/members.module';
 
 @Module({
   imports: [
@@ -47,6 +51,10 @@ import { SocialPostsModule } from './modules/social-posts/social-posts.module';
     DiscountsModule,
     ReviewsModule,
     SocialPostsModule,
+    SearchModule,
+    NotificationsModule,
+    ReportsModule,
+    MembersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

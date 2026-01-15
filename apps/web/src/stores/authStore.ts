@@ -10,8 +10,13 @@ export interface User {
   id: string
   email: string
   name: string
-  role?: 'USER' | 'ADMIN'
+  role?: 'USER' | 'VIP' | 'STAFF' | 'ADMIN'
   avatar?: string // Google OAuth 頭像
+  // 會員等級相關
+  memberLevel?: 'NORMAL' | 'BRONZE' | 'SILVER' | 'GOLD'
+  totalSpent?: number
+  currentPoints?: number
+  birthday?: string
   createdAt: string
 }
 

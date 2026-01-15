@@ -21,6 +21,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // 會員等級欄位
+  memberLevel    MemberLevel @default(NORMAL) @map("member_level")
+  totalSpent     Int         @default(0) @map("total_spent")     // 累積消費（整數，單位：元）
+  currentPoints  Int         @default(0) @map("current_points")  // 當前積分
+  birthday       DateTime?   @db.Date                            // 生日（雙倍積分）
+  levelUpdatedAt DateTime?   @map("level_updated_at")            // 等級更新時間
+
   // 關聯
   orders              Order[]
   farmTourBookings    FarmTourBooking[]
@@ -28,6 +35,9 @@ model User {
   passwordResetTokens PasswordResetToken[]
   discountUsages      DiscountUsage[]
   reviews             Review[]
+  notifications       Notification[]
+  pointTransactions   PointTransaction[]
+  levelHistory        MemberLevelHistory[]
 
   @@map("users")
 }
@@ -54,6 +64,80 @@ enum Role {
   VIP       // VIP 會員：專屬折扣、優先報名
   STAFF     // 員工：查看訂單、管理行程
   ADMIN     // 管理員：完整後台權限
+}
+
+// ========================================
+// Member Level 模組（會員等級系統）
+// ========================================
+
+enum MemberLevel {
+  NORMAL    // 普通會員
+  BRONZE    // 銅卡會員
+  SILVER    // 銀卡會員
+  GOLD      // 金卡會員
+}
+
+enum PointTransactionType {
+  PURCHASE      // 消費獲得
+  BIRTHDAY      // 生日獎勵
+  REDEMPTION    // 兌換扣除
+  ADJUSTMENT    // 管理員調整
+  EXPIRATION    // 過期扣除
+}
+
+// 積分交易紀錄
+model PointTransaction {
+  id          String               @id @default(uuid())
+  userId      String               @map("user_id")
+  type        PointTransactionType
+  points      Int                  // 正數=獲得，負數=扣除
+  balance     Int                  // 交易後餘額
+  description String?              // 交易描述
+  orderId     String?              @map("order_id") // 關聯訂單
+  expiresAt   DateTime?            @map("expires_at") // 過期時間
+  createdAt   DateTime             @default(now()) @map("created_at")
+
+  // 關聯
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("point_transactions")
+}
+
+// 會員等級設定
+model MemberLevelConfig {
+  id              String      @id @default(uuid())
+  level           MemberLevel @unique
+  displayName     String      @map("display_name")      // 顯示名稱
+  minSpent        Int         @map("min_spent")         // 最低累積消費（元）
+  discountPercent Int         @map("discount_percent")  // 折扣百分比 (5 = 95折)
+  freeShipping    Boolean     @default(false) @map("free_shipping")
+  pointMultiplier Float       @default(1.0) @map("point_multiplier") // 積分倍率
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@map("member_level_configs")
+}
+
+// 會員等級變更歷史
+model MemberLevelHistory {
+  id          String      @id @default(uuid())
+  userId      String      @map("user_id")
+  fromLevel   MemberLevel @map("from_level")
+  toLevel     MemberLevel @map("to_level")
+  reason      String      // 變更原因
+  triggeredBy String?     @map("triggered_by") // 觸發者（system/admin）
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  // 關聯
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("member_level_history")
 }
 
 // ========================================
@@ -156,10 +240,11 @@ model Product {
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // 關聯
-  images     ProductImage[]
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-  reviews    Review[]
+  images            ProductImage[]
+  orderItems        OrderItem[]
+  cartItems         CartItem[]
+  reviews           Review[]
+  stockAlertSetting StockAlertSetting?
 
   @@map("products")
 }
@@ -258,10 +343,11 @@ model Order {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // 關聯
-  user          User           @relation(fields: [userId], references: [id])
-  items         OrderItem[]
-  payments      Payment[]
-  discountUsage DiscountUsage?
+  user              User               @relation(fields: [userId], references: [id])
+  items             OrderItem[]
+  payments          Payment[]
+  discountUsage     DiscountUsage?
+  pointTransactions PointTransaction[]
 
   @@index([userId])
   @@index([status])
@@ -536,4 +622,51 @@ model SocialPost {
   @@index([platform])
   @@index([isActive])
   @@map("social_posts")
+}
+
+// ========================================
+// Notifications 模組（智慧通知系統）
+// ========================================
+
+enum NotificationType {
+  LOW_STOCK        // 庫存預警
+  NEW_ORDER        // 新訂單
+  ORDER_CANCELLED  // 訂單取消
+  PAYMENT_SUCCESS  // 付款成功
+  PAYMENT_FAILED   // 付款失敗
+  SYSTEM           // 系統通知
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  data      Json?            // 額外資料（如訂單ID、產品ID等）
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  userId    String?          @map("user_id") // null 表示系統通知（所有管理員可見）
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // 關聯
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model StockAlertSetting {
+  id        String   @id @default(uuid())
+  productId String   @unique @map("product_id")
+  threshold Int      @default(10) // 庫存低於此值時觸發警報
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 關聯
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("stock_alert_settings")
 }

@@ -390,3 +390,48 @@ export const paymentsApi = {
       }
     }>(`/payments/${orderId}/status`),
 }
+
+// Search API
+export const searchApiReal = {
+  /**
+   * 全站搜尋
+   */
+  search: (params: {
+    q: string
+    type?: ('product' | 'farmTour' | 'location')[]
+    category?: string[]
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
+    limit?: number
+    offset?: number
+  }) =>
+    api.get<{
+      results: Array<{
+        id: string
+        title: string
+        description: string
+        type: 'product' | 'farmTour' | 'location'
+        url: string
+        category?: string
+        image?: string
+        price?: number
+        rating?: number
+        relevanceScore: number
+      }>
+      total: number
+      query: string
+      processingTime: number
+    }>('/search', { params }),
+
+  /**
+   * 搜尋建議（自動完成）
+   */
+  getSuggestions: (q: string) =>
+    api.get<string[]>('/search/suggestions', { params: { q } }),
+
+  /**
+   * 熱門搜尋
+   */
+  getTrending: () => api.get<string[]>('/search/trending'),
+}

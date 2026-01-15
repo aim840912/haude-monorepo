@@ -131,6 +131,34 @@ export const ordersApi = {
     api.patch(`/admin/orders/${id}`, { status }),
 }
 
+// Dashboard API (Admin)
+export interface RevenueTrendData {
+  date: string
+  revenue: number
+  orders: number
+}
+
+export interface OrderStatusData {
+  status: string
+  count: number
+  label: string
+}
+
+export interface TopProductData {
+  id: string
+  name: string
+  sales: number
+  revenue: number
+}
+
+export const dashboardApi = {
+  getRevenueTrend: (period: 'day' | 'week' | 'month' = 'day') =>
+    api.get<RevenueTrendData[]>(`/admin/dashboard/revenue-trend?period=${period}`),
+  getOrderStatus: () => api.get<OrderStatusData[]>('/admin/dashboard/order-status'),
+  getTopProducts: (limit = 10) =>
+    api.get<TopProductData[]>(`/admin/dashboard/top-products?limit=${limit}`),
+}
+
 // Users API
 export const usersApi = {
   getAll: () => api.get('/users'),
@@ -486,4 +514,285 @@ export const socialPostsApi = {
   ) => api.put<SocialPost>(`/admin/social-posts/${id}`, data),
   delete: (id: string) => api.delete(`/admin/social-posts/${id}`),
   reorder: (ids: string[]) => api.put<SocialPost[]>('/admin/social-posts/reorder', { ids }),
+}
+
+// Notifications API (通知系統)
+export type NotificationType =
+  | 'LOW_STOCK'
+  | 'NEW_ORDER'
+  | 'ORDER_CANCELLED'
+  | 'PAYMENT_SUCCESS'
+  | 'PAYMENT_FAILED'
+  | 'SYSTEM'
+
+export interface Notification {
+  id: string
+  type: NotificationType
+  title: string
+  message: string
+  data?: Record<string, unknown>
+  isRead: boolean
+  readAt?: string
+  userId?: string
+  createdAt: string
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[]
+  total: number
+}
+
+export interface StockAlertSetting {
+  id: string
+  productId: string
+  threshold: number
+  isEnabled: boolean
+  product: {
+    id: string
+    name: string
+    stock: number
+  }
+  createdAt: string
+  updatedAt: string
+}
+
+export const notificationsApi = {
+  // 取得通知列表
+  getAll: (options?: { limit?: number; offset?: number; unreadOnly?: boolean }) => {
+    const params = new URLSearchParams()
+    if (options?.limit) params.append('limit', options.limit.toString())
+    if (options?.offset) params.append('offset', options.offset.toString())
+    if (options?.unreadOnly) params.append('unreadOnly', 'true')
+    return api.get<NotificationListResponse>(`/admin/notifications?${params.toString()}`)
+  },
+
+  // 取得未讀數量
+  getUnreadCount: () => api.get<{ count: number }>('/admin/notifications/unread-count'),
+
+  // 標記單一通知為已讀
+  markAsRead: (id: string) => api.patch<Notification>(`/admin/notifications/${id}/read`),
+
+  // 標記所有通知為已讀
+  markAllAsRead: () => api.patch<{ updated: number }>('/admin/notifications/read-all'),
+
+  // 刪除通知
+  delete: (id: string) => api.delete(`/admin/notifications/${id}`),
+}
+
+// Stock Alerts API (庫存預警設定)
+export const stockAlertsApi = {
+  // 取得所有預警設定
+  getAll: () => api.get<StockAlertSetting[]>('/admin/stock-alerts'),
+
+  // 更新產品預警設定
+  update: (productId: string, data: { threshold?: number; isEnabled?: boolean }) =>
+    api.patch<StockAlertSetting>(`/admin/stock-alerts/${productId}`, data),
+}
+
+// Members API (會員等級管理)
+export type MemberLevel = 'NORMAL' | 'BRONZE' | 'SILVER' | 'GOLD'
+
+export interface AdminMember {
+  id: string
+  email: string
+  name: string
+  memberLevel: MemberLevel
+  totalSpent: number
+  currentPoints: number
+  levelUpdatedAt?: string
+  createdAt: string
+}
+
+export interface MemberListResponse {
+  items: AdminMember[]
+  total: number
+  hasMore: boolean
+}
+
+export interface MemberDetail extends AdminMember {
+  birthday?: string
+  levelConfig: {
+    displayName: string
+    discountPercent: number
+    freeShipping: boolean
+    pointMultiplier: number
+  } | null
+}
+
+export interface LevelHistoryItem {
+  id: string
+  fromLevel: MemberLevel
+  toLevel: MemberLevel
+  reason: string
+  triggeredBy?: string
+  createdAt: string
+}
+
+export interface LevelHistoryResponse {
+  items: LevelHistoryItem[]
+  total: number
+  hasMore: boolean
+}
+
+export interface PointHistoryItem {
+  id: string
+  type: 'PURCHASE' | 'BIRTHDAY' | 'REDEMPTION' | 'ADJUSTMENT' | 'EXPIRATION'
+  points: number
+  balance: number
+  description?: string
+  createdAt: string
+}
+
+export interface PointHistoryResponse {
+  items: PointHistoryItem[]
+  total: number
+  hasMore: boolean
+}
+
+export const membersApi = {
+  // 取得會員列表（含等級篩選）
+  getAll: (params?: { level?: MemberLevel; search?: string; limit?: number; offset?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.level) searchParams.append('level', params.level)
+    if (params?.search) searchParams.append('search', params.search)
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.offset) searchParams.append('offset', params.offset.toString())
+    return api.get<MemberListResponse>(`/admin/members?${searchParams.toString()}`)
+  },
+
+  // 取得會員詳情
+  getById: (id: string) => api.get<MemberDetail>(`/admin/members/${id}`),
+
+  // 取得會員等級變更歷史
+  getLevelHistory: (id: string, params?: { limit?: number; offset?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.offset) searchParams.append('offset', params.offset.toString())
+    return api.get<LevelHistoryResponse>(`/admin/members/${id}/level-history?${searchParams.toString()}`)
+  },
+
+  // 取得會員積分交易歷史
+  getPointsHistory: (id: string, params?: { limit?: number; offset?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.offset) searchParams.append('offset', params.offset.toString())
+    return api.get<PointHistoryResponse>(`/admin/members/${id}/points/history?${searchParams.toString()}`)
+  },
+
+  // 手動調整會員等級
+  adjustLevel: (id: string, data: { level: MemberLevel; reason?: string }) =>
+    api.patch<{ success: boolean; user: { id: string; memberLevel: MemberLevel } }>(
+      `/admin/members/${id}/level`,
+      data
+    ),
+
+  // 手動調整會員積分
+  adjustPoints: (id: string, data: { points: number; reason?: string }) =>
+    api.patch<{ success: boolean; newBalance: number }>(`/admin/members/${id}/points`, data),
+}
+
+// Reports API (銷售報表)
+export interface PeriodStats {
+  totalRevenue: number
+  totalOrders: number
+  averageOrderValue: number
+  cancelRate: number
+}
+
+export interface SalesSummaryResponse {
+  current: PeriodStats
+  compare: PeriodStats | null
+  changes: {
+    revenueChange: number
+    ordersChange: number
+    aovChange: number
+    cancelRateChange: number
+  } | null
+  period: {
+    start: string
+    end: string
+  }
+}
+
+export interface SalesTrendItem {
+  date: string
+  revenue: number
+  orders: number
+  averageOrderValue: number
+}
+
+export interface SalesDetailItem {
+  date: string
+  orderNumber: string
+  customerName: string
+  productCount: number
+  subtotal: number
+  discount: number
+  shipping: number
+  total: number
+  status: string
+  paymentStatus: string
+}
+
+export interface SalesDetailResponse {
+  items: SalesDetailItem[]
+  total: number
+  hasMore: boolean
+}
+
+export type CompareMode = 'yoy' | 'mom' | 'wow'
+export type GroupBy = 'day' | 'week' | 'month'
+
+export const reportsApi = {
+  // 取得銷售摘要（含同比環比）
+  getSummary: (params: {
+    startDate: string
+    endDate: string
+    compareMode?: CompareMode
+  }) => {
+    const searchParams = new URLSearchParams({
+      startDate: params.startDate,
+      endDate: params.endDate,
+    })
+    if (params.compareMode) {
+      searchParams.append('compareMode', params.compareMode)
+    }
+    return api.get<SalesSummaryResponse>(`/admin/reports/summary?${searchParams.toString()}`)
+  },
+
+  // 取得銷售趨勢
+  getSalesTrend: (params: {
+    startDate: string
+    endDate: string
+    groupBy?: GroupBy
+  }) => {
+    const searchParams = new URLSearchParams({
+      startDate: params.startDate,
+      endDate: params.endDate,
+    })
+    if (params.groupBy) {
+      searchParams.append('groupBy', params.groupBy)
+    }
+    return api.get<SalesTrendItem[]>(`/admin/reports/sales-trend?${searchParams.toString()}`)
+  },
+
+  // 取得銷售明細（分頁）
+  getSalesDetail: (params: {
+    startDate: string
+    endDate: string
+    limit?: number
+    offset?: number
+  }) => {
+    const searchParams = new URLSearchParams({
+      startDate: params.startDate,
+      endDate: params.endDate,
+    })
+    if (params.limit) {
+      searchParams.append('limit', params.limit.toString())
+    }
+    if (params.offset) {
+      searchParams.append('offset', params.offset.toString())
+    }
+    return api.get<SalesDetailResponse>(`/admin/reports/sales-detail?${searchParams.toString()}`)
+  },
 }

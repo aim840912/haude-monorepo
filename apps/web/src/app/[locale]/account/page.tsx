@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
-import { User, ShoppingBag, Heart, MapPin, Shield, LogOut, ChevronRight } from 'lucide-react'
+import { User, ShoppingBag, Heart, MapPin, Shield, LogOut, ChevronRight, Crown } from 'lucide-react'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -30,6 +30,12 @@ export default function AccountPage() {
   }
 
   const menuItems = [
+    {
+      icon: Crown,
+      label: '會員等級',
+      href: '/account/membership',
+      description: '查看等級權益與升級進度',
+    },
     {
       icon: ShoppingBag,
       label: '我的訂單',

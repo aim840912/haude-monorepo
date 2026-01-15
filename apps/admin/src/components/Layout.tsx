@@ -15,8 +15,10 @@ import {
   LogOut,
   Tag,
   Share2,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
+import { NotificationBell } from './notifications'
 
 const navItems = [
   { path: '/', label: '儀表板', icon: LayoutDashboard },
@@ -29,6 +31,7 @@ const navItems = [
   { path: '/discounts', label: '折扣碼管理', icon: Tag },
   { path: '/social-posts', label: '社群貼文', icon: Share2 },
   { path: '/users', label: '會員管理', icon: Users },
+  { path: '/reports', label: '銷售報表', icon: FileSpreadsheet },
   { path: '/settings', label: '系統設定', icon: Settings },
 ]
 
@@ -111,6 +114,7 @@ export function Layout() {
             <Menu className="w-6 h-6" />
           </button>
           <div className="ml-auto flex items-center gap-4">
+            <NotificationBell />
             {user?.avatar && (
               <img
                 src={user.avatar}

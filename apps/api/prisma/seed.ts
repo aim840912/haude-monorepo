@@ -531,6 +531,45 @@ const schedulesData = [
 ]
 
 // ========================================
+// 會員等級設定資料
+// ========================================
+
+const memberLevelConfigsData = [
+  {
+    level: 'NORMAL' as const,
+    displayName: '普通會員',
+    minSpent: 0,
+    discountPercent: 0,
+    freeShipping: false,
+    pointMultiplier: 1.0,
+  },
+  {
+    level: 'BRONZE' as const,
+    displayName: '銅卡會員',
+    minSpent: 3000,       // NT$3,000
+    discountPercent: 5,   // 95 折
+    freeShipping: false,
+    pointMultiplier: 1.0,
+  },
+  {
+    level: 'SILVER' as const,
+    displayName: '銀卡會員',
+    minSpent: 10000,      // NT$10,000
+    discountPercent: 10,  // 9 折
+    freeShipping: false,
+    pointMultiplier: 1.5,
+  },
+  {
+    level: 'GOLD' as const,
+    displayName: '金卡會員',
+    minSpent: 30000,      // NT$30,000
+    discountPercent: 15,  // 85 折
+    freeShipping: true,   // 免運
+    pointMultiplier: 2.0,
+  },
+]
+
+// ========================================
 // Seed 主函數
 // ========================================
 
@@ -545,7 +584,18 @@ async function main() {
   await prisma.location.deleteMany()
   await prisma.productImage.deleteMany()
   await prisma.product.deleteMany()
+  await prisma.memberLevelConfig.deleteMany()
   console.log('✅ 清除完成\n')
+
+  // 0. 建立會員等級設定（先建立，確保後續流程可用）
+  console.log('🎖️  建立會員等級設定...')
+  for (const configData of memberLevelConfigsData) {
+    const config = await prisma.memberLevelConfig.create({
+      data: configData,
+    })
+    console.log(`  ✓ ${config.displayName}`)
+  }
+  console.log(`✅ 會員等級設定建立完成 (${memberLevelConfigsData.length} 筆)\n`)
 
   // 1. 建立產品
   console.log('📦 建立產品資料...')
@@ -606,6 +656,7 @@ async function main() {
   console.log('🎉 所有資料填充完成！')
   console.log(`
   統計：
+  - 會員等級設定: ${memberLevelConfigsData.length} 筆
   - 產品: ${productsData.length} 筆
   - 農場體驗: ${farmToursData.length} 筆
   - 地點: ${locationsData.length} 筆

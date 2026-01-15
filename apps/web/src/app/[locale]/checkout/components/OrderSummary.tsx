@@ -1,11 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { ShoppingBag, Loader2, Tag, X, Check } from 'lucide-react'
+import { ShoppingBag, Loader2, Tag, X, Check, Gift, Crown, Award, Star, Truck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { discountsApi } from '@/services/api'
 import { useCheckoutStore } from '@/stores/checkoutStore'
+import { useAuthStore } from '@/stores/authStore'
 import type { CartItem } from '@/stores/cartStore'
+import type { MemberLevel } from '@haude/types'
+
+// 會員等級本地配置（與後端同步）
+const MEMBER_CONFIG: Record<MemberLevel, {
+  discountPercent: number
+  displayName: string
+  freeShipping: boolean
+  pointMultiplier: number
+  icon: typeof Crown
+  color: string
+}> = {
+  NORMAL: { discountPercent: 0, displayName: '普通會員', freeShipping: false, pointMultiplier: 1, icon: Star, color: 'text-gray-500' },
+  BRONZE: { discountPercent: 5, displayName: '銅卡會員', freeShipping: false, pointMultiplier: 1, icon: Award, color: 'text-amber-600' },
+  SILVER: { discountPercent: 10, displayName: '銀卡會員', freeShipping: false, pointMultiplier: 1.5, icon: Award, color: 'text-slate-500' },
+  GOLD: { discountPercent: 15, displayName: '金卡會員', freeShipping: true, pointMultiplier: 2, icon: Crown, color: 'text-yellow-600' },
+}
 
 interface OrderSummaryProps {
   items: CartItem[]
@@ -32,12 +49,26 @@ export function OrderSummary({
     setIsValidatingDiscount,
     clearDiscount,
   } = useCheckoutStore()
+  const { user, isAuthenticated } = useAuthStore()
 
   const [inputCode, setInputCode] = useState('')
   const [error, setError] = useState('')
 
-  // 計算折扣後的總價
-  const discountAmount = discountInfo?.valid ? discountInfo.discountAmount || 0 : 0
+  // 會員等級與折扣計算
+  const memberLevel = (user?.memberLevel || 'NORMAL') as MemberLevel
+  const memberConfig = MEMBER_CONFIG[memberLevel]
+  const memberDiscount = Math.floor(totalPrice * memberConfig.discountPercent / 100)
+  const hasFreeShipping = isAuthenticated && memberConfig.freeShipping
+  const MemberIcon = memberConfig.icon
+
+  // 計算將獲得的積分
+  const basePoints = Math.floor(totalPrice - memberDiscount)
+  const earnedPoints = Math.floor(basePoints * memberConfig.pointMultiplier)
+
+  // 計算折扣後的總價（取會員折扣和促銷折扣中較高者）
+  const promoDiscountAmount = discountInfo?.valid ? discountInfo.discountAmount || 0 : 0
+  const discountAmount = Math.max(memberDiscount, promoDiscountAmount)
+  const discountSource = memberDiscount >= promoDiscountAmount ? 'member' : 'promo'
   const finalTotal = totalPrice - discountAmount
 
   // 驗證折扣碼
@@ -175,6 +206,31 @@ export function OrderSummary({
         )}
       </div>
 
+      {/* 會員等級標籤 */}
+      {isAuthenticated && (
+        <div className="border-t pt-4 mb-4">
+          <div className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-lg',
+            memberConfig.discountPercent > 0 ? 'bg-green-50' : 'bg-gray-50'
+          )}>
+            <MemberIcon className={cn('w-4 h-4', memberConfig.color)} />
+            <span className={cn('text-sm font-medium', memberConfig.color)}>
+              {memberConfig.displayName}
+            </span>
+            {memberConfig.discountPercent > 0 && (
+              <span className="text-green-600 text-xs ml-auto">
+                享 {100 - memberConfig.discountPercent} 折
+              </span>
+            )}
+            {hasFreeShipping && (
+              <span className="flex items-center gap-1 text-blue-600 text-xs">
+                <Truck className="w-3 h-3" /> 免運
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 金額計算 */}
       <div className="border-t pt-4 space-y-2">
         <div className="flex justify-between text-sm text-gray-600">
@@ -183,11 +239,17 @@ export function OrderSummary({
         </div>
         <div className="flex justify-between text-sm text-gray-600">
           <span>運費</span>
-          <span className="text-green-600">免運費</span>
+          <span className={hasFreeShipping ? 'text-blue-600' : 'text-green-600'}>
+            {hasFreeShipping ? '金卡免運' : '免運費'}
+          </span>
         </div>
         {discountAmount > 0 && (
-          <div className="flex justify-between text-sm text-red-600">
-            <span>折扣</span>
+          <div className="flex justify-between text-sm text-green-600">
+            <span>
+              {discountSource === 'member'
+                ? `會員折扣 (${100 - memberConfig.discountPercent}折)`
+                : '促銷折扣'}
+            </span>
             <span>-NT$ {discountAmount.toLocaleString()}</span>
           </div>
         )}
@@ -196,6 +258,25 @@ export function OrderSummary({
           <span className="text-green-600">NT$ {finalTotal.toLocaleString()}</span>
         </div>
       </div>
+
+      {/* 積分預覽 */}
+      {isAuthenticated && (
+        <div className="mt-4 bg-purple-50 rounded-lg p-3 flex items-center gap-3">
+          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Gift className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-purple-900 font-medium">
+              完成訂單可獲得 <span className="text-purple-600">{earnedPoints.toLocaleString()}</span> 積分
+            </p>
+            {memberConfig.pointMultiplier > 1 && (
+              <p className="text-xs text-purple-600">
+                {memberConfig.displayName}享 {memberConfig.pointMultiplier}x 積分
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 提交按鈕 */}
       <button

@@ -10,6 +10,7 @@ import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto';
 import { OrderCalculator } from './utils/order-calculator';
 import { DiscountsService } from '../discounts/discounts.service';
 import { EmailService, OrderEmailData } from '../email/email.service';
+import { MembersService } from '../members/members.service';
 
 @Injectable()
 export class OrdersService {
@@ -19,6 +20,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private discountsService: DiscountsService,
     private emailService: EmailService,
+    private membersService: MembersService,
   ) {}
 
   // ========================================
@@ -207,6 +209,151 @@ export class OrdersService {
   }
 
   // ========================================
+  // 儀表板統計方法
+  // ========================================
+
+  /**
+   * 取得營收趨勢數據
+   * @param period 時間區間：day（7天）、week（4週）、month（6個月）
+   */
+  async getRevenueTrend(period: 'day' | 'week' | 'month' = 'day') {
+    const now = new Date();
+    let startDate: Date;
+    let groupByFormat: string;
+
+    switch (period) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        groupByFormat = 'day';
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 28);
+        groupByFormat = 'week';
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 6);
+        groupByFormat = 'month';
+        break;
+    }
+
+    // 取得指定期間的訂單
+    const orders = await this.prisma.order.findMany({
+      where: {
+        createdAt: { gte: startDate },
+        status: { notIn: ['cancelled', 'refunded'] },
+      },
+      select: {
+        createdAt: true,
+        totalAmount: true,
+      },
+    });
+
+    // 按日期分組計算營收
+    const revenueMap = new Map<string, { revenue: number; orders: number }>();
+
+    orders.forEach((order) => {
+      let key: string;
+      const date = new Date(order.createdAt);
+
+      if (groupByFormat === 'day') {
+        key = date.toISOString().slice(0, 10);
+      } else if (groupByFormat === 'week') {
+        // 取得該週的週一日期
+        const dayOfWeek = date.getDay();
+        const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const monday = new Date(date);
+        monday.setDate(diff);
+        key = monday.toISOString().slice(0, 10);
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+      }
+
+      const existing = revenueMap.get(key) || { revenue: 0, orders: 0 };
+      revenueMap.set(key, {
+        revenue: existing.revenue + (order.totalAmount || 0),
+        orders: existing.orders + 1,
+      });
+    });
+
+    // 轉換為陣列並排序
+    const result = Array.from(revenueMap.entries())
+      .map(([date, data]) => ({
+        date,
+        revenue: data.revenue,
+        orders: data.orders,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return result;
+  }
+
+  /**
+   * 取得訂單狀態分布（用於圓餅圖）
+   */
+  async getOrderStatusDistribution() {
+    const statusLabels: Record<string, string> = {
+      pending: '待處理',
+      confirmed: '已確認',
+      processing: '處理中',
+      shipped: '已出貨',
+      delivered: '已送達',
+      cancelled: '已取消',
+      refunded: '已退款',
+    };
+
+    const statusCounts = await this.prisma.order.groupBy({
+      by: ['status'],
+      _count: { status: true },
+    });
+
+    return statusCounts.map((item) => ({
+      status: item.status,
+      count: item._count.status,
+      label: statusLabels[item.status] || item.status,
+    }));
+  }
+
+  /**
+   * 取得熱銷產品排行
+   * @param limit 返回數量限制
+   */
+  async getTopProducts(limit = 10) {
+    // 聚合訂單項目，計算每個產品的銷量
+    const productSales = await this.prisma.orderItem.groupBy({
+      by: ['productId'],
+      _sum: {
+        quantity: true,
+        subtotal: true,
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc',
+        },
+      },
+      take: limit,
+    });
+
+    // 取得產品名稱
+    const productIds = productSales.map((p) => p.productId);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true },
+    });
+
+    const productMap = new Map(products.map((p) => [p.id, p.name]));
+
+    return productSales.map((item) => ({
+      id: item.productId,
+      name: productMap.get(item.productId) || '未知產品',
+      sales: item._sum.quantity || 0,
+      revenue: item._sum.subtotal || 0,
+    }));
+  }
+
+  // ========================================
   // 建立訂單
   // ========================================
 
@@ -262,15 +409,35 @@ export class OrdersService {
       });
     }
 
-    // 3. 計算運費
-    const shippingFee = OrderCalculator.calculateShippingFee(
+    // 3. 取得會員等級資訊
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { memberLevel: true },
+    });
+
+    const memberLevelConfig = user?.memberLevel
+      ? await this.membersService.getLevelConfig(user.memberLevel)
+      : null;
+
+    // 4. 計算運費（金卡會員免運）
+    let shippingFee = OrderCalculator.calculateShippingFee(
       subtotal,
       dto.shippingAddress.city,
     );
+
+    // 金卡會員免運費
+    if (memberLevelConfig?.freeShipping) {
+      shippingFee = 0;
+    }
+
     const tax = OrderCalculator.calculateTax(subtotal);
 
-    // 4. 驗證和計算折扣（如果有提供折扣碼）
-    let discountAmount = 0;
+    // 5. 計算會員折扣
+    const memberDiscountPercent = memberLevelConfig?.discountPercent || 0;
+    const memberDiscount = Math.floor(subtotal * memberDiscountPercent / 100);
+
+    // 6. 驗證和計算促銷折扣（如果有提供折扣碼）
+    let promoDiscountAmount = 0;
     let discountCode: string | null = null;
 
     if (dto.discountCode) {
@@ -284,11 +451,19 @@ export class OrdersService {
         throw new BadRequestException(discountResult.message || '折扣碼無效');
       }
 
-      discountAmount = discountResult.discountAmount || 0;
+      promoDiscountAmount = discountResult.discountAmount || 0;
       discountCode = discountResult.code || null;
     }
 
-    // 5. 計算總額（扣除折扣）
+    // 7. 取較高的折扣（會員折扣 vs 促銷折扣）
+    const discountAmount = Math.max(memberDiscount, promoDiscountAmount);
+
+    // 如果使用會員折扣且沒有使用促銷碼，清除 discountCode
+    if (memberDiscount > promoDiscountAmount) {
+      discountCode = null;
+    }
+
+    // 8. 計算總額（扣除折扣）
     const totalAmount = OrderCalculator.calculateTotal(
       subtotal,
       shippingFee,
@@ -499,7 +674,47 @@ export class OrdersService {
       );
     }
 
+    // 當訂單狀態變更為 delivered（已送達）時，更新會員累積消費並發放積分
+    if (dto.status === 'delivered' && order.status !== 'delivered') {
+      this.processOrderCompletionAsync(order.userId, order.id, order.totalAmount);
+    }
+
     return updatedOrder;
+  }
+
+  /**
+   * 非同步處理訂單完成後的會員系統更新
+   * - 更新累積消費並檢查升級
+   * - 發放積分
+   */
+  private async processOrderCompletionAsync(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ) {
+    try {
+      // 1. 更新累積消費並檢查升級
+      const { upgraded } = await this.membersService.updateTotalSpentAndCheckUpgrade(
+        userId,
+        orderAmount,
+      );
+
+      if (upgraded) {
+        this.logger.log(`會員 ${userId} 已升級`);
+      }
+
+      // 2. 發放積分
+      const earnedPoints = await this.membersService.addPointsForPurchase(
+        userId,
+        orderAmount,
+        orderId,
+      );
+
+      this.logger.log(`會員 ${userId} 獲得 ${earnedPoints} 積分`);
+    } catch (error) {
+      // 會員系統更新失敗不應影響訂單狀態更新
+      this.logger.error(`處理訂單完成會員更新失敗: ${error}`);
+    }
   }
 
   /**

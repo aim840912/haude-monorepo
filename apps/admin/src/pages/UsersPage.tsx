@@ -1,31 +1,84 @@
-import { useState } from 'react'
-import { Search, Edit, RefreshCw, UserCheck, UserX } from 'lucide-react'
-import { useUsers, User, UserRole } from '../hooks/useUsers'
-import { UserStatusModal } from '../components/UserStatusModal'
+import { useState, useMemo } from 'react'
+import { Search, RefreshCw, Crown, Award, Star, Coins, ChevronRight } from 'lucide-react'
+import { useMembers } from '../hooks/useMembers'
+import { MemberLevel } from '../services/api'
+import { useNavigate } from 'react-router-dom'
 
-const roleLabels: Record<UserRole, string> = {
-  USER: '一般會員',
-  VIP: 'VIP 會員',
-  STAFF: '員工',
-  ADMIN: '管理員',
+// 會員等級設定
+const MEMBER_LEVEL_CONFIG: Record<MemberLevel, {
+  displayName: string
+  icon: typeof Crown
+  bgColor: string
+  textColor: string
+  borderColor: string
+}> = {
+  NORMAL: {
+    displayName: '普通會員',
+    icon: Star,
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-200',
+  },
+  BRONZE: {
+    displayName: '銅卡會員',
+    icon: Award,
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-200',
+  },
+  SILVER: {
+    displayName: '銀卡會員',
+    icon: Award,
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-700',
+    borderColor: 'border-slate-300',
+  },
+  GOLD: {
+    displayName: '金卡會員',
+    icon: Crown,
+    bgColor: 'bg-yellow-100',
+    textColor: 'text-yellow-700',
+    borderColor: 'border-yellow-300',
+  },
 }
 
 export function UsersPage() {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [editingUser, setEditingUser] = useState<User | null>(null)
-  const { users, isLoading, error, refetch, updateUser, isUpdating } = useUsers()
+  const [levelFilter, setLevelFilter] = useState<MemberLevel | ''>('')
 
-  // 過濾會員
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.phone && user.phone.includes(searchQuery))
-  )
+  const { members, total, isLoading, error, refetch } = useMembers({
+    level: levelFilter || undefined,
+    search: searchQuery || undefined,
+  })
 
-  // 計算統計
-  const activeCount = users.filter((u) => u.isActive).length
-  const inactiveCount = users.filter((u) => !u.isActive).length
+  // 過濾會員（本地再次過濾以確保即時響應）
+  const filteredMembers = useMemo(() => {
+    return members.filter(
+      (member) =>
+        member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }, [members, searchQuery])
+
+  // 計算等級統計
+  const levelStats = useMemo(() => {
+    const stats = {
+      NORMAL: 0,
+      BRONZE: 0,
+      SILVER: 0,
+      GOLD: 0,
+    }
+    members.forEach((member) => {
+      stats[member.memberLevel]++
+    })
+    return stats
+  }, [members])
+
+  // 格式化金額
+  const formatCurrency = (amount: number) => {
+    return `NT$${amount.toLocaleString()}`
+  }
 
   if (isLoading) {
     return (
@@ -63,148 +116,157 @@ export function UsersPage() {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <UserCheck className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">啟用會員</p>
-              <p className="text-xl font-bold text-gray-900">{activeCount}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <UserX className="w-5 h-5 text-gray-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">未啟用</p>
-              <p className="text-xl font-bold text-gray-900">{inactiveCount}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <UserCheck className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">總會員數</p>
-              <p className="text-xl font-bold text-gray-900">{users.length}</p>
-            </div>
-          </div>
-        </div>
+      {/* Stats Cards - 會員等級分布 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {(Object.keys(MEMBER_LEVEL_CONFIG) as MemberLevel[]).map((level) => {
+          const config = MEMBER_LEVEL_CONFIG[level]
+          const Icon = config.icon
+          const isSelected = levelFilter === level
+
+          return (
+            <button
+              key={level}
+              onClick={() => setLevelFilter(isSelected ? '' : level)}
+              className={`bg-white rounded-xl shadow-sm p-4 text-left transition-all ${
+                isSelected ? `ring-2 ring-green-500 ${config.borderColor}` : 'hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2 ${config.bgColor} rounded-lg`}>
+                  <Icon className={`w-5 h-5 ${config.textColor}`} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">{config.displayName}</p>
+                  <p className="text-xl font-bold text-gray-900">{levelStats[level]}</p>
+                </div>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
-      {/* Search */}
+      {/* Search & Filter */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜尋會員名稱、信箱或電話..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜尋會員名稱或信箱..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+          {levelFilter && (
+            <button
+              onClick={() => setLevelFilter('')}
+              className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+            >
+              清除篩選
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Members Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {filteredUsers.length === 0 ? (
+        {filteredMembers.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            {searchQuery ? '找不到符合的會員' : '尚無會員'}
+            {searchQuery || levelFilter ? '找不到符合的會員' : '尚無會員'}
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  會員資訊
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  電話
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  角色
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  註冊時間
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  狀態
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="font-medium text-gray-900">{user.name}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {user.phone || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {roleLabels[user.role] || user.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {new Date(user.createdAt).toLocaleDateString('zh-TW')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        user.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {user.isActive ? '啟用中' : '已停用'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button
-                      onClick={() => setEditingUser(user)}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="編輯會員"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    會員資訊
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    會員等級
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    累積消費
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    積分餘額
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    註冊時間
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    操作
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredMembers.map((member) => {
+                  const levelConfig = MEMBER_LEVEL_CONFIG[member.memberLevel]
+                  const LevelIcon = levelConfig.icon
+
+                  return (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigate(`/users/${member.id}`)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="font-medium text-gray-900">{member.name}</div>
+                          <div className="text-sm text-gray-500">{member.email}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${levelConfig.bgColor} ${levelConfig.textColor}`}
+                        >
+                          <LevelIcon className="w-3.5 h-3.5" />
+                          {levelConfig.displayName}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">
+                          {formatCurrency(member.totalSpent)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <Coins className="w-4 h-4 text-yellow-500" />
+                          <span className="font-medium text-gray-900">
+                            {member.currentPoints.toLocaleString()}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                        {new Date(member.createdAt).toLocaleDateString('zh-TW')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/users/${member.id}`)
+                          }}
+                          className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="查看詳情"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {/* 會員數量統計 */}
       <div className="mt-4 text-sm text-gray-500">
-        共 {filteredUsers.length} 位會員
-        {searchQuery && ` (搜尋結果)`}
+        共 {total} 位會員
+        {(searchQuery || levelFilter) && ` (顯示 ${filteredMembers.length} 位)`}
       </div>
-
-      {/* 編輯會員 Modal */}
-      {editingUser && (
-        <UserStatusModal
-          user={editingUser}
-          isOpen={!!editingUser}
-          isUpdating={isUpdating}
-          onClose={() => setEditingUser(null)}
-          onSave={updateUser}
-        />
-      )}
     </div>
   )
 }
