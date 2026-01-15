@@ -3,6 +3,7 @@ import { X, Loader2 } from 'lucide-react'
 import type { Location, CreateLocationData, UpdateLocationData } from '../hooks/useLocations'
 import { LocationImageManager } from './LocationImageManager'
 import { locationImagesApi, type LocationImage } from '../services/api'
+import logger from '../lib/logger'
 
 interface LocationEditModalProps {
   location: Location | null  // null = 新增模式
@@ -45,6 +46,9 @@ export function LocationEditModal({
   const [images, setImages] = useState<LocationImage[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [newlyUploadedIds, setNewlyUploadedIds] = useState<string[]>([])  // 追蹤新上傳的圖片
+  // 追蹤待刪除的圖片 ID（儲存時才真正刪除）
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([])
 
   // 載入圖片
   const loadImages = useCallback(async (locationId: string) => {
@@ -59,12 +63,31 @@ export function LocationEditModal({
     }
   }, [])
 
-  // 圖片變更處理
-  const handleImagesChange = useCallback(() => {
+  // 圖片變更處理（接收新上傳的圖片 ID）
+  const handleImagesChange = useCallback((newImageIds?: string[]) => {
+    // 追蹤新上傳的圖片 ID（用於取消時清理）
+    if (newImageIds && newImageIds.length > 0) {
+      setNewlyUploadedIds(prev => [...prev, ...newImageIds])
+    }
     if (location?.id) {
       loadImages(location.id)
     }
   }, [location?.id, loadImages])
+
+  // 標記圖片為待刪除
+  const handleMarkForDelete = useCallback((imageId: string) => {
+    // 如果是新上傳的圖片，從 newlyUploadedIds 移除
+    if (newlyUploadedIds.includes(imageId)) {
+      setNewlyUploadedIds(prev => prev.filter(id => id !== imageId))
+    }
+    // 加入待刪除列表
+    setPendingDeleteIds(prev => [...prev, imageId])
+  }, [newlyUploadedIds])
+
+  // 復原圖片（取消待刪除標記）
+  const handleRestoreImage = useCallback((imageId: string) => {
+    setPendingDeleteIds(prev => prev.filter(id => id !== imageId))
+  }, [])
 
   useEffect(() => {
     if (isEditMode && location) {
@@ -86,6 +109,8 @@ export function LocationEditModal({
         isActive: location.isActive ?? true,
       })
       setError(null)
+      setNewlyUploadedIds([])  // 重置新圖片追蹤
+      setPendingDeleteIds([])  // 重置待刪除追蹤
       // 載入圖片
       loadImages(location.id)
     } else {
@@ -107,6 +132,8 @@ export function LocationEditModal({
       })
       setError(null)
       setImages([])
+      setNewlyUploadedIds([])  // 重置新圖片追蹤
+      setPendingDeleteIds([])  // 重置待刪除追蹤
     }
   }, [location, isEditMode, isDraftMode, loadImages])
 
@@ -123,6 +150,21 @@ export function LocationEditModal({
     if (!formData.address.trim()) {
       setError('地址不能為空')
       return
+    }
+
+    // 步驟 1: 先刪除被標記的圖片
+    if (pendingDeleteIds.length > 0 && location?.id) {
+      try {
+        await Promise.all(
+          pendingDeleteIds.map(imageId =>
+            locationImagesApi.deleteImage(location.id, imageId)
+          )
+        )
+      } catch (err) {
+        logger.error('刪除圖片失敗', { error: err })
+        setError('部分圖片刪除失敗，請稍後再試')
+        return
+      }
     }
 
     let success = false
@@ -166,21 +208,58 @@ export function LocationEditModal({
     }
 
     if (success) {
+      setNewlyUploadedIds([])
+      setPendingDeleteIds([])
       onClose()
     } else {
       setError(isEditMode ? '更新失敗，請稍後再試' : '新增失敗，請稍後再試')
     }
   }
 
-  // 處理取消（草稿模式需要刪除草稿）
-  const handleCancel = async () => {
-    if (isDraftMode && location && onDelete) {
+  // 處理取消（草稿模式刪除整個草稿；非草稿模式刪除新上傳的圖片）
+  const handleCancel = useCallback(async () => {
+    // 草稿模式：刪除整個門市（包含所有圖片）
+    if (isDraftMode && location?.id && onDelete) {
       setIsCancelling(true)
-      await onDelete(location.id)
-      setIsCancelling(false)
+      try {
+        await onDelete(location.id)
+      } catch (err) {
+        logger.error('刪除草稿門市失敗', { error: err })
+      } finally {
+        setIsCancelling(false)
+        setNewlyUploadedIds([])
+        setPendingDeleteIds([])
+        onClose()
+      }
+      return
     }
-    onClose()
-  }
+
+    // 非草稿模式：
+    // - pendingDeleteIds → 直接清空（還沒真正刪除）
+    // - newlyUploadedIds → 需要調用 API 刪除
+    if (newlyUploadedIds.length === 0 || !location?.id) {
+      setPendingDeleteIds([])
+      onClose()
+      return
+    }
+
+    // 非草稿模式：刪除本次新上傳的圖片
+    setIsCancelling(true)
+    try {
+      await Promise.all(
+        newlyUploadedIds.map(imageId =>
+          locationImagesApi.deleteImage(location.id, imageId).catch(err => {
+            logger.error(`刪除圖片 ${imageId} 失敗`, { error: err })
+          })
+        )
+      )
+    } finally {
+      setIsCancelling(false)
+      setNewlyUploadedIds([])
+      setPendingDeleteIds([])
+      onClose()
+    }
+  }, [isDraftMode, newlyUploadedIds, location?.id, onClose, onDelete])
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isLoading && !isCancelling) {
@@ -382,6 +461,9 @@ export function LocationEditModal({
                   images={images}
                   onImagesChange={handleImagesChange}
                   disabled={isLoading || isCancelling}
+                  pendingDeleteIds={pendingDeleteIds}
+                  onMarkForDelete={handleMarkForDelete}
+                  onRestoreImage={handleRestoreImage}
                 />
               )}
             </div>
