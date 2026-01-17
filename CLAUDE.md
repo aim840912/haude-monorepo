@@ -118,31 +118,20 @@ haude-v2/                     # Monorepo 根目錄
 
 ### Plan Mode 工作流程
 
-大多數任務應從 **Plan Mode** 開始（按 `Shift+Tab` 兩次）：
+> **詳見全域規範**：`~/.claude/CLAUDE.md`（Plan Mode 工作流程）
 
-```
-1. 進入 Plan Mode
-2. 描述任務需求
-3. 與 Claude 討論實作方案，直到計畫完善
-4. 確認計畫後，切換到實作模式
-5. Claude 執行計畫
-```
-
-**何時使用 Plan Mode**：
-- 新功能開發
-- 複雜的重構任務
-- 跨多個檔案的變更
-
-**何時跳過**：
-- 簡單的 Bug 修復
-- 錯字修正
-- 單檔案小修改
+**本專案快速判斷**：
+- **使用 Plan Mode**：新功能開發、複雜重構、跨多檔案變更
+- **跳過**：簡單 Bug 修復、錯字修正、單檔案小修改
 
 ### 多代理並行工作
 
-> 詳見全域規則：`~/.claude/rules/multi-agent-workflow.md`
+**本專案分配**：
+- **Web 實例** → `apps/web`
+- **Admin 實例** → `apps/admin`
+- **API 實例** → `apps/api`
 
-**本專案分配**：Web → `apps/web`、Admin → `apps/admin`、API → `apps/api`
+核心原則：不同實例不應同時編輯同一檔案
 
 ### Monorepo 規範
 

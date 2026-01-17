@@ -26,7 +26,7 @@ export function LocationCard({ location, className, onClick }: LocationCardProps
       {/* 圖片區域 */}
       <div className="relative aspect-video bg-gray-100 overflow-hidden">
         <img
-          src={location.image || PLACEHOLDER_IMAGES.location(location.id)}
+          src={location.images?.[0]?.storageUrl || location.image || PLACEHOLDER_IMAGES.location(location.id)}
           alt={location.name}
           className="w-full h-full object-cover"
         />

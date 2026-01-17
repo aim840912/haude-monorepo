@@ -31,6 +31,7 @@ export class LocationsService {
     return this.prisma.location.findMany({
       where: { isActive: true },
       orderBy: [{ isMain: 'desc' }, { createdAt: 'asc' }],
+      include: { images: true },
     });
   }
 
@@ -55,6 +56,7 @@ export class LocationsService {
   async findOne(id: string) {
     const location = await this.prisma.location.findUnique({
       where: { id },
+      include: { images: true },
     });
 
     if (!location) {

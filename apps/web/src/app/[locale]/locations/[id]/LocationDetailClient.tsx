@@ -13,6 +13,14 @@ import {
 } from 'lucide-react'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
 
+// 圖片資料型別
+export interface LocationImageData {
+  id: string
+  storageUrl: string
+  altText?: string
+  displayPosition: number
+}
+
 // 地點資料型別（從 Server Component 傳入）
 export interface LocationData {
   id: string
@@ -33,6 +41,7 @@ export interface LocationData {
     lng: number
   }
   image?: string
+  images?: LocationImageData[]
   isMain?: boolean
 }
 
@@ -74,8 +83,8 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
             {/* 圖片 */}
             <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden">
               <img
-                src={location.image || PLACEHOLDER_IMAGES.location(location.id)}
-                alt={location.name}
+                src={location.images?.[0]?.storageUrl || location.image || PLACEHOLDER_IMAGES.location(location.id)}
+                alt={location.images?.[0]?.altText || location.name}
                 className="w-full h-full object-cover"
               />
             </div>

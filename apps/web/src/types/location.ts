@@ -1,3 +1,15 @@
+export interface LocationImage {
+  id: string
+  locationId: string
+  storageUrl: string
+  filePath: string
+  altText?: string
+  displayPosition: number
+  size: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Location {
   id: string
   name: string
@@ -17,6 +29,7 @@ export interface Location {
     lng: number
   }
   image: string
+  images?: LocationImage[]
   isMain: boolean
   createdAt?: string
   updatedAt?: string
