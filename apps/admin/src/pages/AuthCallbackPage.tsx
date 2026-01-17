@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { setCsrfToken } from '../services/api'
 import logger from '../lib/logger'
 
 /**
  * Google OAuth 回調頁面
  * 處理從後端重導向回來的 token 和用戶資訊
- * URL 格式: /auth/callback#token=xxx&user=xxx
+ * URL 格式: /auth/callback#token=xxx&user=xxx&csrfToken=xxx
  * 或錯誤: /auth/callback#error=xxx
  */
 export function AuthCallbackPage() {
@@ -30,6 +31,7 @@ export function AuthCallbackPage() {
 
         const token = params.get('token')
         const userJson = params.get('user')
+        const csrfTokenValue = params.get('csrfToken')
 
         if (!token || !userJson) {
           throw new Error('缺少認證資訊')
@@ -48,6 +50,11 @@ export function AuthCallbackPage() {
 
         // 同時儲存 token 到 localStorage（供 API 攔截器使用）
         localStorage.setItem('admin-token', token)
+
+        // 儲存 CSRF Token（CSRF 防護所需）
+        if (csrfTokenValue) {
+          setCsrfToken(csrfTokenValue)
+        }
 
         // 導向到首頁
         navigate('/')

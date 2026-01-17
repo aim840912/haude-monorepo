@@ -23,8 +23,10 @@ export interface User {
 interface AuthState {
   user: User | null
   token: string | null
+  csrfToken: string | null
   isAuthenticated: boolean
-  setAuth: (user: User, token: string) => void
+  setAuth: (user: User, token: string, csrfToken?: string) => void
+  setCsrfToken: (csrfToken: string) => void
   logout: () => void
 }
 
@@ -117,14 +119,19 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       token: null,
+      csrfToken: null,
       isAuthenticated: false,
 
-      setAuth: (user, token) =>
+      setAuth: (user, token, csrfToken) =>
         set({
           user,
           token,
+          csrfToken: csrfToken ?? null,
           isAuthenticated: true,
         }),
+
+      setCsrfToken: (csrfToken) =>
+        set({ csrfToken }),
 
       logout: () => {
         // 清除本地購物車（避免登出後還顯示之前的訪客購物車）
@@ -133,6 +140,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           token: null,
+          csrfToken: null,
           isAuthenticated: false,
         })
       },

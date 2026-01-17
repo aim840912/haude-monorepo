@@ -8,15 +8,26 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 攜帶 Cookie（CSRF 防護所需）
 })
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and CSRF token
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    const state = useAuthStore.getState()
+
+    // JWT Token
+    if (state.token) {
+      config.headers.Authorization = `Bearer ${state.token}`
     }
+
+    // CSRF Token（僅非安全方法需要）
+    const method = config.method?.toUpperCase()
+    const safeMethods = ['GET', 'HEAD', 'OPTIONS']
+    if (state.csrfToken && method && !safeMethods.includes(method)) {
+      config.headers['X-CSRF-Token'] = state.csrfToken
+    }
+
     return config
   },
   (error) => {

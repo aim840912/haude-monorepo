@@ -1,9 +1,11 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
+import { CacheHeadersInterceptor } from './common/interceptors/cache-headers.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
@@ -34,6 +36,9 @@ async function bootstrap() {
     }),
   );
 
+  // Cookie Parser - CSRF 防護所需
+  app.use(cookieParser());
+
   // CORS - 允許 web 和 admin 前端
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -63,6 +68,10 @@ async function bootstrap() {
 
   // 效能監控 - 追蹤 API 請求時間
   app.useGlobalInterceptors(new PerformanceInterceptor());
+
+  // HTTP 快取標頭 - GET 請求自動添加 Cache-Control
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(new CacheHeadersInterceptor(reflector));
 
   // Swagger API documentation - 只在非生產環境啟用
   if (process.env.NODE_ENV !== 'production') {

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CsrfModule } from './common/csrf/csrf.module';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -51,6 +53,9 @@ import { MembersModule } from './modules/members/members.module';
       },
     ]),
 
+    // Security - CSRF 防護
+    CsrfModule,
+
     // Database & Storage
     PrismaModule,
     SupabaseModule,
@@ -84,6 +89,11 @@ import { MembersModule } from './modules/members/members.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // 全域 CSRF 防護 Guard
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
   ],
 })

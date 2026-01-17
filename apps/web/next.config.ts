@@ -32,6 +32,26 @@ const securityHeaders = [
   },
 ]
 
+// 快取標頭配置
+// HTML 頁面：短期快取 + stale-while-revalidate 提升體驗
+const pageCacheHeaders = [
+  {
+    key: 'Cache-Control',
+    // max-age=0：瀏覽器不快取（確保用戶看到最新內容）
+    // s-maxage=60：CDN 快取 1 分鐘
+    // stale-while-revalidate=300：CDN 重新驗證時可返回舊內容最多 5 分鐘
+    value: 'public, max-age=0, s-maxage=60, stale-while-revalidate=300',
+  },
+]
+
+// API 路由：不快取（動態資料）
+const apiNoCacheHeaders = [
+  {
+    key: 'Cache-Control',
+    value: 'no-store',
+  },
+]
+
 const nextConfig: NextConfig = {
   // 輸出獨立部署包
   output: 'standalone',
@@ -51,12 +71,28 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
 
-  // 安全標頭
+  // 安全標頭與快取標頭
   async headers() {
     return [
+      // 所有頁面：安全標頭
       {
         source: '/(.*)',
         headers: securityHeaders,
+      },
+      // HTML 頁面：快取標頭（排除 API 和靜態檔案）
+      {
+        source: '/:locale/:path*',
+        headers: pageCacheHeaders,
+      },
+      // 根路徑
+      {
+        source: '/',
+        headers: pageCacheHeaders,
+      },
+      // Next.js API 路由：不快取
+      {
+        source: '/api/:path*',
+        headers: apiNoCacheHeaders,
       },
     ]
   },

@@ -178,6 +178,7 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
 - **Content Security Policy**：API 和 Next.js 雙層 CSP 配置
 - **依賴安全掃描**：pnpm audit 腳本 + CI 自動掃描
 - **生產環境保護**：Swagger 文件自動隱藏
+- **CSRF 防護**：Double Submit Cookie 模式，全域 Guard + 端點豁免裝飾器
 
 ### 4.9 效能監控基礎設施
 
@@ -185,6 +186,13 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
 - **慢查詢監控**：Prisma 100ms 閾值警告，自動記錄問題 SQL
 - **API 效能追蹤**：全域 Interceptor 監控請求時間，500ms 閾值警告
 - **Bundle 分析**：@next/bundle-analyzer 視覺化套件大小
+
+### 4.10 快取策略優化
+
+- **Next.js ISR/SSG**：首頁 30 分鐘、列表頁 1 小時增量靜態再生，提升首屏載入速度
+- **HTTP Cache-Control**：API GET 請求 5 分鐘快取，支援 CDN 快取
+- **stale-while-revalidate**：背景更新時仍返回舊內容，提升用戶體驗
+- **Server/Client 分離**：頁面層級 Server Component，互動邏輯移至 Client Component
 
 ---
 
@@ -201,12 +209,14 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
 
 ### 5.2 快取策略
 
-**現況**：未發現顯著的快取機制
+**現況**：HTTP 快取標頭和 ISR/SSG 已實作，Redis 尚未導入
+
+**已完成**：
+- ✅ Next.js ISR/SSG 優化（首頁 30 分鐘、列表頁 1 小時重新驗證）
+- ✅ HTTP 快取標頭（API GET 請求 5 分鐘快取、Next.js stale-while-revalidate）
 
 **建議**：
-- 實作 Redis 快取層
-- 利用 Next.js ISR/SSG 優化靜態內容
-- 設置適當的 HTTP 快取標頭
+- 實作 Redis 快取層（適用於高流量場景）
 
 ### 5.3 資料庫進一步優化
 
@@ -235,7 +245,6 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
 - 生產環境 Swagger 自動隱藏
 
 **建議**：
-- 加入 CSRF 防護（如需表單提交）
 - 考慮 WAF（Web Application Firewall）整合
 
 ### 5.6 效能優化持續進行中
@@ -270,7 +279,7 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
 
 ### 總體評分：8.3 / 10
 
-**評語**：這是一個架構優秀、程式碼品質高的專業級電商專案。技術選型現代化，Monorepo 結構清晰，業務功能完整。經過多輪改進後，已完成 11 項重要改進：完整的 CI/CD 流程、195 個單元測試、多層級速率限制、API 版本控制、資料庫索引優化、Bundle 優化、API 文件完善、ADR 記錄、**安全性強化（Helmet、CSP、安全標頭、安全掃描）**、**效能監控（Web Vitals、慢查詢監控、API 效能追蹤）**以及**統一錯誤處理（全域異常過濾器、前後端型別共用）**。剩餘改進空間主要在 APM 監控整合和快取策略方面。對於展示作品集或團隊協作來說，這是一個生產就緒的優秀專案。
+**評語**：這是一個架構優秀、程式碼品質高的專業級電商專案。技術選型現代化，Monorepo 結構清晰，業務功能完整。經過多輪改進後，已完成 12 項重要改進：完整的 CI/CD 流程、195 個單元測試、多層級速率限制、API 版本控制、資料庫索引優化、Bundle 優化、API 文件完善、ADR 記錄、**安全性強化（Helmet、CSP、安全標頭、安全掃描）**、**效能監控（Web Vitals、慢查詢監控、API 效能追蹤）**、**統一錯誤處理（全域異常過濾器、前後端型別共用）**以及**CSRF 防護（Double Submit Cookie 模式）**。專案同時具備完善的**快取策略優化（ISR/SSG、HTTP Cache-Control）**。剩餘改進空間主要在 APM 監控整合方面。對於展示作品集或團隊協作來說，這是一個生產就緒的優秀專案。
 
 ---
 
@@ -289,6 +298,7 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
 9. ~~**安全性強化**~~ - Helmet HTTP 安全標頭、CSP 配置、Next.js 安全標頭、依賴安全掃描腳本、生產環境 Swagger 隱藏
 10. ~~**效能監控**~~ - Web Vitals 追蹤（CLS、FCP、INP、LCP、TTFB）、Prisma 慢查詢監控（100ms 閾值）、API 請求效能 Interceptor（500ms 閾值）
 11. ~~**統一錯誤處理**~~ - 全域異常過濾器、統一 ErrorCode 枚舉、前後端型別共用（@haude/types）、useApiError hooks
+12. ~~**CSRF 防護**~~ - Double Submit Cookie 模式，CsrfGuard 全域驗證 + @SkipCsrf 豁免裝飾器
 
 ### 高優先（立即處理）
 
@@ -297,10 +307,10 @@ auth, products, orders, payments, farm-tours, members, notifications, reports, s
    - 工作量：中
    - 建議：Sentry + 結構化日誌
 
-2. **實作快取層**
-   - 影響：效能、用戶體驗
+2. **Redis 快取層**（可選）
+   - 影響：高流量場景效能
    - 工作量：中
-   - 建議：Redis + Next.js ISR
+   - 建議：Session 快取、熱門資料快取（當流量成長時考慮）
 
 ---
 

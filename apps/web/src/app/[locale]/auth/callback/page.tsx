@@ -9,7 +9,7 @@ import logger from '@/lib/logger'
 /**
  * Google OAuth 回調頁面
  * 處理從後端重導向回來的 token 和用戶資訊
- * URL 格式: /auth/callback#token=xxx&user=xxx
+ * URL 格式: /auth/callback#token=xxx&user=xxx&csrfToken=xxx
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -26,6 +26,7 @@ export default function AuthCallbackPage() {
 
         const token = params.get('token')
         const userJson = params.get('user')
+        const csrfToken = params.get('csrfToken')
 
         if (!token || !userJson) {
           throw new Error('缺少認證資訊')
@@ -34,8 +35,8 @@ export default function AuthCallbackPage() {
         // 解析用戶資訊
         const user = JSON.parse(decodeURIComponent(userJson))
 
-        // 儲存到 authStore
-        setAuth(user, token)
+        // 儲存到 authStore（包含 CSRF Token）
+        setAuth(user, token, csrfToken ?? undefined)
 
         // 合併本地購物車到後端（如果有的話）
         try {

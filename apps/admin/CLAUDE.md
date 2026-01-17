@@ -341,6 +341,8 @@ export function useProducts() {
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #2301 | 9:02 PM | 🔵 | HTTP Cache Header Configuration Audit Completed | ~512 |
+| #2297 | 9:01 PM | 🔵 | Admin App Nginx Configuration for SPA Deployment | ~371 |
 | #1842 | 5:59 PM | 🔵 | Admin application package configuration lacks testing infrastructure | ~357 |
 | #1759 | 5:04 PM | 🔵 | Admin Application: Vite-Powered React SPA with Analytics | ~397 |
 | #1679 | 4:41 PM | 🔵 | Admin App CLAUDE.md Already Analyzed Previously | ~436 |
