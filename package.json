@@ -10,8 +10,11 @@
     "dev:api": "turbo run dev --filter=@haude/api",
     "build": "turbo run build",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "type-check": "turbo run type-check",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "security:audit": "pnpm audit --audit-level=moderate",
+    "security:check": "pnpm audit --json > security-report.json || true"
   },
   "devDependencies": {
     "turbo": "^2.7.3"

@@ -222,30 +222,35 @@ pnpm type-check                     # 2. 檢查前端型別
 
 ### API 端點（現有）
 
+> API v1 版本：所有端點前綴 `/api/v1`，健康檢查除外
+
 ```
 # 認證
-POST   /auth/register
-POST   /auth/login
-GET    /auth/me
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+GET    /api/v1/auth/me
 
 # 產品
-GET    /products
-GET    /products/:id
-POST   /admin/products
-PUT    /admin/products/:id
-DELETE /admin/products/:id
+GET    /api/v1/products
+GET    /api/v1/products/:id
+POST   /api/v1/admin/products
+PUT    /api/v1/admin/products/:id
+DELETE /api/v1/admin/products/:id
 
 # 訂單
-GET    /orders
-GET    /orders/:id
-POST   /orders
-PATCH  /orders/:id/cancel
+GET    /api/v1/orders
+GET    /api/v1/orders/:id
+POST   /api/v1/orders
+PATCH  /api/v1/orders/:id/cancel
 
 # 購物車
-GET    /cart
-POST   /cart/items
-PUT    /cart/items/:productId
-DELETE /cart/items/:productId
+GET    /api/v1/cart
+POST   /api/v1/cart/items
+PUT    /api/v1/cart/items/:productId
+DELETE /api/v1/cart/items/:productId
+
+# 健康檢查（無前綴）
+GET    /health
 ```
 
 ### Port 管理規範
@@ -289,12 +294,14 @@ FRONTEND_URL=http://localhost:5173
 
 **apps/web** (`.env.local`)：
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+# API URL 必須包含 /api/v1 前綴
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 ```
 
 **apps/admin** (`.env.development`)：
 ```env
-VITE_API_URL=http://localhost:3001
+# API URL 必須包含 /api/v1 前綴
+VITE_API_URL=http://localhost:3001/api/v1
 ```
 
 ---

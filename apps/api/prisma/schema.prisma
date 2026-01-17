@@ -39,6 +39,7 @@ model User {
   pointTransactions   PointTransaction[]
   levelHistory        MemberLevelHistory[]
 
+  @@index([memberLevel])
   @@map("users")
 }
 
@@ -246,6 +247,7 @@ model Product {
   reviews           Review[]
   stockAlertSetting StockAlertSetting?
 
+  @@index([isActive, isDraft, createdAt(sort: Desc)])
   @@map("products")
 }
 
@@ -351,6 +353,7 @@ model Order {
 
   @@index([userId])
   @@index([status])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("orders")
 }
 
@@ -471,6 +474,7 @@ model FarmTour {
 
   @@index([date])
   @@index([status])
+  @@index([isActive, status, date])
   @@map("farm_tours")
 }
 
@@ -597,6 +601,7 @@ model Schedule {
 
   @@index([date])
   @@index([status])
+  @@index([isActive, date])
   @@map("schedules")
 }
 
@@ -654,6 +659,7 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+  @@index([userId, isRead, createdAt(sort: Desc)])
   @@map("notifications")
 }
 

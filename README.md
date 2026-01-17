@@ -361,8 +361,9 @@ pnpm dev
 |------|------|------|
 | 用戶端 | http://localhost:5173 | Next.js 電商前台 |
 | 管理後台 | http://localhost:5174 | Vite 管理系統 |
-| API | http://localhost:3001 | NestJS 後端 |
-| API 文檔 | http://localhost:3001/api | Swagger UI |
+| API | http://localhost:3001/api/v1 | NestJS 後端 (API v1) |
+| API 文檔 | http://localhost:3001/docs | Swagger UI |
+| 健康檢查 | http://localhost:3001/health | 無版本前綴 |
 
 ### 常用指令
 
@@ -386,51 +387,59 @@ npx prisma migrate dev        # 執行遷移
 
 ## API 端點
 
+> **API v1 版本**：所有端點前綴 `/api/v1`，健康檢查除外
+
 ### 認證 (Auth)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| POST | `/auth/register` | 用戶註冊 |
-| POST | `/auth/login` | 用戶登入 |
-| GET | `/auth/me` | 取得當前用戶 |
-| POST | `/auth/forgot-password` | 忘記密碼 |
-| POST | `/auth/reset-password` | 重設密碼 |
+| POST | `/api/v1/auth/register` | 用戶註冊 |
+| POST | `/api/v1/auth/login` | 用戶登入 |
+| GET | `/api/v1/auth/me` | 取得當前用戶 |
+| POST | `/api/v1/auth/forgot-password` | 忘記密碼 |
+| POST | `/api/v1/auth/reset-password` | 重設密碼 |
 
 ### 產品 (Products)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| GET | `/products` | 產品列表 |
-| GET | `/products/:id` | 產品詳情 |
-| POST | `/admin/products` | 建立產品 (管理員) |
-| PUT | `/admin/products/:id` | 更新產品 (管理員) |
-| DELETE | `/admin/products/:id` | 刪除產品 (管理員) |
+| GET | `/api/v1/products` | 產品列表 |
+| GET | `/api/v1/products/:id` | 產品詳情 |
+| POST | `/api/v1/admin/products` | 建立產品 (管理員) |
+| PUT | `/api/v1/admin/products/:id` | 更新產品 (管理員) |
+| DELETE | `/api/v1/admin/products/:id` | 刪除產品 (管理員) |
 
 ### 訂單 (Orders)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| GET | `/orders` | 用戶訂單列表 |
-| GET | `/orders/:id` | 訂單詳情 |
-| POST | `/orders` | 建立訂單 |
-| PATCH | `/orders/:id/cancel` | 取消訂單 |
+| GET | `/api/v1/orders` | 用戶訂單列表 |
+| GET | `/api/v1/orders/:id` | 訂單詳情 |
+| POST | `/api/v1/orders` | 建立訂單 |
+| PATCH | `/api/v1/orders/:id/cancel` | 取消訂單 |
 
 ### 支付 (Payments)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| POST | `/payments/ecpay/create` | 發起支付 |
-| POST | `/payments/ecpay/notify` | 支付回調 |
-| GET | `/payments/ecpay/return` | 支付返回頁 |
+| POST | `/api/v1/payments/ecpay/create` | 發起支付 |
+| POST | `/api/v1/payments/ecpay/notify` | 支付回調 |
+| GET | `/api/v1/payments/ecpay/return` | 支付返回頁 |
 
 ### 購物車 (Cart)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| GET | `/cart` | 取得購物車 |
-| POST | `/cart/items` | 加入商品 |
-| PUT | `/cart/items/:productId` | 更新數量 |
-| DELETE | `/cart/items/:productId` | 移除商品 |
+| GET | `/api/v1/cart` | 取得購物車 |
+| POST | `/api/v1/cart/items` | 加入商品 |
+| PUT | `/api/v1/cart/items/:productId` | 更新數量 |
+| DELETE | `/api/v1/cart/items/:productId` | 移除商品 |
+
+### 健康檢查 (Health)
+
+| 方法 | 端點 | 說明 |
+|------|------|------|
+| GET | `/health` | 健康檢查（無版本前綴）|
 
 <details>
 <summary>查看更多 API 端點</summary>
@@ -439,24 +448,24 @@ npx prisma migrate dev        # 執行遷移
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| POST | `/discounts/validate` | 驗證折扣碼 |
-| GET | `/admin/discounts` | 折扣碼列表 |
-| POST | `/admin/discounts` | 建立折扣碼 |
+| POST | `/api/v1/discounts/validate` | 驗證折扣碼 |
+| GET | `/api/v1/admin/discounts` | 折扣碼列表 |
+| POST | `/api/v1/admin/discounts` | 建立折扣碼 |
 
 ### 評論 (Reviews)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| GET | `/products/:id/reviews` | 產品評論 |
-| POST | `/products/:id/reviews` | 發表評論 |
+| GET | `/api/v1/products/:id/reviews` | 產品評論 |
+| POST | `/api/v1/products/:id/reviews` | 發表評論 |
 
 ### 農場體驗 (Farm Tours)
 
 | 方法 | 端點 | 說明 |
 |------|------|------|
-| GET | `/farm-tours` | 體驗列表 |
-| GET | `/farm-tours/:id` | 體驗詳情 |
-| POST | `/farm-tours/:id/book` | 預約體驗 |
+| GET | `/api/v1/farm-tours` | 體驗列表 |
+| GET | `/api/v1/farm-tours/:id` | 體驗詳情 |
+| POST | `/api/v1/farm-tours/:id/book` | 預約體驗 |
 
 </details>
 
@@ -491,13 +500,15 @@ SUPABASE_KEY="your-supabase-key"
 ### apps/web/.env.local
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:3001"
+# API URL 必須包含 /api/v1 前綴
+NEXT_PUBLIC_API_URL="http://localhost:3001/api/v1"
 ```
 
 ### apps/admin/.env.development
 
 ```env
-VITE_API_URL="http://localhost:3001"
+# API URL 必須包含 /api/v1 前綴
+VITE_API_URL="http://localhost:3001/api/v1"
 ```
 
 ---

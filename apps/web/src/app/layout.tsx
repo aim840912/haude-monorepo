@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { WebVitals } from '@/components/analytics/WebVitals'
 import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
@@ -67,7 +68,10 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        <WebVitals />
+        {children}
+      </body>
     </html>
   )
 }

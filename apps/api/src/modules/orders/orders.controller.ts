@@ -20,6 +20,12 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import {
+  OrderResponseDto,
+  PaginatedResponseDto,
+  MessageResponseDto,
+  ErrorResponseDto,
+} from '@/common/dto/response.dto';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -42,8 +48,8 @@ export class OrdersController {
   @ApiOperation({ summary: '取得使用者訂單列表' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
   @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
-  @ApiResponse({ status: 200, description: '成功取得訂單列表' })
-  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 200, description: '成功取得訂單列表', type: PaginatedResponseDto<OrderResponseDto> })
+  @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   getUserOrders(
     @Request() req: { user: JwtUser },
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
@@ -54,18 +60,18 @@ export class OrdersController {
 
   @Post()
   @ApiOperation({ summary: '建立訂單' })
-  @ApiResponse({ status: 201, description: '訂單建立成功' })
-  @ApiResponse({ status: 400, description: '請求參數錯誤或庫存不足' })
-  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 201, description: '訂單建立成功', type: OrderResponseDto })
+  @ApiResponse({ status: 400, description: '請求參數錯誤或庫存不足', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   createOrder(@Request() req: { user: JwtUser }, @Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(req.user.userId, dto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '取得訂單詳情' })
-  @ApiResponse({ status: 200, description: '成功取得訂單' })
-  @ApiResponse({ status: 401, description: '未認證' })
-  @ApiResponse({ status: 404, description: '訂單不存在或無權限查看' })
+  @ApiResponse({ status: 200, description: '成功取得訂單', type: OrderResponseDto })
+  @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: '訂單不存在或無權限查看', type: ErrorResponseDto })
   getOrderById(
     @Request() req: { user: JwtUser },
     @Param('id', ParseUUIDPipe) id: string,
@@ -75,10 +81,10 @@ export class OrdersController {
 
   @Patch(':id/cancel')
   @ApiOperation({ summary: '取消訂單' })
-  @ApiResponse({ status: 200, description: '訂單取消成功' })
-  @ApiResponse({ status: 400, description: '訂單狀態無法取消' })
-  @ApiResponse({ status: 401, description: '未認證' })
-  @ApiResponse({ status: 404, description: '訂單不存在或無權限' })
+  @ApiResponse({ status: 200, description: '訂單取消成功', type: OrderResponseDto })
+  @ApiResponse({ status: 400, description: '訂單狀態無法取消', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: '訂單不存在或無權限', type: ErrorResponseDto })
   cancelOrder(
     @Request() req: { user: JwtUser },
     @Param('id', ParseUUIDPipe) id: string,

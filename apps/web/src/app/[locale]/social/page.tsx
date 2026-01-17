@@ -1,10 +1,33 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FacebookEmbed, InstagramEmbed } from 'react-social-media-embed'
+import dynamic from 'next/dynamic'
 import { Facebook, Instagram, RefreshCw } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/navigation'
 import { socialPostsApi } from '@/services/api'
+
+// 動態導入重型社群嵌入元件
+const FacebookEmbed = dynamic(
+  () => import('react-social-media-embed').then((mod) => mod.FacebookEmbed),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 animate-pulse flex items-center justify-center rounded-lg">
+        <span className="text-gray-400">載入中...</span>
+      </div>
+    ),
+  }
+)
+
+const InstagramEmbed = dynamic(
+  () => import('react-social-media-embed').then((mod) => mod.InstagramEmbed),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 animate-pulse flex items-center justify-center rounded-lg">
+        <span className="text-gray-400">載入中...</span>
+      </div>
+    ),
+  }
+)
 
 interface SocialPost {
   id: string

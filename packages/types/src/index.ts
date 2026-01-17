@@ -18,3 +18,6 @@ export * from './review'
 
 // Social Post
 export * from './social-post'
+
+// Error
+export * from './error'

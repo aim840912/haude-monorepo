@@ -455,7 +455,11 @@ export class ItemController {
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #1799 | 5:07 PM | 🔵 | NestJS API: Haude Tea Shop Backend with Full Testing Infrastructure | ~573 |
+| #1849 | 6:01 PM | 🔵 | E2E test infrastructure exists but contains only placeholder test file | ~380 |
+| #1838 | 5:58 PM | 🔵 | Complete API source file inventory reveals limited test coverage | ~422 |
+| #1835 | " | 🔵 | API backend package configuration reviewed for improvement planning | ~341 |
+| #1810 | 5:07 PM | ⚖️ | Comprehensive Code Quality Analysis with Prioritized Improvements | ~701 |
+| #1799 | " | 🔵 | NestJS API: Haude Tea Shop Backend with Full Testing Infrastructure | ~573 |
 | #1797 | 5:06 PM | 🔵 | Production Environment Configuration with Taiwan Payment and Email Services | ~631 |
 | #1773 | 5:05 PM | 🔵 | Modern TypeScript Configuration with ES2023 and Decorators | ~431 |
 | #1754 | 5:03 PM | 🔵 | NestJS API with Prisma, Supabase, and Multi-Auth Strategy | ~516 |

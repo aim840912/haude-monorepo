@@ -16,6 +16,13 @@ import {
   ApiExcludeEndpoint,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import {
+  AuthResponseDto,
+  UserResponseDto,
+  MessageResponseDto,
+  ErrorResponseDto,
+} from '@/common/dto/response.dto';
 import type { Response, Request as ExpressRequest } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -36,17 +43,21 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({ short: { limit: 5, ttl: 60000 } }) // 每分鐘最多 5 次註冊嘗試
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully.' })
-  @ApiResponse({ status: 409, description: 'Email already exists.' })
+  @ApiResponse({ status: 201, description: 'User registered successfully.', type: AuthResponseDto })
+  @ApiResponse({ status: 409, description: 'Email already exists.', type: ErrorResponseDto })
+  @ApiResponse({ status: 429, description: 'Too many registration attempts.', type: ErrorResponseDto })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
+  @Throttle({ short: { limit: 5, ttl: 60000 } }) // 每分鐘最多 5 次登入嘗試
   @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'Login successful.' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials.' })
+  @ApiResponse({ status: 200, description: 'Login successful.', type: AuthResponseDto })
+  @ApiResponse({ status: 401, description: 'Invalid credentials.', type: ErrorResponseDto })
+  @ApiResponse({ status: 429, description: 'Too many login attempts.', type: ErrorResponseDto })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -55,8 +66,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user' })
-  @ApiResponse({ status: 200, description: 'Return current user.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 200, description: 'Return current user.', type: UserResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized.', type: ErrorResponseDto })
   getMe(@Request() req: { user: { userId: string } }) {
     return this.authService.getMe(req.user.userId);
   }
@@ -65,7 +76,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200, description: 'Logout successful.' })
+  @ApiResponse({ status: 200, description: 'Logout successful.', type: MessageResponseDto })
   logout() {
     // With JWT, logout is handled client-side by removing the token
     return { message: 'Logged out successfully' };
@@ -76,24 +87,26 @@ export class AuthController {
   // ========================================
 
   @Post('forgot-password')
+  @Throttle({ short: { limit: 3, ttl: 60000 } }) // 每分鐘最多 3 次密碼重設
   @ApiOperation({ summary: '忘記密碼 - 發送重設密碼郵件' })
-  @ApiResponse({ status: 200, description: '已發送重設密碼郵件（如果帳號存在）' })
+  @ApiResponse({ status: 200, description: '已發送重設密碼郵件（如果帳號存在）', type: MessageResponseDto })
+  @ApiResponse({ status: 429, description: '請求過於頻繁，請稍後再試', type: ErrorResponseDto })
   forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @Post('reset-password')
   @ApiOperation({ summary: '重設密碼' })
-  @ApiResponse({ status: 200, description: '密碼重設成功' })
-  @ApiResponse({ status: 400, description: '無效或已過期的重設連結' })
+  @ApiResponse({ status: 200, description: '密碼重設成功', type: MessageResponseDto })
+  @ApiResponse({ status: 400, description: '無效或已過期的重設連結', type: ErrorResponseDto })
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Get('verify-reset-token')
   @ApiOperation({ summary: '驗證重設密碼 Token 是否有效' })
-  @ApiResponse({ status: 200, description: 'Token 有效' })
-  @ApiResponse({ status: 400, description: '無效或已過期的 Token' })
+  @ApiResponse({ status: 200, description: 'Token 有效', type: MessageResponseDto })
+  @ApiResponse({ status: 400, description: '無效或已過期的 Token', type: ErrorResponseDto })
   verifyResetToken(@Query('token') token: string) {
     return this.authService.verifyResetToken(token);
   }
@@ -102,9 +115,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '為 Google 帳號設定密碼' })
-  @ApiResponse({ status: 200, description: '密碼設定成功' })
-  @ApiResponse({ status: 400, description: '已設定過密碼或非 Google 用戶' })
-  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 200, description: '密碼設定成功', type: MessageResponseDto })
+  @ApiResponse({ status: 400, description: '已設定過密碼或非 Google 用戶', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   setPassword(
     @Request() req: { user: { userId: string } },
     @Body() setPasswordDto: SetPasswordDto,
