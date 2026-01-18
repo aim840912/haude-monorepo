@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -111,11 +112,13 @@ export function FarmTourDetailClient({ tour }: FarmTourDetailClientProps) {
           <div className="lg:col-span-2 space-y-6">
             {/* 圖片 */}
             {tour.imageUrl && (
-              <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden">
-                <img
+              <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden relative">
+                <Image
                   src={tour.imageUrl}
                   alt={tour.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  className="object-cover"
                 />
               </div>
             )}

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { MapPin, Phone, Clock, Car } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
@@ -25,10 +26,12 @@ export function LocationCard({ location, className, onClick }: LocationCardProps
     >
       {/* 圖片區域 */}
       <div className="relative aspect-video bg-gray-100 overflow-hidden">
-        <img
+        <Image
           src={location.images?.[0]?.storageUrl || location.image || PLACEHOLDER_IMAGES.location(location.id)}
           alt={location.name}
-          className="w-full h-full object-cover"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+          className="object-cover"
         />
 
         {/* 主要地點標籤 */}

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Calendar, MapPin, Users, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
@@ -50,10 +51,12 @@ export function FarmTourCard({ tour, className, onClick }: FarmTourCardProps) {
     <>
       {/* 圖片區域 */}
       <div className="relative aspect-video bg-gray-100 overflow-hidden">
-        <img
+        <Image
           src={tour.imageUrl || PLACEHOLDER_IMAGES.farmTour(tour.id)}
           alt={tour.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* 狀態標籤 */}

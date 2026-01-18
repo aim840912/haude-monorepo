@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { ShoppingBag, Loader2, Tag, X, Check, Gift, Crown, Award, Star, Truck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { discountsApi } from '@/services/api'
@@ -114,12 +115,14 @@ export function OrderSummary({
       <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
         {items.map(item => (
           <div key={item.id} className="flex gap-3">
-            <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+            <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
               {item.image ? (
-                <img
+                <Image
                   src={item.image}
                   alt={item.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="56px"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">

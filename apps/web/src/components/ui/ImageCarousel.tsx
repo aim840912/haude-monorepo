@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -100,10 +101,13 @@ export function ImageCarousel({
     >
       {/* 主圖容器 */}
       <div className="aspect-square bg-white rounded-xl overflow-hidden shadow-lg relative">
-        <img
+        <Image
           src={images[currentIndex]}
           alt={`${productName}${hasMultipleImages ? ` - ${currentIndex + 1}` : ''}`}
-          className="w-full h-full object-cover transition-opacity duration-300"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 500px"
+          className="object-cover transition-opacity duration-300"
+          priority={currentIndex === 0}
         />
 
         {/* 左右點擊區（在主圖容器內，多張圖片時才顯示） */}
@@ -203,7 +207,7 @@ export function ImageCarousel({
                 key={index}
                 onClick={() => goToIndex(index)}
                 className={cn(
-                  'w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden',
+                  'relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden',
                   'transition-all duration-200 ease-out',
                   'focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2',
                   currentIndex === index
@@ -212,10 +216,12 @@ export function ImageCarousel({
                 )}
                 aria-label={`檢視第 ${index + 1} 張圖片`}
               >
-                <img
+                <Image
                   src={image}
                   alt={`${productName} 縮圖 ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
                 />
               </button>
             ))}

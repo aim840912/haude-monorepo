@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight } from 'lucide-react'
 import { useOrders } from '@/hooks/useOrders'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
@@ -102,11 +103,15 @@ export default function OrdersPage() {
                       {order.items.slice(0, 3).map((item) => (
                         <div key={item.id} className="flex items-center gap-4">
                           {item.productImage ? (
-                            <img
-                              src={item.productImage}
-                              alt={item.productName}
-                              className="w-16 h-16 object-cover rounded-lg"
-                            />
+                            <div className="relative w-16 h-16 flex-shrink-0">
+                              <Image
+                                src={item.productImage}
+                                alt={item.productName}
+                                fill
+                                sizes="64px"
+                                className="object-cover rounded-lg"
+                              />
+                            </div>
                           ) : (
                             <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
                               <Package className="w-6 h-6 text-gray-400" />

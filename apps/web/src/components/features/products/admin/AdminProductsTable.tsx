@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { Pencil, Trash2, ToggleLeft, ToggleRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useProducts, useCategories } from '@/hooks/useProducts'
@@ -166,12 +167,14 @@ export function AdminProductsTable({
                     {/* 產品資訊 */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative">
                           {product.images[0] ? (
-                            <img
+                            <Image
                               src={product.images[0].storageUrl}
                               alt={product.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              sizes="48px"
+                              className="object-cover"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">

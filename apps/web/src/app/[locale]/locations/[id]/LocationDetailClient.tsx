@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   MapPin,
@@ -81,11 +82,13 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
           {/* 左側：詳細資訊 */}
           <div className="lg:col-span-2 space-y-6">
             {/* 圖片 */}
-            <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden">
-              <img
+            <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden relative">
+              <Image
                 src={location.images?.[0]?.storageUrl || location.image || PLACEHOLDER_IMAGES.location(location.id)}
                 alt={location.images?.[0]?.altText || location.name}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="object-cover"
               />
             </div>
 

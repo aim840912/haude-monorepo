@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Search, SlidersHorizontal, Loader2, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSearch } from '@/hooks/useSearch'
@@ -47,11 +48,13 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         <div className="flex gap-4">
           {/* 圖片 */}
           {result.image && (
-            <div className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
-              <img
+            <div className="relative flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
+              <Image
                 src={result.image}
                 alt={result.title}
-                className="w-full h-full object-cover"
+                fill
+                sizes="80px"
+                className="object-cover"
               />
             </div>
           )}

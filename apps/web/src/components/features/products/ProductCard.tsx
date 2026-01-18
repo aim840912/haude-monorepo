@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Image from 'next/image'
 import { Star, Heart, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
@@ -111,19 +112,22 @@ export function ProductCard({
       <div className="relative overflow-hidden rounded-t-xl product-image-wrapper">
         <div className="pb-[100%] bg-card-bg-secondary relative">
           {!imageError ? (
-            <img
+            <Image
               src={imageUrl}
               alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
               onError={() => setImageError(true)}
-              loading="lazy"
             />
           ) : (
             // 圖片載入失敗時，顯示分類專屬 placeholder
-            <img
+            <Image
               src={PLACEHOLDER_IMAGES.product(product.category)}
               alt={`${product.category} - 暫無圖片`}
-              className="absolute inset-0 w-full h-full object-cover"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+              className="object-cover"
             />
           )}
         </div>

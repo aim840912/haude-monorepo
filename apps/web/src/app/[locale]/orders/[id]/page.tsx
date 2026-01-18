@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -228,13 +229,17 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
               >
                 {item.productImage ? (
-                  <img
-                    src={item.productImage}
-                    alt={item.productName}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
+                  <div className="w-20 h-20 rounded-lg overflow-hidden relative flex-shrink-0">
+                    <Image
+                      src={item.productImage}
+                      alt={item.productName}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </div>
                 ) : (
-                  <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Package className="w-8 h-8 text-gray-400" />
                   </div>
                 )}

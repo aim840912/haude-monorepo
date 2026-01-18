@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
+import Image from 'next/image'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
@@ -104,10 +105,12 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                   <div className="mb-6">
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                       <div className="relative aspect-square">
-                        <img
+                        <Image
                           src={currentImageUrl}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          className="object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
                             target.src = '/placeholder-product.png'
@@ -136,10 +139,12 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                           aria-label={`切換到圖片 ${index + 1}，共 ${images.length} 張`}
                           aria-pressed={currentImageIndex === index}
                         >
-                          <img
+                          <Image
                             src={image.storageUrl}
                             alt={`預覽 ${index + 1}`}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="56px"
+                            className="object-cover"
                           />
                         </button>
                       ))}

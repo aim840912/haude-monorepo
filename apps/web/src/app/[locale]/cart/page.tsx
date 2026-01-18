@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Crown, Award, Star } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -81,12 +82,14 @@ export default function CartPage() {
                 className="flex gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200"
               >
                 {/* 商品圖片 */}
-                <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="relative w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                   {item.image ? (
-                    <img
+                    <Image
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="96px"
+                      className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
