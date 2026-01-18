@@ -237,7 +237,9 @@ describe('MemberAdminService', () => {
 
       const result = await service.getLevelHistory(userId, 10, 5);
 
-      expect(mockPrismaService.memberLevelHistory.findMany).toHaveBeenCalledWith(
+      expect(
+        mockPrismaService.memberLevelHistory.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 10,
           skip: 5,
@@ -408,17 +410,17 @@ describe('MemberAdminService', () => {
         currentPoints: 50,
       });
 
-      await expect(
-        service.adjustPoints(userId, -100, adminId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.adjustPoints(userId, -100, adminId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('使用者不存在應拋出 NotFoundException', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.adjustPoints(userId, 100, adminId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.adjustPoints(userId, 100, adminId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('應建立積分交易記錄', async () => {

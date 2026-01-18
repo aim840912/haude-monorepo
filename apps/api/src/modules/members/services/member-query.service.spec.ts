@@ -93,7 +93,9 @@ describe('MemberQueryService', () => {
       await expect(service.getLevelInfo(userId)).rejects.toThrow(
         NotFoundException,
       );
-      await expect(service.getLevelInfo(userId)).rejects.toThrow('使用者不存在');
+      await expect(service.getLevelInfo(userId)).rejects.toThrow(
+        '使用者不存在',
+      );
     });
 
     it('等級設定不存在應拋出 NotFoundException', async () => {
@@ -136,11 +138,11 @@ describe('MemberQueryService', () => {
           currentPoints: true,
         },
       });
-      expect(mockPrismaService.memberLevelConfig.findUnique).toHaveBeenCalledWith(
-        {
-          where: { level: MemberLevel.GOLD },
-        },
-      );
+      expect(
+        mockPrismaService.memberLevelConfig.findUnique,
+      ).toHaveBeenCalledWith({
+        where: { level: MemberLevel.GOLD },
+      });
     });
   });
 
@@ -173,7 +175,9 @@ describe('MemberQueryService', () => {
         memberLevel: MemberLevel.NORMAL,
         totalSpent: 8000,
       });
-      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(allConfigs);
+      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(
+        allConfigs,
+      );
 
       const result = await service.getUpgradeProgress(userId);
 
@@ -193,7 +197,9 @@ describe('MemberQueryService', () => {
         memberLevel: MemberLevel.SILVER,
         totalSpent: 20000,
       });
-      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(allConfigs);
+      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(
+        allConfigs,
+      );
 
       const result = await service.getUpgradeProgress(userId);
 
@@ -213,7 +219,9 @@ describe('MemberQueryService', () => {
         memberLevel: MemberLevel.GOLD,
         totalSpent: 50000,
       });
-      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(allConfigs);
+      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(
+        allConfigs,
+      );
 
       const result = await service.getUpgradeProgress(userId);
 
@@ -237,7 +245,9 @@ describe('MemberQueryService', () => {
         memberLevel: MemberLevel.SILVER,
         totalSpent: 10000, // 剛達到銀卡門檻
       });
-      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(allConfigs);
+      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue(
+        allConfigs,
+      );
 
       const result = await service.getUpgradeProgress(userId);
 
@@ -335,7 +345,9 @@ describe('MemberQueryService', () => {
     });
 
     it('應支援自訂分頁參數', async () => {
-      mockPrismaService.pointTransaction.findMany.mockResolvedValue([mockItems[0]]);
+      mockPrismaService.pointTransaction.findMany.mockResolvedValue([
+        mockItems[0],
+      ]);
       mockPrismaService.pointTransaction.count.mockResolvedValue(100);
 
       const result = await service.getPointsHistory(userId, 10, 5);
@@ -416,11 +428,11 @@ describe('MemberQueryService', () => {
       const result = await service.getLevelConfig(MemberLevel.SILVER);
 
       expect(result).toEqual(mockConfig);
-      expect(mockPrismaService.memberLevelConfig.findUnique).toHaveBeenCalledWith(
-        {
-          where: { level: MemberLevel.SILVER },
-        },
-      );
+      expect(
+        mockPrismaService.memberLevelConfig.findUnique,
+      ).toHaveBeenCalledWith({
+        where: { level: MemberLevel.SILVER },
+      });
     });
 
     it('等級不存在應回傳 null', async () => {
@@ -450,9 +462,11 @@ describe('MemberQueryService', () => {
       const result = await service.getAllLevelConfigs();
 
       expect(result).toEqual(mockConfigs);
-      expect(mockPrismaService.memberLevelConfig.findMany).toHaveBeenCalledWith({
-        orderBy: { minSpent: 'asc' },
-      });
+      expect(mockPrismaService.memberLevelConfig.findMany).toHaveBeenCalledWith(
+        {
+          orderBy: { minSpent: 'asc' },
+        },
+      );
     });
 
     it('無設定時應回傳空陣列', async () => {
