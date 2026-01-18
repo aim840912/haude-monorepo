@@ -21,6 +21,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // 帳號安全欄位
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")  // 連續登入失敗次數
+  lockedUntil         DateTime? @map("locked_until")                       // 帳號鎖定到期時間
+
   // 會員等級欄位
   memberLevel    MemberLevel @default(NORMAL) @map("member_level")
   totalSpent     Int         @default(0) @map("total_spent")     // 累積消費（整數，單位：元）
@@ -265,6 +269,7 @@ model ProductImage {
   // 關聯
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
   @@map("product_images")
 }
 
@@ -300,6 +305,7 @@ model CartItem {
   // 確保同一購物車內不會有重複的產品
   @@unique([cartId, productId])
   @@index([cartId])
+  @@index([productId])
   @@map("cart_items")
 }
 
@@ -492,6 +498,7 @@ model FarmTourImage {
   // 關聯
   farmTour FarmTour @relation(fields: [farmTourId], references: [id], onDelete: Cascade)
 
+  @@index([farmTourId])
   @@map("farm_tour_images")
 }
 
@@ -569,6 +576,7 @@ model LocationImage {
   // 關聯
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
+  @@index([locationId])
   @@map("location_images")
 }
 

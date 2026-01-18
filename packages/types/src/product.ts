@@ -36,7 +36,7 @@ export interface Product {
   isDraft?: boolean
   createdAt: string
   updatedAt: string
-  productImages: ProductImage[]
+  images: ProductImage[]
 }
 
 export interface CreateProductData {
