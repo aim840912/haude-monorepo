@@ -257,7 +257,7 @@ describe('AuthService', () => {
   });
 
   describe('googleLogin', () => {
-    it('應成功登入並回傳 token', async () => {
+    it('應成功登入並回傳 token', () => {
       const user = {
         id: 'user-1',
         email: 'google@example.com',
@@ -266,13 +266,13 @@ describe('AuthService', () => {
         isActive: true,
       };
 
-      const result = await service.googleLogin(user);
+      const result = service.googleLogin(user);
 
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.user.email).toBe(user.email);
     });
 
-    it('帳號被停用時應拋出 UnauthorizedException', async () => {
+    it('帳號被停用時應拋出 UnauthorizedException', () => {
       const user = {
         id: 'user-1',
         email: 'google@example.com',
@@ -281,9 +281,7 @@ describe('AuthService', () => {
         isActive: false,
       };
 
-      await expect(service.googleLogin(user)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      expect(() => service.googleLogin(user)).toThrow(UnauthorizedException);
     });
   });
 

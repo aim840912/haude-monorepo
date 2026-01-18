@@ -7,7 +7,7 @@
  * - 儀表板統計（營收趨勢、訂單狀態分布、熱銷產品）
  */
 
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp, authHeader } from './setup-e2e';
@@ -48,7 +48,11 @@ describe('Admin Orders API (e2e)', () => {
             orderNumber: 'ORD-001',
             status: 'pending',
           }),
-          user: { id: 'user-1', name: '測試使用者', email: 'test1@example.com' },
+          user: {
+            id: 'user-1',
+            name: '測試使用者',
+            email: 'test1@example.com',
+          },
         },
         {
           ...createMockOrder({
@@ -56,7 +60,11 @@ describe('Admin Orders API (e2e)', () => {
             orderNumber: 'ORD-002',
             status: 'shipped',
           }),
-          user: { id: 'user-2', name: '測試使用者2', email: 'test2@example.com' },
+          user: {
+            id: 'user-2',
+            name: '測試使用者2',
+            email: 'test2@example.com',
+          },
         },
       ];
 

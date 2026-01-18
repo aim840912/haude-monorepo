@@ -4,7 +4,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 @Injectable()
 export class SupabaseService implements OnModuleInit {
   private readonly logger = new Logger(SupabaseService.name);
-  private supabase: SupabaseClient;
+
+  private supabase!: SupabaseClient<any, 'public', any>;
 
   onModuleInit() {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -17,6 +18,7 @@ export class SupabaseService implements OnModuleInit {
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.supabase = createClient(supabaseUrl, supabaseKey);
     this.logger.log('Supabase client initialized');
   }

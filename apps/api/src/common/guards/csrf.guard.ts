@@ -37,7 +37,9 @@ export class CsrfGuard implements CanActivate {
     }
 
     // 從 Cookie 和 Header 取得 CSRF Token
-    const cookieToken = request.cookies?.['csrf-token'];
+    const cookieToken =
+      (request.cookies as Record<string, string> | undefined)?.['csrf-token'] ??
+      '';
     const headerToken = request.headers['x-csrf-token'] as string;
 
     // 驗證 Token

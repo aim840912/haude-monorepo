@@ -189,12 +189,18 @@ describe('Payments API (e2e)', () => {
         createMockPayment({
           id: 'payment-1',
           status: 'paid',
-          order: { orderNumber: 'ORD-001', user: { name: '測試', email: 'test@example.com' } },
+          order: {
+            orderNumber: 'ORD-001',
+            user: { name: '測試', email: 'test@example.com' },
+          },
         }),
         createMockPayment({
           id: 'payment-2',
           status: 'pending',
-          order: { orderNumber: 'ORD-002', user: { name: '測試2', email: 'test2@example.com' } },
+          order: {
+            orderNumber: 'ORD-002',
+            user: { name: '測試2', email: 'test2@example.com' },
+          },
         }),
       ];
 
@@ -261,8 +267,16 @@ describe('Payments API (e2e)', () => {
       mockPrisma.user.findUnique.mockResolvedValue(adminUser);
 
       const mockLogs = [
-        createMockPaymentLog({ id: 'log-1', logType: 'notify', verified: true }),
-        createMockPaymentLog({ id: 'log-2', logType: 'return', verified: true }),
+        createMockPaymentLog({
+          id: 'log-1',
+          logType: 'notify',
+          verified: true,
+        }),
+        createMockPaymentLog({
+          id: 'log-2',
+          logType: 'return',
+          verified: true,
+        }),
       ];
 
       mockPrisma.paymentLog.findMany.mockResolvedValue(mockLogs);
@@ -316,9 +330,9 @@ describe('Payments API (e2e)', () => {
 
       mockPrisma.payment.count
         .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(80)  // paid
-        .mockResolvedValueOnce(15)  // pending
-        .mockResolvedValueOnce(5);  // failed
+        .mockResolvedValueOnce(80) // paid
+        .mockResolvedValueOnce(15) // pending
+        .mockResolvedValueOnce(5); // failed
 
       mockPrisma.payment.aggregate.mockResolvedValue({
         _sum: { amount: 500000 },

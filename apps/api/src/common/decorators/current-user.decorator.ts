@@ -18,8 +18,8 @@ import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
  */
 export const CurrentUser = createParamDecorator(
   (data: keyof JwtUser | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user as JwtUser;
+    const request = ctx.switchToHttp().getRequest<{ user: JwtUser }>();
+    const user = request.user;
 
     // 如果指定了欄位，回傳該欄位的值
     if (data) {

@@ -6,11 +6,30 @@ import {
 } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { EmailModule } from '../email/email.module';
+
+// 專責服務
+import {
+  PaymentConfigService,
+  CreatePaymentService,
+  PaymentCallbackService,
+  PaymentQueryService,
+  PaymentAdminService,
+} from './services';
 
 @Module({
-  imports: [PrismaModule, ConfigModule],
+  imports: [PrismaModule, ConfigModule, EmailModule],
   controllers: [PaymentsController, AdminPaymentsController],
-  providers: [PaymentsService],
+  providers: [
+    // 專責服務
+    PaymentConfigService,
+    CreatePaymentService,
+    PaymentCallbackService,
+    PaymentQueryService,
+    PaymentAdminService,
+    // Facade 服務
+    PaymentsService,
+  ],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

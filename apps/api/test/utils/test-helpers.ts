@@ -77,14 +77,6 @@ export function createMockPrismaService() {
       aggregate: jest.fn(),
     },
 
-    // Payment
-    payment: {
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-
     // PasswordResetToken
     passwordResetToken: {
       findUnique: jest.fn(),
@@ -185,7 +177,7 @@ export function createMockPrismaService() {
       create: jest.fn(),
     },
 
-    // Payment
+    // Payment (完整版本，包含 aggregate 和 count)
     payment: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),

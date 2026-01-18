@@ -478,7 +478,9 @@ describe('LocationsService', () => {
         id: locationId,
         images: [],
       });
-      mockPrismaService.locationImage.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.locationImage.updateMany.mockResolvedValue({
+        count: 1,
+      });
       mockPrismaService.locationImage.findMany.mockResolvedValue([
         { id: 'img-3', displayPosition: 0 },
         { id: 'img-1', displayPosition: 1 },

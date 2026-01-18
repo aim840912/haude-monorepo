@@ -6,7 +6,7 @@
  * - 管理員端點：CRUD 操作、圖片管理
  */
 
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp, authHeader } from './setup-e2e';

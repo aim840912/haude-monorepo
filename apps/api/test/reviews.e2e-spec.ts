@@ -7,7 +7,7 @@
  * - 管理員端點：審核評論、刪除評論
  */
 
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp, authHeader } from './setup-e2e';
@@ -44,8 +44,16 @@ describe('Reviews API (e2e)', () => {
     it('應該返回產品評論列表', async () => {
       const productId = '550e8400-e29b-41d4-a716-446655440000';
       const mockReviews = [
-        createMockReview({ id: 'review-1', rating: 5, user: { id: 'user-1', name: '測試使用者', avatar: null } }),
-        createMockReview({ id: 'review-2', rating: 4, user: { id: 'user-2', name: '測試使用者2', avatar: null } }),
+        createMockReview({
+          id: 'review-1',
+          rating: 5,
+          user: { id: 'user-1', name: '測試使用者', avatar: null },
+        }),
+        createMockReview({
+          id: 'review-2',
+          rating: 4,
+          user: { id: 'user-2', name: '測試使用者2', avatar: null },
+        }),
       ];
 
       mockPrisma.review.findMany.mockResolvedValue(mockReviews);
@@ -160,8 +168,10 @@ describe('Reviews API (e2e)', () => {
       // Mock: 尚未評論（findUnique 用於複合鍵查詢）
       mockPrisma.review.findUnique.mockResolvedValue(null);
       // Mock: 用戶已購買且已送達（checkPurchaseHistory）
-      mockPrisma.order.findFirst
-        .mockResolvedValueOnce({ id: 'order-1', status: 'delivered' }); // delivered 訂單
+      mockPrisma.order.findFirst.mockResolvedValueOnce({
+        id: 'order-1',
+        status: 'delivered',
+      }); // delivered 訂單
       // Mock: 建立成功
       mockPrisma.review.create.mockResolvedValue(
         createMockReview({

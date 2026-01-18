@@ -182,7 +182,9 @@ describe('Notifications API (e2e)', () => {
 
     it('應該拒絕非管理員的請求', async () => {
       await request(app.getHttpServer())
-        .patch('/api/v1/admin/notifications/550e8400-e29b-41d4-a716-446655440000/read')
+        .patch(
+          '/api/v1/admin/notifications/550e8400-e29b-41d4-a716-446655440000/read',
+        )
         .set(authHeader('mock-jwt-token'))
         .expect(403);
     });
@@ -245,7 +247,9 @@ describe('Notifications API (e2e)', () => {
 
     it('應該拒絕非管理員的請求', async () => {
       await request(app.getHttpServer())
-        .delete('/api/v1/admin/notifications/550e8400-e29b-41d4-a716-446655440000')
+        .delete(
+          '/api/v1/admin/notifications/550e8400-e29b-41d4-a716-446655440000',
+        )
         .set(authHeader('mock-jwt-token'))
         .expect(403);
     });
@@ -308,7 +312,9 @@ describe('Notifications API (e2e)', () => {
 
     it('應該拒絕非管理員的請求', async () => {
       await request(app.getHttpServer())
-        .patch('/api/v1/admin/stock-alerts/550e8400-e29b-41d4-a716-446655440000')
+        .patch(
+          '/api/v1/admin/stock-alerts/550e8400-e29b-41d4-a716-446655440000',
+        )
         .set(authHeader('mock-jwt-token'))
         .send({ threshold: 10 })
         .expect(403);

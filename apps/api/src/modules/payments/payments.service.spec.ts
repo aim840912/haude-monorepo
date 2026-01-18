@@ -1,56 +1,61 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from './payments.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import { EmailService } from '../email/email.service';
-import { ECPayCrypto } from './utils/ecpay-crypto';
+import {
+  PaymentConfigService,
+  CreatePaymentService,
+  PaymentCallbackService,
+  PaymentQueryService,
+  PaymentAdminService,
+} from './services';
+import { PaymentStatus } from '@prisma/client';
 
-describe('PaymentsService', () => {
+/**
+ * PaymentsService Facade 測試
+ *
+ * 由於 PaymentsService 現在是 Facade 模式，只負責委派到專責子服務，
+ * 這裡的測試主要驗證委派行為是否正確。
+ * 詳細的業務邏輯測試（如 ECPay 加密驗證、付款流程等）應在各子服務的測試檔案中進行。
+ */
+describe('PaymentsService (Facade)', () => {
   let service: PaymentsService;
+  let configService: jest.Mocked<PaymentConfigService>;
+  let createPaymentService: jest.Mocked<CreatePaymentService>;
+  let callbackService: jest.Mocked<PaymentCallbackService>;
+  let queryService: jest.Mocked<PaymentQueryService>;
+  let adminService: jest.Mocked<PaymentAdminService>;
 
-  // 測試用的 ECPay 配置
-  const TEST_CONFIG = {
-    ECPAY_MERCHANT_ID: '2000132',
-    ECPAY_HASH_KEY: '5294y06JbISpM5x9',
-    ECPAY_HASH_IV: 'v77hoKGq4kWxNNIS',
-    ECPAY_API_URL: 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5',
-    ECPAY_NOTIFY_URL: 'https://example.com/payments/notify',
-    ECPAY_RETURN_URL: 'https://example.com/payments/return',
-  };
-
-  // 用於生成正確的 CheckMacValue
-  const testCrypto = new ECPayCrypto(
-    TEST_CONFIG.ECPAY_HASH_KEY,
-    TEST_CONFIG.ECPAY_HASH_IV,
-  );
-
-  // Mock Prisma
-  const mockPrismaService = {
-    payment: {
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    order: {
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-    paymentLog: {
-      create: jest.fn(),
-    },
-    $transaction: jest.fn((callback) => callback(mockPrismaService)),
-  };
-
-  // Mock ConfigService
+  // Mock PaymentConfigService
   const mockConfigService = {
-    get: jest.fn((key: string) => TEST_CONFIG[key as keyof typeof TEST_CONFIG]),
+    getMerchantId: jest.fn(),
+    getHashKey: jest.fn(),
+    getHashIv: jest.fn(),
+    getApiUrl: jest.fn(),
+    getNotifyUrl: jest.fn(),
+    getReturnUrl: jest.fn(),
   };
 
-  // Mock EmailService
-  const mockEmailService = {
-    sendPaymentSuccessEmail: jest.fn(),
+  // Mock CreatePaymentService
+  const mockCreatePaymentService = {
+    createPayment: jest.fn(),
+  };
+
+  // Mock PaymentCallbackService
+  const mockCallbackService = {
+    handleNotify: jest.fn(),
+    handlePaymentInfo: jest.fn(),
+    handleReturn: jest.fn(),
+  };
+
+  // Mock PaymentQueryService
+  const mockQueryService = {
+    getPaymentStatus: jest.fn(),
+  };
+
+  // Mock PaymentAdminService
+  const mockAdminService = {
+    getAllPayments: jest.fn(),
+    getPaymentLogs: jest.fn(),
+    getPaymentStats: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -58,400 +63,326 @@ describe('PaymentsService', () => {
       providers: [
         PaymentsService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: ConfigService,
+          provide: PaymentConfigService,
           useValue: mockConfigService,
         },
         {
-          provide: EmailService,
-          useValue: mockEmailService,
+          provide: CreatePaymentService,
+          useValue: mockCreatePaymentService,
+        },
+        {
+          provide: PaymentCallbackService,
+          useValue: mockCallbackService,
+        },
+        {
+          provide: PaymentQueryService,
+          useValue: mockQueryService,
+        },
+        {
+          provide: PaymentAdminService,
+          useValue: mockAdminService,
         },
       ],
     }).compile();
 
     service = module.get<PaymentsService>(PaymentsService);
+    configService = module.get(PaymentConfigService);
+    createPaymentService = module.get(CreatePaymentService);
+    callbackService = module.get(PaymentCallbackService);
+    queryService = module.get(PaymentQueryService);
+    adminService = module.get(PaymentAdminService);
 
-    // 清除所有 mock
     jest.clearAllMocks();
   });
 
+  describe('Facade 初始化', () => {
+    it('應成功建立 PaymentsService', () => {
+      expect(service).toBeDefined();
+    });
+
+    it('應注入所有子服務', () => {
+      expect(configService).toBeDefined();
+      expect(createPaymentService).toBeDefined();
+      expect(callbackService).toBeDefined();
+      expect(queryService).toBeDefined();
+      expect(adminService).toBeDefined();
+    });
+  });
+
+  // ========================================
+  // 建立付款委派測試
+  // ========================================
+
+  describe('createPayment', () => {
+    const orderId = 'order-123';
+    const userId = 'user-123';
+    const mockFormData = {
+      url: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5',
+      params: {
+        MerchantID: '2000132',
+        MerchantTradeNo: 'TEST123',
+        MerchantTradeDate: '2024/01/15 10:30:00',
+        PaymentType: 'aio',
+        TotalAmount: 1000,
+        TradeDesc: '豪德製茶所訂單',
+        ItemName: '茶葉商品',
+        ReturnURL: 'https://example.com/payments/notify',
+        ChoosePayment: 'Credit',
+        CheckMacValue: 'ABC123',
+        EncryptType: 1,
+      },
+    };
+
+    it('應委派至 CreatePaymentService.createPayment（使用預設付款方式）', async () => {
+      mockCreatePaymentService.createPayment.mockResolvedValue(mockFormData);
+
+      const result = await service.createPayment(orderId, userId);
+
+      expect(createPaymentService.createPayment).toHaveBeenCalledWith(
+        orderId,
+        userId,
+        'CREDIT',
+      );
+      expect(result).toEqual(mockFormData);
+    });
+
+    it('應委派至 CreatePaymentService.createPayment（使用指定付款方式）', async () => {
+      mockCreatePaymentService.createPayment.mockResolvedValue(mockFormData);
+
+      const result = await service.createPayment(orderId, userId, 'ATM');
+
+      expect(createPaymentService.createPayment).toHaveBeenCalledWith(
+        orderId,
+        userId,
+        'ATM',
+      );
+      expect(result).toEqual(mockFormData);
+    });
+  });
+
+  // ========================================
+  // 綠界回調處理委派測試
+  // ========================================
+
   describe('handleNotify', () => {
-    describe('CheckMacValue 驗證', () => {
-      it('驗證失敗應記錄錯誤並回傳 false', async () => {
-        const invalidBody = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-          CheckMacValue: 'INVALID_MAC_VALUE',
-        };
+    const mockBody = {
+      MerchantTradeNo: 'TEST123',
+      RtnCode: '1',
+      TradeNo: 'ECPay456',
+      CheckMacValue: 'VALID_MAC',
+    };
 
-        const result = await service.handleNotify(invalidBody);
+    it('應委派至 CallbackService.handleNotify', async () => {
+      mockCallbackService.handleNotify.mockResolvedValue(true);
 
-        expect(result).toBe(false);
-        expect(mockPrismaService.paymentLog.create).toHaveBeenCalledWith({
-          data: expect.objectContaining({
-            logType: 'error',
-            verified: false,
-          }),
-        });
-      });
+      const result = await service.handleNotify(mockBody);
 
-      it('驗證失敗應建立 PaymentLog', async () => {
-        const invalidBody = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-          CheckMacValue: 'WRONG_MAC',
-        };
-
-        await service.handleNotify(invalidBody, '192.168.1.1');
-
-        expect(mockPrismaService.paymentLog.create).toHaveBeenCalledWith({
-          data: expect.objectContaining({
-            merchantOrderNo: 'TEST123',
-            logType: 'error',
-            verified: false,
-            ipAddress: '192.168.1.1',
-          }),
-        });
-      });
+      expect(callbackService.handleNotify).toHaveBeenCalledWith(
+        mockBody,
+        undefined,
+      );
+      expect(result).toBe(true);
     });
 
-    describe('冪等性處理', () => {
-      it('付款狀態已為 paid 應直接回傳 true', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-          TradeNo: 'ECPay123',
-        };
-        // 加上正確的 CheckMacValue
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
+    it('應傳遞 IP 地址至 CallbackService.handleNotify', async () => {
+      mockCallbackService.handleNotify.mockResolvedValue(true);
+      const ipAddress = '192.168.1.1';
 
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          status: 'paid', // 已付款
-          order: { orderNumber: 'ORD-001' },
-        });
+      const result = await service.handleNotify(mockBody, ipAddress);
 
-        const result = await service.handleNotify(bodyWithMac);
-
-        expect(result).toBe(true);
-        // 不應該更新 payment
-        expect(mockPrismaService.payment.update).not.toHaveBeenCalled();
-      });
-
-      it('重複通知不應重複更新資料', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          status: 'paid',
-          order: { orderNumber: 'ORD-001' },
-        });
-
-        // 呼叫兩次
-        await service.handleNotify(bodyWithMac);
-        await service.handleNotify(bodyWithMac);
-
-        // $transaction 不應該被呼叫
-        expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
-      });
+      expect(callbackService.handleNotify).toHaveBeenCalledWith(
+        mockBody,
+        ipAddress,
+      );
+      expect(result).toBe(true);
     });
 
-    describe('付款成功處理', () => {
-      it('RtnCode = 1 應更新 Payment 為 paid', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-          TradeNo: 'ECPay456',
-          PaymentDate: '2024/01/15 10:30:00',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
+    it('應回傳 false 當驗證失敗', async () => {
+      mockCallbackService.handleNotify.mockResolvedValue(false);
 
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          amount: 1000,
-          paymentType: 'CREDIT',
-          status: 'pending',
-          order: { orderNumber: 'ORD-001' },
-        });
-        mockPrismaService.order.findUnique.mockResolvedValue({
-          id: 'order-1',
-          user: { email: 'test@example.com', name: '測試' },
-        });
+      const result = await service.handleNotify(mockBody);
 
-        const result = await service.handleNotify(bodyWithMac);
-
-        expect(result).toBe(true);
-        expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      });
-
-      it('應同時更新 Order 狀態為 confirmed', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-          TradeNo: 'ECPay456',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          amount: 1000,
-          paymentType: 'CREDIT',
-          status: 'pending',
-          order: { orderNumber: 'ORD-001' },
-        });
-        mockPrismaService.order.findUnique.mockResolvedValue({
-          id: 'order-1',
-          user: { email: 'test@example.com' },
-        });
-
-        await service.handleNotify(bodyWithMac);
-
-        // 檢查 $transaction 內的 order.update 被呼叫
-        expect(mockPrismaService.$transaction).toHaveBeenCalled();
-        // 由於 $transaction 是 mock，我們檢查 order.update 被呼叫
-        expect(mockPrismaService.order.update).toHaveBeenCalledWith({
-          where: { id: 'order-1' },
-          data: expect.objectContaining({
-            paymentStatus: 'paid',
-            status: 'confirmed',
-          }),
-        });
-      });
-
-      it('應記錄 tradeNo 和 payTime', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '1',
-          TradeNo: 'ECPay789',
-          PaymentDate: '2024/01/15 10:30:00',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          amount: 1000,
-          paymentType: 'CREDIT',
-          status: 'pending',
-          order: { orderNumber: 'ORD-001' },
-        });
-        mockPrismaService.order.findUnique.mockResolvedValue({
-          id: 'order-1',
-          user: { email: 'test@example.com' },
-        });
-
-        await service.handleNotify(bodyWithMac);
-
-        expect(mockPrismaService.payment.update).toHaveBeenCalledWith({
-          where: { id: 'payment-1' },
-          data: expect.objectContaining({
-            status: 'paid',
-            tradeNo: 'ECPay789',
-          }),
-        });
-      });
-    });
-
-    describe('付款失敗處理', () => {
-      it('RtnCode != 1 應更新 Payment 為 failed', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '0', // 失敗
-          RtnMsg: '交易失敗',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          status: 'pending',
-          order: { orderNumber: 'ORD-001' },
-        });
-
-        const result = await service.handleNotify(bodyWithMac);
-
-        expect(result).toBe(true);
-        expect(mockPrismaService.payment.update).toHaveBeenCalledWith({
-          where: { id: 'payment-1' },
-          data: expect.objectContaining({
-            status: 'failed',
-          }),
-        });
-      });
-
-      it('應更新 Order paymentStatus 為 failed', async () => {
-        const body = {
-          MerchantTradeNo: 'TEST123',
-          RtnCode: '0',
-          RtnMsg: '餘額不足',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-        mockPrismaService.payment.findUnique.mockResolvedValue({
-          id: 'payment-1',
-          orderId: 'order-1',
-          status: 'pending',
-          order: { orderNumber: 'ORD-001' },
-        });
-
-        await service.handleNotify(bodyWithMac);
-
-        expect(mockPrismaService.order.update).toHaveBeenCalledWith({
-          where: { id: 'order-1' },
-          data: { paymentStatus: 'failed' },
-        });
-      });
-    });
-
-    describe('找不到付款記錄', () => {
-      it('找不到 Payment 應記錄錯誤並回傳 false', async () => {
-        const body = {
-          MerchantTradeNo: 'NONEXISTENT',
-          RtnCode: '1',
-        };
-        const checkMac = testCrypto.generateCheckMacValue(body);
-        const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-        mockPrismaService.payment.findUnique.mockResolvedValue(null);
-
-        const result = await service.handleNotify(bodyWithMac);
-
-        expect(result).toBe(false);
-      });
+      expect(result).toBe(false);
     });
   });
 
   describe('handlePaymentInfo', () => {
-    it('ATM 取號成功應儲存銀行代碼和虛擬帳號', async () => {
-      const body = {
-        MerchantTradeNo: 'TEST123',
-        RtnCode: '2', // ATM 取號成功
-        TradeNo: 'ECPay123',
-        BankCode: '012',
-        vAccount: '1234567890123456',
-        ExpireDate: '2024/01/18 23:59:59',
-      };
-      const checkMac = testCrypto.generateCheckMacValue(body);
-      const bodyWithMac = { ...body, CheckMacValue: checkMac };
+    const mockBody = {
+      MerchantTradeNo: 'TEST123',
+      RtnCode: '2',
+      BankCode: '012',
+      vAccount: '1234567890123456',
+      ExpireDate: '2024/01/18 23:59:59',
+    };
 
-      mockPrismaService.payment.findUnique.mockResolvedValue({
-        id: 'payment-1',
-        orderId: 'order-1',
-        paymentType: 'ATM',
-        order: { orderNumber: 'ORD-001' },
-      });
+    it('應委派至 CallbackService.handlePaymentInfo', async () => {
+      mockCallbackService.handlePaymentInfo.mockResolvedValue(true);
 
-      await service.handlePaymentInfo(bodyWithMac);
+      const result = await service.handlePaymentInfo(mockBody);
 
-      expect(mockPrismaService.payment.update).toHaveBeenCalledWith({
-        where: { id: 'payment-1' },
-        data: expect.objectContaining({
-          bankCode: '012',
-          vaAccount: '1234567890123456',
-        }),
-      });
+      expect(callbackService.handlePaymentInfo).toHaveBeenCalledWith(
+        mockBody,
+        undefined,
+      );
+      expect(result).toBe(true);
     });
 
-    it('CVS 取號成功應儲存繳費代碼', async () => {
-      const body = {
-        MerchantTradeNo: 'TEST123',
-        RtnCode: '10100073', // CVS 取號成功
-        TradeNo: 'ECPay123',
-        PaymentNo: 'CVS123456789',
-        ExpireDate: '2024/01/22 23:59:59',
-      };
-      const checkMac = testCrypto.generateCheckMacValue(body);
-      const bodyWithMac = { ...body, CheckMacValue: checkMac };
+    it('應傳遞 IP 地址至 CallbackService.handlePaymentInfo', async () => {
+      mockCallbackService.handlePaymentInfo.mockResolvedValue(true);
+      const ipAddress = '192.168.1.1';
 
-      mockPrismaService.payment.findUnique.mockResolvedValue({
-        id: 'payment-1',
-        orderId: 'order-1',
-        paymentType: 'CVS',
-        order: { orderNumber: 'ORD-001' },
-      });
+      const result = await service.handlePaymentInfo(mockBody, ipAddress);
 
-      await service.handlePaymentInfo(bodyWithMac);
-
-      expect(mockPrismaService.payment.update).toHaveBeenCalledWith({
-        where: { id: 'payment-1' },
-        data: expect.objectContaining({
-          paymentCode: 'CVS123456789',
-        }),
-      });
-    });
-
-    it('應正確解析繳費期限', async () => {
-      const body = {
-        MerchantTradeNo: 'TEST123',
-        RtnCode: '2',
-        BankCode: '012',
-        vAccount: '1234567890123456',
-        ExpireDate: '2024/01/18 23:59:59',
-      };
-      const checkMac = testCrypto.generateCheckMacValue(body);
-      const bodyWithMac = { ...body, CheckMacValue: checkMac };
-
-      mockPrismaService.payment.findUnique.mockResolvedValue({
-        id: 'payment-1',
-        orderId: 'order-1',
-        paymentType: 'ATM',
-        order: { orderNumber: 'ORD-001' },
-      });
-
-      await service.handlePaymentInfo(bodyWithMac);
-
-      expect(mockPrismaService.payment.update).toHaveBeenCalledWith({
-        where: { id: 'payment-1' },
-        data: expect.objectContaining({
-          expireDate: expect.any(Date),
-        }),
-      });
+      expect(callbackService.handlePaymentInfo).toHaveBeenCalledWith(
+        mockBody,
+        ipAddress,
+      );
+      expect(result).toBe(true);
     });
   });
 
-  describe('getPaymentStatus', () => {
-    it('訂單不存在應拋出 NotFoundException', async () => {
-      mockPrismaService.order.findFirst.mockResolvedValue(null);
+  describe('handleReturn', () => {
+    const mockBody = {
+      MerchantTradeNo: 'TEST123',
+      RtnCode: '1',
+      CheckMacValue: 'VALID_MAC',
+    };
 
-      await expect(
-        service.getPaymentStatus('non-existent', 'user-123'),
-      ).rejects.toThrow();
+    it('應委派至 CallbackService.handleReturn（成功）', async () => {
+      const mockResult = {
+        success: true,
+        orderId: 'order-123',
+      };
+      mockCallbackService.handleReturn.mockResolvedValue(mockResult);
+
+      const result = await service.handleReturn(mockBody);
+
+      expect(callbackService.handleReturn).toHaveBeenCalledWith(mockBody);
+      expect(result).toEqual(mockResult);
     });
 
-    it('應回傳正確的付款狀態', async () => {
-      mockPrismaService.order.findFirst.mockResolvedValue({
-        id: 'order-1',
-        paymentStatus: 'paid',
-      });
-      mockPrismaService.payment.findFirst.mockResolvedValue({
-        id: 'payment-1',
-        status: 'paid',
+    it('應委派至 CallbackService.handleReturn（失敗）', async () => {
+      const mockResult = {
+        success: false,
+        message: '付款失敗',
+      };
+      mockCallbackService.handleReturn.mockResolvedValue(mockResult);
+
+      const result = await service.handleReturn(mockBody);
+
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  // ========================================
+  // 查詢付款狀態委派測試
+  // ========================================
+
+  describe('getPaymentStatus', () => {
+    const orderId = 'order-123';
+    const userId = 'user-123';
+
+    it('應委派至 QueryService.getPaymentStatus', async () => {
+      const mockStatus = {
+        status: PaymentStatus.paid,
         payTime: new Date('2024-01-15'),
         tradeNo: 'ECPay123',
-      });
+      };
+      mockQueryService.getPaymentStatus.mockResolvedValue(mockStatus);
 
-      const result = await service.getPaymentStatus('order-1', 'user-123');
+      const result = await service.getPaymentStatus(orderId, userId);
 
-      expect(result.status).toBe('paid');
-      expect(result.tradeNo).toBe('ECPay123');
+      expect(queryService.getPaymentStatus).toHaveBeenCalledWith(
+        orderId,
+        userId,
+      );
+      expect(result).toEqual(mockStatus);
+    });
+
+    it('應正確處理 pending 狀態', async () => {
+      const mockStatus = {
+        status: PaymentStatus.pending,
+      };
+      mockQueryService.getPaymentStatus.mockResolvedValue(mockStatus);
+
+      const result = await service.getPaymentStatus(orderId, userId);
+
+      expect(result.status).toBe(PaymentStatus.pending);
+      expect(result.payTime).toBeUndefined();
+      expect(result.tradeNo).toBeUndefined();
+    });
+  });
+
+  // ========================================
+  // 管理員 API 委派測試
+  // ========================================
+
+  describe('getAllPayments', () => {
+    const mockResult = {
+      items: [
+        {
+          id: 'payment-1',
+          orderId: 'order-1',
+          status: PaymentStatus.paid,
+          amount: 1000,
+        },
+      ],
+      total: 1,
+    };
+
+    it('應委派至 AdminService.getAllPayments', async () => {
+      mockAdminService.getAllPayments.mockResolvedValue(mockResult);
+
+      const result = await service.getAllPayments(10, 0);
+
+      expect(adminService.getAllPayments).toHaveBeenCalledWith(10, 0);
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('getPaymentLogs', () => {
+    const mockResult = {
+      items: [
+        {
+          id: 'log-1',
+          merchantOrderNo: 'TEST123',
+          logType: 'notify',
+          verified: true,
+          createdAt: new Date(),
+        },
+      ],
+      total: 1,
+    };
+
+    it('應委派至 AdminService.getPaymentLogs', async () => {
+      mockAdminService.getPaymentLogs.mockResolvedValue(mockResult);
+
+      const result = await service.getPaymentLogs(10, 0);
+
+      expect(adminService.getPaymentLogs).toHaveBeenCalledWith(10, 0);
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('getPaymentStats', () => {
+    const mockStats = {
+      totalPayments: 100,
+      totalAmount: 500000,
+      successRate: 95.5,
+      paymentsByMethod: {
+        CREDIT: 70,
+        ATM: 20,
+        CVS: 10,
+      },
+    };
+
+    it('應委派至 AdminService.getPaymentStats', async () => {
+      mockAdminService.getPaymentStats.mockResolvedValue(mockStats);
+
+      const result = await service.getPaymentStats();
+
+      expect(adminService.getPaymentStats).toHaveBeenCalled();
+      expect(result).toEqual(mockStats);
     });
   });
 });

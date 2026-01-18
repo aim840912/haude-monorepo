@@ -23,7 +23,6 @@ import { Role } from '@prisma/client';
 import {
   OrderResponseDto,
   PaginatedResponseDto,
-  MessageResponseDto,
   ErrorResponseDto,
 } from '@/common/dto/response.dto';
 import { OrdersService } from './orders.service';

@@ -15,8 +15,6 @@ import {
   createMockPrismaService,
   createMockUser,
   createMockProduct,
-  createMockFarmTour,
-  createMockLocation,
 } from './utils/test-helpers';
 
 describe('Search API (e2e)', () => {

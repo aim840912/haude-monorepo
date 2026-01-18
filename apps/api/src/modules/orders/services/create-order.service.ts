@@ -193,7 +193,7 @@ export class CreateOrderService {
     }
 
     // 12. 發送訂單確認郵件（非同步，不阻塞回應）
-    this.sendOrderConfirmationEmailAsync(userId, order, dto);
+    void this.sendOrderConfirmationEmailAsync(userId, order, dto);
 
     return order;
   }

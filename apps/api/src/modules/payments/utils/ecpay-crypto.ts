@@ -160,8 +160,8 @@ export class ECPayCrypto {
 
     // .NET 的特殊編碼規則
     encoded = encoded
-      .replace(/\!/g, '%21')
-      .replace(/\'/g, '%27')
+      .replace(/!/g, '%21')
+      .replace(/'/g, '%27')
       .replace(/\(/g, '%28')
       .replace(/\)/g, '%29')
       .replace(/\*/g, '%2A')

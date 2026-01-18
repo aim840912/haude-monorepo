@@ -17,6 +17,7 @@ import { UpdateReviewDto, ApproveReviewDto } from './dto/update-review.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 
 /**
  * 評論 Controller
@@ -78,7 +79,7 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard)
   async checkReviewEligibility(
     @Param('productId') productId: string,
-    @Request() req,
+    @Request() req: { user: JwtUser },
   ) {
     const purchaseStatus = await this.reviewsService.checkPurchaseHistory(
       req.user.userId,
@@ -124,7 +125,7 @@ export class ReviewsController {
   async createReview(
     @Param('productId') productId: string,
     @Body() dto: CreateReviewDto,
-    @Request() req,
+    @Request() req: { user: JwtUser },
   ) {
     return this.reviewsService.create(req.user.userId, productId, dto);
   }
@@ -137,7 +138,7 @@ export class ReviewsController {
   async updateReview(
     @Param('id') id: string,
     @Body() dto: UpdateReviewDto,
-    @Request() req,
+    @Request() req: { user: JwtUser },
   ) {
     return this.reviewsService.update(id, req.user.userId, dto);
   }
@@ -147,7 +148,10 @@ export class ReviewsController {
    */
   @Delete('reviews/:id')
   @UseGuards(JwtAuthGuard)
-  async deleteReview(@Param('id') id: string, @Request() req) {
+  async deleteReview(
+    @Param('id') id: string,
+    @Request() req: { user: JwtUser },
+  ) {
     return this.reviewsService.delete(id, req.user.userId, false);
   }
 
@@ -189,7 +193,10 @@ export class ReviewsController {
   @Delete('admin/reviews/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async adminDeleteReview(@Param('id') id: string, @Request() req) {
+  async adminDeleteReview(
+    @Param('id') id: string,
+    @Request() req: { user: JwtUser },
+  ) {
     return this.reviewsService.delete(id, req.user.userId, true);
   }
 }

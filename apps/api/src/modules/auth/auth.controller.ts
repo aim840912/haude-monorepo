@@ -234,7 +234,7 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiExcludeEndpoint() // 不在 Swagger 中顯示
-  async googleAuthCallback(
+  googleAuthCallback(
     @Request()
     req: ExpressRequest & {
       user: {
@@ -252,7 +252,7 @@ export class AuthController {
     const { oauthState, ...userData } = req.user;
 
     // Google OAuth 回調處理
-    const { user, accessToken } = await this.authService.googleLogin(userData);
+    const { user, accessToken } = this.authService.googleLogin(userData);
 
     // 設定 CSRF Cookie
     const csrfToken = this.csrfService.generateToken();

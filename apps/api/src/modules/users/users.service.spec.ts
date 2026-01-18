@@ -196,9 +196,9 @@ describe('UsersService', () => {
     it('用戶不存在應拋出 NotFoundException', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.update(userId, { name: '新名稱' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update(userId, { name: '新名稱' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('管理員不能降低自己的權限 (ADMIN → USER)', async () => {

@@ -41,9 +41,7 @@ import { JwtAuthGuard } from '../src/modules/auth/guards/jwt-auth.guard';
  * 會從 mockPrisma.user.findUnique 取得用戶資料設定到 req.user
  */
 class MockJwtAuthGuard implements CanActivate {
-  constructor(
-    private mockPrisma: ReturnType<typeof createMockPrismaService>,
-  ) {}
+  constructor(private mockPrisma: ReturnType<typeof createMockPrismaService>) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -188,11 +186,7 @@ export async function createTestApp(
 /**
  * 生成測試用的 JWT Token
  */
-export function generateTestToken(
-  userId: string = 'test-user-id',
-  email: string = 'test@example.com',
-  role: string = 'USER',
-): string {
+export function generateTestToken(userId: string = 'test-user-id'): string {
   // 在測試中我們 mock 了 JwtService.verify()
   // 所以這個 token 只需要是一個有效的字串即可
   return `mock-jwt-token-${userId}`;

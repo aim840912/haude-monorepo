@@ -302,7 +302,7 @@ describe('ReviewsService', () => {
         ...updateDto,
       });
 
-      const result = await service.update(reviewId, userId, updateDto);
+      await service.update(reviewId, userId, updateDto);
 
       expect(mockPrismaService.review.update).toHaveBeenCalled();
     });

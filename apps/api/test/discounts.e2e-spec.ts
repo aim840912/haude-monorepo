@@ -281,7 +281,7 @@ describe('Discounts API (e2e)', () => {
 
       const createDto = {
         code: 'NEWYEAR',
-        discountType: 'PERCENTAGE',
+        discountType: 'PERCENTAGE' as const,
         discountValue: 15,
         description: '新年優惠',
       };
@@ -414,7 +414,7 @@ describe('Discounts API (e2e)', () => {
       // 如果有使用記錄，delete 方法會返回停用後的折扣碼
       mockDiscounts.delete.mockResolvedValue(existingDiscount);
 
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .delete(`/api/v1/admin/discounts/${discountId}`)
         .set(authHeader('mock-jwt-token'))
         .expect(200);

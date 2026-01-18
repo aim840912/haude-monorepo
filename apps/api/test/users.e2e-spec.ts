@@ -12,10 +12,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp, authHeader } from './setup-e2e';
-import {
-  createMockPrismaService,
-  createMockUser,
-} from './utils/test-helpers';
+import { createMockPrismaService, createMockUser } from './utils/test-helpers';
 
 describe('Users API (e2e)', () => {
   let app: INestApplication<App>;
@@ -77,9 +74,7 @@ describe('Users API (e2e)', () => {
     });
 
     it('應該拒絕未認證的請求', async () => {
-      await request(app.getHttpServer())
-        .get('/api/v1/users')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/v1/users').expect(401);
     });
   });
 
@@ -92,7 +87,9 @@ describe('Users API (e2e)', () => {
       const adminUser = createMockUser({ id: 'admin-1', role: 'ADMIN' });
       mockPrisma.user.findUnique
         .mockResolvedValueOnce(adminUser) // 第一次調用：驗證 token
-        .mockResolvedValueOnce(createMockUser({ id: 'user-1', name: '測試用戶' })); // 第二次調用：查詢用戶
+        .mockResolvedValueOnce(
+          createMockUser({ id: 'user-1', name: '測試用戶' }),
+        ); // 第二次調用：查詢用戶
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/users/user-1')
@@ -198,7 +195,9 @@ describe('Users API (e2e)', () => {
         .mockResolvedValueOnce(adminUser)
         .mockResolvedValueOnce(createMockUser({ id: 'user-1' }));
 
-      mockPrisma.user.delete.mockResolvedValue(createMockUser({ id: 'user-1' }));
+      mockPrisma.user.delete.mockResolvedValue(
+        createMockUser({ id: 'user-1' }),
+      );
 
       await request(app.getHttpServer())
         .delete('/api/v1/users/user-1')

@@ -88,9 +88,16 @@ describe('EmailService', () => {
     const userName = '測試用戶';
 
     it('發送成功應回傳 true', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
-      const result = await service.sendPasswordResetEmail(to, resetUrl, userName);
+      const result = await service.sendPasswordResetEmail(
+        to,
+        resetUrl,
+        userName,
+      );
 
       expect(result).toBe(true);
       expect(mockResendInstance.emails.send).toHaveBeenCalledWith(
@@ -113,7 +120,9 @@ describe('EmailService', () => {
     });
 
     it('發生例外應回傳 false', async () => {
-      mockResendInstance.emails.send.mockRejectedValue(new Error('Network error'));
+      mockResendInstance.emails.send.mockRejectedValue(
+        new Error('Network error'),
+      );
 
       const result = await service.sendPasswordResetEmail(to, resetUrl);
 
@@ -160,7 +169,10 @@ describe('EmailService', () => {
     const userName = '王小明';
 
     it('發送成功應回傳 true', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       const result = await service.sendOrderConfirmationEmail(
         to,
@@ -224,7 +236,10 @@ describe('EmailService', () => {
     const userName = '李小華';
 
     it('發送成功應回傳 true', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       const result = await service.sendPaymentSuccessEmail(
         to,
@@ -300,7 +315,10 @@ describe('EmailService', () => {
     const userName = '張三';
 
     it('發送成功應回傳 true', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       const result = await service.sendShippingNotificationEmail(
         to,
@@ -334,7 +352,9 @@ describe('EmailService', () => {
     });
 
     it('發生例外應回傳 false', async () => {
-      mockResendInstance.emails.send.mockRejectedValue(new Error('DNS failure'));
+      mockResendInstance.emails.send.mockRejectedValue(
+        new Error('DNS failure'),
+      );
 
       const result = await service.sendShippingNotificationEmail(
         to,
@@ -371,7 +391,10 @@ describe('EmailService', () => {
     const to = 'user@example.com';
 
     it('credit_card 應顯示信用卡', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       await service.sendOrderConfirmationEmail(to, {
         orderNumber: 'ORD-001',
@@ -391,7 +414,10 @@ describe('EmailService', () => {
     });
 
     it('atm 應顯示 ATM 轉帳', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       await service.sendOrderConfirmationEmail(to, {
         orderNumber: 'ORD-001',
@@ -411,7 +437,10 @@ describe('EmailService', () => {
     });
 
     it('cvs 應顯示超商付款', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       await service.sendOrderConfirmationEmail(to, {
         orderNumber: 'ORD-001',
@@ -431,7 +460,10 @@ describe('EmailService', () => {
     });
 
     it('未知方式應顯示線上付款', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({ data: {}, error: null });
+      mockResendInstance.emails.send.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       await service.sendOrderConfirmationEmail(to, {
         orderNumber: 'ORD-001',

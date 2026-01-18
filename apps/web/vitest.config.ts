@@ -10,6 +10,25 @@ export default defineConfig({
     globals: true,
     include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/.next/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      reportsDirectory: './coverage',
+      exclude: [
+        'node_modules/**',
+        '.next/**',
+        'src/test/**',
+        '**/*.d.ts',
+        '**/*.config.{js,ts}',
+        '**/types/**',
+      ],
+      thresholds: {
+        statements: 60,
+        branches: 50,
+        functions: 45,
+        lines: 60,
+      },
+    },
   },
   resolve: {
     alias: {

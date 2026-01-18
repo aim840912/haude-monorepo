@@ -12,7 +12,10 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp } from './setup-e2e';
-import { createMockProduct, createMockPrismaService } from './utils/test-helpers';
+import {
+  createMockProduct,
+  createMockPrismaService,
+} from './utils/test-helpers';
 
 describe('Products API (e2e)', () => {
   let app: INestApplication<App>;

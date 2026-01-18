@@ -83,7 +83,7 @@ export class AuthService {
   /**
    * 處理 Google OAuth 登入，返回 JWT Token
    */
-  async googleLogin(user: {
+  googleLogin(user: {
     id: string;
     email: string;
     name: string;

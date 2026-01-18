@@ -55,7 +55,7 @@ export class UpdateOrderService {
       (dto.trackingNumber || order.trackingNumber)
     ) {
       const trackingNumber = dto.trackingNumber || order.trackingNumber || '';
-      this.sendShippingNotificationEmailAsync(
+      void this.sendShippingNotificationEmailAsync(
         order.user.email,
         order.orderNumber,
         trackingNumber,
@@ -65,7 +65,7 @@ export class UpdateOrderService {
 
     // 當訂單狀態變更為 delivered（已送達）時，更新會員累積消費並發放積分
     if (dto.status === 'delivered' && order.status !== 'delivered') {
-      this.processOrderCompletionAsync(
+      void this.processOrderCompletionAsync(
         order.userId,
         order.id,
         order.totalAmount,

@@ -153,7 +153,11 @@ describe('Reports API (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/api/v1/admin/reports/sales-trend')
         .set(authHeader('mock-jwt-token'))
-        .query({ startDate: '2024-01-01', endDate: '2024-01-31', groupBy: 'day' })
+        .query({
+          startDate: '2024-01-01',
+          endDate: '2024-01-31',
+          groupBy: 'day',
+        })
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -168,7 +172,11 @@ describe('Reports API (e2e)', () => {
       await request(app.getHttpServer())
         .get('/api/v1/admin/reports/sales-trend')
         .set(authHeader('mock-jwt-token'))
-        .query({ startDate: '2024-01-01', endDate: '2024-01-31', groupBy: 'week' })
+        .query({
+          startDate: '2024-01-01',
+          endDate: '2024-01-31',
+          groupBy: 'week',
+        })
         .expect(200);
     });
 
@@ -181,7 +189,11 @@ describe('Reports API (e2e)', () => {
       await request(app.getHttpServer())
         .get('/api/v1/admin/reports/sales-trend')
         .set(authHeader('mock-jwt-token'))
-        .query({ startDate: '2024-01-01', endDate: '2024-12-31', groupBy: 'month' })
+        .query({
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          groupBy: 'month',
+        })
         .expect(200);
     });
 

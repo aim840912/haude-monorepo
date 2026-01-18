@@ -10,7 +10,6 @@ import {
 
 describe('DiscountsService', () => {
   let service: DiscountsService;
-  let prisma: PrismaService;
 
   // Mock Prisma
   const mockPrismaService = {
@@ -40,7 +39,6 @@ describe('DiscountsService', () => {
     }).compile();
 
     service = module.get<DiscountsService>(DiscountsService);
-    prisma = module.get<PrismaService>(PrismaService);
 
     // 清除所有 mock
     jest.clearAllMocks();

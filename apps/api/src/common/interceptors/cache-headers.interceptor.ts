@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import type { Request, Response } from 'express';
 import { CACHE_MAX_AGE_KEY } from '../decorators/cacheable.decorator';
 
 /**
@@ -33,8 +34,8 @@ export class CacheHeadersInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const request = context.switchToHttp().getRequest();
-    const response = context.switchToHttp().getResponse();
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
 
     // 非 GET 請求不快取
     if (request.method !== 'GET') {

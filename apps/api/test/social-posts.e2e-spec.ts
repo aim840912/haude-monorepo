@@ -277,14 +277,18 @@ describe('Social Posts API (e2e)', () => {
       mockPrisma.socialPost.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
-        .delete('/api/v1/admin/social-posts/550e8400-e29b-41d4-a716-446655440001')
+        .delete(
+          '/api/v1/admin/social-posts/550e8400-e29b-41d4-a716-446655440001',
+        )
         .set(authHeader('mock-jwt-token'))
         .expect(404);
     });
 
     it('應該拒絕非管理員的請求', async () => {
       await request(app.getHttpServer())
-        .delete('/api/v1/admin/social-posts/550e8400-e29b-41d4-a716-446655440000')
+        .delete(
+          '/api/v1/admin/social-posts/550e8400-e29b-41d4-a716-446655440000',
+        )
         .set(authHeader('mock-jwt-token'))
         .expect(403);
     });

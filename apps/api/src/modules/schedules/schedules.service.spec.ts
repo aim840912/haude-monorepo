@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SchedulesService } from './schedules.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
-import { ScheduleStatus } from '@prisma/client';
+import { ScheduleStatus } from './dto/create-schedule.dto';
 
 describe('SchedulesService', () => {
   let service: SchedulesService;
@@ -42,8 +42,18 @@ describe('SchedulesService', () => {
   describe('findAll', () => {
     it('應回傳所有活躍日程並按日期排序', async () => {
       const mockSchedules = [
-        { id: 'sch-1', title: '市集 A', isActive: true, date: new Date('2024-01-15') },
-        { id: 'sch-2', title: '市集 B', isActive: true, date: new Date('2024-01-20') },
+        {
+          id: 'sch-1',
+          title: '市集 A',
+          isActive: true,
+          date: new Date('2024-01-15'),
+        },
+        {
+          id: 'sch-2',
+          title: '市集 B',
+          isActive: true,
+          date: new Date('2024-01-20'),
+        },
       ];
       mockPrismaService.schedule.findMany.mockResolvedValue(mockSchedules);
 
@@ -202,7 +212,10 @@ describe('SchedulesService', () => {
     });
 
     it('應使用指定的 status', async () => {
-      const dtoWithStatus = { ...createDto, status: ScheduleStatus.cancelled };
+      const dtoWithStatus = {
+        ...createDto,
+        status: ScheduleStatus.cancelled as ScheduleStatus,
+      };
       mockPrismaService.schedule.create.mockResolvedValue({
         id: 'sch-new',
         status: ScheduleStatus.cancelled,
@@ -286,7 +299,9 @@ describe('SchedulesService', () => {
         status: ScheduleStatus.completed,
       });
 
-      await service.update(scheduleId, { status: ScheduleStatus.completed });
+      await service.update(scheduleId, {
+        status: ScheduleStatus.completed as ScheduleStatus,
+      });
 
       expect(mockPrismaService.schedule.update).toHaveBeenCalledWith({
         where: { id: scheduleId },

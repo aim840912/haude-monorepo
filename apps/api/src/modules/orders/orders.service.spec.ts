@@ -100,7 +100,10 @@ describe('OrdersService (Facade)', () => {
 
   describe('getUserOrders', () => {
     it('應委派給 QueryUserOrdersService.getUserOrders', async () => {
-      const mockOrders = [createMockOrder(), createMockOrder({ id: 'order-2' })];
+      const mockOrders = [
+        createMockOrder(),
+        createMockOrder({ id: 'order-2' }),
+      ];
       const mockResult = {
         orders: mockOrders,
         total: 2,
@@ -108,7 +111,9 @@ describe('OrdersService (Facade)', () => {
         offset: 0,
         hasMore: false,
       };
-      mockQueryUserOrdersService.getUserOrders.mockResolvedValue(mockResult);
+      mockQueryUserOrdersService.getUserOrders.mockResolvedValue(
+        mockResult as any,
+      );
 
       const result = await service.getUserOrders('user-1', 20, 0);
 
@@ -145,7 +150,9 @@ describe('OrdersService (Facade)', () => {
         ...createMockOrder(),
         payment: { id: 'payment-1', status: 'paid' },
       };
-      mockQueryUserOrdersService.getOrderById.mockResolvedValue(mockOrder);
+      mockQueryUserOrdersService.getOrderById.mockResolvedValue(
+        mockOrder as any,
+      );
 
       const result = await service.getOrderById('order-1', 'user-1');
 
@@ -180,7 +187,9 @@ describe('OrdersService (Facade)', () => {
         offset: 0,
         hasMore: false,
       };
-      mockQueryAdminOrdersService.getAllOrders.mockResolvedValue(mockResult);
+      mockQueryAdminOrdersService.getAllOrders.mockResolvedValue(
+        mockResult as any,
+      );
 
       const result = await service.getAllOrders(20, 0);
 
@@ -196,7 +205,7 @@ describe('OrdersService (Facade)', () => {
     it('應委派給 QueryAdminOrdersService.getOrderByIdForAdmin', async () => {
       const mockOrder = createMockOrder();
       mockQueryAdminOrdersService.getOrderByIdForAdmin.mockResolvedValue(
-        mockOrder,
+        mockOrder as any,
       );
 
       const result = await service.getOrderByIdForAdmin('order-1');
@@ -243,13 +252,15 @@ describe('OrdersService (Facade)', () => {
         { date: '2024-01-15', revenue: 1500, orders: 2 },
         { date: '2024-01-14', revenue: 800, orders: 1 },
       ];
-      mockDashboardAnalyticsService.getRevenueTrend.mockResolvedValue(mockTrend);
+      mockDashboardAnalyticsService.getRevenueTrend.mockResolvedValue(
+        mockTrend,
+      );
 
       const result = await service.getRevenueTrend('day');
 
-      expect(mockDashboardAnalyticsService.getRevenueTrend).toHaveBeenCalledWith(
-        'day',
-      );
+      expect(
+        mockDashboardAnalyticsService.getRevenueTrend,
+      ).toHaveBeenCalledWith('day');
       expect(result).toEqual(mockTrend);
     });
   });
@@ -261,7 +272,7 @@ describe('OrdersService (Facade)', () => {
         { status: 'shipped', count: 30, label: '已出貨' },
       ];
       mockDashboardAnalyticsService.getOrderStatusDistribution.mockResolvedValue(
-        mockDistribution,
+        mockDistribution as any,
       );
 
       const result = await service.getOrderStatusDistribution();
@@ -299,7 +310,7 @@ describe('OrdersService (Facade)', () => {
     it('應委派給 CreateOrderService.createOrder', async () => {
       const mockDto = createMockCreateOrderDto();
       const mockOrder = createMockOrder();
-      mockCreateOrderService.createOrder.mockResolvedValue(mockOrder);
+      mockCreateOrderService.createOrder.mockResolvedValue(mockOrder as any);
 
       const result = await service.createOrder('user-1', mockDto);
 
@@ -372,7 +383,9 @@ describe('OrdersService (Facade)', () => {
   describe('updateOrderStatus', () => {
     it('應委派給 UpdateOrderService.updateOrderStatus', async () => {
       const mockOrder = { ...createMockOrder(), status: 'shipped' };
-      mockUpdateOrderService.updateOrderStatus.mockResolvedValue(mockOrder);
+      mockUpdateOrderService.updateOrderStatus.mockResolvedValue(
+        mockOrder as any,
+      );
 
       const result = await service.updateOrderStatus('order-1', {
         status: 'shipped',

@@ -12,7 +12,7 @@ import {
   CreateFarmTourImageDto,
   UpdateFarmTourImageDto,
 } from './dto';
-import { Prisma, FarmTourStatus } from '@prisma/client';
+import { Prisma, FarmTourStatus, FarmTourType } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 // Storage bucket 名稱
@@ -123,7 +123,7 @@ export class FarmToursService {
       location: dto.location,
       imageUrl: dto.imageUrl,
       status: dto.status as FarmTourStatus,
-      type: dto.type as any,
+      type: dto.type as FarmTourType,
       tags: dto.tags || [],
       isActive: dto.isActive ?? true,
     };
@@ -150,7 +150,7 @@ export class FarmToursService {
     if (dto.location !== undefined) data.location = dto.location;
     if (dto.imageUrl !== undefined) data.imageUrl = dto.imageUrl;
     if (dto.status !== undefined) data.status = dto.status as FarmTourStatus;
-    if (dto.type !== undefined) data.type = dto.type as any;
+    if (dto.type !== undefined) data.type = dto.type as FarmTourType;
     if (dto.tags !== undefined) data.tags = dto.tags;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
 

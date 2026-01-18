@@ -495,14 +495,19 @@ describe('FarmToursService', () => {
         id: farmTourId,
         bookings: [],
       });
-      mockPrismaService.farmTourImage.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.farmTourImage.updateMany.mockResolvedValue({
+        count: 1,
+      });
       mockPrismaService.$transaction.mockResolvedValue([{}, {}, {}]);
       mockPrismaService.farmTourImage.findMany.mockResolvedValue([
         { id: 'img-2', displayPosition: 0 },
         { id: 'img-1', displayPosition: 1 },
       ]);
 
-      const result = await service.reorderImages(farmTourId, ['img-2', 'img-1']);
+      const result = await service.reorderImages(farmTourId, [
+        'img-2',
+        'img-1',
+      ]);
 
       expect(result).toHaveLength(2);
     });

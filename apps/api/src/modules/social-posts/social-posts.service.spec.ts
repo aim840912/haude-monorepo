@@ -85,7 +85,11 @@ describe('SocialPostsService', () => {
 
   describe('findOne', () => {
     it('應回傳單一社群貼文', async () => {
-      const mockPost = { id: 'post-1', platform: 'instagram', url: 'https://...' };
+      const mockPost = {
+        id: 'post-1',
+        platform: 'instagram',
+        url: 'https://...',
+      };
       mockPrismaService.socialPost.findUnique.mockResolvedValue(mockPost);
 
       const result = await service.findOne('post-1');

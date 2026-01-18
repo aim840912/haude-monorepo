@@ -5,9 +5,21 @@ import {
   AdminMembersController,
 } from './members.controller';
 
+// Specialized Services
+import {
+  MemberQueryService,
+  MemberPointsService,
+  MemberAdminService,
+} from './services';
+
 @Module({
   controllers: [MembersController, AdminMembersController],
-  providers: [MembersService],
+  providers: [
+    MemberQueryService,
+    MemberPointsService,
+    MemberAdminService,
+    MembersService,
+  ],
   exports: [MembersService],
 })
 export class MembersModule {}

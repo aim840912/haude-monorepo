@@ -123,7 +123,7 @@ describe('CartService', () => {
           });
         mockPrismaService.cartItem.create.mockResolvedValue({});
 
-        const result = await service.addItem(userId, addItemDto);
+        await service.addItem(userId, addItemDto);
 
         // 應該成功（因為可用庫存 90 > 0）
         expect(mockPrismaService.cartItem.create).toHaveBeenCalled();

@@ -23,6 +23,7 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
 
 /**
@@ -50,20 +51,23 @@ export class FarmToursController {
   // 需要登入的操作
   @Post('bookings')
   @UseGuards(JwtAuthGuard)
-  createBooking(@Request() req: any, @Body() dto: CreateBookingDto) {
-    return this.farmToursService.createBooking(req.user.id, dto);
+  createBooking(
+    @Request() req: { user: JwtUser },
+    @Body() dto: CreateBookingDto,
+  ) {
+    return this.farmToursService.createBooking(req.user.userId, dto);
   }
 
   @Get('bookings/my')
   @UseGuards(JwtAuthGuard)
-  getMyBookings(@Request() req: any) {
-    return this.farmToursService.getUserBookings(req.user.id);
+  getMyBookings(@Request() req: { user: JwtUser }) {
+    return this.farmToursService.getUserBookings(req.user.userId);
   }
 
   @Patch('bookings/:id/cancel')
   @UseGuards(JwtAuthGuard)
-  cancelBooking(@Request() req: any, @Param('id') id: string) {
-    return this.farmToursService.cancelBooking(req.user.id, id);
+  cancelBooking(@Request() req: { user: JwtUser }, @Param('id') id: string) {
+    return this.farmToursService.cancelBooking(req.user.userId, id);
   }
 }
 

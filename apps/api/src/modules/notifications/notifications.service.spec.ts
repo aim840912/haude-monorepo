@@ -197,7 +197,9 @@ describe('NotificationsService', () => {
 
   describe('markAllAsRead', () => {
     it('應標記所有系統通知為已讀', async () => {
-      mockPrismaService.notification.updateMany.mockResolvedValue({ count: 10 });
+      mockPrismaService.notification.updateMany.mockResolvedValue({
+        count: 10,
+      });
 
       const result = await service.markAllAsRead();
 
