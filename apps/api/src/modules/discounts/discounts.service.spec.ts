@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DiscountsService } from './discounts.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { DiscountType } from '@prisma/client';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 
 describe('DiscountsService', () => {
   let service: DiscountsService;
@@ -49,7 +53,11 @@ describe('DiscountsService', () => {
     it('折扣碼不存在應回傳 valid: false', async () => {
       mockPrismaService.discountCode.findUnique.mockResolvedValue(null);
 
-      const result = await service.validateDiscountCode('INVALID', userId, subtotal);
+      const result = await service.validateDiscountCode(
+        'INVALID',
+        userId,
+        subtotal,
+      );
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('折扣碼不存在');
@@ -63,7 +71,11 @@ describe('DiscountsService', () => {
         usages: [],
       });
 
-      const result = await service.validateDiscountCode('TEST10', userId, subtotal);
+      const result = await service.validateDiscountCode(
+        'TEST10',
+        userId,
+        subtotal,
+      );
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('此折扣碼已停用');
@@ -82,7 +94,11 @@ describe('DiscountsService', () => {
         usages: [],
       });
 
-      const result = await service.validateDiscountCode('FUTURE', userId, subtotal);
+      const result = await service.validateDiscountCode(
+        'FUTURE',
+        userId,
+        subtotal,
+      );
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('此折扣碼尚未開始');
@@ -101,7 +117,11 @@ describe('DiscountsService', () => {
         usages: [],
       });
 
-      const result = await service.validateDiscountCode('EXPIRED', userId, subtotal);
+      const result = await service.validateDiscountCode(
+        'EXPIRED',
+        userId,
+        subtotal,
+      );
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('此折扣碼已過期');
@@ -120,7 +140,11 @@ describe('DiscountsService', () => {
         usages: [],
       });
 
-      const result = await service.validateDiscountCode('LIMIT100', userId, subtotal);
+      const result = await service.validateDiscountCode(
+        'LIMIT100',
+        userId,
+        subtotal,
+      );
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('此折扣碼已達使用上限');
@@ -139,7 +163,11 @@ describe('DiscountsService', () => {
         usages: [{ id: 'usage-1', userId }], // 用戶已使用過
       });
 
-      const result = await service.validateDiscountCode('ONCE', userId, subtotal);
+      const result = await service.validateDiscountCode(
+        'ONCE',
+        userId,
+        subtotal,
+      );
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('您已達此折扣碼的使用次數上限');
@@ -159,7 +187,11 @@ describe('DiscountsService', () => {
         usages: [],
       });
 
-      const result = await service.validateDiscountCode('MIN2000', userId, 1000); // 只有 1000
+      const result = await service.validateDiscountCode(
+        'MIN2000',
+        userId,
+        1000,
+      ); // 只有 1000
 
       expect(result.valid).toBe(false);
       expect(result.message).toBe('訂單金額需滿 NT$2000 才能使用此折扣碼');
@@ -225,7 +257,11 @@ describe('DiscountsService', () => {
           usages: [],
         });
 
-        const result = await service.validateDiscountCode('TEST10', userId, 1000);
+        const result = await service.validateDiscountCode(
+          'TEST10',
+          userId,
+          1000,
+        );
 
         expect(result.discountAmount).toBe(100);
       });
@@ -248,7 +284,11 @@ describe('DiscountsService', () => {
         });
 
         // 777 * 15% = 116.55 → 應該是 116
-        const result = await service.validateDiscountCode('TEST15', userId, 777);
+        const result = await service.validateDiscountCode(
+          'TEST15',
+          userId,
+          777,
+        );
 
         expect(result.discountAmount).toBe(116);
       });
@@ -271,7 +311,11 @@ describe('DiscountsService', () => {
         });
 
         // 1000 * 20% = 200，但最高只能折 100
-        const result = await service.validateDiscountCode('TEST20', userId, 1000);
+        const result = await service.validateDiscountCode(
+          'TEST20',
+          userId,
+          1000,
+        );
 
         expect(result.discountAmount).toBe(100);
       });
@@ -294,7 +338,11 @@ describe('DiscountsService', () => {
         });
 
         // 500 * 10% = 50，未超過 maxDiscount
-        const result = await service.validateDiscountCode('TEST10', userId, 500);
+        const result = await service.validateDiscountCode(
+          'TEST10',
+          userId,
+          500,
+        );
 
         expect(result.discountAmount).toBe(50);
       });
@@ -318,7 +366,11 @@ describe('DiscountsService', () => {
           usages: [],
         });
 
-        const result = await service.validateDiscountCode('FIX100', userId, 1000);
+        const result = await service.validateDiscountCode(
+          'FIX100',
+          userId,
+          1000,
+        );
 
         expect(result.discountAmount).toBe(100);
       });
@@ -341,7 +393,11 @@ describe('DiscountsService', () => {
         });
 
         // 訂單只有 300 元，折扣最多只能折 300
-        const result = await service.validateDiscountCode('FIX500', userId, 300);
+        const result = await service.validateDiscountCode(
+          'FIX500',
+          userId,
+          300,
+        );
 
         expect(result.discountAmount).toBe(300);
       });
@@ -352,7 +408,9 @@ describe('DiscountsService', () => {
     it('找不到折扣碼應拋出 NotFoundException', async () => {
       mockPrismaService.discountCode.findUnique.mockResolvedValue(null);
 
-      await expect(service.findById('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('找到折扣碼應回傳完整資料', async () => {
@@ -372,7 +430,9 @@ describe('DiscountsService', () => {
 
   describe('create', () => {
     it('折扣碼已存在應拋出 ConflictException', async () => {
-      mockPrismaService.discountCode.findUnique.mockResolvedValue({ id: 'existing' });
+      mockPrismaService.discountCode.findUnique.mockResolvedValue({
+        id: 'existing',
+      });
 
       await expect(
         service.create({
@@ -397,7 +457,9 @@ describe('DiscountsService', () => {
 
     it('應成功建立折扣碼並正規化為大寫', async () => {
       mockPrismaService.discountCode.findUnique.mockResolvedValue(null);
-      mockPrismaService.discountCode.create.mockResolvedValue({ id: 'new-discount' });
+      mockPrismaService.discountCode.create.mockResolvedValue({
+        id: 'new-discount',
+      });
 
       await service.create({
         code: '  newcode  ', // 小寫且有空白
@@ -417,7 +479,9 @@ describe('DiscountsService', () => {
     it('找不到折扣碼應拋出 NotFoundException', async () => {
       mockPrismaService.discountCode.findUnique.mockResolvedValue(null);
 
-      await expect(service.delete('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.delete('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('有使用記錄的折扣碼應停用而非刪除', async () => {
@@ -425,7 +489,10 @@ describe('DiscountsService', () => {
         id: 'discount-1',
         _count: { usages: 5 }, // 有 5 筆使用記錄
       });
-      mockPrismaService.discountCode.update.mockResolvedValue({ id: 'discount-1', isActive: false });
+      mockPrismaService.discountCode.update.mockResolvedValue({
+        id: 'discount-1',
+        isActive: false,
+      });
 
       await service.delete('discount-1');
 
@@ -441,7 +508,9 @@ describe('DiscountsService', () => {
         id: 'discount-1',
         _count: { usages: 0 }, // 沒有使用記錄
       });
-      mockPrismaService.discountCode.delete.mockResolvedValue({ id: 'discount-1' });
+      mockPrismaService.discountCode.delete.mockResolvedValue({
+        id: 'discount-1',
+      });
 
       await service.delete('discount-1');
 

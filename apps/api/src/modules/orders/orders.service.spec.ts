@@ -45,7 +45,10 @@ describe('OrdersService', () => {
 
   describe('getUserOrders', () => {
     it('應回傳使用者的訂單列表與分頁資訊', async () => {
-      const mockOrders = [createMockOrder(), createMockOrder({ id: 'order-2' })];
+      const mockOrders = [
+        createMockOrder(),
+        createMockOrder({ id: 'order-2' }),
+      ];
       mockPrismaService.order.findMany.mockResolvedValue(mockOrders);
       mockPrismaService.order.count.mockResolvedValue(2);
 
@@ -96,9 +99,9 @@ describe('OrdersService', () => {
     it('訂單不存在時應拋出 NotFoundException', async () => {
       mockPrismaService.order.findFirst.mockResolvedValue(null);
 
-      await expect(service.getOrderById('non-existent', 'user-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.getOrderById('non-existent', 'user-1'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -174,9 +177,9 @@ describe('OrdersService', () => {
       });
       const dtoWithDiscount = { ...mockDto, discountCode: 'INVALID' };
 
-      await expect(service.createOrder('user-1', dtoWithDiscount)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createOrder('user-1', dtoWithDiscount),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('金卡會員應享有免運費', async () => {
@@ -205,7 +208,9 @@ describe('OrdersService', () => {
       await service.createOrder('user-1', mockDto);
 
       expect(capturedData).not.toBeNull();
-      expect((capturedData as Record<string, number>).shippingFee).toBe(0);
+      expect(
+        (capturedData as unknown as Record<string, number>).shippingFee,
+      ).toBe(0);
     });
 
     it('交易失敗時應回滾（庫存競態條件）', async () => {
@@ -340,7 +345,9 @@ describe('OrdersService', () => {
       // 等待非同步處理
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(mockMembersService.updateTotalSpentAndCheckUpgrade).toHaveBeenCalled();
+      expect(
+        mockMembersService.updateTotalSpentAndCheckUpgrade,
+      ).toHaveBeenCalled();
       expect(mockMembersService.addPointsForPurchase).toHaveBeenCalled();
     });
   });

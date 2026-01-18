@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReviewsService } from './reviews.service';
 import { PrismaService } from '@/prisma/prisma.service';
-import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 
 describe('ReviewsService', () => {
   let service: ReviewsService;
@@ -246,7 +250,9 @@ describe('ReviewsService', () => {
     it('找不到評論應拋出 NotFoundException', async () => {
       mockPrismaService.review.findUnique.mockResolvedValue(null);
 
-      await expect(service.findById('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('找到評論應回傳完整資料', async () => {
@@ -279,9 +285,9 @@ describe('ReviewsService', () => {
         product: {},
       });
 
-      await expect(
-        service.update(reviewId, userId, updateDto),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.update(reviewId, userId, updateDto)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('作者應可以更新評論', async () => {
@@ -314,9 +320,9 @@ describe('ReviewsService', () => {
         product: {},
       });
 
-      await expect(
-        service.delete(reviewId, userId, false),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.delete(reviewId, userId, false)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('作者應可以刪除自己的評論', async () => {
@@ -358,7 +364,9 @@ describe('ReviewsService', () => {
     it('產品不存在應拋出 NotFoundException', async () => {
       mockPrismaService.product.findUnique.mockResolvedValue(null);
 
-      await expect(service.getReviewStats(productId)).rejects.toThrow(NotFoundException);
+      await expect(service.getReviewStats(productId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('無評論應回傳空統計', async () => {
@@ -369,7 +377,13 @@ describe('ReviewsService', () => {
 
       expect(result.averageRating).toBe(0);
       expect(result.totalReviews).toBe(0);
-      expect(result.ratingDistribution).toEqual({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+      expect(result.ratingDistribution).toEqual({
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      });
     });
 
     it('應正確計算平均評分和分布', async () => {
@@ -387,7 +401,13 @@ describe('ReviewsService', () => {
       // (5+5+4+4+3) / 5 = 4.2
       expect(result.averageRating).toBe(4.2);
       expect(result.totalReviews).toBe(5);
-      expect(result.ratingDistribution).toEqual({ 1: 0, 2: 0, 3: 1, 4: 2, 5: 2 });
+      expect(result.ratingDistribution).toEqual({
+        1: 0,
+        2: 0,
+        3: 1,
+        4: 2,
+        5: 2,
+      });
     });
   });
 });

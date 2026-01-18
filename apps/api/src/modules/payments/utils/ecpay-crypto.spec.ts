@@ -103,8 +103,9 @@ describe('ECPayCrypto', () => {
         MerchantID: '2000132',
       };
 
-      expect(crypto.generateCheckMacValue(params1))
-        .toBe(crypto.generateCheckMacValue(params2));
+      expect(crypto.generateCheckMacValue(params1)).toBe(
+        crypto.generateCheckMacValue(params2),
+      );
     });
   });
 
@@ -130,7 +131,8 @@ describe('ECPayCrypto', () => {
         MerchantID: '2000132',
         MerchantTradeNo: 'Test123',
         TotalAmount: 500,
-        CheckMacValue: 'WRONG_MAC_VALUE_1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF12',
+        CheckMacValue:
+          'WRONG_MAC_VALUE_1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF12',
       };
 
       expect(crypto.verifyCheckMacValue(params)).toBe(false);
@@ -156,7 +158,10 @@ describe('ECPayCrypto', () => {
       const correctMac = crypto.generateCheckMacValue(params);
 
       // 用小寫的 MAC 驗證
-      const paramsWithLowerMac = { ...params, CheckMacValue: correctMac.toLowerCase() };
+      const paramsWithLowerMac = {
+        ...params,
+        CheckMacValue: correctMac.toLowerCase(),
+      };
       expect(crypto.verifyCheckMacValue(paramsWithLowerMac)).toBe(true);
     });
 
@@ -186,24 +191,27 @@ describe('ECPayCrypto', () => {
       const params2 = { Test: 'Hello' };
 
       // 含有 ! 的應該產生不同的 MAC
-      expect(crypto.generateCheckMacValue(params1))
-        .not.toBe(crypto.generateCheckMacValue(params2));
+      expect(crypto.generateCheckMacValue(params1)).not.toBe(
+        crypto.generateCheckMacValue(params2),
+      );
     });
 
     it("應正確處理特殊字元 '", () => {
       const params1 = { Test: "It's" };
       const params2 = { Test: 'Its' };
 
-      expect(crypto.generateCheckMacValue(params1))
-        .not.toBe(crypto.generateCheckMacValue(params2));
+      expect(crypto.generateCheckMacValue(params1)).not.toBe(
+        crypto.generateCheckMacValue(params2),
+      );
     });
 
     it('應正確處理空格', () => {
       const params1 = { Test: 'Hello World' };
       const params2 = { Test: 'HelloWorld' };
 
-      expect(crypto.generateCheckMacValue(params1))
-        .not.toBe(crypto.generateCheckMacValue(params2));
+      expect(crypto.generateCheckMacValue(params1)).not.toBe(
+        crypto.generateCheckMacValue(params2),
+      );
     });
   });
 
@@ -342,7 +350,9 @@ describe('getTradeDate', () => {
     const resultDate = new Date(year, month - 1, day, hours, minutes, seconds);
 
     // 確認在合理範圍內
-    expect(resultDate.getTime()).toBeGreaterThanOrEqual(before.getTime() - 1000);
+    expect(resultDate.getTime()).toBeGreaterThanOrEqual(
+      before.getTime() - 1000,
+    );
     expect(resultDate.getTime()).toBeLessThanOrEqual(after.getTime() + 1000);
   });
 });

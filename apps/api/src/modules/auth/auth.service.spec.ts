@@ -161,7 +161,9 @@ describe('AuthService', () => {
       expect(result.user.email).toBe(mockUser.email);
       expect(result.user.hasPassword).toBe(true);
       expect(result.user.isGoogleUser).toBe(false);
-      expect((result.user as unknown as Record<string, unknown>).password).toBeUndefined();
+      expect(
+        (result.user as unknown as Record<string, unknown>).password,
+      ).toBeUndefined();
     });
 
     it('使用者不存在時應拋出 UnauthorizedException', async () => {

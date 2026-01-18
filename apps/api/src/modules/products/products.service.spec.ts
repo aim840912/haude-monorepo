@@ -57,7 +57,9 @@ describe('ProductsService', () => {
 
   describe('findAllAdmin', () => {
     it('應回傳所有產品（預設不含草稿）', async () => {
-      mockPrismaService.product.findMany.mockResolvedValue([createMockProduct()]);
+      mockPrismaService.product.findMany.mockResolvedValue([
+        createMockProduct(),
+      ]);
 
       await service.findAllAdmin();
 
@@ -69,7 +71,9 @@ describe('ProductsService', () => {
     });
 
     it('includeDrafts=true 時應包含草稿', async () => {
-      mockPrismaService.product.findMany.mockResolvedValue([createMockProduct()]);
+      mockPrismaService.product.findMany.mockResolvedValue([
+        createMockProduct(),
+      ]);
 
       await service.findAllAdmin(true);
 
@@ -121,7 +125,9 @@ describe('ProductsService', () => {
 
   describe('checkNameExists', () => {
     it('名稱存在時應回傳 exists: true', async () => {
-      mockPrismaService.product.findFirst.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findFirst.mockResolvedValue(
+        createMockProduct(),
+      );
 
       const result = await service.checkNameExists('測試產品');
 
@@ -264,7 +270,9 @@ describe('ProductsService', () => {
     };
 
     beforeEach(() => {
-      mockPrismaService.product.findUnique.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
     });
 
     it('應成功更新產品', async () => {
@@ -309,7 +317,9 @@ describe('ProductsService', () => {
 
   describe('remove', () => {
     beforeEach(() => {
-      mockPrismaService.product.findUnique.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
     });
 
     it('應成功刪除產品', async () => {
@@ -338,7 +348,9 @@ describe('ProductsService', () => {
 
   describe('softRemove', () => {
     it('應將產品設為非啟用', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
       mockPrismaService.product.update.mockResolvedValue(
         createMockProduct({ isActive: false }),
       );
@@ -356,7 +368,9 @@ describe('ProductsService', () => {
 
   describe('getUploadUrl', () => {
     it('應回傳簽名上傳 URL', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
 
       const result = await service.getUploadUrl('product-1', 'test.jpg');
 
@@ -383,7 +397,9 @@ describe('ProductsService', () => {
     });
 
     beforeEach(() => {
-      mockPrismaService.product.findUnique.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
     });
 
     it('應成功新增產品圖片', async () => {
@@ -452,7 +468,9 @@ describe('ProductsService', () => {
     });
 
     it('Storage 刪除失敗時仍應刪除資料庫記錄', async () => {
-      mockSupabaseService.deleteFile.mockRejectedValue(new Error('Storage error'));
+      mockSupabaseService.deleteFile.mockRejectedValue(
+        new Error('Storage error'),
+      );
       mockPrismaService.productImage.delete.mockResolvedValue({});
 
       const result = await service.removeImage('product-1', 'image-1');
@@ -464,14 +482,19 @@ describe('ProductsService', () => {
 
   describe('reorderImages', () => {
     it('應正確重新排序圖片', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue(createMockProduct());
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
       mockPrismaService.$transaction.mockResolvedValue([]);
       mockPrismaService.productImage.findMany.mockResolvedValue([
         { id: 'image-2', displayPosition: 0 },
         { id: 'image-1', displayPosition: 1 },
       ]);
 
-      const result = await service.reorderImages('product-1', ['image-2', 'image-1']);
+      const result = await service.reorderImages('product-1', [
+        'image-2',
+        'image-1',
+      ]);
 
       expect(Array.isArray(result)).toBe(true);
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
