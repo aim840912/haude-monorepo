@@ -21,6 +21,8 @@ import { EmailService } from '../email/email.service';
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly TOKEN_EXPIRY_HOURS = 1; // Token 有效期 1 小時
+  private readonly MAX_LOGIN_ATTEMPTS = 5; // 最大登入失敗次數
+  private readonly LOCKOUT_DURATION_MINUTES = 15; // 帳號鎖定時間（分鐘）
 
   constructor(
     private prisma: PrismaService,
@@ -81,7 +83,13 @@ export class AuthService {
   /**
    * 處理 Google OAuth 登入，返回 JWT Token
    */
-  async googleLogin(user: { id: string; email: string; name: string; role: string; isActive: boolean }) {
+  async googleLogin(user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    isActive: boolean;
+  }) {
     // 檢查帳號是否停用
     if (!user.isActive) {
       throw new UnauthorizedException('您的帳號已被停用，請聯絡客服');
@@ -152,21 +160,91 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // 檢查帳號是否被鎖定
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / (1000 * 60),
+      );
+      this.logger.warn(`帳號鎖定中: ${email}，剩餘 ${remainingMinutes} 分鐘`);
+      throw new UnauthorizedException(
+        `帳號已暫時鎖定，請在 ${remainingMinutes} 分鐘後再試`,
+      );
+    }
+
+    // 如果鎖定時間已過期，重置失敗次數
+    if (user.lockedUntil && user.lockedUntil <= new Date()) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
+    }
+
     // 如果用戶沒有密碼（Google 登入用戶），拒絕密碼登入
     if (!user.password) {
-      throw new UnauthorizedException('此帳戶使用 Google 登入，請使用 Google 登入');
+      throw new UnauthorizedException(
+        '此帳戶使用 Google 登入，請使用 Google 登入',
+      );
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      // 登入失敗：增加失敗次數
+      const newFailedAttempts = user.failedLoginAttempts + 1;
+      const remainingAttempts = this.MAX_LOGIN_ATTEMPTS - newFailedAttempts;
+
+      if (newFailedAttempts >= this.MAX_LOGIN_ATTEMPTS) {
+        // 達到上限：鎖定帳號
+        const lockedUntil = new Date(
+          Date.now() + this.LOCKOUT_DURATION_MINUTES * 60 * 1000,
+        );
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: newFailedAttempts,
+            lockedUntil,
+          },
+        });
+        this.logger.warn(
+          `帳號已鎖定: ${email}，連續失敗 ${newFailedAttempts} 次`,
+        );
+        throw new UnauthorizedException(
+          `登入失敗次數過多，帳號已鎖定 ${this.LOCKOUT_DURATION_MINUTES} 分鐘`,
+        );
+      } else {
+        // 未達上限：更新失敗次數
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: newFailedAttempts,
+          },
+        });
+        throw new UnauthorizedException(
+          remainingAttempts <= 2
+            ? `密碼錯誤，還剩 ${remainingAttempts} 次嘗試機會`
+            : 'Invalid credentials',
+        );
+      }
     }
 
     // 檢查帳號是否停用
     if (!user.isActive) {
       throw new UnauthorizedException('您的帳號已被停用，請聯絡客服');
+    }
+
+    // 登入成功：重置失敗次數
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
     }
 
     // Generate token
@@ -248,7 +326,9 @@ export class AuthService {
 
     // 生成新的 token
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + this.TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + this.TOKEN_EXPIRY_HOURS * 60 * 60 * 1000,
+    );
 
     // 儲存 token
     await this.prisma.passwordResetToken.create({
@@ -370,7 +450,9 @@ export class AuthService {
 
     // 檢查是否已有密碼
     if (user.password) {
-      throw new BadRequestException('您已設定過密碼，如需修改請使用修改密碼功能');
+      throw new BadRequestException(
+        '您已設定過密碼，如需修改請使用修改密碼功能',
+      );
     }
 
     // Hash 並儲存密碼

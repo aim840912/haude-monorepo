@@ -350,7 +350,10 @@ export class ProductsService {
       await this.supabase.deleteFile(PRODUCT_IMAGES_BUCKET, image.filePath);
     } catch (error) {
       // 檔案可能不存在，記錄但不阻止刪除記錄
-      console.warn(`Failed to delete file from storage: ${image.filePath}`, error);
+      console.warn(
+        `Failed to delete file from storage: ${image.filePath}`,
+        error,
+      );
     }
 
     // 刪除資料庫記錄

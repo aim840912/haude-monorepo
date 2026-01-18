@@ -143,7 +143,11 @@ export class EmailService {
         from: `豪德製茶所 <${this.fromEmail}>`,
         to: [to],
         subject: `付款成功 #${orderNumber} - 豪德製茶所`,
-        html: this.getPaymentSuccessTemplate(orderNumber, totalAmount, userName),
+        html: this.getPaymentSuccessTemplate(
+          orderNumber,
+          totalAmount,
+          userName,
+        ),
       });
 
       if (error) {
@@ -178,7 +182,11 @@ export class EmailService {
         from: `豪德製茶所 <${this.fromEmail}>`,
         to: [to],
         subject: `您的訂單已出貨 #${orderNumber} - 豪德製茶所`,
-        html: this.getShippingNotificationTemplate(orderNumber, trackingNumber, userName),
+        html: this.getShippingNotificationTemplate(
+          orderNumber,
+          trackingNumber,
+          userName,
+        ),
       });
 
       if (error) {
@@ -201,7 +209,10 @@ export class EmailService {
   /**
    * 密碼重設郵件模板
    */
-  private getPasswordResetTemplate(resetUrl: string, userName?: string): string {
+  private getPasswordResetTemplate(
+    resetUrl: string,
+    userName?: string,
+  ): string {
     const name = userName || '用戶';
 
     return `
@@ -279,7 +290,10 @@ export class EmailService {
   /**
    * 訂單確認郵件模板
    */
-  private getOrderConfirmationTemplate(order: OrderEmailData, userName?: string): string {
+  private getOrderConfirmationTemplate(
+    order: OrderEmailData,
+    userName?: string,
+  ): string {
     const name = userName || '顧客';
     const paymentMethodText = this.getPaymentMethodText(order.paymentMethod);
 

@@ -98,18 +98,23 @@ export class ECPayCrypto {
    * 4. URL encode 後轉小寫
    * 5. SHA256 加密後轉大寫
    */
-  generateCheckMacValue(params: Record<string, string | number | undefined>): string {
+  generateCheckMacValue(
+    params: Record<string, string | number | undefined>,
+  ): string {
     // 1. 過濾掉 undefined 和 CheckMacValue
     const filteredParams = Object.entries(params)
       .filter(([key, value]) => value !== undefined && key !== 'CheckMacValue')
-      .reduce((acc, [key, value]) => {
-        acc[key] = value!;
-        return acc;
-      }, {} as Record<string, string | number>);
+      .reduce(
+        (acc, [key, value]) => {
+          acc[key] = value!;
+          return acc;
+        },
+        {} as Record<string, string | number>,
+      );
 
     // 2. 按字母排序
     const sortedKeys = Object.keys(filteredParams).sort((a, b) =>
-      a.toLowerCase().localeCompare(b.toLowerCase())
+      a.toLowerCase().localeCompare(b.toLowerCase()),
     );
 
     // 3. 組成 query string
@@ -124,13 +129,19 @@ export class ECPayCrypto {
     const encoded = this.dotNetUrlEncode(raw).toLowerCase();
 
     // 6. SHA256 加密後轉大寫
-    return crypto.createHash('sha256').update(encoded).digest('hex').toUpperCase();
+    return crypto
+      .createHash('sha256')
+      .update(encoded)
+      .digest('hex')
+      .toUpperCase();
   }
 
   /**
    * 驗證 CheckMacValue
    */
-  verifyCheckMacValue(params: Record<string, string | number | undefined>): boolean {
+  verifyCheckMacValue(
+    params: Record<string, string | number | undefined>,
+  ): boolean {
     const receivedMac = params.CheckMacValue as string;
     if (!receivedMac) return false;
 
@@ -162,9 +173,7 @@ export class ECPayCrypto {
   /**
    * 建立付款表單資料
    */
-  createPaymentData(
-    params: ECPayTradeParams,
-  ): Record<string, string | number> {
+  createPaymentData(params: ECPayTradeParams): Record<string, string | number> {
     const checkMacValue = this.generateCheckMacValue(params);
 
     // 過濾掉 undefined 值並返回乾淨的 Record

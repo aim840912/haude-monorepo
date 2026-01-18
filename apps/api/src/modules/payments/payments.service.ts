@@ -431,9 +431,7 @@ export class PaymentsService {
         data: { paymentStatus: 'failed' },
       });
 
-      this.logger.warn(
-        `付款失敗: ${merchantTradeNo}, 原因: ${body.RtnMsg}`,
-      );
+      this.logger.warn(`付款失敗: ${merchantTradeNo}, 原因: ${body.RtnMsg}`);
     }
 
     return true;
@@ -547,9 +545,7 @@ export class PaymentsService {
    *
    * 驗證並解析資料，回傳導向資訊
    */
-  async handleReturn(
-    body: Record<string, string>,
-  ): Promise<{
+  async handleReturn(body: Record<string, string>): Promise<{
     success: boolean;
     orderId?: string;
     message?: string;

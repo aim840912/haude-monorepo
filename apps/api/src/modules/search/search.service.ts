@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../prisma/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import {
   SearchQueryDto,
   SearchResultItem,
   SearchResponseDto,
-} from './dto/search.dto'
+} from './dto/search.dto';
 
 @Injectable()
 export class SearchService {
@@ -14,8 +14,8 @@ export class SearchService {
    * 全站搜尋 - 同時搜尋產品、農場體驗、據點
    */
   async search(dto: SearchQueryDto): Promise<SearchResponseDto> {
-    const startTime = Date.now()
-    const query = dto.q.toLowerCase().trim()
+    const startTime = Date.now();
+    const query = dto.q.toLowerCase().trim();
 
     if (!query) {
       return {
@@ -23,13 +23,13 @@ export class SearchService {
         total: 0,
         query: dto.q,
         processingTime: Date.now() - startTime,
-      }
+      };
     }
 
-    const results: SearchResultItem[] = []
+    const results: SearchResultItem[] = [];
 
     // 根據 type 過濾決定搜尋哪些類型
-    const searchTypes = dto.type || ['product', 'farmTour', 'location']
+    const searchTypes = dto.type || ['product', 'farmTour', 'location'];
 
     // 並行搜尋各類型
     const [products, farmTours, locations] = await Promise.all([
@@ -42,24 +42,24 @@ export class SearchService {
       searchTypes.includes('location')
         ? this.searchLocations(query)
         : Promise.resolve([]),
-    ])
+    ]);
 
-    results.push(...products, ...farmTours, ...locations)
+    results.push(...products, ...farmTours, ...locations);
 
     // 按相關性排序
-    results.sort((a, b) => b.relevanceScore - a.relevanceScore)
+    results.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
     // 分頁
-    const offset = dto.offset || 0
-    const limit = dto.limit || 10
-    const paginatedResults = results.slice(offset, offset + limit)
+    const offset = dto.offset || 0;
+    const limit = dto.limit || 10;
+    const paginatedResults = results.slice(offset, offset + limit);
 
     return {
       results: paginatedResults,
       total: results.length,
       query: dto.q,
       processingTime: Date.now() - startTime,
-    }
+    };
   }
 
   /**
@@ -91,18 +91,18 @@ export class SearchService {
         },
       },
       take: 20,
-    })
+    });
 
     return products.map((product) => {
       // 計算相關性分數
-      const nameMatch = product.name.toLowerCase().includes(query) ? 0.5 : 0
+      const nameMatch = product.name.toLowerCase().includes(query) ? 0.5 : 0;
       const descMatch = product.description?.toLowerCase().includes(query)
         ? 0.3
-        : 0
+        : 0;
       const catMatch = product.category?.toLowerCase().includes(query)
         ? 0.2
-        : 0
-      const relevanceScore = Math.min(nameMatch + descMatch + catMatch, 1)
+        : 0;
+      const relevanceScore = Math.min(nameMatch + descMatch + catMatch, 1);
 
       return {
         id: product.id,
@@ -115,8 +115,8 @@ export class SearchService {
         price: Number(product.price),
         rating: undefined, // 可以從 reviews 計算平均評分
         relevanceScore,
-      }
-    })
+      };
+    });
   }
 
   /**
@@ -140,14 +140,14 @@ export class SearchService {
         },
       },
       take: 10,
-    })
+    });
 
     return farmTours.map((tour) => {
-      const nameMatch = tour.name.toLowerCase().includes(query) ? 0.5 : 0
+      const nameMatch = tour.name.toLowerCase().includes(query) ? 0.5 : 0;
       const descMatch = tour.description?.toLowerCase().includes(query)
         ? 0.3
-        : 0
-      const relevanceScore = Math.min(nameMatch + descMatch, 1)
+        : 0;
+      const relevanceScore = Math.min(nameMatch + descMatch, 1);
 
       return {
         id: tour.id,
@@ -159,8 +159,8 @@ export class SearchService {
         image: tour.images[0]?.storageUrl || undefined,
         price: Number(tour.price),
         relevanceScore,
-      }
-    })
+      };
+    });
   }
 
   /**
@@ -185,14 +185,14 @@ export class SearchService {
         },
       },
       take: 10,
-    })
+    });
 
     return locations.map((location) => {
-      const nameMatch = location.name.toLowerCase().includes(query) ? 0.5 : 0
+      const nameMatch = location.name.toLowerCase().includes(query) ? 0.5 : 0;
       const addrMatch = location.address?.toLowerCase().includes(query)
         ? 0.3
-        : 0
-      const relevanceScore = Math.min(nameMatch + addrMatch, 1)
+        : 0;
+      const relevanceScore = Math.min(nameMatch + addrMatch, 1);
 
       return {
         id: location.id,
@@ -203,18 +203,18 @@ export class SearchService {
         category: '據點',
         image: location.images[0]?.storageUrl || undefined,
         relevanceScore,
-      }
-    })
+      };
+    });
   }
 
   /**
    * 取得搜尋建議
    */
   async getSuggestions(query: string): Promise<string[]> {
-    if (!query.trim()) return []
+    if (!query.trim()) return [];
 
-    const lowerQuery = query.toLowerCase()
-    const suggestions = new Set<string>()
+    const lowerQuery = query.toLowerCase();
+    const suggestions = new Set<string>();
 
     // 從產品名稱和類別取得建議
     const products = await this.prisma.product.findMany({
@@ -228,16 +228,16 @@ export class SearchService {
       },
       select: { name: true, category: true },
       take: 10,
-    })
+    });
 
     products.forEach((p) => {
       if (p.name.toLowerCase().includes(lowerQuery)) {
-        suggestions.add(p.name)
+        suggestions.add(p.name);
       }
       if (p.category?.toLowerCase().includes(lowerQuery)) {
-        suggestions.add(p.category)
+        suggestions.add(p.category);
       }
-    })
+    });
 
     // 從農場體驗名稱取得建議
     const farmTours = await this.prisma.farmTour.findMany({
@@ -248,9 +248,9 @@ export class SearchService {
       },
       select: { name: true },
       take: 5,
-    })
+    });
 
-    farmTours.forEach((t) => suggestions.add(t.name))
+    farmTours.forEach((t) => suggestions.add(t.name));
 
     // 從據點名稱取得建議
     const locations = await this.prisma.location.findMany({
@@ -261,11 +261,11 @@ export class SearchService {
       },
       select: { name: true },
       take: 5,
-    })
+    });
 
-    locations.forEach((l) => suggestions.add(l.name))
+    locations.forEach((l) => suggestions.add(l.name));
 
-    return Array.from(suggestions).slice(0, 8)
+    return Array.from(suggestions).slice(0, 8);
   }
 
   /**
@@ -279,21 +279,15 @@ export class SearchService {
       select: { category: true },
       distinct: ['category'],
       take: 5,
-    })
+    });
 
     const trendingTerms = categories
       .map((c) => c.category)
-      .filter((c): c is string => c !== null)
+      .filter((c): c is string => c !== null);
 
     // 添加一些預設熱門詞
     return [
-      ...new Set([
-        ...trendingTerms,
-        '茶葉',
-        '禮盒',
-        '體驗',
-        '農場',
-      ]),
-    ].slice(0, 6)
+      ...new Set([...trendingTerms, '茶葉', '禮盒', '體驗', '農場']),
+    ].slice(0, 6);
   }
 }

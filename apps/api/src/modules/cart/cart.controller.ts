@@ -54,10 +54,7 @@ export class CartController {
   @ApiResponse({ status: 400, description: '庫存不足或產品已下架' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 404, description: '產品不存在' })
-  addItem(
-    @CurrentUser('userId') userId: string,
-    @Body() dto: AddCartItemDto,
-  ) {
+  addItem(@CurrentUser('userId') userId: string, @Body() dto: AddCartItemDto) {
     return this.cartService.addItem(userId, dto);
   }
 

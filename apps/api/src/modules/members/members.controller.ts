@@ -58,8 +58,18 @@ export class MembersController {
   @ApiOperation({ summary: '取得積分歷史' })
   @ApiResponse({ status: 200, description: '成功取得積分歷史' })
   @ApiResponse({ status: 401, description: '未認證' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每頁筆數' })
-  @ApiQuery({ name: 'offset', required: false, type: Number, description: '偏移量' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '每頁筆數',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: '偏移量',
+  })
   async getPointsHistory(
     @Request() req: { user: { userId: string } },
     @Query('limit') limit?: string,
@@ -98,10 +108,30 @@ export class AdminMembersController {
   @ApiResponse({ status: 200, description: '成功取得會員列表' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '無權限' })
-  @ApiQuery({ name: 'level', required: false, enum: MemberLevel, description: '會員等級篩選' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: '搜尋（email/姓名）' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每頁筆數' })
-  @ApiQuery({ name: 'offset', required: false, type: Number, description: '偏移量' })
+  @ApiQuery({
+    name: 'level',
+    required: false,
+    enum: MemberLevel,
+    description: '會員等級篩選',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: '搜尋（email/姓名）',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '每頁筆數',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: '偏移量',
+  })
   async getMembers(
     @Query('level') level?: MemberLevel,
     @Query('search') search?: string,
@@ -134,8 +164,18 @@ export class AdminMembersController {
   @ApiResponse({ status: 403, description: '無權限' })
   @ApiResponse({ status: 404, description: '會員不存在' })
   @ApiParam({ name: 'id', description: '會員 ID' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每頁筆數' })
-  @ApiQuery({ name: 'offset', required: false, type: Number, description: '偏移量' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '每頁筆數',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: '偏移量',
+  })
   async getLevelHistory(
     @Param('id') id: string,
     @Query('limit') limit?: string,
@@ -155,8 +195,18 @@ export class AdminMembersController {
   @ApiResponse({ status: 403, description: '無權限' })
   @ApiResponse({ status: 404, description: '會員不存在' })
   @ApiParam({ name: 'id', description: '會員 ID' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每頁筆數' })
-  @ApiQuery({ name: 'offset', required: false, type: Number, description: '偏移量' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '每頁筆數',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: '偏移量',
+  })
   async getPointsHistory(
     @Param('id') id: string,
     @Query('limit') limit?: string,

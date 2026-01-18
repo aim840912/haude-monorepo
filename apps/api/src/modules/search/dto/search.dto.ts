@@ -1,74 +1,81 @@
-import { IsString, IsOptional, IsArray, IsNumber, Min, Max } from 'class-validator'
-import { Type } from 'class-transformer'
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class SearchQueryDto {
   @IsString()
-  q: string
+  q: string;
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  type?: ('product' | 'farmTour' | 'location')[]
+  type?: ('product' | 'farmTour' | 'location')[];
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  category?: string[]
+  category?: string[];
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  minPrice?: number
+  minPrice?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  maxPrice?: number
+  maxPrice?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(5)
-  minRating?: number
+  minRating?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
   @Max(50)
-  limit?: number = 10
+  limit?: number = 10;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  offset?: number = 0
+  offset?: number = 0;
 }
 
 export class SearchSuggestionDto {
   @IsString()
-  q: string
+  q: string;
 }
 
 export interface SearchResultItem {
-  id: string
-  title: string
-  description: string
-  type: 'product' | 'farmTour' | 'location'
-  url: string
-  category?: string
-  image?: string
-  price?: number
-  rating?: number
-  relevanceScore: number
+  id: string;
+  title: string;
+  description: string;
+  type: 'product' | 'farmTour' | 'location';
+  url: string;
+  category?: string;
+  image?: string;
+  price?: number;
+  rating?: number;
+  relevanceScore: number;
 }
 
 export interface SearchResponseDto {
-  results: SearchResultItem[]
-  total: number
-  query: string
-  processingTime: number
+  results: SearchResultItem[];
+  total: number;
+  query: string;
+  processingTime: number;
 }

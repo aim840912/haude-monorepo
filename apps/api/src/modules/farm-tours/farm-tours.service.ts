@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
 import {
@@ -141,7 +145,8 @@ export class FarmToursService {
     if (dto.startTime !== undefined) data.startTime = dto.startTime;
     if (dto.endTime !== undefined) data.endTime = dto.endTime;
     if (dto.price !== undefined) data.price = dto.price;
-    if (dto.maxParticipants !== undefined) data.maxParticipants = dto.maxParticipants;
+    if (dto.maxParticipants !== undefined)
+      data.maxParticipants = dto.maxParticipants;
     if (dto.location !== undefined) data.location = dto.location;
     if (dto.imageUrl !== undefined) data.imageUrl = dto.imageUrl;
     if (dto.status !== undefined) data.status = dto.status as FarmTourStatus;
@@ -176,7 +181,9 @@ export class FarmToursService {
 
     const availableSpots = tour.maxParticipants - tour.currentParticipants;
     if (dto.participants > availableSpots) {
-      throw new BadRequestException(`名額不足，目前剩餘 ${availableSpots} 個名額`);
+      throw new BadRequestException(
+        `名額不足，目前剩餘 ${availableSpots} 個名額`,
+      );
     }
 
     // 建立預約並更新人數
@@ -346,7 +353,10 @@ export class FarmToursService {
       await this.supabase.deleteFile(FARM_TOUR_IMAGES_BUCKET, image.filePath);
     } catch (error) {
       // 檔案可能不存在，記錄但不阻止刪除記錄
-      console.warn(`Failed to delete file from storage: ${image.filePath}`, error);
+      console.warn(
+        `Failed to delete file from storage: ${image.filePath}`,
+        error,
+      );
     }
 
     // 刪除資料庫記錄

@@ -55,7 +55,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : undefined,
       );
     } else if (status >= 400) {
-      this.logger.warn(`[${errorCode}] ${message} - ${request.method} ${request.url}`);
+      this.logger.warn(
+        `[${errorCode}] ${message} - ${request.method} ${request.url}`,
+      );
     }
 
     response.status(status).json(errorResponse);
@@ -100,7 +102,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
           status,
           errorCode: this.mapStatusToErrorCode(status),
           message:
-            typeof response.message === 'string' ? response.message : exception.message,
+            typeof response.message === 'string'
+              ? response.message
+              : exception.message,
         };
       }
 
@@ -108,7 +112,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         status,
         errorCode: this.mapStatusToErrorCode(status),
         message:
-          typeof exceptionResponse === 'string' ? exceptionResponse : exception.message,
+          typeof exceptionResponse === 'string'
+            ? exceptionResponse
+            : exception.message,
       };
     }
 

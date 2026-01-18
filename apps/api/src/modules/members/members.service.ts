@@ -113,7 +113,8 @@ export class MembersService {
       totalSpent: user.totalSpent,
       nextLevel: nextConfig?.level || null,
       nextLevelName: nextConfig?.displayName || null,
-      amountToNextLevel: amountToNextLevel && amountToNextLevel > 0 ? amountToNextLevel : null,
+      amountToNextLevel:
+        amountToNextLevel && amountToNextLevel > 0 ? amountToNextLevel : null,
       progressPercent,
     };
   }
@@ -252,7 +253,7 @@ export class MembersService {
     }
 
     // 基礎積分：消費 1 元 = 1 點
-    let basePoints = Math.floor(orderAmount);
+    const basePoints = Math.floor(orderAmount);
 
     // 套用等級倍率
     let earnedPoints = Math.floor(basePoints * config.pointMultiplier);
@@ -355,7 +356,10 @@ export class MembersService {
 
     const where: {
       memberLevel?: MemberLevel;
-      OR?: Array<{ email?: { contains: string; mode: 'insensitive' }; name?: { contains: string; mode: 'insensitive' } }>;
+      OR?: Array<{
+        email?: { contains: string; mode: 'insensitive' };
+        name?: { contains: string; mode: 'insensitive' };
+      }>;
     } = {};
 
     if (level) {
@@ -457,7 +461,10 @@ export class MembersService {
     newLevel: MemberLevel,
     adminId: string,
     reason?: string,
-  ): Promise<{ success: boolean; user: { id: string; memberLevel: MemberLevel } }> {
+  ): Promise<{
+    success: boolean;
+    user: { id: string; memberLevel: MemberLevel };
+  }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { memberLevel: true },
@@ -526,7 +533,9 @@ export class MembersService {
 
     // 檢查積分是否會變成負數
     if (newBalance < 0) {
-      throw new NotFoundException(`積分不足，當前積分: ${user.currentPoints}，嘗試扣除: ${Math.abs(points)}`);
+      throw new NotFoundException(
+        `積分不足，當前積分: ${user.currentPoints}，嘗試扣除: ${Math.abs(points)}`,
+      );
     }
 
     // 更新積分並記錄交易

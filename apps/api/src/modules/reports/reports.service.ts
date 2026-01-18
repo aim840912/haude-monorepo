@@ -99,10 +99,13 @@ export class ReportsService {
     return {
       totalRevenue,
       totalOrders,
-      averageOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
+      averageOrderValue:
+        totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
       cancelRate:
         totalOrdersWithCancelled > 0
-          ? Math.round((cancelledCount / totalOrdersWithCancelled) * 100 * 100) / 100
+          ? Math.round(
+              (cancelledCount / totalOrdersWithCancelled) * 100 * 100,
+            ) / 100
           : 0,
     };
   }
@@ -156,7 +159,10 @@ export class ReportsService {
     return {
       revenueChange: calcChange(current.totalRevenue, compare.totalRevenue),
       ordersChange: calcChange(current.totalOrders, compare.totalOrders),
-      aovChange: calcChange(current.averageOrderValue, compare.averageOrderValue),
+      aovChange: calcChange(
+        current.averageOrderValue,
+        compare.averageOrderValue,
+      ),
       cancelRateChange: calcChange(current.cancelRate, compare.cancelRate),
     };
   }
@@ -198,7 +204,8 @@ export class ReportsService {
         date,
         revenue: data.revenue,
         orders: data.orders,
-        averageOrderValue: data.orders > 0 ? Math.round(data.revenue / data.orders) : 0,
+        averageOrderValue:
+          data.orders > 0 ? Math.round(data.revenue / data.orders) : 0,
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }

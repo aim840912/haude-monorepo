@@ -34,7 +34,10 @@ export class ApiException extends HttpException {
  * 驗證異常 (400)
  */
 export class ValidationException extends ApiException {
-  constructor(message: string, errorCode: ErrorCode = ErrorCode.VALIDATION_ERROR) {
+  constructor(
+    message: string,
+    errorCode: ErrorCode = ErrorCode.VALIDATION_ERROR,
+  ) {
     super(errorCode, message, HttpStatus.BAD_REQUEST);
   }
 }
@@ -76,7 +79,10 @@ export class NotFoundException extends ApiException {
  * 資源衝突異常 (409)
  */
 export class ConflictException extends ApiException {
-  constructor(message: string, errorCode: ErrorCode = ErrorCode.RESOURCE_CONFLICT) {
+  constructor(
+    message: string,
+    errorCode: ErrorCode = ErrorCode.RESOURCE_CONFLICT,
+  ) {
     super(errorCode, message, HttpStatus.CONFLICT);
   }
 }

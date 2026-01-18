@@ -10,7 +10,11 @@ import { MembersModule } from '../members/members.module';
 
 @Module({
   imports: [DiscountsModule, MembersModule],
-  controllers: [OrdersController, AdminOrdersController, AdminDashboardController],
+  controllers: [
+    OrdersController,
+    AdminOrdersController,
+    AdminDashboardController,
+  ],
   providers: [OrdersService],
   exports: [OrdersService],
 })

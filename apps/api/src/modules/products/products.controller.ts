@@ -47,7 +47,11 @@ export class ProductsController {
 
   @Get()
   @ApiOperation({ summary: '取得所有啟用產品' })
-  @ApiResponse({ status: 200, description: '成功取得產品列表', type: [ProductResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: '成功取得產品列表',
+    type: [ProductResponseDto],
+  })
   findAll() {
     return this.productsService.findAll();
   }
@@ -77,8 +81,16 @@ export class ProductsController {
 
   @Get(':id')
   @ApiOperation({ summary: '取得單一產品' })
-  @ApiResponse({ status: 200, description: '成功取得產品', type: ProductResponseDto })
-  @ApiResponse({ status: 404, description: '產品不存在', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: '成功取得產品',
+    type: ProductResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: '產品不存在',
+    type: ErrorResponseDto,
+  })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.findOne(id);
   }
@@ -100,7 +112,11 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: '建立產品（管理員）' })
-  @ApiResponse({ status: 201, description: '產品建立成功', type: ProductResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: '產品建立成功',
+    type: ProductResponseDto,
+  })
   @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   @ApiResponse({ status: 403, description: '權限不足', type: ErrorResponseDto })
   create(@Body() dto: CreateProductDto) {
@@ -112,10 +128,18 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: '更新產品（管理員）' })
-  @ApiResponse({ status: 200, description: '產品更新成功', type: ProductResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: '產品更新成功',
+    type: ProductResponseDto,
+  })
   @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   @ApiResponse({ status: 403, description: '權限不足', type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: '產品不存在', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: '產品不存在',
+    type: ErrorResponseDto,
+  })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProductDto,
@@ -128,10 +152,18 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: '刪除產品（管理員）' })
-  @ApiResponse({ status: 200, description: '產品刪除成功', type: MessageResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: '產品刪除成功',
+    type: MessageResponseDto,
+  })
   @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   @ApiResponse({ status: 403, description: '權限不足', type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: '產品不存在', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: '產品不存在',
+    type: ErrorResponseDto,
+  })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.remove(id);
   }

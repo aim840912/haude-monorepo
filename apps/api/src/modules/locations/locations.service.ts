@@ -155,7 +155,8 @@ export class LocationsService {
     if (dto.hours !== undefined) data.hours = dto.hours;
     if (dto.closedDays !== undefined) data.closedDays = dto.closedDays;
     if (dto.parking !== undefined) data.parking = dto.parking;
-    if (dto.publicTransport !== undefined) data.publicTransport = dto.publicTransport;
+    if (dto.publicTransport !== undefined)
+      data.publicTransport = dto.publicTransport;
     if (dto.features !== undefined) data.features = dto.features;
     if (dto.specialties !== undefined) data.specialties = dto.specialties;
     if (dto.lat !== undefined) data.lat = dto.lat;
@@ -279,7 +280,10 @@ export class LocationsService {
       await this.supabase.deleteFile(LOCATION_IMAGES_BUCKET, image.filePath);
     } catch (error) {
       // 檔案可能不存在，記錄但不阻止刪除記錄
-      console.warn(`Failed to delete file from storage: ${image.filePath}`, error);
+      console.warn(
+        `Failed to delete file from storage: ${image.filePath}`,
+        error,
+      );
     }
 
     // 刪除資料庫記錄

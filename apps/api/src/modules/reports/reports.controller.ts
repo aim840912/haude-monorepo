@@ -2,7 +2,10 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ReportsService } from './reports.service';
-import { ReportFiltersDto, SalesDetailFiltersDto } from './dto/report-filters.dto';
+import {
+  ReportFiltersDto,
+  SalesDetailFiltersDto,
+} from './dto/report-filters.dto';
 
 @ApiTags('admin/reports')
 @ApiBearerAuth()

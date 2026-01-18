@@ -49,9 +49,21 @@ export class AuthController {
   @SkipCsrf() // 註冊時尚無 CSRF Token
   @Throttle({ short: { limit: 5, ttl: 60000 } }) // 每分鐘最多 5 次註冊嘗試
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully.', type: AuthResponseDto })
-  @ApiResponse({ status: 409, description: 'Email already exists.', type: ErrorResponseDto })
-  @ApiResponse({ status: 429, description: 'Too many registration attempts.', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User registered successfully.',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email already exists.',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many registration attempts.',
+    type: ErrorResponseDto,
+  })
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -66,9 +78,21 @@ export class AuthController {
   @SkipCsrf() // 登入時尚無 CSRF Token
   @Throttle({ short: { limit: 5, ttl: 60000 } }) // 每分鐘最多 5 次登入嘗試
   @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'Login successful.', type: AuthResponseDto })
-  @ApiResponse({ status: 401, description: 'Invalid credentials.', type: ErrorResponseDto })
-  @ApiResponse({ status: 429, description: 'Too many login attempts.', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful.',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid credentials.',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many login attempts.',
+    type: ErrorResponseDto,
+  })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -83,8 +107,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user' })
-  @ApiResponse({ status: 200, description: 'Return current user.', type: UserResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized.', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Return current user.',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+    type: ErrorResponseDto,
+  })
   getMe(@Request() req: { user: { userId: string } }) {
     return this.authService.getMe(req.user.userId);
   }
@@ -93,7 +125,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200, description: 'Logout successful.', type: MessageResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Logout successful.',
+    type: MessageResponseDto,
+  })
   logout(@Res({ passthrough: true }) res: Response) {
     // 清除 CSRF Cookie
     res.clearCookie('csrf-token', { path: '/' });
@@ -108,8 +144,16 @@ export class AuthController {
   @SkipCsrf() // 公開端點，無需 CSRF
   @Throttle({ short: { limit: 3, ttl: 60000 } }) // 每分鐘最多 3 次密碼重設
   @ApiOperation({ summary: '忘記密碼 - 發送重設密碼郵件' })
-  @ApiResponse({ status: 200, description: '已發送重設密碼郵件（如果帳號存在）', type: MessageResponseDto })
-  @ApiResponse({ status: 429, description: '請求過於頻繁，請稍後再試', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: '已發送重設密碼郵件（如果帳號存在）',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({
+    status: 429,
+    description: '請求過於頻繁，請稍後再試',
+    type: ErrorResponseDto,
+  })
   forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
@@ -117,16 +161,32 @@ export class AuthController {
   @Post('reset-password')
   @SkipCsrf() // 使用 Token 驗證，無需 CSRF
   @ApiOperation({ summary: '重設密碼' })
-  @ApiResponse({ status: 200, description: '密碼重設成功', type: MessageResponseDto })
-  @ApiResponse({ status: 400, description: '無效或已過期的重設連結', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: '密碼重設成功',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '無效或已過期的重設連結',
+    type: ErrorResponseDto,
+  })
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Get('verify-reset-token')
   @ApiOperation({ summary: '驗證重設密碼 Token 是否有效' })
-  @ApiResponse({ status: 200, description: 'Token 有效', type: MessageResponseDto })
-  @ApiResponse({ status: 400, description: '無效或已過期的 Token', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Token 有效',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '無效或已過期的 Token',
+    type: ErrorResponseDto,
+  })
   verifyResetToken(@Query('token') token: string) {
     return this.authService.verifyResetToken(token);
   }
@@ -135,8 +195,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '為 Google 帳號設定密碼' })
-  @ApiResponse({ status: 200, description: '密碼設定成功', type: MessageResponseDto })
-  @ApiResponse({ status: 400, description: '已設定過密碼或非 Google 用戶', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: '密碼設定成功',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '已設定過密碼或非 Google 用戶',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   setPassword(
     @Request() req: { user: { userId: string } },
@@ -152,7 +220,11 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth login' })
-  @ApiQuery({ name: 'redirect', required: false, description: 'Redirect target: "admin" or "web"' })
+  @ApiQuery({
+    name: 'redirect',
+    required: false,
+    description: 'Redirect target: "admin" or "web"',
+  })
   @ApiResponse({ status: 302, description: 'Redirect to Google OAuth.' })
   googleAuth() {
     // GoogleStrategy.authenticate() 會處理 redirect 參數並設定 state
@@ -163,7 +235,17 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @ApiExcludeEndpoint() // 不在 Swagger 中顯示
   async googleAuthCallback(
-    @Request() req: ExpressRequest & { user: { id: string; email: string; name: string; role: string; isActive: boolean; oauthState?: string } },
+    @Request()
+    req: ExpressRequest & {
+      user: {
+        id: string;
+        email: string;
+        name: string;
+        role: string;
+        isActive: boolean;
+        oauthState?: string;
+      };
+    },
     @Res() res: Response,
   ) {
     // 從 user 物件取得 oauthState（由 GoogleStrategy 附加）
@@ -178,12 +260,15 @@ export class AuthController {
 
     if (oauthState === 'admin') {
       // Admin 登入：檢查是否為 ADMIN 角色
-      const adminUrl = this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';
+      const adminUrl =
+        this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';
 
       if (user.role !== 'ADMIN') {
         // 非管理員，重導向到錯誤頁面，清除 CSRF Cookie
         res.clearCookie('csrf-token', { path: '/' });
-        res.redirect(`${adminUrl}/auth/callback#error=${encodeURIComponent('您沒有管理員權限')}`);
+        res.redirect(
+          `${adminUrl}/auth/callback#error=${encodeURIComponent('您沒有管理員權限')}`,
+        );
         return;
       }
 
@@ -193,7 +278,8 @@ export class AuthController {
     }
 
     // Web 登入（預設）
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
     const redirectUrl = `${frontendUrl}/auth/callback#token=${accessToken}&user=${encodeURIComponent(JSON.stringify(user))}&csrfToken=${csrfToken}`;
 
     res.redirect(redirectUrl);

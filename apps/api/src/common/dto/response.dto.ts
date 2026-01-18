@@ -83,7 +83,11 @@ export class UserResponseDto {
   @ApiProperty({ description: '姓名', example: '王小明' })
   name: string;
 
-  @ApiProperty({ description: '角色', example: 'USER', enum: ['USER', 'VIP', 'STAFF', 'ADMIN'] })
+  @ApiProperty({
+    description: '角色',
+    example: 'USER',
+    enum: ['USER', 'VIP', 'STAFF', 'ADMIN'],
+  })
   role: string;
 
   @ApiProperty({ description: '是否啟用', example: true })
@@ -92,7 +96,10 @@ export class UserResponseDto {
   @ApiPropertyOptional({ description: 'Google ID', example: '123456789' })
   googleId?: string;
 
-  @ApiPropertyOptional({ description: '頭像 URL', example: 'https://example.com/avatar.jpg' })
+  @ApiPropertyOptional({
+    description: '頭像 URL',
+    example: 'https://example.com/avatar.jpg',
+  })
   avatar?: string;
 
   @ApiProperty({
@@ -125,7 +132,10 @@ export class ProductResponseDto {
   @ApiProperty({ description: '產品名稱', example: '阿里山高山茶' })
   name: string;
 
-  @ApiProperty({ description: '產品描述', example: '來自海拔 1500 公尺的高山茶園...' })
+  @ApiProperty({
+    description: '產品描述',
+    example: '來自海拔 1500 公尺的高山茶園...',
+  })
   description: string;
 
   @ApiProperty({ description: '分類', example: '烏龍茶' })
@@ -166,10 +176,16 @@ export class ProductResponseDto {
  * 產品圖片 DTO
  */
 export class ProductImageDto {
-  @ApiProperty({ description: '圖片 ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiProperty({
+    description: '圖片 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   id: string;
 
-  @ApiProperty({ description: '圖片 URL', example: 'https://example.com/image.jpg' })
+  @ApiProperty({
+    description: '圖片 URL',
+    example: 'https://example.com/image.jpg',
+  })
   storageUrl: string;
 
   @ApiPropertyOptional({ description: '替代文字', example: '阿里山高山茶包裝' })
@@ -195,7 +211,15 @@ export class OrderResponseDto {
   @ApiProperty({
     description: '訂單狀態',
     example: 'pending',
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
+    enum: [
+      'pending',
+      'confirmed',
+      'processing',
+      'shipped',
+      'delivered',
+      'cancelled',
+      'refunded',
+    ],
   })
   status: string;
 
@@ -247,16 +271,25 @@ export class OrderResponseDto {
  * 訂單項目 DTO
  */
 export class OrderItemDto {
-  @ApiProperty({ description: '項目 ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiProperty({
+    description: '項目 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   id: string;
 
-  @ApiProperty({ description: '產品 ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiProperty({
+    description: '產品 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   productId: string;
 
   @ApiProperty({ description: '產品名稱', example: '阿里山高山茶' })
   productName: string;
 
-  @ApiPropertyOptional({ description: '產品圖片', example: 'https://example.com/image.jpg' })
+  @ApiPropertyOptional({
+    description: '產品圖片',
+    example: 'https://example.com/image.jpg',
+  })
   productImage?: string;
 
   @ApiProperty({ description: '數量', example: 2 })

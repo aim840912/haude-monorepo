@@ -3,24 +3,24 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
-} from '@nestjs/common'
-import { PrismaService } from '@/prisma/prisma.service'
-import { CreateReviewDto } from './dto/create-review.dto'
-import { UpdateReviewDto } from './dto/update-review.dto'
+} from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 /**
  * 評論統計
  */
 export interface ReviewStats {
-  averageRating: number
-  totalReviews: number
+  averageRating: number;
+  totalReviews: number;
   ratingDistribution: {
-    1: number
-    2: number
-    3: number
-    4: number
-    5: number
-  }
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+  };
 }
 
 @Injectable()
@@ -37,17 +37,17 @@ export class ReviewsService {
   async getProductReviews(
     productId: string,
     options?: {
-      limit?: number
-      offset?: number
-      onlyApproved?: boolean
+      limit?: number;
+      offset?: number;
+      onlyApproved?: boolean;
     },
   ) {
-    const { limit = 10, offset = 0, onlyApproved = true } = options || {}
+    const { limit = 10, offset = 0, onlyApproved = true } = options || {};
 
     const where = {
       productId,
       ...(onlyApproved ? { isApproved: true } : {}),
-    }
+    };
 
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
@@ -65,7 +65,7 @@ export class ReviewsService {
         },
       }),
       this.prisma.review.count({ where }),
-    ])
+    ]);
 
     return {
       reviews: reviews.map((review) => ({
@@ -82,7 +82,7 @@ export class ReviewsService {
       })),
       total,
       hasMore: offset + reviews.length < total,
-    }
+    };
   }
 
   /**
@@ -92,10 +92,10 @@ export class ReviewsService {
     // 確認產品存在
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-    })
+    });
 
     if (!product) {
-      throw new NotFoundException('找不到此產品')
+      throw new NotFoundException('找不到此產品');
     }
 
     // 取得所有已審核通過的評論
@@ -107,31 +107,31 @@ export class ReviewsService {
       select: {
         rating: true,
       },
-    })
+    });
 
     // 計算統計
-    const totalReviews = reviews.length
-    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    const totalReviews = reviews.length;
+    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
     if (totalReviews === 0) {
       return {
         averageRating: 0,
         totalReviews: 0,
         ratingDistribution,
-      }
+      };
     }
 
-    let totalRating = 0
+    let totalRating = 0;
     for (const review of reviews) {
-      totalRating += review.rating
-      ratingDistribution[review.rating as keyof typeof ratingDistribution]++
+      totalRating += review.rating;
+      ratingDistribution[review.rating as keyof typeof ratingDistribution]++;
     }
 
     return {
       averageRating: Math.round((totalRating / totalReviews) * 10) / 10,
       totalReviews,
       ratingDistribution,
-    }
+    };
   }
 
   /**
@@ -148,26 +148,26 @@ export class ReviewsService {
           select: { id: true, name: true },
         },
       },
-    })
+    });
 
     if (!review) {
-      throw new NotFoundException('找不到此評論')
+      throw new NotFoundException('找不到此評論');
     }
 
-    return review
+    return review;
   }
 
   /**
    * 取得所有評論（管理員用）
    */
   async findAll(options?: {
-    limit?: number
-    offset?: number
-    isApproved?: boolean
+    limit?: number;
+    offset?: number;
+    isApproved?: boolean;
   }) {
-    const { limit = 20, offset = 0, isApproved } = options || {}
+    const { limit = 20, offset = 0, isApproved } = options || {};
 
-    const where = isApproved !== undefined ? { isApproved } : {}
+    const where = isApproved !== undefined ? { isApproved } : {};
 
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
@@ -185,9 +185,9 @@ export class ReviewsService {
         },
       }),
       this.prisma.review.count({ where }),
-    ])
+    ]);
 
-    return { reviews, total }
+    return { reviews, total };
   }
 
   /**
@@ -207,10 +207,10 @@ export class ReviewsService {
           some: { productId },
         },
       },
-    })
+    });
 
     if (deliveredOrder) {
-      return 'delivered'
+      return 'delivered';
     }
 
     // 檢查是否有其他狀態的訂單（已購買但未送達）
@@ -222,13 +222,13 @@ export class ReviewsService {
           some: { productId },
         },
       },
-    })
+    });
 
     if (otherOrder) {
-      return 'ordered'
+      return 'ordered';
     }
 
-    return 'not_purchased'
+    return 'not_purchased';
   }
 
   /**
@@ -239,7 +239,7 @@ export class ReviewsService {
       where: {
         productId_userId: { productId, userId },
       },
-    })
+    });
   }
 
   // ========================================
@@ -253,10 +253,10 @@ export class ReviewsService {
     // 確認產品存在
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-    })
+    });
 
     if (!product) {
-      throw new NotFoundException('找不到此產品')
+      throw new NotFoundException('找不到此產品');
     }
 
     // 檢查是否已評論過
@@ -264,22 +264,22 @@ export class ReviewsService {
       where: {
         productId_userId: { productId, userId },
       },
-    })
+    });
 
     if (existingReview) {
-      throw new BadRequestException('您已經評論過此產品')
+      throw new BadRequestException('您已經評論過此產品');
     }
 
     // 檢查購買狀態
-    const purchaseStatus = await this.checkPurchaseHistory(userId, productId)
+    const purchaseStatus = await this.checkPurchaseHistory(userId, productId);
 
     // 只有已收貨才能評價
     if (purchaseStatus === 'not_purchased') {
-      throw new ForbiddenException('您尚未購買此產品，無法發表評論')
+      throw new ForbiddenException('您尚未購買此產品，無法發表評論');
     }
 
     if (purchaseStatus === 'ordered') {
-      throw new ForbiddenException('收到商品後才能發表評論')
+      throw new ForbiddenException('收到商品後才能發表評論');
     }
 
     // 建立評論（已確認是 delivered 狀態）
@@ -298,17 +298,17 @@ export class ReviewsService {
           select: { id: true, name: true },
         },
       },
-    })
+    });
   }
 
   /**
    * 更新評論（只有作者可以更新）
    */
   async update(id: string, userId: string, dto: UpdateReviewDto) {
-    const review = await this.findById(id)
+    const review = await this.findById(id);
 
     if (review.userId !== userId) {
-      throw new ForbiddenException('您無權編輯此評論')
+      throw new ForbiddenException('您無權編輯此評論');
     }
 
     return this.prisma.review.update({
@@ -323,29 +323,29 @@ export class ReviewsService {
           select: { id: true, name: true },
         },
       },
-    })
+    });
   }
 
   /**
    * 刪除評論（作者或管理員可刪除）
    */
   async delete(id: string, userId: string, isAdmin: boolean = false) {
-    const review = await this.findById(id)
+    const review = await this.findById(id);
 
     if (!isAdmin && review.userId !== userId) {
-      throw new ForbiddenException('您無權刪除此評論')
+      throw new ForbiddenException('您無權刪除此評論');
     }
 
-    await this.prisma.review.delete({ where: { id } })
+    await this.prisma.review.delete({ where: { id } });
 
-    return { success: true }
+    return { success: true };
   }
 
   /**
    * 審核評論（管理員）
    */
   async approve(id: string, isApproved: boolean) {
-    await this.findById(id) // 確認評論存在
+    await this.findById(id); // 確認評論存在
 
     return this.prisma.review.update({
       where: { id },
@@ -358,6 +358,6 @@ export class ReviewsService {
           select: { id: true, name: true },
         },
       },
-    })
+    });
   }
 }

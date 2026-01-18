@@ -7,7 +7,10 @@ export class ResetPasswordDto {
   @IsNotEmpty({ message: 'Token 為必填' })
   token: string;
 
-  @ApiProperty({ example: 'newpassword123', description: '新密碼（至少 6 個字元）' })
+  @ApiProperty({
+    example: 'newpassword123',
+    description: '新密碼（至少 6 個字元）',
+  })
   @IsString()
   @IsNotEmpty({ message: '新密碼為必填' })
   @MinLength(6, { message: '密碼至少需要 6 個字元' })

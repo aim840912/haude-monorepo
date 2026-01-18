@@ -8,16 +8,16 @@ import {
   Param,
   Query,
   UseGuards,
-} from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { CurrentUser } from '@/common/decorators/current-user.decorator'
-import { Role } from '@prisma/client'
-import { DiscountsService } from './discounts.service'
-import { CreateDiscountDto } from './dto/create-discount.dto'
-import { UpdateDiscountDto } from './dto/update-discount.dto'
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Role } from '@prisma/client';
+import { DiscountsService } from './discounts.service';
+import { CreateDiscountDto } from './dto/create-discount.dto';
+import { UpdateDiscountDto } from './dto/update-discount.dto';
 
 @ApiTags('discounts')
 @Controller()
@@ -41,8 +41,12 @@ export class DiscountsController {
     @Query('subtotal') subtotal: string,
     @CurrentUser('userId') userId: string,
   ) {
-    const subtotalNum = parseInt(subtotal, 10) || 0
-    return this.discountsService.validateDiscountCode(code, userId, subtotalNum)
+    const subtotalNum = parseInt(subtotal, 10) || 0;
+    return this.discountsService.validateDiscountCode(
+      code,
+      userId,
+      subtotalNum,
+    );
   }
 
   // ========================================
@@ -60,8 +64,8 @@ export class DiscountsController {
   @ApiOperation({ summary: '取得所有折扣碼（管理員）' })
   async findAll(@Query('isActive') isActive?: string) {
     const options =
-      isActive !== undefined ? { isActive: isActive === 'true' } : undefined
-    return this.discountsService.findAll(options)
+      isActive !== undefined ? { isActive: isActive === 'true' } : undefined;
+    return this.discountsService.findAll(options);
   }
 
   /**
@@ -74,7 +78,7 @@ export class DiscountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '取得折扣碼詳情（管理員）' })
   async findOne(@Param('id') id: string) {
-    return this.discountsService.findById(id)
+    return this.discountsService.findById(id);
   }
 
   /**
@@ -87,7 +91,7 @@ export class DiscountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '建立折扣碼（管理員）' })
   async create(@Body() createDiscountDto: CreateDiscountDto) {
-    return this.discountsService.create(createDiscountDto)
+    return this.discountsService.create(createDiscountDto);
   }
 
   /**
@@ -103,7 +107,7 @@ export class DiscountsController {
     @Param('id') id: string,
     @Body() updateDiscountDto: UpdateDiscountDto,
   ) {
-    return this.discountsService.update(id, updateDiscountDto)
+    return this.discountsService.update(id, updateDiscountDto);
   }
 
   /**
@@ -116,6 +120,6 @@ export class DiscountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '刪除折扣碼（管理員）' })
   async delete(@Param('id') id: string) {
-    return this.discountsService.delete(id)
+    return this.discountsService.delete(id);
   }
 }

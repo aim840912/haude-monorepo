@@ -3,12 +3,12 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-} from '@nestjs/common'
-import { PrismaService } from '@/prisma/prisma.service'
-import { CreateDiscountDto } from './dto/create-discount.dto'
-import { UpdateDiscountDto } from './dto/update-discount.dto'
-import { DiscountValidationResult } from './dto/validate-discount.dto'
-import { DiscountType } from '@prisma/client'
+} from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateDiscountDto } from './dto/create-discount.dto';
+import { UpdateDiscountDto } from './dto/update-discount.dto';
+import { DiscountValidationResult } from './dto/validate-discount.dto';
+import { DiscountType } from '@prisma/client';
 
 @Injectable()
 export class DiscountsService {
@@ -22,7 +22,8 @@ export class DiscountsService {
    * 取得所有折扣碼（管理員用）
    */
   async findAll(options?: { isActive?: boolean }) {
-    const where = options?.isActive !== undefined ? { isActive: options.isActive } : {}
+    const where =
+      options?.isActive !== undefined ? { isActive: options.isActive } : {};
 
     return this.prisma.discountCode.findMany({
       where,
@@ -32,7 +33,7 @@ export class DiscountsService {
           select: { usages: true },
         },
       },
-    })
+    });
   }
 
   /**
@@ -47,18 +48,20 @@ export class DiscountsService {
           orderBy: { createdAt: 'desc' },
           include: {
             user: { select: { id: true, name: true, email: true } },
-            order: { select: { id: true, orderNumber: true, totalAmount: true } },
+            order: {
+              select: { id: true, orderNumber: true, totalAmount: true },
+            },
           },
         },
         _count: { select: { usages: true } },
       },
-    })
+    });
 
     if (!discount) {
-      throw new NotFoundException('找不到此折扣碼')
+      throw new NotFoundException('找不到此折扣碼');
     }
 
-    return discount
+    return discount;
   }
 
   /**
@@ -69,7 +72,7 @@ export class DiscountsService {
     userId: string,
     subtotal: number,
   ): Promise<DiscountValidationResult> {
-    const normalizedCode = code.toUpperCase().trim()
+    const normalizedCode = code.toUpperCase().trim();
 
     // 查詢折扣碼
     const discount = await this.prisma.discountCode.findUnique({
@@ -79,36 +82,36 @@ export class DiscountsService {
           where: { userId },
         },
       },
-    })
+    });
 
     // 驗證折扣碼是否存在
     if (!discount) {
-      return { valid: false, message: '折扣碼不存在' }
+      return { valid: false, message: '折扣碼不存在' };
     }
 
     // 驗證是否啟用
     if (!discount.isActive) {
-      return { valid: false, message: '此折扣碼已停用' }
+      return { valid: false, message: '此折扣碼已停用' };
     }
 
     // 驗證開始日期
     if (discount.startDate && new Date() < discount.startDate) {
-      return { valid: false, message: '此折扣碼尚未開始' }
+      return { valid: false, message: '此折扣碼尚未開始' };
     }
 
     // 驗證結束日期
     if (discount.endDate && new Date() > discount.endDate) {
-      return { valid: false, message: '此折扣碼已過期' }
+      return { valid: false, message: '此折扣碼已過期' };
     }
 
     // 驗證總使用次數
     if (discount.usageLimit && discount.usageCount >= discount.usageLimit) {
-      return { valid: false, message: '此折扣碼已達使用上限' }
+      return { valid: false, message: '此折扣碼已達使用上限' };
     }
 
     // 驗證每人使用次數
     if (discount.usages.length >= discount.perUserLimit) {
-      return { valid: false, message: '您已達此折扣碼的使用次數上限' }
+      return { valid: false, message: '您已達此折扣碼的使用次數上限' };
     }
 
     // 驗證最低訂單金額
@@ -116,11 +119,11 @@ export class DiscountsService {
       return {
         valid: false,
         message: `訂單金額需滿 NT$${discount.minOrderAmount} 才能使用此折扣碼`,
-      }
+      };
     }
 
     // 計算折扣金額
-    const discountAmount = this.calculateDiscountAmount(discount, subtotal)
+    const discountAmount = this.calculateDiscountAmount(discount, subtotal);
 
     return {
       valid: true,
@@ -129,37 +132,41 @@ export class DiscountsService {
       discountAmount,
       code: discount.code,
       description: discount.description || undefined,
-    }
+    };
   }
 
   /**
    * 計算折扣金額
    */
   private calculateDiscountAmount(
-    discount: { discountType: DiscountType; discountValue: number; maxDiscount: number | null },
+    discount: {
+      discountType: DiscountType;
+      discountValue: number;
+      maxDiscount: number | null;
+    },
     subtotal: number,
   ): number {
-    let discountAmount: number
+    let discountAmount: number;
 
     if (discount.discountType === DiscountType.PERCENTAGE) {
       // 百分比折扣
-      discountAmount = Math.floor(subtotal * (discount.discountValue / 100))
+      discountAmount = Math.floor(subtotal * (discount.discountValue / 100));
 
       // 如果有最高折扣限制
       if (discount.maxDiscount && discountAmount > discount.maxDiscount) {
-        discountAmount = discount.maxDiscount
+        discountAmount = discount.maxDiscount;
       }
     } else {
       // 固定金額折扣
-      discountAmount = discount.discountValue
+      discountAmount = discount.discountValue;
 
       // 折扣不能超過訂單金額
       if (discountAmount > subtotal) {
-        discountAmount = subtotal
+        discountAmount = subtotal;
       }
     }
 
-    return discountAmount
+    return discountAmount;
   }
 
   // ========================================
@@ -170,20 +177,23 @@ export class DiscountsService {
    * 建立折扣碼
    */
   async create(dto: CreateDiscountDto) {
-    const normalizedCode = dto.code.toUpperCase().trim()
+    const normalizedCode = dto.code.toUpperCase().trim();
 
     // 檢查折扣碼是否已存在
     const existing = await this.prisma.discountCode.findUnique({
       where: { code: normalizedCode },
-    })
+    });
 
     if (existing) {
-      throw new ConflictException('此折扣碼已存在')
+      throw new ConflictException('此折扣碼已存在');
     }
 
     // 驗證百分比折扣值
-    if (dto.discountType === DiscountType.PERCENTAGE && dto.discountValue > 100) {
-      throw new BadRequestException('百分比折扣不能超過 100%')
+    if (
+      dto.discountType === DiscountType.PERCENTAGE &&
+      dto.discountValue > 100
+    ) {
+      throw new BadRequestException('百分比折扣不能超過 100%');
     }
 
     return this.prisma.discountCode.create({
@@ -200,28 +210,30 @@ export class DiscountsService {
         endDate: dto.endDate ? new Date(dto.endDate) : null,
         isActive: dto.isActive ?? true,
       },
-    })
+    });
   }
 
   /**
    * 更新折扣碼
    */
   async update(id: string, dto: UpdateDiscountDto) {
-    const existing = await this.prisma.discountCode.findUnique({ where: { id } })
+    const existing = await this.prisma.discountCode.findUnique({
+      where: { id },
+    });
 
     if (!existing) {
-      throw new NotFoundException('找不到此折扣碼')
+      throw new NotFoundException('找不到此折扣碼');
     }
 
     // 如果更新折扣碼，檢查新碼是否已存在
     if (dto.code) {
-      const normalizedCode = dto.code.toUpperCase().trim()
+      const normalizedCode = dto.code.toUpperCase().trim();
       const codeExists = await this.prisma.discountCode.findFirst({
         where: { code: normalizedCode, NOT: { id } },
-      })
+      });
 
       if (codeExists) {
-        throw new ConflictException('此折扣碼已存在')
+        throw new ConflictException('此折扣碼已存在');
       }
     }
 
@@ -231,18 +243,26 @@ export class DiscountsService {
         ...(dto.code && { code: dto.code.toUpperCase().trim() }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.discountType && { discountType: dto.discountType }),
-        ...(dto.discountValue !== undefined && { discountValue: dto.discountValue }),
-        ...(dto.minOrderAmount !== undefined && { minOrderAmount: dto.minOrderAmount }),
+        ...(dto.discountValue !== undefined && {
+          discountValue: dto.discountValue,
+        }),
+        ...(dto.minOrderAmount !== undefined && {
+          minOrderAmount: dto.minOrderAmount,
+        }),
         ...(dto.maxDiscount !== undefined && { maxDiscount: dto.maxDiscount }),
         ...(dto.usageLimit !== undefined && { usageLimit: dto.usageLimit }),
-        ...(dto.perUserLimit !== undefined && { perUserLimit: dto.perUserLimit }),
+        ...(dto.perUserLimit !== undefined && {
+          perUserLimit: dto.perUserLimit,
+        }),
         ...(dto.startDate !== undefined && {
           startDate: dto.startDate ? new Date(dto.startDate) : null,
         }),
-        ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
+        ...(dto.endDate !== undefined && {
+          endDate: dto.endDate ? new Date(dto.endDate) : null,
+        }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
-    })
+    });
   }
 
   /**
@@ -252,10 +272,10 @@ export class DiscountsService {
     const existing = await this.prisma.discountCode.findUnique({
       where: { id },
       include: { _count: { select: { usages: true } } },
-    })
+    });
 
     if (!existing) {
-      throw new NotFoundException('找不到此折扣碼')
+      throw new NotFoundException('找不到此折扣碼');
     }
 
     // 如果已有使用記錄，改為停用而非刪除
@@ -263,22 +283,27 @@ export class DiscountsService {
       return this.prisma.discountCode.update({
         where: { id },
         data: { isActive: false },
-      })
+      });
     }
 
-    return this.prisma.discountCode.delete({ where: { id } })
+    return this.prisma.discountCode.delete({ where: { id } });
   }
 
   /**
    * 應用折扣到訂單（由 OrdersService 呼叫）
    */
-  async applyDiscount(code: string, userId: string, orderId: string, discountAmount: number) {
+  async applyDiscount(
+    code: string,
+    userId: string,
+    orderId: string,
+    discountAmount: number,
+  ) {
     const discount = await this.prisma.discountCode.findUnique({
       where: { code: code.toUpperCase().trim() },
-    })
+    });
 
     if (!discount) {
-      throw new NotFoundException('找不到此折扣碼')
+      throw new NotFoundException('找不到此折扣碼');
     }
 
     // 使用交易確保資料一致性
@@ -291,13 +316,13 @@ export class DiscountsService {
           orderId,
           discountAmount,
         },
-      })
+      });
 
       // 增加使用次數
       await tx.discountCode.update({
         where: { id: discount.id },
         data: { usageCount: { increment: 1 } },
-      })
-    })
+      });
+    });
   }
 }

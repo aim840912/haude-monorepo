@@ -230,7 +230,12 @@ export class CartService {
     });
 
     if (!cart) {
-      return { message: '購物車已清空', items: [], totalItems: 0, totalPrice: 0 };
+      return {
+        message: '購物車已清空',
+        items: [],
+        totalItems: 0,
+        totalPrice: 0,
+      };
     }
 
     // 刪除所有商品

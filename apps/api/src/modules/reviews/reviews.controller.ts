@@ -10,13 +10,13 @@ import {
   Query,
   UseGuards,
   Request,
-} from '@nestjs/common'
-import { ReviewsService } from './reviews.service'
-import { CreateReviewDto } from './dto/create-review.dto'
-import { UpdateReviewDto, ApproveReviewDto } from './dto/update-review.dto'
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { Roles } from '@/common/decorators/roles.decorator'
+} from '@nestjs/common';
+import { ReviewsService } from './reviews.service';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateReviewDto, ApproveReviewDto } from './dto/update-review.dto';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
 
 /**
  * 評論 Controller
@@ -56,7 +56,7 @@ export class ReviewsController {
       limit: limit ? parseInt(limit, 10) : 10,
       offset: offset ? parseInt(offset, 10) : 0,
       onlyApproved: true,
-    })
+    });
   }
 
   /**
@@ -64,7 +64,7 @@ export class ReviewsController {
    */
   @Get('products/:productId/reviews/stats')
   async getReviewStats(@Param('productId') productId: string) {
-    return this.reviewsService.getReviewStats(productId)
+    return this.reviewsService.getReviewStats(productId);
   }
 
   // ========================================
@@ -83,19 +83,19 @@ export class ReviewsController {
     const purchaseStatus = await this.reviewsService.checkPurchaseHistory(
       req.user.userId,
       productId,
-    )
+    );
 
     const existingReview = await this.reviewsService.findUserReviewForProduct(
       req.user.userId,
       productId,
-    )
+    );
 
     return {
       canReview: purchaseStatus === 'delivered' && !existingReview,
       purchaseStatus,
       hasReviewed: !!existingReview,
       message: this.getEligibilityMessage(purchaseStatus, !!existingReview),
-    }
+    };
   }
 
   /**
@@ -105,14 +105,14 @@ export class ReviewsController {
     purchaseStatus: 'delivered' | 'ordered' | 'not_purchased',
     hasReviewed: boolean,
   ): string {
-    if (hasReviewed) return '您已對此產品發表過評論'
+    if (hasReviewed) return '您已對此產品發表過評論';
     switch (purchaseStatus) {
       case 'delivered':
-        return '您可以發表評論'
+        return '您可以發表評論';
       case 'ordered':
-        return '收到商品後才能發表評論'
+        return '收到商品後才能發表評論';
       case 'not_purchased':
-        return '購買此產品後才能發表評論'
+        return '購買此產品後才能發表評論';
     }
   }
 
@@ -126,7 +126,7 @@ export class ReviewsController {
     @Body() dto: CreateReviewDto,
     @Request() req,
   ) {
-    return this.reviewsService.create(req.user.userId, productId, dto)
+    return this.reviewsService.create(req.user.userId, productId, dto);
   }
 
   /**
@@ -139,7 +139,7 @@ export class ReviewsController {
     @Body() dto: UpdateReviewDto,
     @Request() req,
   ) {
-    return this.reviewsService.update(id, req.user.userId, dto)
+    return this.reviewsService.update(id, req.user.userId, dto);
   }
 
   /**
@@ -148,7 +148,7 @@ export class ReviewsController {
   @Delete('reviews/:id')
   @UseGuards(JwtAuthGuard)
   async deleteReview(@Param('id') id: string, @Request() req) {
-    return this.reviewsService.delete(id, req.user.userId, false)
+    return this.reviewsService.delete(id, req.user.userId, false);
   }
 
   // ========================================
@@ -170,7 +170,7 @@ export class ReviewsController {
       limit: limit ? parseInt(limit, 10) : 20,
       offset: offset ? parseInt(offset, 10) : 0,
       isApproved: isApproved !== undefined ? isApproved === 'true' : undefined,
-    })
+    });
   }
 
   /**
@@ -180,7 +180,7 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
   async approveReview(@Param('id') id: string, @Body() dto: ApproveReviewDto) {
-    return this.reviewsService.approve(id, dto.isApproved)
+    return this.reviewsService.approve(id, dto.isApproved);
   }
 
   /**
@@ -190,6 +190,6 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   async adminDeleteReview(@Param('id') id: string, @Request() req) {
-    return this.reviewsService.delete(id, req.user.userId, true)
+    return this.reviewsService.delete(id, req.user.userId, true);
   }
 }

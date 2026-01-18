@@ -434,7 +434,7 @@ export class OrdersService {
 
     // 5. 計算會員折扣
     const memberDiscountPercent = memberLevelConfig?.discountPercent || 0;
-    const memberDiscount = Math.floor(subtotal * memberDiscountPercent / 100);
+    const memberDiscount = Math.floor((subtotal * memberDiscountPercent) / 100);
 
     // 6. 驗證和計算促銷折扣（如果有提供折扣碼）
     let promoDiscountAmount = 0;
@@ -464,11 +464,9 @@ export class OrdersService {
     }
 
     // 8. 計算總額（扣除折扣）
-    const totalAmount = OrderCalculator.calculateTotal(
-      subtotal,
-      shippingFee,
-      tax,
-    ) - discountAmount;
+    const totalAmount =
+      OrderCalculator.calculateTotal(subtotal, shippingFee, tax) -
+      discountAmount;
 
     // 6. 生成訂單編號
     const orderNumber = await this.generateOrderNumber();
@@ -540,7 +538,19 @@ export class OrdersService {
    */
   private async sendOrderConfirmationEmailAsync(
     userId: string,
-    order: { orderNumber: string; subtotal: number; shippingFee: number; discountAmount: number; totalAmount: number; items: Array<{ productName: string; quantity: number; unitPrice: number | bigint | Prisma.Decimal; subtotal: number | bigint | Prisma.Decimal }> },
+    order: {
+      orderNumber: string;
+      subtotal: number;
+      shippingFee: number;
+      discountAmount: number;
+      totalAmount: number;
+      items: Array<{
+        productName: string;
+        quantity: number;
+        unitPrice: number | bigint | Prisma.Decimal;
+        subtotal: number | bigint | Prisma.Decimal;
+      }>;
+    },
     dto: CreateOrderDto,
   ) {
     try {
@@ -551,7 +561,9 @@ export class OrdersService {
       });
 
       if (!user?.email) {
-        this.logger.warn(`無法發送訂單確認郵件：找不到使用者 ${userId} 的 email`);
+        this.logger.warn(
+          `無法發送訂單確認郵件：找不到使用者 ${userId} 的 email`,
+        );
         return;
       }
 
@@ -664,7 +676,10 @@ export class OrdersService {
     });
 
     // 當訂單狀態變更為 shipped 且有物流追蹤號時，發送發貨通知郵件
-    if (dto.status === 'shipped' && (dto.trackingNumber || order.trackingNumber)) {
+    if (
+      dto.status === 'shipped' &&
+      (dto.trackingNumber || order.trackingNumber)
+    ) {
       const trackingNumber = dto.trackingNumber || order.trackingNumber || '';
       this.sendShippingNotificationEmailAsync(
         order.user.email,
@@ -676,7 +691,11 @@ export class OrdersService {
 
     // 當訂單狀態變更為 delivered（已送達）時，更新會員累積消費並發放積分
     if (dto.status === 'delivered' && order.status !== 'delivered') {
-      this.processOrderCompletionAsync(order.userId, order.id, order.totalAmount);
+      this.processOrderCompletionAsync(
+        order.userId,
+        order.id,
+        order.totalAmount,
+      );
     }
 
     return updatedOrder;
@@ -694,10 +713,11 @@ export class OrdersService {
   ) {
     try {
       // 1. 更新累積消費並檢查升級
-      const { upgraded } = await this.membersService.updateTotalSpentAndCheckUpgrade(
-        userId,
-        orderAmount,
-      );
+      const { upgraded } =
+        await this.membersService.updateTotalSpentAndCheckUpgrade(
+          userId,
+          orderAmount,
+        );
 
       if (upgraded) {
         this.logger.log(`會員 ${userId} 已升級`);

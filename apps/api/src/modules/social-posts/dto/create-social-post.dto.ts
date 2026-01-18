@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEnum, IsBoolean, IsInt, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsInt,
+  IsUrl,
+} from 'class-validator';
 
 export enum SocialPlatform {
   facebook = 'facebook',

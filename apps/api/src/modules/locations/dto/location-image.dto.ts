@@ -9,11 +9,17 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateLocationImageDto {
-  @ApiProperty({ description: '圖片 URL', example: 'https://example.com/image.jpg' })
+  @ApiProperty({
+    description: '圖片 URL',
+    example: 'https://example.com/image.jpg',
+  })
   @IsUrl()
   storageUrl: string;
 
-  @ApiProperty({ description: '儲存路徑', example: 'locations/abc123/image.jpg' })
+  @ApiProperty({
+    description: '儲存路徑',
+    example: 'locations/abc123/image.jpg',
+  })
   @IsString()
   filePath: string;
 

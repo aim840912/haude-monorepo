@@ -1,6 +1,6 @@
-import { Controller, Get, Query } from '@nestjs/common'
-import { SearchService } from './search.service'
-import { SearchQueryDto, SearchSuggestionDto } from './dto/search.dto'
+import { Controller, Get, Query } from '@nestjs/common';
+import { SearchService } from './search.service';
+import { SearchQueryDto, SearchSuggestionDto } from './dto/search.dto';
 
 @Controller('search')
 export class SearchController {
@@ -12,7 +12,7 @@ export class SearchController {
    */
   @Get()
   async search(@Query() dto: SearchQueryDto) {
-    return this.searchService.search(dto)
+    return this.searchService.search(dto);
   }
 
   /**
@@ -21,7 +21,7 @@ export class SearchController {
    */
   @Get('suggestions')
   async getSuggestions(@Query() dto: SearchSuggestionDto) {
-    return this.searchService.getSuggestions(dto.q)
+    return this.searchService.getSuggestions(dto.q);
   }
 
   /**
@@ -30,6 +30,6 @@ export class SearchController {
    */
   @Get('trending')
   async getTrendingSearches() {
-    return this.searchService.getTrendingSearches()
+    return this.searchService.getTrendingSearches();
   }
 }
