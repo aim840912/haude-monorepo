@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { ProductDetailModal } from './ProductDetailModal'
 import { createMockProduct, createMockProductImage } from '@/test/mocks'
 import type { ExtendedProduct } from './modal/types'

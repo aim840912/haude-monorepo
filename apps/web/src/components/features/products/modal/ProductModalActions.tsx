@@ -35,8 +35,8 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
     const [isRequestingQuote, setIsRequestingQuote] = useState(false)
     const [isAddingToCart, setIsAddingToCart] = useState(false)
     const { success, info } = useToast()
-    const { user, isAuthenticated } = useAuthStore()
-    const { addItem, getItemQuantity, isLoading: isCartLoading } = useCartStore()
+    const { isAuthenticated } = useAuthStore()
+    const { addItem, getItemQuantity } = useCartStore()
 
     // 取得購物車中此產品的數量
     const cartQuantity = getItemQuantity(product.id)

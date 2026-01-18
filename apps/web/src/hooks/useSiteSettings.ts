@@ -63,7 +63,7 @@ export function useSiteSettings(keys: (SettingKey | string)[]): UseSiteSettingsR
         settingsMap[setting.key] = setting
       })
       setSettings(settingsMap)
-    } catch (err) {
+    } catch {
       // API 不可用時使用預設值
       console.warn('Site settings API not available, using defaults')
       setSettings({})
