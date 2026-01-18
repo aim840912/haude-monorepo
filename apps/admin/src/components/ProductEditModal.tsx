@@ -75,8 +75,8 @@ export function ProductEditModal({
       setNewlyUploadedIds([])
       setPendingDeleteIds([])
       // 載入圖片
-      if (product.productImages && product.productImages.length > 0) {
-        setImages(product.productImages.map(img => ({
+      if (product.images && product.images.length > 0) {
+        setImages(product.images.map(img => ({
           id: img.id,
           productId: product.id,
           storageUrl: img.storageUrl,

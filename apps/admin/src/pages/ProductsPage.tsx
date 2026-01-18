@@ -128,10 +128,8 @@ export function ProductsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredProducts.map((product) => {
-                // 取得圖片 URL（API 回傳 images，型別定義 productImages）
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const images = (product as any).images || product.productImages || []
-                const imageUrl = getProductImageUrl(images, product.category)
+                // 取得圖片 URL（型別已統一為 images）
+                const imageUrl = getProductImageUrl(product.images || [], product.category)
 
                 return (
                 <tr key={product.id} className="hover:bg-gray-50">
