@@ -1,41 +1,92 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { DiscountsService } from '../discounts/discounts.service';
-import { EmailService } from '../email/email.service';
-import { MembersService } from '../members/members.service';
 import {
-  createMockPrismaService,
-  createMockEmailService,
-  createMockDiscountsService,
-  createMockMembersService,
-  createMockUser,
-  createMockProduct,
+  QueryUserOrdersService,
+  QueryAdminOrdersService,
+  OrderStatsService,
+  DashboardAnalyticsService,
+  CreateOrderService,
+  CancelOrderService,
+  UpdateOrderService,
+} from './services';
+import {
   createMockOrder,
   createMockCreateOrderDto,
 } from '../../../test/utils/test-helpers';
 
-describe('OrdersService', () => {
+/**
+ * OrdersService Facade 測試
+ *
+ * OrdersService 是一個 Facade，將操作委派給專責服務。
+ * 這些測試驗證：
+ * 1. 委派是否正確傳遞參數
+ * 2. 委派是否正確返回結果
+ * 3. 錯誤是否正確傳播
+ */
+describe('OrdersService (Facade)', () => {
   let service: OrdersService;
-  let mockPrismaService: ReturnType<typeof createMockPrismaService>;
-  let mockEmailService: ReturnType<typeof createMockEmailService>;
-  let mockDiscountsService: ReturnType<typeof createMockDiscountsService>;
-  let mockMembersService: ReturnType<typeof createMockMembersService>;
+  let mockQueryUserOrdersService: jest.Mocked<QueryUserOrdersService>;
+  let mockQueryAdminOrdersService: jest.Mocked<QueryAdminOrdersService>;
+  let mockOrderStatsService: jest.Mocked<OrderStatsService>;
+  let mockDashboardAnalyticsService: jest.Mocked<DashboardAnalyticsService>;
+  let mockCreateOrderService: jest.Mocked<CreateOrderService>;
+  let mockCancelOrderService: jest.Mocked<CancelOrderService>;
+  let mockUpdateOrderService: jest.Mocked<UpdateOrderService>;
 
   beforeEach(async () => {
-    mockPrismaService = createMockPrismaService();
-    mockEmailService = createMockEmailService();
-    mockDiscountsService = createMockDiscountsService();
-    mockMembersService = createMockMembersService();
+    // 建立 mock 專責服務
+    mockQueryUserOrdersService = {
+      getUserOrders: jest.fn(),
+      getOrderById: jest.fn(),
+    } as unknown as jest.Mocked<QueryUserOrdersService>;
+
+    mockQueryAdminOrdersService = {
+      getAllOrders: jest.fn(),
+      getOrderByIdForAdmin: jest.fn(),
+    } as unknown as jest.Mocked<QueryAdminOrdersService>;
+
+    mockOrderStatsService = {
+      getOrderStats: jest.fn(),
+    } as unknown as jest.Mocked<OrderStatsService>;
+
+    mockDashboardAnalyticsService = {
+      getRevenueTrend: jest.fn(),
+      getOrderStatusDistribution: jest.fn(),
+      getTopProducts: jest.fn(),
+    } as unknown as jest.Mocked<DashboardAnalyticsService>;
+
+    mockCreateOrderService = {
+      createOrder: jest.fn(),
+    } as unknown as jest.Mocked<CreateOrderService>;
+
+    mockCancelOrderService = {
+      cancelOrder: jest.fn(),
+    } as unknown as jest.Mocked<CancelOrderService>;
+
+    mockUpdateOrderService = {
+      updateOrderStatus: jest.fn(),
+    } as unknown as jest.Mocked<UpdateOrderService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: EmailService, useValue: mockEmailService },
-        { provide: DiscountsService, useValue: mockDiscountsService },
-        { provide: MembersService, useValue: mockMembersService },
+        {
+          provide: QueryUserOrdersService,
+          useValue: mockQueryUserOrdersService,
+        },
+        {
+          provide: QueryAdminOrdersService,
+          useValue: mockQueryAdminOrdersService,
+        },
+        { provide: OrderStatsService, useValue: mockOrderStatsService },
+        {
+          provide: DashboardAnalyticsService,
+          useValue: mockDashboardAnalyticsService,
+        },
+        { provide: CreateOrderService, useValue: mockCreateOrderService },
+        { provide: CancelOrderService, useValue: mockCancelOrderService },
+        { provide: UpdateOrderService, useValue: mockUpdateOrderService },
       ],
     }).compile();
 
@@ -43,61 +94,72 @@ describe('OrdersService', () => {
     jest.clearAllMocks();
   });
 
+  // ========================================
+  // 使用者查詢方法
+  // ========================================
+
   describe('getUserOrders', () => {
-    it('應回傳使用者的訂單列表與分頁資訊', async () => {
-      const mockOrders = [
-        createMockOrder(),
-        createMockOrder({ id: 'order-2' }),
-      ];
-      mockPrismaService.order.findMany.mockResolvedValue(mockOrders);
-      mockPrismaService.order.count.mockResolvedValue(2);
+    it('應委派給 QueryUserOrdersService.getUserOrders', async () => {
+      const mockOrders = [createMockOrder(), createMockOrder({ id: 'order-2' })];
+      const mockResult = {
+        orders: mockOrders,
+        total: 2,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      };
+      mockQueryUserOrdersService.getUserOrders.mockResolvedValue(mockResult);
 
       const result = await service.getUserOrders('user-1', 20, 0);
 
-      expect(result.orders).toHaveLength(2);
-      expect(result.total).toBe(2);
-      expect(result.hasMore).toBe(false);
-      expect(mockPrismaService.order.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { userId: 'user-1' },
-          take: 20,
-          skip: 0,
-        }),
+      expect(mockQueryUserOrdersService.getUserOrders).toHaveBeenCalledWith(
+        'user-1',
+        20,
+        0,
       );
+      expect(result).toEqual(mockResult);
     });
 
-    it('應正確計算 hasMore 狀態', async () => {
-      const mockOrders = Array(20).fill(createMockOrder());
-      mockPrismaService.order.findMany.mockResolvedValue(mockOrders);
-      mockPrismaService.order.count.mockResolvedValue(50);
+    it('應正確傳遞預設參數', async () => {
+      mockQueryUserOrdersService.getUserOrders.mockResolvedValue({
+        orders: [],
+        total: 0,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      });
 
-      const result = await service.getUserOrders('user-1', 20, 0);
+      await service.getUserOrders('user-1');
 
-      expect(result.hasMore).toBe(true);
+      expect(mockQueryUserOrdersService.getUserOrders).toHaveBeenCalledWith(
+        'user-1',
+        20,
+        0,
+      );
     });
   });
 
   describe('getOrderById', () => {
-    it('應回傳訂單詳情（含付款資訊）', async () => {
+    it('應委派給 QueryUserOrdersService.getOrderById', async () => {
       const mockOrder = {
         ...createMockOrder(),
-        payments: [{ id: 'payment-1', status: 'paid', paymentType: 'CREDIT' }],
+        payment: { id: 'payment-1', status: 'paid' },
       };
-      mockPrismaService.order.findFirst.mockResolvedValue(mockOrder);
+      mockQueryUserOrdersService.getOrderById.mockResolvedValue(mockOrder);
 
       const result = await service.getOrderById('order-1', 'user-1');
 
-      expect(result.id).toBe('order-1');
-      expect(result.payment).toBeDefined();
-      expect(mockPrismaService.order.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'order-1', userId: 'user-1' },
-        }),
+      expect(mockQueryUserOrdersService.getOrderById).toHaveBeenCalledWith(
+        'order-1',
+        'user-1',
       );
+      expect(result).toEqual(mockOrder);
     });
 
-    it('訂單不存在時應拋出 NotFoundException', async () => {
-      mockPrismaService.order.findFirst.mockResolvedValue(null);
+    it('訂單不存在時應傳播 NotFoundException', async () => {
+      mockQueryUserOrdersService.getOrderById.mockRejectedValue(
+        new NotFoundException('訂單不存在或無權限查看'),
+      );
 
       await expect(
         service.getOrderById('non-existent', 'user-1'),
@@ -105,123 +167,165 @@ describe('OrdersService', () => {
     });
   });
 
-  describe('createOrder', () => {
-    const mockDto = createMockCreateOrderDto();
-    const mockProduct = createMockProduct({ stock: 100, reservedStock: 0 });
-    const mockUser = createMockUser();
+  // ========================================
+  // 管理員查詢方法
+  // ========================================
 
-    beforeEach(() => {
-      mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockMembersService.getLevelConfig.mockResolvedValue({
-        level: 'NORMAL',
-        discountPercent: 0,
-        freeShipping: false,
-      });
-      mockPrismaService.order.count.mockResolvedValue(0);
+  describe('getAllOrders', () => {
+    it('應委派給 QueryAdminOrdersService.getAllOrders', async () => {
+      const mockResult = {
+        orders: [createMockOrder()],
+        total: 1,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      };
+      mockQueryAdminOrdersService.getAllOrders.mockResolvedValue(mockResult);
 
-      // Mock transaction
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const txMock = {
-          ...mockPrismaService,
-          order: { ...mockPrismaService.order, create: jest.fn() },
-          product: { ...mockPrismaService.product, updateMany: jest.fn() },
-        };
-        txMock.order.create.mockResolvedValue(createMockOrder());
-        txMock.product.updateMany.mockResolvedValue({ count: 1 });
-        return callback(txMock);
-      });
+      const result = await service.getAllOrders(20, 0);
+
+      expect(mockQueryAdminOrdersService.getAllOrders).toHaveBeenCalledWith(
+        20,
+        0,
+      );
+      expect(result).toEqual(mockResult);
     });
+  });
 
-    it('應成功建立訂單', async () => {
+  describe('getOrderByIdForAdmin', () => {
+    it('應委派給 QueryAdminOrdersService.getOrderByIdForAdmin', async () => {
+      const mockOrder = createMockOrder();
+      mockQueryAdminOrdersService.getOrderByIdForAdmin.mockResolvedValue(
+        mockOrder,
+      );
+
+      const result = await service.getOrderByIdForAdmin('order-1');
+
+      expect(
+        mockQueryAdminOrdersService.getOrderByIdForAdmin,
+      ).toHaveBeenCalledWith('order-1');
+      expect(result).toEqual(mockOrder);
+    });
+  });
+
+  // ========================================
+  // 訂單統計
+  // ========================================
+
+  describe('getOrderStats', () => {
+    it('應委派給 OrderStatsService.getOrderStats', async () => {
+      const mockStats = {
+        totalOrders: 100,
+        totalAmount: 1000000,
+        pendingOrders: 10,
+        confirmedOrders: 20,
+        processingOrders: 15,
+        shippedOrders: 30,
+        deliveredOrders: 20,
+        cancelledOrders: 5,
+      };
+      mockOrderStatsService.getOrderStats.mockResolvedValue(mockStats);
+
+      const result = await service.getOrderStats();
+
+      expect(mockOrderStatsService.getOrderStats).toHaveBeenCalled();
+      expect(result).toEqual(mockStats);
+    });
+  });
+
+  // ========================================
+  // 儀表板分析
+  // ========================================
+
+  describe('getRevenueTrend', () => {
+    it('應委派給 DashboardAnalyticsService.getRevenueTrend', async () => {
+      const mockTrend = [
+        { date: '2024-01-15', revenue: 1500, orders: 2 },
+        { date: '2024-01-14', revenue: 800, orders: 1 },
+      ];
+      mockDashboardAnalyticsService.getRevenueTrend.mockResolvedValue(mockTrend);
+
+      const result = await service.getRevenueTrend('day');
+
+      expect(mockDashboardAnalyticsService.getRevenueTrend).toHaveBeenCalledWith(
+        'day',
+      );
+      expect(result).toEqual(mockTrend);
+    });
+  });
+
+  describe('getOrderStatusDistribution', () => {
+    it('應委派給 DashboardAnalyticsService.getOrderStatusDistribution', async () => {
+      const mockDistribution = [
+        { status: 'pending', count: 10, label: '待處理' },
+        { status: 'shipped', count: 30, label: '已出貨' },
+      ];
+      mockDashboardAnalyticsService.getOrderStatusDistribution.mockResolvedValue(
+        mockDistribution,
+      );
+
+      const result = await service.getOrderStatusDistribution();
+
+      expect(
+        mockDashboardAnalyticsService.getOrderStatusDistribution,
+      ).toHaveBeenCalled();
+      expect(result).toEqual(mockDistribution);
+    });
+  });
+
+  describe('getTopProducts', () => {
+    it('應委派給 DashboardAnalyticsService.getTopProducts', async () => {
+      const mockProducts = [
+        { id: 'product-1', name: '高山茶', sales: 100, revenue: 50000 },
+      ];
+      mockDashboardAnalyticsService.getTopProducts.mockResolvedValue(
+        mockProducts,
+      );
+
+      const result = await service.getTopProducts(10);
+
+      expect(mockDashboardAnalyticsService.getTopProducts).toHaveBeenCalledWith(
+        10,
+      );
+      expect(result).toEqual(mockProducts);
+    });
+  });
+
+  // ========================================
+  // 建立訂單
+  // ========================================
+
+  describe('createOrder', () => {
+    it('應委派給 CreateOrderService.createOrder', async () => {
+      const mockDto = createMockCreateOrderDto();
+      const mockOrder = createMockOrder();
+      mockCreateOrderService.createOrder.mockResolvedValue(mockOrder);
+
       const result = await service.createOrder('user-1', mockDto);
 
-      expect(result).toBeDefined();
-      expect(result.orderNumber).toBeDefined();
+      expect(mockCreateOrderService.createOrder).toHaveBeenCalledWith(
+        'user-1',
+        mockDto,
+      );
+      expect(result).toEqual(mockOrder);
     });
 
-    it('訂單項目為空時應拋出 BadRequestException', async () => {
-      const emptyDto = { ...mockDto, items: [] };
+    it('訂單項目為空時應傳播 BadRequestException', async () => {
+      const emptyDto = { ...createMockCreateOrderDto(), items: [] };
+      mockCreateOrderService.createOrder.mockRejectedValue(
+        new BadRequestException('訂單至少需要一個商品'),
+      );
 
       await expect(service.createOrder('user-1', emptyDto)).rejects.toThrow(
         BadRequestException,
       );
     });
 
-    it('產品不存在時應拋出 BadRequestException', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue(null);
-
-      await expect(service.createOrder('user-1', mockDto)).rejects.toThrow(
-        BadRequestException,
+    it('庫存不足時應傳播 BadRequestException', async () => {
+      const mockDto = createMockCreateOrderDto();
+      mockCreateOrderService.createOrder.mockRejectedValue(
+        new BadRequestException('產品庫存不足'),
       );
-    });
-
-    it('庫存不足時應拋出 BadRequestException', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue(
-        createMockProduct({ stock: 1, reservedStock: 0 }),
-      );
-      const bigOrderDto = {
-        ...mockDto,
-        items: [{ productId: 'product-1', quantity: 10 }],
-      };
-
-      await expect(service.createOrder('user-1', bigOrderDto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('折扣碼無效時應拋出 BadRequestException', async () => {
-      mockDiscountsService.validateDiscountCode.mockResolvedValue({
-        valid: false,
-        message: '折扣碼已過期',
-      });
-      const dtoWithDiscount = { ...mockDto, discountCode: 'INVALID' };
-
-      await expect(
-        service.createOrder('user-1', dtoWithDiscount),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('金卡會員應享有免運費', async () => {
-      mockMembersService.getLevelConfig.mockResolvedValue({
-        level: 'GOLD',
-        discountPercent: 10,
-        freeShipping: true,
-      });
-
-      // 追蹤 transaction 內的 create 呼叫
-      let capturedData: Record<string, unknown> | null = null;
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const txMock = {
-          ...mockPrismaService,
-          order: {
-            create: jest.fn().mockImplementation((args) => {
-              capturedData = args.data;
-              return createMockOrder({ shippingFee: 0 });
-            }),
-          },
-          product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-        };
-        return callback(txMock);
-      });
-
-      await service.createOrder('user-1', mockDto);
-
-      expect(capturedData).not.toBeNull();
-      expect(
-        (capturedData as unknown as Record<string, number>).shippingFee,
-      ).toBe(0);
-    });
-
-    it('交易失敗時應回滾（庫存競態條件）', async () => {
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const txMock = {
-          ...mockPrismaService,
-          order: { create: jest.fn().mockResolvedValue(createMockOrder()) },
-          product: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) }, // 庫存不足
-        };
-        return callback(txMock);
-      });
 
       await expect(service.createOrder('user-1', mockDto)).rejects.toThrow(
         BadRequestException,
@@ -229,48 +333,31 @@ describe('OrdersService', () => {
     });
   });
 
+  // ========================================
+  // 取消訂單
+  // ========================================
+
   describe('cancelOrder', () => {
-    const mockOrder = createMockOrder({ status: 'pending' });
+    it('應委派給 CancelOrderService.cancelOrder', async () => {
+      const mockResult = { message: '訂單已取消' };
+      mockCancelOrderService.cancelOrder.mockResolvedValue(mockResult);
 
-    beforeEach(() => {
-      mockPrismaService.order.findFirst.mockResolvedValue({
-        ...mockOrder,
-        payments: [],
-      });
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const txMock = {
-          order: { update: jest.fn().mockResolvedValue({}) },
-          product: { update: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(txMock);
-      });
-    });
-
-    it('應成功取消待處理訂單並恢復庫存', async () => {
       const result = await service.cancelOrder('order-1', 'user-1', {
         reason: '不想要了',
       });
 
-      expect(result.message).toBe('訂單已取消');
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockCancelOrderService.cancelOrder).toHaveBeenCalledWith(
+        'order-1',
+        'user-1',
+        { reason: '不想要了' },
+      );
+      expect(result).toEqual(mockResult);
     });
 
-    it('已出貨訂單不可取消', async () => {
-      mockPrismaService.order.findFirst.mockResolvedValue({
-        ...createMockOrder({ status: 'shipped' }),
-        payments: [],
-      });
-
-      await expect(
-        service.cancelOrder('order-1', 'user-1', { reason: '取消' }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('已送達訂單不可取消', async () => {
-      mockPrismaService.order.findFirst.mockResolvedValue({
-        ...createMockOrder({ status: 'delivered' }),
-        payments: [],
-      });
+    it('已出貨訂單不可取消時應傳播 BadRequestException', async () => {
+      mockCancelOrderService.cancelOrder.mockRejectedValue(
+        new BadRequestException('此訂單狀態無法取消'),
+      );
 
       await expect(
         service.cancelOrder('order-1', 'user-1', { reason: '取消' }),
@@ -278,116 +365,35 @@ describe('OrdersService', () => {
     });
   });
 
-  describe('updateOrderStatus (admin)', () => {
-    const mockOrder = {
-      ...createMockOrder(),
-      user: { email: 'test@example.com', name: '測試' },
-    };
+  // ========================================
+  // 更新訂單狀態
+  // ========================================
 
-    beforeEach(() => {
-      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.order.update.mockResolvedValue({
-        ...mockOrder,
-        status: 'shipped',
-      });
-    });
+  describe('updateOrderStatus', () => {
+    it('應委派給 UpdateOrderService.updateOrderStatus', async () => {
+      const mockOrder = { ...createMockOrder(), status: 'shipped' };
+      mockUpdateOrderService.updateOrderStatus.mockResolvedValue(mockOrder);
 
-    it('應成功更新訂單狀態', async () => {
       const result = await service.updateOrderStatus('order-1', {
         status: 'shipped',
         trackingNumber: '1234567890',
       });
 
-      expect(result.status).toBe('shipped');
-      expect(mockPrismaService.order.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'order-1' },
-          data: expect.objectContaining({
-            status: 'shipped',
-            trackingNumber: '1234567890',
-          }),
-        }),
+      expect(mockUpdateOrderService.updateOrderStatus).toHaveBeenCalledWith(
+        'order-1',
+        { status: 'shipped', trackingNumber: '1234567890' },
       );
+      expect(result).toEqual(mockOrder);
     });
 
-    it('出貨時應發送通知郵件', async () => {
-      await service.updateOrderStatus('order-1', {
-        status: 'shipped',
-        trackingNumber: '1234567890',
-      });
-
-      // 等待非同步郵件發送
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(mockEmailService.sendShippingNotificationEmail).toHaveBeenCalled();
-    });
-
-    it('訂單不存在時應拋出 NotFoundException', async () => {
-      mockPrismaService.order.findUnique.mockResolvedValue(null);
+    it('訂單不存在時應傳播 NotFoundException', async () => {
+      mockUpdateOrderService.updateOrderStatus.mockRejectedValue(
+        new NotFoundException('訂單不存在'),
+      );
 
       await expect(
         service.updateOrderStatus('non-existent', { status: 'shipped' }),
       ).rejects.toThrow(NotFoundException);
-    });
-
-    it('訂單送達時應更新會員積分', async () => {
-      mockPrismaService.order.findUnique.mockResolvedValue({
-        ...mockOrder,
-        status: 'shipped',
-      });
-      mockPrismaService.order.update.mockResolvedValue({
-        ...mockOrder,
-        status: 'delivered',
-      });
-
-      await service.updateOrderStatus('order-1', { status: 'delivered' });
-
-      // 等待非同步處理
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(
-        mockMembersService.updateTotalSpentAndCheckUpgrade,
-      ).toHaveBeenCalled();
-      expect(mockMembersService.addPointsForPurchase).toHaveBeenCalled();
-    });
-  });
-
-  describe('getOrderStats (admin)', () => {
-    it('應回傳訂單統計資料', async () => {
-      mockPrismaService.order.count.mockResolvedValue(100);
-      mockPrismaService.order.aggregate.mockResolvedValue({
-        _sum: { totalAmount: 1000000 },
-      });
-      mockPrismaService.order.groupBy.mockResolvedValue([
-        { status: 'pending', _count: { status: 10 } },
-        { status: 'confirmed', _count: { status: 20 } },
-        { status: 'shipped', _count: { status: 30 } },
-        { status: 'delivered', _count: { status: 35 } },
-        { status: 'cancelled', _count: { status: 5 } },
-      ]);
-
-      const result = await service.getOrderStats();
-
-      expect(result.totalOrders).toBe(100);
-      expect(result.totalAmount).toBe(1000000);
-      expect(result.pendingOrders).toBe(10);
-      expect(result.cancelledOrders).toBe(5);
-    });
-  });
-
-  describe('getRevenueTrend', () => {
-    it('應回傳按日期分組的營收趨勢', async () => {
-      const mockOrders = [
-        { createdAt: new Date('2024-01-15'), totalAmount: 1000 },
-        { createdAt: new Date('2024-01-15'), totalAmount: 500 },
-        { createdAt: new Date('2024-01-14'), totalAmount: 800 },
-      ];
-      mockPrismaService.order.findMany.mockResolvedValue(mockOrders);
-
-      const result = await service.getRevenueTrend('day');
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
     });
   });
 });
