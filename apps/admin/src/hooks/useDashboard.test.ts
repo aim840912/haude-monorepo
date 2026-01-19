@@ -8,6 +8,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 
+// Helper: 將 mock 資料包裝為 AxiosResponse 相容格式
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockResponse = <T>(data: T): any => ({ data })
+
 // Mock API
 vi.mock('../services/api', () => ({
   productsApi: {
@@ -54,32 +58,20 @@ describe('useDashboard', () => {
   describe('統計資料', () => {
     it('應該載入所有統計資料', async () => {
       // Mock 基礎資料
-      vi.mocked(productsApi.getAll).mockResolvedValue({
-        data: [{ id: 'p1' }, { id: 'p2' }],
-      })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [
-            { id: 'o1', totalAmount: 1000, createdAt: '2024-01-15T10:00:00Z', status: 'PAID', shippingAddress: { name: '張三' } },
-            { id: 'o2', totalAmount: 2000, createdAt: '2024-01-14T10:00:00Z', status: 'PENDING', shippingAddress: { name: '李四' } },
-          ],
-          total: 2,
-        },
-      })
-      vi.mocked(usersApi.getAll).mockResolvedValue({
-        data: [{ id: 'u1', name: '用戶1', email: 'u1@test.com', createdAt: '2024-01-10T10:00:00Z' }],
-      })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([{ id: 'p1' }, { id: 'p2' }]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [
+          { id: 'o1', totalAmount: 1000, createdAt: '2024-01-15T10:00:00Z', status: 'PAID', shippingAddress: { name: '張三' } },
+          { id: 'o2', totalAmount: 2000, createdAt: '2024-01-14T10:00:00Z', status: 'PENDING', shippingAddress: { name: '李四' } },
+        ],
+        total: 2,
+      }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([{ id: 'u1', name: '用戶1', email: 'u1@test.com', createdAt: '2024-01-10T10:00:00Z' }]))
 
       // Mock 圖表資料
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({
-        data: [{ date: '2024-01-15', revenue: 3000, orders: 2 }],
-      })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({
-        data: [{ status: 'PAID', count: 1, label: '已付款' }],
-      })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({
-        data: [{ id: 'p1', name: '產品1', sales: 10, revenue: 5000 }],
-      })
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([{ date: '2024-01-15', revenue: 3000, orders: 2 }]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([{ status: 'PAID', count: 1, label: '已付款' }]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([{ id: 'p1', name: '產品1', sales: 10, revenue: 5000 }]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -95,20 +87,18 @@ describe('useDashboard', () => {
     })
 
     it('應該計算最近訂單', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [
-            { id: 'o1', orderNumber: 'ORD-001', totalAmount: 1000, status: 'PAID', createdAt: '2024-01-10T10:00:00Z', shippingAddress: { name: '張三' } },
-            { id: 'o2', orderNumber: 'ORD-002', totalAmount: 2000, status: 'PENDING', createdAt: '2024-01-15T10:00:00Z', shippingAddress: { name: '李四' } },
-          ],
-          total: 2,
-        },
-      })
-      vi.mocked(usersApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [
+          { id: 'o1', orderNumber: 'ORD-001', totalAmount: 1000, status: 'PAID', createdAt: '2024-01-10T10:00:00Z', shippingAddress: { name: '張三' } },
+          { id: 'o2', orderNumber: 'ORD-002', totalAmount: 2000, status: 'PENDING', createdAt: '2024-01-15T10:00:00Z', shippingAddress: { name: '李四' } },
+        ],
+        total: 2,
+      }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -122,17 +112,15 @@ describe('useDashboard', () => {
     })
 
     it('應該計算最近用戶', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({ data: { orders: [], total: 0 } })
-      vi.mocked(usersApi.getAll).mockResolvedValue({
-        data: [
-          { id: 'u1', name: '舊用戶', email: 'old@test.com', createdAt: '2024-01-01T10:00:00Z' },
-          { id: 'u2', name: '新用戶', email: 'new@test.com', createdAt: '2024-01-15T10:00:00Z' },
-        ],
-      })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({ orders: [], total: 0 }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([
+        { id: 'u1', name: '舊用戶', email: 'old@test.com', createdAt: '2024-01-01T10:00:00Z' },
+        { id: 'u2', name: '新用戶', email: 'new@test.com', createdAt: '2024-01-15T10:00:00Z' },
+      ]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -151,17 +139,15 @@ describe('useDashboard', () => {
 
   describe('圖表資料', () => {
     it('應該載入營收趨勢', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({ data: { orders: [], total: 0 } })
-      vi.mocked(usersApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({
-        data: [
-          { date: '2024-01-14', revenue: 1000, orders: 1 },
-          { date: '2024-01-15', revenue: 2000, orders: 2 },
-        ],
-      })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({ orders: [], total: 0 }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([
+        { date: '2024-01-14', revenue: 1000, orders: 1 },
+        { date: '2024-01-15', revenue: 2000, orders: 2 },
+      ]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -174,17 +160,15 @@ describe('useDashboard', () => {
     })
 
     it('應該載入訂單狀態分布', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({ data: { orders: [], total: 0 } })
-      vi.mocked(usersApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({
-        data: [
-          { status: 'PAID', count: 10, label: '已付款' },
-          { status: 'PENDING', count: 5, label: '待付款' },
-        ],
-      })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({ orders: [], total: 0 }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([
+        { status: 'PAID', count: 10, label: '已付款' },
+        { status: 'PENDING', count: 5, label: '待付款' },
+      ]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -197,16 +181,14 @@ describe('useDashboard', () => {
     })
 
     it('應該載入熱門產品', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({ data: { orders: [], total: 0 } })
-      vi.mocked(usersApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({
-        data: [
-          { id: 'p1', name: '熱賣商品', sales: 100, revenue: 50000 },
-        ],
-      })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({ orders: [], total: 0 }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([
+        { id: 'p1', name: '熱賣商品', sales: 100, revenue: 50000 },
+      ]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -219,12 +201,12 @@ describe('useDashboard', () => {
     })
 
     it('setRevenuePeriod 應該切換期間並重新載入', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({ data: { orders: [], total: 0 } })
-      vi.mocked(usersApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({ orders: [], total: 0 }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -237,7 +219,7 @@ describe('useDashboard', () => {
 
       // 切換到 'week'
       vi.mocked(dashboardApi.getRevenueTrend).mockClear()
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
 
       act(() => {
         result.current.setRevenuePeriod('week')
@@ -262,9 +244,9 @@ describe('useDashboard', () => {
       vi.mocked(productsApi.getAll).mockRejectedValue(new Error('載入失敗'))
       vi.mocked(ordersApi.getAll).mockRejectedValue(new Error('載入失敗'))
       vi.mocked(usersApi.getAll).mockRejectedValue(new Error('載入失敗'))
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -281,12 +263,12 @@ describe('useDashboard', () => {
     })
 
     it('部分 API 失敗應該使用預設值', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [{ id: 'p1' }] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([{ id: 'p1' }]))
       vi.mocked(ordersApi.getAll).mockRejectedValue(new Error('網路錯誤'))
       vi.mocked(usersApi.getAll).mockRejectedValue(new Error('網路錯誤'))
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 
@@ -308,12 +290,12 @@ describe('useDashboard', () => {
 
   describe('refetch', () => {
     it('應該支援手動重新載入', async () => {
-      vi.mocked(productsApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(ordersApi.getAll).mockResolvedValue({ data: { orders: [], total: 0 } })
-      vi.mocked(usersApi.getAll).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue({ data: [] })
-      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue({ data: [] })
+      vi.mocked(productsApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({ orders: [], total: 0 }))
+      vi.mocked(usersApi.getAll).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getRevenueTrend).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getOrderStatus).mockResolvedValue(mockResponse([]))
+      vi.mocked(dashboardApi.getTopProducts).mockResolvedValue(mockResponse([]))
 
       const { result } = renderHook(() => useDashboard())
 

@@ -9,6 +9,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 
+// Helper: 將 mock 資料包裝為 AxiosResponse 相容格式
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockResponse = <T>(data: T): any => ({ data })
+
 // Mock API
 vi.mock('../services/api', () => ({
   ordersApi: {
@@ -47,7 +51,7 @@ const createMockOrder = (overrides = {}): Order => ({
     },
   ],
   totalAmount: 1000,
-  status: 'PENDING',
+  status: 'pending',
   paymentStatus: 'pending',
   paymentMethod: 'CREDIT',
   shippingAddress: '台北市中正區忠孝東路一段100號',
@@ -74,17 +78,15 @@ describe('Admin 訂單 Hooks', () => {
     it('應該自動載入訂單列表', async () => {
       const mockOrders = [
         createMockOrder({ id: 'order-1' }),
-        createMockOrder({ id: 'order-2', status: 'PAID' }),
+        createMockOrder({ id: 'order-2', status: 'confirmed' }),
       ]
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: mockOrders,
-          total: 2,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        },
-      })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: mockOrders,
+        total: 2,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      }))
 
       const { result } = renderHook(() => useOrders())
 
@@ -100,15 +102,13 @@ describe('Admin 訂單 Hooks', () => {
     })
 
     it('應該正確計算分頁資訊', async () => {
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [createMockOrder()],
-          total: 50,
-          limit: 20,
-          offset: 0,
-          hasMore: true,
-        },
-      })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [createMockOrder()],
+        total: 50,
+        limit: 20,
+        offset: 0,
+        hasMore: true,
+      }))
 
       const { result } = renderHook(() => useOrders())
 
@@ -122,15 +122,13 @@ describe('Admin 訂單 Hooks', () => {
     })
 
     it('goToPage 應該切換到指定頁', async () => {
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [createMockOrder()],
-          total: 50,
-          limit: 20,
-          offset: 0,
-          hasMore: true,
-        },
-      })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [createMockOrder()],
+        total: 50,
+        limit: 20,
+        offset: 0,
+        hasMore: true,
+      }))
 
       const { result } = renderHook(() => useOrders())
 
@@ -140,15 +138,13 @@ describe('Admin 訂單 Hooks', () => {
 
       // 切換到第二頁
       vi.mocked(ordersApi.getAll).mockClear()
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [createMockOrder({ id: 'order-page2' })],
-          total: 50,
-          limit: 20,
-          offset: 20,
-          hasMore: true,
-        },
-      })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [createMockOrder({ id: 'order-page2' })],
+        total: 50,
+        limit: 20,
+        offset: 20,
+        hasMore: true,
+      }))
 
       await act(async () => {
         result.current.goToPage(2)
@@ -160,15 +156,13 @@ describe('Admin 訂單 Hooks', () => {
     })
 
     it('setPageSize 應該切換每頁筆數並回到第一頁', async () => {
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [createMockOrder()],
-          total: 50,
-          limit: 20,
-          offset: 0,
-          hasMore: true,
-        },
-      })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [createMockOrder()],
+        total: 50,
+        limit: 20,
+        offset: 0,
+        hasMore: true,
+      }))
 
       const { result } = renderHook(() => useOrders())
 
@@ -177,15 +171,13 @@ describe('Admin 訂單 Hooks', () => {
       })
 
       vi.mocked(ordersApi.getAll).mockClear()
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [],
-          total: 50,
-          limit: 10,
-          offset: 0,
-          hasMore: true,
-        },
-      })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [],
+        total: 50,
+        limit: 10,
+        offset: 0,
+        hasMore: true,
+      }))
 
       await act(async () => {
         result.current.setPageSize(10)
@@ -197,16 +189,14 @@ describe('Admin 訂單 Hooks', () => {
     })
 
     it('updateOrderStatus 應該更新訂單狀態', async () => {
-      vi.mocked(ordersApi.getAll).mockResolvedValue({
-        data: {
-          orders: [createMockOrder()],
-          total: 1,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        },
-      })
-      vi.mocked(ordersApi.updateStatus).mockResolvedValue({ data: {} })
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [createMockOrder()],
+        total: 1,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      }))
+      vi.mocked(ordersApi.updateStatus).mockResolvedValue(mockResponse({}))
 
       const { result } = renderHook(() => useOrders())
 
@@ -216,11 +206,11 @@ describe('Admin 訂單 Hooks', () => {
 
       let success = false
       await act(async () => {
-        success = await result.current.updateOrderStatus('order-1', 'SHIPPED')
+        success = await result.current.updateOrderStatus('order-1', 'shipped')
       })
 
       expect(success).toBe(true)
-      expect(ordersApi.updateStatus).toHaveBeenCalledWith('order-1', 'SHIPPED')
+      expect(ordersApi.updateStatus).toHaveBeenCalledWith('order-1', 'shipped')
     })
 
     it('API 失敗應該設定錯誤', async () => {
@@ -243,7 +233,7 @@ describe('Admin 訂單 Hooks', () => {
   describe('useOrder', () => {
     it('應該載入單一訂單', async () => {
       const mockOrder = createMockOrder()
-      vi.mocked(ordersApi.getById).mockResolvedValue({ data: mockOrder })
+      vi.mocked(ordersApi.getById).mockResolvedValue(mockResponse(mockOrder))
 
       const { result } = renderHook(() => useOrder('order-1'))
 
@@ -279,7 +269,7 @@ describe('Admin 訂單 Hooks', () => {
 
     it('應該支援手動重新載入', async () => {
       const mockOrder = createMockOrder()
-      vi.mocked(ordersApi.getById).mockResolvedValue({ data: mockOrder })
+      vi.mocked(ordersApi.getById).mockResolvedValue(mockResponse(mockOrder))
 
       const { result } = renderHook(() => useOrder('order-1'))
 
