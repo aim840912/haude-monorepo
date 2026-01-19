@@ -50,10 +50,16 @@ vi.mock('@/hooks/useModalAnimation', () => ({
 }))
 
 // Mock useToast hook
-vi.mock('@/components/ui/feedback/toast/hooks/useToast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({
-    addToast: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    loading: vi.fn(),
     removeToast: vi.fn(),
+    updateToast: vi.fn(),
+    showToast: vi.fn(),
     toasts: [],
   }),
 }))

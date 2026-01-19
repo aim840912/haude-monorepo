@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ordersApi } from '@/services/api'
 import type { Order, CreateOrderRequest } from '@/types/order'
-import { mockOrders, getMockOrderById } from '@/services/mock/order.mock'
+
+/**
+ * 動態載入 Mock 資料（僅開發環境使用）
+ * 使用動態導入確保 mock 資料不會被打包進生產環境
+ */
+const getMockData = async () => {
+  const { mockOrders, getMockOrderById } = await import('@/test/mocks/services/order.mock')
+  return { mockOrders, getMockOrderById }
+}
 
 interface UseOrdersOptions {
   /** 是否自動載入 */
@@ -58,19 +66,25 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersReturn {
       } catch (err) {
         // 開發模式：API 失敗時使用 Mock 資料
         if (process.env.NODE_ENV !== 'production') {
-          console.warn('[useOrders] API 不可用，使用 Mock 資料')
-          const currentOffset = reset ? 0 : offset
-          const paginatedOrders = mockOrders.slice(currentOffset, currentOffset + limit)
-          if (reset) {
-            setOrders(paginatedOrders)
-            setOffset(limit)
-          } else {
-            setOrders((prev) => [...prev, ...paginatedOrders])
-            setOffset((prev) => prev + limit)
+          try {
+            console.warn('[useOrders] API 不可用，使用 Mock 資料')
+            const { mockOrders } = await getMockData()
+            const currentOffset = reset ? 0 : offset
+            const paginatedOrders = mockOrders.slice(currentOffset, currentOffset + limit)
+            if (reset) {
+              setOrders(paginatedOrders)
+              setOffset(limit)
+            } else {
+              setOrders((prev) => [...prev, ...paginatedOrders])
+              setOffset((prev) => prev + limit)
+            }
+            setTotal(mockOrders.length)
+            setHasMore(currentOffset + limit < mockOrders.length)
+            setError(null)
+          } catch {
+            const message = err instanceof Error ? err.message : '載入訂單失敗'
+            setError(message)
           }
-          setTotal(mockOrders.length)
-          setHasMore(currentOffset + limit < mockOrders.length)
-          setError(null)
         } else {
           const message = err instanceof Error ? err.message : '載入訂單失敗'
           setError(message)
@@ -136,13 +150,19 @@ export function useOrder(orderId: string | undefined): UseOrderReturn {
     } catch (err) {
       // 開發模式：API 失敗時使用 Mock 資料
       if (process.env.NODE_ENV !== 'production') {
-        const mockOrder = getMockOrderById(orderId)
-        if (mockOrder) {
-          console.warn('[useOrder] API 不可用，使用 Mock 資料')
-          setOrder(mockOrder)
-          setError(null)
-        } else {
-          setError('找不到該訂單')
+        try {
+          const { getMockOrderById } = await getMockData()
+          const mockOrder = getMockOrderById(orderId)
+          if (mockOrder) {
+            console.warn('[useOrder] API 不可用，使用 Mock 資料')
+            setOrder(mockOrder)
+            setError(null)
+          } else {
+            setError('找不到該訂單')
+          }
+        } catch {
+          const message = err instanceof Error ? err.message : '載入訂單失敗'
+          setError(message)
         }
       } else {
         const message = err instanceof Error ? err.message : '載入訂單失敗'

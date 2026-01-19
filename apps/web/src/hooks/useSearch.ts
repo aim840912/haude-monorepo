@@ -8,7 +8,7 @@ const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true'
 // 動態導入 mock API（僅在需要時載入）
 const getMockApi = async () => {
   if (USE_MOCK) {
-    const { searchApi } = await import('@/services/mock/search.mock')
+    const { searchApi } = await import('@/test/mocks/services/search.mock')
     return searchApi
   }
   return null

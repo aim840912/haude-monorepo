@@ -22,8 +22,8 @@ vi.mock('@/services/api', () => ({
   },
 }))
 
-// Mock mock data
-vi.mock('@/services/mock/order.mock', () => ({
+// Mock mock data (now in test/mocks/services/)
+vi.mock('@/test/mocks/services/order.mock', () => ({
   mockOrders: [
     { id: 'order-1', status: 'PENDING', totalAmount: 1000 },
     { id: 'order-2', status: 'PAID', totalAmount: 2000 },
@@ -39,7 +39,7 @@ vi.mock('@/services/mock/order.mock', () => ({
 
 import { useOrders, useOrder, useCreateOrder, useCancelOrder } from './useOrders'
 import { ordersApi } from '@/services/api'
-import { mockOrders, getMockOrderById } from '@/services/mock/order.mock'
+import { mockOrders, getMockOrderById } from '@/test/mocks/services/order.mock'
 import { createMockOrder, createMockAxiosResponse } from '@/test/mocks'
 
 describe('訂單 Hooks', () => {

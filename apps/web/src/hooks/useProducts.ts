@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { productsApi } from '@/services/api'
 import type { Product } from '@/types/product'
-import { mockProducts, mockCategories, getMockProductById } from '@/services/mock/product.mock'
+
+/**
+ * 動態載入 Mock 資料（僅開發環境使用）
+ * 使用動態導入確保 mock 資料不會被打包進生產環境
+ */
+const getMockData = async () => {
+  const { mockProducts, mockCategories, getMockProductById } = await import(
+    '@/test/mocks/services/product.mock'
+  )
+  return { mockProducts, mockCategories, getMockProductById }
+}
 
 interface UseProductsOptions {
   /** 是否自動載入 */
@@ -41,9 +51,15 @@ export function useProducts(options: UseProductsOptions = {}): UseProductsReturn
     } catch (err) {
       // 開發模式：API 失敗時使用 Mock 資料
       if (process.env.NODE_ENV !== 'production') {
-        console.warn('[useProducts] API 不可用，使用 Mock 資料')
-        setProducts(mockProducts)
-        setError(null)
+        try {
+          console.warn('[useProducts] API 不可用，使用 Mock 資料')
+          const { mockProducts } = await getMockData()
+          setProducts(mockProducts)
+          setError(null)
+        } catch {
+          const message = err instanceof Error ? err.message : '載入產品失敗'
+          setError(message)
+        }
       } else {
         const message = err instanceof Error ? err.message : '載入產品失敗'
         setError(message)
@@ -98,13 +114,19 @@ export function useProduct(productId: string | undefined): UseProductReturn {
     } catch (err) {
       // 開發模式：API 失敗時使用 Mock 資料
       if (process.env.NODE_ENV !== 'production') {
-        const mockProduct = getMockProductById(productId)
-        if (mockProduct) {
-          console.warn('[useProduct] API 不可用，使用 Mock 資料')
-          setProduct(mockProduct)
-          setError(null)
-        } else {
-          setError('找不到該產品')
+        try {
+          const { getMockProductById } = await getMockData()
+          const mockProduct = getMockProductById(productId)
+          if (mockProduct) {
+            console.warn('[useProduct] API 不可用，使用 Mock 資料')
+            setProduct(mockProduct)
+            setError(null)
+          } else {
+            setError('找不到該產品')
+          }
+        } catch {
+          const message = err instanceof Error ? err.message : '載入產品失敗'
+          setError(message)
         }
       } else {
         const message = err instanceof Error ? err.message : '載入產品失敗'
@@ -156,9 +178,15 @@ export function useCategories(): UseCategoriesReturn {
       } catch (err) {
         // 開發模式：API 失敗時使用 Mock 類別
         if (process.env.NODE_ENV !== 'production') {
-          console.warn('[useCategories] API 不可用，使用 Mock 類別')
-          setCategories(mockCategories)
-          setError(null)
+          try {
+            console.warn('[useCategories] API 不可用，使用 Mock 類別')
+            const { mockCategories } = await getMockData()
+            setCategories(mockCategories)
+            setError(null)
+          } catch {
+            const message = err instanceof Error ? err.message : '載入類別失敗'
+            setError(message)
+          }
         } else {
           const message = err instanceof Error ? err.message : '載入類別失敗'
           setError(message)

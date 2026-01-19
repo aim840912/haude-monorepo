@@ -1,4 +1,4 @@
-import type { AuthServiceInterface, AuthResponse, GetMeResponse } from './types'
+import type { AuthServiceInterface, AuthResponse, GetMeResponse } from '@/services/auth/types'
 import type { User } from '@/stores/authStore'
 
 /**

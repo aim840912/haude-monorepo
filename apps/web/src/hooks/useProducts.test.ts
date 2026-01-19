@@ -20,8 +20,8 @@ vi.mock('@/services/api', () => ({
   },
 }))
 
-// Mock mock data
-vi.mock('@/services/mock/product.mock', () => ({
+// Mock mock data (now in test/mocks/services/)
+vi.mock('@/test/mocks/services/product.mock', () => ({
   mockProducts: [
     { id: 'mock-1', name: 'Mock Product 1', price: 100 },
     { id: 'mock-2', name: 'Mock Product 2', price: 200 },
@@ -37,7 +37,7 @@ vi.mock('@/services/mock/product.mock', () => ({
 
 import { useProducts, useProduct, useCategories } from './useProducts'
 import { productsApi } from '@/services/api'
-import { mockProducts, mockCategories, getMockProductById } from '@/services/mock/product.mock'
+import { mockProducts, mockCategories, getMockProductById } from '@/test/mocks/services/product.mock'
 import { createMockProduct, createMockAxiosResponse } from '@/test/mocks'
 
 describe('useProducts', () => {
