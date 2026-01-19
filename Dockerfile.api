@@ -75,8 +75,8 @@ RUN mkdir -p /app/prisma-client/.prisma && \
       fi \
     fi
 
-# 建置 API
-RUN pnpm --filter=@haude/api build
+# 建置 API（需要 DATABASE_URL 給 build 腳本中的 prisma generate）
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" pnpm --filter=@haude/api build
 
 # 使用 pnpm deploy 創建獨立的生產環境依賴
 # 這會把所有需要的依賴扁平化到一個目錄中
