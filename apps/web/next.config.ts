@@ -61,9 +61,25 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'placehold.co', // Mock 資料的佔位圖片
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com', // Unsplash 圖片（種子資料使用）
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co', // Supabase Storage
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.in', // Supabase Storage (備用域名)
       },
     ],
+    // 允許 SVG 圖片（placehold.co 返回 SVG 格式）
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   // 環境變數
