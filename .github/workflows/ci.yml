@@ -45,6 +45,8 @@ jobs:
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
 
       - name: Run type check
         run: pnpm type-check
@@ -105,6 +107,8 @@ jobs:
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/haude_test
 
       - name: Run tests
         run: pnpm test
@@ -149,6 +153,8 @@ jobs:
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
 
       - name: Build all packages
         run: pnpm build
