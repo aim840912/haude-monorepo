@@ -42,6 +42,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
@@ -104,6 +106,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/haude_test
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
@@ -150,6 +154,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
