@@ -44,6 +44,7 @@ export function useMembers(options?: UseMembersOptions): UseMembersReturn {
     } finally {
       setIsLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 使用解構的 options 欄位避免物件參考變化導致不必要的重新渲染
   }, [options?.level, options?.search, options?.limit, options?.offset])
 
   const adjustLevel = useCallback(async (id: string, level: MemberLevel, reason?: string): Promise<boolean> => {

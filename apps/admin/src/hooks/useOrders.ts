@@ -139,7 +139,8 @@ export function useOrders(): UseOrdersReturn {
 
   useEffect(() => {
     fetchOrders(DEFAULT_PAGE_SIZE, 0)
-  }, []) // 只在首次載入時執行
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在首次載入時執行一次
+  }, [])
 
   return {
     orders,

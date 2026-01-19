@@ -1,4 +1,3 @@
-// @ts-nocheck - 測試檔案的 mock 型別與嚴格的 AxiosResponse 型別不完全匹配
 /**
  * Admin 訂單 Hooks 單元測試
  *

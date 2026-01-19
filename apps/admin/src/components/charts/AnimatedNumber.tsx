@@ -56,6 +56,7 @@ export function AnimatedNumber({
         cancelAnimationFrame(animationFrame.current)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- displayValue 故意不加入依賴，否則每次動畫更新都會重新觸發 effect 造成無限循環
   }, [value, duration])
 
   return (
