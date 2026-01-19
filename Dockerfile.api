@@ -42,15 +42,16 @@ FROM base AS builder
 
 WORKDIR /app
 
-# 複製依賴
+# 複製依賴（包含 types 套件的依賴，因為 API 依賴 @haude/types）
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 
 # 複製原始碼
 COPY . .
 
-# 建置 types 套件（API 可能依賴它，忽略錯誤）
-RUN pnpm --filter=@haude/types build || true
+# 建置 types 套件（API 依賴它，必須成功）
+RUN pnpm --filter=@haude/types build
 
 # 生成 Prisma Client（使用假的 DATABASE_URL，僅用於生成 client，不實際連接）
 # Prisma 7 + pnpm 會將 client 生成到 .pnpm 虛擬存儲中
