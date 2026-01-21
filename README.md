@@ -176,7 +176,7 @@ haude-monorepo/
 │   ├── web/                 # @haude/web - 用戶端 (Next.js 15)
 │   │   ├── src/
 │   │   │   ├── app/         # App Router 頁面
-│   │   │   ├── components/  # React 元件 (86 個)
+│   │   │   ├── components/  # React 元件 (90+ 個)
 │   │   │   ├── stores/      # Zustand 狀態
 │   │   │   ├── services/    # API 服務層
 │   │   │   └── hooks/       # 自訂 Hooks
@@ -191,7 +191,7 @@ haude-monorepo/
 │   │
 │   └── api/                 # @haude/api - 後端 API (NestJS)
 │       ├── src/
-│       │   ├── modules/     # 功能模組 (12 個)
+│       │   ├── modules/     # 功能模組 (18 個)
 │       │   └── prisma/      # Prisma 服務
 │       ├── prisma/
 │       │   └── schema.prisma # 資料庫 Schema
@@ -550,13 +550,13 @@ docker-compose down
 <table>
 <tr>
 <td align="center"><strong>40,000+</strong><br/>程式碼行數</td>
-<td align="center"><strong>361</strong><br/>TypeScript 檔案</td>
-<td align="center"><strong>21</strong><br/>前端頁面</td>
-<td align="center"><strong>12</strong><br/>API 模組</td>
+<td align="center"><strong>435</strong><br/>TypeScript 檔案</td>
+<td align="center"><strong>24+</strong><br/>前端頁面</td>
+<td align="center"><strong>18</strong><br/>API 模組</td>
 </tr>
 <tr>
-<td align="center"><strong>16</strong><br/>資料庫模型</td>
-<td align="center"><strong>86</strong><br/>UI 元件</td>
+<td align="center"><strong>29</strong><br/>資料庫模型</td>
+<td align="center"><strong>90+</strong><br/>UI 元件</td>
 <td align="center"><strong>4</strong><br/>支付方式</td>
 <td align="center"><strong>4</strong><br/>用戶角色</td>
 </tr>
