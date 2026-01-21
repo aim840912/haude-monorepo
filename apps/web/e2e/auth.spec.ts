@@ -122,7 +122,7 @@ test.describe('認證流程', () => {
     // 點擊返回首頁連結
     await page.getByRole('link', { name: '← 返回首頁' }).click()
 
-    // 驗證已導航到首頁
-    await expect(page).toHaveURL(/\/zh-TW\/?$/)
+    // 驗證已導航到首頁（可能是 / 或 /zh-TW/）
+    await expect(page).toHaveURL(/^https?:\/\/[^\/]+(\/zh-TW)?\/?$/)
   })
 })

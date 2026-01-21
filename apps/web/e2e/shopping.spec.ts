@@ -17,8 +17,8 @@ test.describe('購物流程', () => {
     test('應該顯示產品列表頁面', async ({ page }) => {
       await page.goto('/zh-TW/products')
 
-      // 驗證頁面標題或麵包屑
-      await expect(page.getByText('產品')).toBeVisible()
+      // 驗證麵包屑導航中的「產品」文字
+      await expect(page.getByLabel('麵包屑導航').getByText('產品')).toBeVisible()
 
       // 等待產品載入
       await page.waitForTimeout(2000)
@@ -112,19 +112,33 @@ test.describe('購物流程', () => {
       // 等待產品載入
       await page.waitForTimeout(3000)
 
-      // 嘗試點擊第一個產品卡片
-      const productCard = page.locator('[class*="product"]').first()
-        .or(page.locator('article').first())
-        .or(page.locator('.rounded-lg').first())
+      // 嘗試多種方式找到可點擊的產品連結
+      const productLinks = [
+        page.getByRole('link', { name: /查看詳情/i }).first(),
+        page.locator('a[href*="/products/"][href*="-"]').first(),  // 產品詳情連結通常有 UUID
+        page.locator('.product-image-wrapper').first().locator('..').locator('a').first()
+      ]
 
-      if (await productCard.isVisible()) {
-        await productCard.click()
+      let clicked = false
+      for (const link of productLinks) {
+        if (await link.isVisible().catch(() => false)) {
+          await link.click()
+          clicked = true
+          break
+        }
+      }
 
-        // 等待導航
-        await page.waitForTimeout(1000)
+      // 等待導航
+      await page.waitForTimeout(1000)
 
-        // 驗證 URL 包含產品 ID
+      // 如果成功點擊了連結，驗證導航到產品詳情頁
+      // 如果沒有產品可點擊（例如空的產品列表），跳過驗證
+      if (clicked) {
         expect(page.url()).toMatch(/\/products\/[a-zA-Z0-9-]+/)
+      } else {
+        // 沒有產品可點擊時，至少確認頁面正常載入
+        console.log('沒有找到可點擊的產品連結，可能是產品列表為空')
+        expect(page.url()).toContain('/products')
       }
     })
   })
