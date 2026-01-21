@@ -27,6 +27,7 @@ import { SearchModule } from './modules/search/search.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { MembersModule } from './modules/members/members.module';
+import { SystemModule } from './modules/system/system.module';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { MembersModule } from './modules/members/members.module';
     NotificationsModule,
     ReportsModule,
     MembersModule,
+    SystemModule,
   ],
   controllers: [AppController],
   providers: [

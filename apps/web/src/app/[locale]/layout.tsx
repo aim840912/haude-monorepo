@@ -6,6 +6,8 @@ import { Header } from '@/components/layouts/common/Header'
 import { Footer } from '@/components/layouts/common/Footer'
 import { OrganizationSchema } from '@/components/seo'
 import { routing } from '@/i18n/routing'
+import { ErrorBoundary } from '@/components/errors'
+import { SystemStatusProvider, SystemBanner } from '@/components/system'
 
 // 靜態生成所有語系的頁面
 export function generateStaticParams() {
@@ -30,13 +32,21 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages}>
       <OrganizationSchema />
       <ThemeProvider>
-        <ToastProvider>
-          <Header />
-          <main className="pt-[var(--header-height)]">
-            {children}
-          </main>
-          <Footer />
-        </ToastProvider>
+        <SystemStatusProvider>
+          <ErrorBoundary>
+            <ToastProvider>
+              {/* 系統公告欄 - 顯示在頁面頂部 */}
+              <div className="fixed top-0 left-0 right-0 z-50 p-2">
+                <SystemBanner />
+              </div>
+              <Header />
+              <main className="pt-[var(--header-height)]">
+                {children}
+              </main>
+              <Footer />
+            </ToastProvider>
+          </ErrorBoundary>
+        </SystemStatusProvider>
       </ThemeProvider>
     </NextIntlClientProvider>
   )
