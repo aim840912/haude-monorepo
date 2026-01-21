@@ -37,12 +37,20 @@ const googleStrategyProvider = {
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService): JwtModuleOptions => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: {
-          expiresIn: 604800, // 7 天（秒）
-        },
-      }),
+      useFactory: (configService: ConfigService): JwtModuleOptions => {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+        if (!jwtSecret) {
+          throw new Error(
+            'JWT_SECRET environment variable is required. Please set it in your .env file.',
+          );
+        }
+        return {
+          secret: jwtSecret,
+          signOptions: {
+            expiresIn: 604800, // 7 天（秒）
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

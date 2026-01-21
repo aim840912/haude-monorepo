@@ -381,7 +381,13 @@ pnpm type-check               # TypeScript 檢查
 cd apps/api
 npx prisma studio             # 開啟資料庫 GUI
 npx prisma migrate dev        # 執行遷移
+
+# 測試
+pnpm test:e2e                 # 執行 E2E 測試 (Playwright)
+pnpm load-test                # 執行負載測試 (k6)
 ```
+
+> 📝 詳細測試指南請參考 [TESTING.md](./TESTING.md)
 
 ---
 

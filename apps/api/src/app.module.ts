@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { envValidationSchema } from './config/env.validation';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CsrfModule } from './common/csrf/csrf.module';
@@ -29,9 +30,14 @@ import { MembersModule } from './modules/members/members.module';
 
 @Module({
   imports: [
-    // Config
+    // Config - 環境變數驗證
     ConfigModule.forRoot({
       isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        abortEarly: false, // 顯示所有驗證錯誤，而非只有第一個
+        allowUnknown: true, // 允許額外的環境變數（如 Vercel 注入的系統變數）
+      },
     }),
 
     // Rate Limiting - 多層級速率限制

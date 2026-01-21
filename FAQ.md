@@ -394,14 +394,17 @@ async createProduct() { ... }
 | 測試類型 | 數量 | 涵蓋範圍 |
 |----------|------|----------|
 | **單元測試** | 195 個 | Orders、Auth、Products、Payments |
-| **E2E 測試** | 基礎架構已建立 | 端對端流程 |
+| **E2E 測試 (Playwright)** | 24 個 | 登入流程、購物流程、結帳流程 |
+| **負載測試 (k6)** | 已配置 | API 效能、壓力測試 |
 
 **測試執行**：
 ```bash
-pnpm test           # 執行所有測試
-pnpm test:cov       # 測試覆蓋率報告
-pnpm test:watch     # 監看模式
+pnpm test           # 執行所有單元測試
+pnpm test:e2e       # 執行 E2E 測試 (Playwright)
+pnpm load-test      # 執行負載測試 (k6)
 ```
+
+> 📝 詳細測試指南請參考 [TESTING.md](./TESTING.md)
 
 **CI 自動化**：每次 Push 自動執行 lint、type-check、test、build。
 
