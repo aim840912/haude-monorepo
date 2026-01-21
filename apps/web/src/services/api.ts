@@ -1,7 +1,10 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+// API 版本集中管理：升級版本時只需修改此處
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
+const API_VERSION = 'v1'
+const API_URL = `${API_BASE}/api/${API_VERSION}`
 
 export const api = axios.create({
   baseURL: API_URL,

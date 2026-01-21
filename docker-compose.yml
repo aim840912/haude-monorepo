@@ -62,7 +62,8 @@ services:
     ports:
       - "5173:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+      # 只設定 Base URL，版本在 api.ts 中集中管理
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
     depends_on:
       - api
     restart: unless-stopped
@@ -77,6 +78,9 @@ services:
     container_name: haude-admin
     ports:
       - "5174:80"
+    environment:
+      # 只設定 Base URL，版本在 client.ts 中集中管理
+      - VITE_API_BASE_URL=http://localhost:3001
     depends_on:
       - api
     restart: unless-stopped

@@ -294,15 +294,31 @@ FRONTEND_URL=http://localhost:5173
 
 **apps/web** (`.env.local`)：
 ```env
-# API URL 必須包含 /api/v1 前綴
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+# 只設定 Base URL（不含版本），版本在 api.ts 中集中管理
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-**apps/admin** (`.env.development`)：
+**apps/admin** (`.env`)：
 ```env
-# API URL 必須包含 /api/v1 前綴
-VITE_API_URL=http://localhost:3001/api/v1
+# 只設定 Base URL（不含版本），版本在 client.ts 中集中管理
+VITE_API_BASE_URL=http://localhost:3001
 ```
+
+### API 版本管理
+
+> ⚠️ **重要**：API 版本已集中管理，升級時只需修改 2 個檔案
+
+**版本定義位置**：
+- `apps/web/src/services/api.ts` → `API_VERSION = 'v1'`
+- `apps/admin/src/services/api/client.ts` → `API_VERSION = 'v1'`
+
+**升級 API 版本**：
+```typescript
+// 只需修改這兩個檔案中的 API_VERSION 常數
+const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
+```
+
+**注意**：升級 API 版本後，需同步更新 Google Cloud Console 的 OAuth 回調 URI
 
 ---
 
