@@ -20,6 +20,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { ErrorBoundary } from './components/errors'
 import { ToastProvider } from './components/ui/Toast'
 import { SystemStatusProvider } from './components/system/SystemStatusProvider'
+import { Agentation } from 'agentation'
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
           </SystemStatusProvider>
         </BrowserRouter>
       </ToastProvider>
+      {import.meta.env.DEV && <Agentation endpoint="http://localhost:4747" />}
     </ErrorBoundary>
   )
 }

@@ -202,6 +202,23 @@ pnpm type-check                     # 2. 檢查前端型別
 
 ## 開發工作流
 
+### 開發工具
+
+#### Agentation（UI 視覺標註）
+
+已整合在 web 和 admin 兩個前端應用中，僅在開發環境啟用。
+
+**使用方式**：
+1. 啟動開發伺服器 `pnpm dev`
+2. 在瀏覽器中開啟目標頁面
+3. 使用 Agentation Overlay（右下角工具列）標註 UI 元素
+4. Claude Code 透過 MCP 接收標註資訊，精確定位對應的程式碼
+
+**整合位置**：
+- Web：`apps/web/src/components/dev/AgentationOverlay.tsx` → `layout.tsx`
+- Admin：`apps/admin/src/App.tsx`（`import.meta.env.DEV` 條件渲染）
+- MCP：`.mcp.json`（Claude Code 啟動時自動連接）
+
 ### 新增功能流程
 
 1. **確認需求** - 確保理解需求範圍

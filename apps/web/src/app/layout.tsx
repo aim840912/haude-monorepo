@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { WebVitals } from '@/components/analytics/WebVitals'
+import { AgentationOverlay } from '@/components/dev/AgentationOverlay'
 import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
@@ -71,6 +72,7 @@ export default function RootLayout({
       <body>
         <WebVitals />
         {children}
+        <AgentationOverlay />
       </body>
     </html>
   )
