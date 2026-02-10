@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { LocationDetailClient, type LocationData } from './LocationDetailClient'
 import { LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { API_URL } from '@/lib/api-url'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface LocationDetailPageProps {

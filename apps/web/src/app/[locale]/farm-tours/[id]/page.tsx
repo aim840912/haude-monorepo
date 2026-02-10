@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { FarmTourDetailClient, type FarmTourData } from './FarmTourDetailClient'
 import { EventSchema, BreadcrumbSchema } from '@/components/seo'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { API_URL } from '@/lib/api-url'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface FarmTourDetailPageProps {

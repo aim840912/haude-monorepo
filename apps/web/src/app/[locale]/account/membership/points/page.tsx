@@ -15,9 +15,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import type { PointTransactionType } from '@haude/types'
-
-// API 基礎路徑
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { API_URL } from '@/lib/api-url'
 
 interface PointsHistoryItem {
   id: string

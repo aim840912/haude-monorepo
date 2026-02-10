@@ -311,7 +311,7 @@ FRONTEND_URL=http://localhost:5173
 
 **apps/web** (`.env.local`)：
 ```env
-# 只設定 Base URL（不含版本），版本在 api.ts 中集中管理
+# 只設定 Base URL（不含版本），版本在 lib/api-url.ts 中集中管理
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
@@ -326,7 +326,7 @@ VITE_API_BASE_URL=http://localhost:3001
 > ⚠️ **重要**：API 版本已集中管理，升級時只需修改 2 個檔案
 
 **版本定義位置**：
-- `apps/web/src/services/api.ts` → `API_VERSION = 'v1'`
+- `apps/web/src/lib/api-url.ts` → `API_VERSION = 'v1'`（Server/Client 共用）
 - `apps/admin/src/services/api/client.ts` → `API_VERSION = 'v1'`
 
 **升級 API 版本**：
@@ -350,6 +350,13 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 |------|----------|
 | 直接使用 `product.inventory` | 使用 fallback chain：`product.stock ?? product.inventory ?? 0` |
 | 使用 `image.storage_url` (snake_case) | 使用 camelCase：`image.storageUrl` |
+| 在 Server Component 從 `@/services/api` 匯入 API_URL | 使用 `import { API_URL } from '@/lib/api-url'`（零依賴，Server 安全） |
+
+### Git 與部署（本專案特定）
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| 使用已刪除的 git email (`tien@mochibits.com`) 提交 | 提交前確認 `git config user.email` 匹配 GitHub 帳號 email |
 
 ### Monorepo 架構（本專案特定）
 

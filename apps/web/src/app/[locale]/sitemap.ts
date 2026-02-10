@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
+import { API_URL } from '@/lib/api-url'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 /**
  * 動態 Sitemap 生成

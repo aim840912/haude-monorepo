@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { API_URL } from '@/lib/api-url'
 import { Mail, Lock, LogIn } from 'lucide-react'
 
 function LoginForm() {
@@ -151,7 +152,7 @@ function LoginForm() {
 
             {/* Google 登入按鈕 */}
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/google`}
+              href={`${API_URL}/auth/google`}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-tea"
             >
               {/* Google Logo SVG */}

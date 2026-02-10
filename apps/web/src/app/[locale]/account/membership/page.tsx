@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import { ArrowLeft, Crown, Star, Award, Gift, Truck, Percent, ChevronRight } from 'lucide-react'
 import type { MemberLevelInfo, UpgradeProgress, MemberLevelConfig } from '@haude/types'
+import { API_URL } from '@/lib/api-url'
 
 // 等級顯示設定
 const levelConfig: Record<string, {
@@ -44,9 +45,6 @@ const levelConfig: Record<string, {
     icon: Crown,
   },
 }
-
-// API 基礎路徑
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export default function MembershipPage() {
   const router = useRouter()
