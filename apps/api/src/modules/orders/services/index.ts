@@ -10,3 +10,6 @@ export { DashboardAnalyticsService } from './dashboard-analytics.service';
 export { CreateOrderService } from './create-order.service';
 export { CancelOrderService } from './cancel-order.service';
 export { UpdateOrderService } from './update-order.service';
+
+// 排程服務
+export { OrderExpiryService } from './order-expiry.service';

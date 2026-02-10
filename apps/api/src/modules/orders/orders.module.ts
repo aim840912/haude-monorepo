@@ -17,6 +17,7 @@ import {
   CreateOrderService,
   CancelOrderService,
   UpdateOrderService,
+  OrderExpiryService,
 } from './services';
 
 @Module({
@@ -37,6 +38,7 @@ import {
     CreateOrderService,
     CancelOrderService,
     UpdateOrderService,
+    OrderExpiryService,
   ],
   exports: [OrdersService],
 })

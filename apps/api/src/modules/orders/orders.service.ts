@@ -10,6 +10,7 @@ import {
   CreateOrderService,
   CancelOrderService,
   UpdateOrderService,
+  OrderExpiryService,
 } from './services';
 
 /**
@@ -26,6 +27,7 @@ import {
  * - CreateOrderService: 訂單建立
  * - CancelOrderService: 訂單取消
  * - UpdateOrderService: 訂單更新
+ * - OrderExpiryService: 訂單過期自動取消
  */
 @Injectable()
 export class OrdersService {
@@ -37,6 +39,7 @@ export class OrdersService {
     private createOrderService: CreateOrderService,
     private cancelOrderService: CancelOrderService,
     private updateOrderService: UpdateOrderService,
+    private orderExpiryService: OrderExpiryService,
   ) {}
 
   // ========================================
@@ -142,5 +145,16 @@ export class OrdersService {
    */
   updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
     return this.updateOrderService.updateOrderStatus(orderId, dto);
+  }
+
+  // ========================================
+  // 訂單過期（委派給 OrderExpiryService）
+  // ========================================
+
+  /**
+   * 手動觸發過期訂單掃描
+   */
+  handleExpiredOrders() {
+    return this.orderExpiryService.handleExpiredOrders();
   }
 }

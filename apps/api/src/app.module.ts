@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { envValidationSchema } from './config/env.validation';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -40,6 +41,9 @@ import { SystemModule } from './modules/system/system.module';
         allowUnknown: true, // 允許額外的環境變數（如 Vercel 注入的系統變數）
       },
     }),
+
+    // Scheduling - 排程任務（如訂單超時自動取消）
+    ScheduleModule.forRoot(),
 
     // Rate Limiting - 多層級速率限制
     ThrottlerModule.forRoot([
