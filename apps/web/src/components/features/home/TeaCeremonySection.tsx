@@ -24,12 +24,13 @@ import { useElementScroll } from '@/hooks/useElementScroll'
 // ===== 子元件：CSS 茶壺 =====
 function Teapot() {
   return (
-    <div className="relative w-32 h-28 md:w-40 md:h-36">
+    <div className="relative w-32 h-24 md:w-40 md:h-30">
       {/* 壺身 */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-20 md:w-30 md:h-24 bg-[#5d4037] rounded-[50%_50%_45%_45%] shadow-lg" />
-      {/* 壺蓋 */}
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 md:w-18 md:h-5 bg-[#4e342e] rounded-full" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-3 md:w-5 md:h-4 bg-[#4e342e] rounded-full" />
+      {/* 壺蓋 — 緊貼壺身頂部 */}
+      <div className="absolute bottom-[74%] left-1/2 -translate-x-1/2 w-14 h-4 md:w-18 md:h-5 bg-[#4e342e] rounded-full" />
+      {/* 蓋鈕 */}
+      <div className="absolute bottom-[82%] left-1/2 -translate-x-1/2 w-4 h-3 md:w-5 md:h-4 bg-[#4e342e] rounded-full" />
       {/* 壺嘴 */}
       <div className="absolute bottom-6 -right-3 md:-right-4 w-8 h-3 md:w-10 md:h-4 bg-[#5d4037] rounded-r-full origin-left -rotate-12" />
       {/* 壺把 */}
@@ -50,8 +51,8 @@ function Teacup({ fillHeight }: { fillHeight: MotionValue<string> }) {
           style={{ height: fillHeight }}
         />
       </div>
-      {/* 杯把 */}
-      <div className="absolute bottom-3 -right-1 md:-right-2 w-4 h-8 md:w-5 md:h-10 border-[3px] border-white/80 dark:border-[#d7ccc8] rounded-r-full border-l-0" />
+      {/* 杯把 — 位置上移、加粗 */}
+      <div className="absolute bottom-5 -right-1 md:-right-2 w-4 h-8 md:w-5 md:h-10 border-4 border-white/80 dark:border-[#d7ccc8] rounded-r-full border-l-0" />
       {/* 杯碟 */}
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-28 h-3 md:w-36 md:h-4 bg-white/70 dark:bg-[#d7ccc8]/70 rounded-full shadow-sm" />
     </div>
@@ -60,13 +61,18 @@ function Teacup({ fillHeight }: { fillHeight: MotionValue<string> }) {
 
 // ===== 子元件：蒸氣 =====
 function SteamLines() {
+  const lines = [
+    { w: 'w-2', h: 'h-10 md:h-14', delay: '0s' },
+    { w: 'w-2.5', h: 'h-14 md:h-18', delay: '0.5s' },
+    { w: 'w-2', h: 'h-8 md:h-12', delay: '1s' },
+  ]
   return (
-    <div className="flex gap-3 justify-center">
-      {[0, 1, 2].map((i) => (
+    <div className="flex gap-4 justify-center">
+      {lines.map((line, i) => (
         <div
           key={i}
-          className="w-1 h-8 md:h-12 bg-white/40 rounded-full blur-[2px] animate-float"
-          style={{ animationDelay: `${i * 0.6}s`, animationDuration: '2.5s' }}
+          className={`${line.w} ${line.h} bg-[#a1887f]/30 rounded-full blur-[4px] animate-float`}
+          style={{ animationDelay: line.delay, animationDuration: '2s' }}
         />
       ))}
     </div>
@@ -200,7 +206,7 @@ export function TeaCeremonySection() {
 
         {/* 茶壺層 (z-30) */}
         <motion.div
-          className="absolute left-1/2 -translate-x-[70%] md:-translate-x-[80%] top-[35%] md:top-[30%] z-30 transform-gpu"
+          className="absolute left-1/2 -translate-x-[70%] md:-translate-x-[80%] top-[38%] md:top-[33%] z-30 transform-gpu"
           style={{
             y: teapotY,
             opacity: teapotOpacity,
@@ -212,7 +218,7 @@ export function TeaCeremonySection() {
 
         {/* 茶杯層 (z-40) */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/3 md:-translate-x-1/4 top-[55%] md:top-[50%] z-40 transform-gpu"
+          className="absolute left-1/2 -translate-x-1/3 md:-translate-x-1/4 top-[52%] md:top-[47%] z-40 transform-gpu"
           style={{
             y: cupY,
             scale: cupScale,
@@ -224,7 +230,7 @@ export function TeaCeremonySection() {
 
         {/* 蒸氣層 (z-50) */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/4 md:-translate-x-1/5 top-[48%] md:top-[43%] z-50 transform-gpu"
+          className="absolute left-1/2 -translate-x-1/3 md:-translate-x-1/4 top-[49%] md:top-[44%] z-50 w-24 md:w-32 transform-gpu"
           style={{ opacity: steamOpacity, y: steamY }}
         >
           <SteamLines />
