@@ -4,12 +4,17 @@
  * 首頁客戶端元件
  *
  * 處理所有客戶端互動邏輯：
- * - 視差滾動效果
- * - 輪播狀態
- * - IntersectionObserver 動畫
+ * - 視差滾動效果（Hero）
+ * - 輪播狀態（Hero）
+ * - 翻轉卡片狀態（Features）
+ * - 滾動進度指示器
+ *
+ * 各 section 使用 Framer Motion whileInView 自管理入場動畫，
+ * 不再需要集中式 IntersectionObserver。
  */
 
 import { useState, useEffect } from 'react'
+import { motion, useScroll, useSpring } from 'framer-motion'
 import {
   Sprout,
   Apple,
@@ -24,7 +29,12 @@ import {
   HeroSection,
   FeaturesSection,
   NewsSection,
+  BrandStorySection,
+  TestimonialsSection,
+  CTASection,
+  TeaCeremonySection,
 } from '@/components/features/home'
+import { ProductsSection } from '@/components/features/products/section/ProductsSection'
 import { useHomeSettings } from '@/hooks/useSiteSettings'
 import { SETTING_KEYS } from '@/types/siteSettings'
 import {
@@ -52,11 +62,19 @@ const getIcon = (iconName: string) => {
 }
 
 export function HomePageClient() {
-  // 狀態
+  // 狀態 — 僅保留 Hero 視差、輪播、翻轉卡片所需
   const [scrollY, setScrollY] = useState(0)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set())
   const [activeFeature, setActiveFeature] = useState(-1)
+  const [mounted, setMounted] = useState(false)
+
+  // 滾動進度條
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  })
 
   // 載入首頁設定
   const { settings, loading: settingsLoading } = useHomeSettings()
@@ -137,7 +155,12 @@ export function HomePageClient() {
     },
   }
 
-  // 視差滾動效果
+  // 客戶端掛載標記（避免 SSR hydration mismatch）
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // 視差滾動效果（僅 Hero 區需要）
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY)
@@ -146,27 +169,16 @@ export function HomePageClient() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // 滾動觸發動畫
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisibleSections((prev) => new Set(prev).add(entry.target.id))
-          }
-        })
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -100px 0px' }
-    )
-
-    const sections = document.querySelectorAll('[data-animate]')
-    sections.forEach((section) => observer.observe(section))
-
-    return () => observer.disconnect()
-  }, [])
-
   return (
     <div className="min-h-screen">
+      {/* 滾動進度指示器 — 僅客戶端掛載後渲染，避免 MotionValue hydration mismatch */}
+      {mounted && (
+        <motion.div
+          className="fixed top-0 left-0 right-0 h-[3px] bg-[#d4af37] z-50 origin-left"
+          style={{ scaleX }}
+        />
+      )}
+
       {/* Hero 區域 */}
       <HeroSection
         images={heroImages}
@@ -180,15 +192,32 @@ export function HomePageClient() {
         activeFeature={activeFeature}
         onFeatureClick={setActiveFeature}
         featureImages={featureCardImages}
-        isVisible={visibleSections.has('features')}
       />
+
+      {/* 滾動驅動泡茶動畫 — 製茶過程視覺敘事 */}
+      <TeaCeremonySection />
+
+      {/* 精選產品區域 */}
+      <ProductsSection
+        limit={4}
+        title="精選好茶"
+        subtitle="嚴選自梅山高山的優質茶品"
+      />
+
+      {/* 品牌故事區域 */}
+      <BrandStorySection />
+
+      {/* 客戶評價區域 */}
+      <TestimonialsSection />
 
       {/* 最新消息區域 */}
       <NewsSection
         newsCards={newsCards}
         getIcon={getIcon}
-        isVisible={visibleSections.has('news')}
       />
+
+      {/* 訂閱 CTA 區域 */}
+      <CTASection />
     </div>
   )
 }

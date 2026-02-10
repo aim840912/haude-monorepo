@@ -1,10 +1,9 @@
 import React from 'react'
 import { Leaf } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import { fadeInUp } from '@/lib/motion'
 
 interface SectionHeaderProps {
-  /** 是否可見（用於動畫） */
-  isVisible?: boolean
   /** 標題 */
   title?: string
   /** 副標題 */
@@ -16,16 +15,15 @@ interface SectionHeaderProps {
 /**
  * 區段標題元件
  *
- * 用於首頁各區段的標題顯示
+ * 用於首頁各區段的標題顯示，動畫由父層 Framer Motion stagger 管理
  */
 export const SectionHeader = React.memo<SectionHeaderProps>(({
-  isVisible = true,
   title = '經典產品',
   subtitle = '精選來自梅山的優質農產品',
   feature = '100% 有機無毒栽培',
 }) => {
   return (
-    <div className={cn('text-center mb-16', isVisible && 'animate-fade-in')}>
+    <motion.div variants={fadeInUp} className="text-center mb-16">
       <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
         {title}
       </h2>
@@ -34,7 +32,7 @@ export const SectionHeader = React.memo<SectionHeaderProps>(({
         <Leaf className="w-4 h-4 text-green-600" />
         <span>{feature}</span>
       </div>
-    </div>
+    </motion.div>
   )
 })
 

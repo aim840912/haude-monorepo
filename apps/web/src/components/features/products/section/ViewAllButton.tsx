@@ -4,8 +4,6 @@ import { ShoppingBag, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ViewAllButtonProps {
-  /** 是否可見（用於動畫） */
-  isVisible?: boolean
   /** 連結路徑 */
   href?: string
   /** 按鈕文字 */
@@ -14,14 +12,14 @@ interface ViewAllButtonProps {
 
 /**
  * 查看所有商品按鈕元件
+ * 動畫由父層 Framer Motion 管理
  */
 export const ViewAllButton = React.memo<ViewAllButtonProps>(({
-  isVisible = true,
   href = '/products',
   label = '瀏覽所有商品',
 }) => {
   return (
-    <div className={cn('text-center', isVisible && 'animate-fade-in')}>
+    <div className="text-center">
       <Link
         href={href}
         className={cn(

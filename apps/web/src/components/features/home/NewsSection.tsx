@@ -1,11 +1,20 @@
 /**
  * 最新消息區域
- * 包含當季推薦、農場活動、下次市集、聯絡我們四個卡片
+ * 包含當季推薦、農場活動、下次市集三個卡片
+ * 使用 Framer Motion stagger 入場
  */
 
+'use client'
+
 import Link from 'next/link'
-import { Phone } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { NextMarketScheduleCard } from './NextMarketScheduleCard'
+import {
+  fadeInUp,
+  staggerContainer,
+  staggerItem,
+  viewportConfig,
+} from '@/lib/motion'
 
 interface NewsCard {
   enabled: boolean
@@ -22,46 +31,47 @@ interface NewsSectionProps {
     farmActivity: NewsCard
   }
   getIcon: (iconName: string) => React.ComponentType<{ className?: string; strokeWidth?: number }>
-  isVisible: boolean
 }
 
-export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps) {
+export function NewsSection({ newsCards, getIcon }: NewsSectionProps) {
   return (
-    <section
-      id="news"
-      data-animate
-      className="py-20 px-6 bg-[#f8f5f0] dark:bg-[#1a120d]"
-    >
-      <div className="max-w-7xl mx-auto">
+    <section className="py-20 px-6 bg-white dark:bg-[#2d1f1a]">
+      <motion.div
+        variants={staggerContainer(0.15)}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportConfig}
+        className="max-w-7xl mx-auto"
+      >
         {/* 標題區 */}
         <div className="text-center mb-12">
-          <h2
-            className={`text-4xl md:text-5xl font-serif-display text-[#3e2723] dark:text-[#d7ccc8] mb-4 ${
-              isVisible ? 'animate-fade-in' : 'opacity-0'
-            }`}
+          <motion.h2
+            variants={fadeInUp}
+            className="text-4xl md:text-5xl font-serif-display text-[#3e2723] dark:text-[#d7ccc8] mb-4"
           >
             最新消息
-          </h2>
-          <p
-            className={`text-[#5d4037] dark:text-[#bcaaa4] text-lg ${
-              isVisible ? 'animate-fade-in animation-delay-150' : 'opacity-0'
-            }`}
+          </motion.h2>
+          <motion.p
+            variants={fadeInUp}
+            className="text-[#5d4037] dark:text-[#bcaaa4] text-lg"
           >
             農場動態與季節活動
-          </p>
+          </motion.p>
         </div>
 
         {/* 卡片網格 */}
-        <div
-          className={`grid md:grid-cols-2 gap-8 ${
-            isVisible ? 'animate-slide-up animation-delay-300' : 'opacity-0'
-          }`}
+        <motion.div
+          variants={staggerContainer(0.15)}
+          className="grid md:grid-cols-3 gap-8"
         >
           {/* 當季推薦卡片 */}
           {newsCards.seasonalRecommendation.enabled && (() => {
             const IconComponent = getIcon(newsCards.seasonalRecommendation.icon)
             return (
-              <div className="bg-white dark:bg-[#2d1f1a] rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+              <motion.div
+                variants={staggerItem}
+                className="tea-card bg-white dark:bg-[#2d1f1a] rounded-2xl p-8 shadow-lg"
+              >
                 <div className="flex items-center mb-4">
                   <IconComponent className="w-10 h-10 mr-3 text-[#2e7d32]" strokeWidth={2} />
                   <h3 className="text-2xl font-bold text-[#3e2723] dark:text-[#d7ccc8]">
@@ -77,7 +87,7 @@ export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps)
                 >
                   {newsCards.seasonalRecommendation.linkText}
                 </Link>
-              </div>
+              </motion.div>
             )
           })()}
 
@@ -85,7 +95,10 @@ export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps)
           {newsCards.farmActivity.enabled && (() => {
             const IconComponent = getIcon(newsCards.farmActivity.icon)
             return (
-              <div className="bg-white dark:bg-[#2d1f1a] rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+              <motion.div
+                variants={staggerItem}
+                className="tea-card bg-white dark:bg-[#2d1f1a] rounded-2xl p-8 shadow-lg"
+              >
                 <div className="flex items-center mb-4">
                   <IconComponent className="w-10 h-10 mr-3 text-[#d35400]" strokeWidth={2} />
                   <h3 className="text-2xl font-bold text-[#3e2723] dark:text-[#d7ccc8]">
@@ -101,33 +114,16 @@ export function NewsSection({ newsCards, getIcon, isVisible }: NewsSectionProps)
                 >
                   {newsCards.farmActivity.linkText}
                 </Link>
-              </div>
+              </motion.div>
             )
           })()}
 
           {/* 下次市集卡片 */}
-          <NextMarketScheduleCard />
-
-          {/* 聯絡我們卡片 */}
-          <div className="bg-white dark:bg-[#2d1f1a] rounded-2xl p-8 text-center shadow-lg hover:shadow-xl transition-all duration-300">
-            <div className="flex justify-center mb-4">
-              <Phone className="w-12 h-12 text-[#d35400]" strokeWidth={2} />
-            </div>
-            <h3 className="text-2xl font-bold text-[#3e2723] dark:text-[#d7ccc8] mb-4">
-              聯絡我們
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 text-lg">
-              有任何問題歡迎與我們聯繫
-            </p>
-            <Link
-              href="/contact"
-              className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-md hover:shadow-lg"
-            >
-              立即聯繫
-            </Link>
-          </div>
-        </div>
-      </div>
+          <motion.div variants={staggerItem}>
+            <NextMarketScheduleCard />
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </section>
   )
 }
