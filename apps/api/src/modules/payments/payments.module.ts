@@ -15,6 +15,7 @@ import {
   PaymentCallbackService,
   PaymentQueryService,
   PaymentAdminService,
+  PaymentRefundService,
 } from './services';
 
 @Module({
@@ -27,6 +28,7 @@ import {
     PaymentCallbackService,
     PaymentQueryService,
     PaymentAdminService,
+    PaymentRefundService,
     // Facade 服務
     PaymentsService,
   ],

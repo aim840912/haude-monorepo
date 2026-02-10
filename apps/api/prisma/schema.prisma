@@ -43,6 +43,7 @@ model User {
   notifications       Notification[]
   pointTransactions   PointTransaction[]
   levelHistory        MemberLevelHistory[]
+  operatedRefunds     Refund[]             @relation("refundOperator")
 
   @@index([memberLevel])
   @@map("users")
@@ -355,6 +356,7 @@ model Order {
   user              User               @relation(fields: [userId], references: [id])
   items             OrderItem[]
   payments          Payment[]
+  refunds           Refund[]
   discountUsage     DiscountUsage?
   pointTransactions PointTransaction[]
 
@@ -410,8 +412,9 @@ model Payment {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // 關聯
-  order Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  logs  PaymentLog[]
+  order   Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  logs    PaymentLog[]
+  refunds Refund[]
 
   @@index([orderId])
   @@index([status])
@@ -435,6 +438,48 @@ model PaymentLog {
   @@index([merchantOrderNo])
   @@index([paymentId])
   @@map("payment_logs")
+}
+
+// ========================================
+// Refunds 模組（退款管理）
+// ========================================
+
+enum RefundType {
+  FULL    // 全額退款
+  PARTIAL // 部分退款
+}
+
+enum RefundStatus {
+  pending    // 待處理
+  processing // 處理中（已送出 ECPay 請求或待人工處理）
+  completed  // 已完成
+  failed     // 失敗
+}
+
+model Refund {
+  id            String       @id @default(uuid())
+  paymentId     String       @map("payment_id")
+  orderId       String       @map("order_id")
+  operatorId    String       @map("operator_id") // 操作管理員
+  type          RefundType // 全額/部分
+  status        RefundStatus @default(pending)
+  amount        Int // 退款金額（整數，單位：元）
+  reason        String? // 退款原因
+  ecpayResponse Json?        @map("ecpay_response") // ECPay 回應資料
+  failReason    String?      @map("fail_reason") // 失敗原因
+  completedAt   DateTime?    @map("completed_at") // 完成時間
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  // 關聯
+  payment  Payment @relation(fields: [paymentId], references: [id])
+  order    Order   @relation(fields: [orderId], references: [id])
+  operator User    @relation("refundOperator", fields: [operatorId], references: [id])
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([status])
+  @@map("refunds")
 }
 
 // ========================================

@@ -10,6 +10,7 @@ import { getPasswordResetTemplate } from './templates/password-reset.template';
 import { getOrderConfirmationTemplate } from './templates/order-confirmation.template';
 import { getPaymentSuccessTemplate } from './templates/payment-success.template';
 import { getShippingNotificationTemplate } from './templates/shipping-notification.template';
+import { getRefundNotificationTemplate } from './templates/refund-notification.template';
 
 @Injectable()
 export class EmailService {
@@ -101,6 +102,29 @@ export class EmailService {
         userName,
       }),
       logMessage: '發貨通知郵件',
+    });
+  }
+
+  /**
+   * 發送退款通知郵件
+   */
+  async sendRefundNotificationEmail(
+    to: string,
+    orderNumber: string,
+    refundAmount: number,
+    paymentType: string,
+    userName?: string,
+  ): Promise<boolean> {
+    return this.sendEmail({
+      to,
+      subject: `退款通知 #${orderNumber} - 豪德製茶所`,
+      html: getRefundNotificationTemplate({
+        orderNumber,
+        refundAmount,
+        paymentType,
+        userName,
+      }),
+      logMessage: '退款通知郵件',
     });
   }
 

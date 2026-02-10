@@ -5,3 +5,4 @@ export type { PaymentFormData } from './create-payment.service';
 export { PaymentCallbackService } from './payment-callback.service';
 export { PaymentQueryService } from './payment-query.service';
 export { PaymentAdminService } from './payment-admin.service';
+export { PaymentRefundService } from './payment-refund.service';

@@ -7,6 +7,7 @@ import {
   PaymentCallbackService,
   PaymentQueryService,
   PaymentAdminService,
+  PaymentRefundService,
   PaymentFormData,
 } from './services';
 
@@ -22,6 +23,7 @@ import {
  * - PaymentCallbackService: 處理綠界回調
  * - PaymentQueryService: 查詢付款狀態
  * - PaymentAdminService: 管理員 API
+ * - PaymentRefundService: 退款處理
  */
 @Injectable()
 export class PaymentsService {
@@ -31,6 +33,7 @@ export class PaymentsService {
     private readonly callbackService: PaymentCallbackService,
     private readonly queryService: PaymentQueryService,
     private readonly adminService: PaymentAdminService,
+    private readonly refundService: PaymentRefundService,
   ) {}
 
   // ========================================
@@ -128,6 +131,47 @@ export class PaymentsService {
    */
   async getPaymentStats() {
     return this.adminService.getPaymentStats();
+  }
+
+  // ========================================
+  // 退款
+  // ========================================
+
+  /**
+   * 執行退款（管理員）
+   */
+  async processRefund(
+    paymentId: string,
+    operatorId: string,
+    type: 'FULL' | 'PARTIAL',
+    amount?: number,
+    reason?: string,
+  ) {
+    return this.refundService.processRefund(
+      paymentId,
+      operatorId,
+      type,
+      amount,
+      reason,
+    );
+  }
+
+  /**
+   * 確認人工退款（管理員）
+   */
+  async confirmManualRefund(
+    refundId: string,
+    operatorId: string,
+    notes?: string,
+  ) {
+    return this.refundService.confirmManualRefund(refundId, operatorId, notes);
+  }
+
+  /**
+   * 查詢付款的退款記錄（管理員）
+   */
+  async getRefundsByPayment(paymentId: string) {
+    return this.refundService.getRefundsByPayment(paymentId);
   }
 }
 

@@ -25,3 +25,7 @@ export type { PaymentSuccessTemplateData } from './payment-success.template';
 // Shipping notification template
 export { getShippingNotificationTemplate } from './shipping-notification.template';
 export type { ShippingNotificationTemplateData } from './shipping-notification.template';
+
+// Refund notification template
+export { getRefundNotificationTemplate } from './refund-notification.template';
+export type { RefundNotificationTemplateData } from './refund-notification.template';

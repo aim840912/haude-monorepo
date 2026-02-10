@@ -106,15 +106,22 @@ export class PaymentAdminService {
       paidPayments,
       pendingPayments,
       failedPayments,
+      refundedPayments,
       totalAmount,
+      totalRefunded,
       verificationFailures,
     ] = await Promise.all([
       this.prisma.payment.count(),
       this.prisma.payment.count({ where: { status: 'paid' } }),
       this.prisma.payment.count({ where: { status: 'pending' } }),
       this.prisma.payment.count({ where: { status: 'failed' } }),
+      this.prisma.payment.count({ where: { status: 'refunded' } }),
       this.prisma.payment.aggregate({
         where: { status: 'paid' },
+        _sum: { amount: true },
+      }),
+      this.prisma.refund.aggregate({
+        where: { status: 'completed' },
         _sum: { amount: true },
       }),
       this.prisma.paymentLog.count({ where: { verified: false } }),
@@ -125,7 +132,9 @@ export class PaymentAdminService {
       paidPayments,
       pendingPayments,
       failedPayments,
+      refundedPayments,
       totalAmount: totalAmount._sum.amount || 0,
+      totalRefunded: totalRefunded._sum.amount || 0,
       verificationFailures,
     };
   }

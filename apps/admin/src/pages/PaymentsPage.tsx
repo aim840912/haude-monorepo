@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   DollarSign,
   FileText,
+  RotateCcw,
 } from 'lucide-react'
 import {
   usePayments,
@@ -16,6 +17,7 @@ import {
   usePaymentStats,
   type Payment,
 } from '../hooks/usePayments'
+import { RefundModal } from '../components/RefundModal'
 
 const statusLabels: Record<Payment['status'], string> = {
   pending: '待付款',
@@ -46,6 +48,7 @@ const logTypeColors: Record<string, string> = {
 export function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'payments' | 'logs'>('payments')
+  const [refundPayment, setRefundPayment] = useState<Payment | null>(null)
 
   const {
     payments,
@@ -109,7 +112,7 @@ export function PaymentsPage() {
 
       {/* 統計卡片 */}
       {!statsLoading && stats && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
           <StatCard
             icon={CreditCard}
             label="總付款數"
@@ -135,10 +138,22 @@ export function PaymentsPage() {
             color="red"
           />
           <StatCard
+            icon={RotateCcw}
+            label="已退款"
+            value={stats.refundedPayments}
+            color="gray"
+          />
+          <StatCard
             icon={DollarSign}
             label="總金額"
             value={`NT$ ${stats.totalAmount.toLocaleString()}`}
             color="purple"
+          />
+          <StatCard
+            icon={DollarSign}
+            label="退款總額"
+            value={`NT$ ${stats.totalRefunded.toLocaleString()}`}
+            color="gray"
           />
           <StatCard
             icon={AlertTriangle}
@@ -240,6 +255,9 @@ export function PaymentsPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       建立時間
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      操作
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -281,6 +299,17 @@ export function PaymentsPage() {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-gray-500 text-sm">
                         {new Date(payment.createdAt).toLocaleString('zh-TW')}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {payment.status === 'paid' && (
+                          <button
+                            onClick={() => setRefundPayment(payment)}
+                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            退款
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -396,6 +425,18 @@ export function PaymentsPage() {
         {activeTab === 'payments' ? '付款記錄' : '回調日誌'}
         {searchQuery && ` (搜尋結果)`}
       </div>
+
+      {/* 退款 Modal */}
+      {refundPayment && (
+        <RefundModal
+          payment={refundPayment}
+          onClose={() => setRefundPayment(null)}
+          onSuccess={() => {
+            setRefundPayment(null)
+            handleRefresh()
+          }}
+        />
+      )}
     </div>
   )
 }

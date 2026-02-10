@@ -28,7 +28,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto } from './dto';
+import { CreatePaymentDto, RefundPaymentDto, ConfirmManualRefundDto } from './dto';
 import { ConfigService } from '@nestjs/config';
 
 interface AuthenticatedRequest extends Request {
@@ -239,5 +239,52 @@ export class AdminPaymentsController {
   @ApiResponse({ status: 403, description: '權限不足' })
   getPaymentStats() {
     return this.paymentsService.getPaymentStats();
+  }
+
+  // ========================================
+  // 退款端點
+  // ========================================
+
+  @Post('refund')
+  @ApiOperation({ summary: '執行退款（管理員）' })
+  @ApiResponse({ status: 201, description: '退款已處理' })
+  @ApiResponse({ status: 400, description: '退款條件不符' })
+  @ApiResponse({ status: 404, description: '付款記錄不存在' })
+  processRefund(
+    @Body() dto: RefundPaymentDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.paymentsService.processRefund(
+      dto.paymentId,
+      req.user.userId,
+      dto.type,
+      dto.amount,
+      dto.reason,
+    );
+  }
+
+  @Post('refund/:id/confirm')
+  @ApiOperation({ summary: '確認人工退款（ATM/CVS）' })
+  @ApiResponse({ status: 200, description: '退款已確認' })
+  @ApiResponse({ status: 400, description: '退款狀態不允許確認' })
+  @ApiResponse({ status: 404, description: '退款記錄不存在' })
+  confirmManualRefund(
+    @Param('id') refundId: string,
+    @Body() dto: ConfirmManualRefundDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.paymentsService.confirmManualRefund(
+      refundId,
+      req.user.userId,
+      dto.notes,
+    );
+  }
+
+  @Get(':paymentId/refunds')
+  @ApiOperation({ summary: '查詢退款記錄' })
+  @ApiResponse({ status: 200, description: '成功取得退款記錄' })
+  @ApiResponse({ status: 404, description: '付款記錄不存在' })
+  getRefundsByPayment(@Param('paymentId') paymentId: string) {
+    return this.paymentsService.getRefundsByPayment(paymentId);
   }
 }

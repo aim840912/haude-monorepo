@@ -32,7 +32,9 @@ export interface PaymentStats {
   paidPayments: number
   pendingPayments: number
   failedPayments: number
+  refundedPayments: number
   totalAmount: number
+  totalRefunded: number
   verificationFailures: number
 }
 

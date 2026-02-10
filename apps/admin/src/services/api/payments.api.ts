@@ -9,4 +9,15 @@ export const paymentsApi = {
   getLogs: (limit = 50, offset = 0) =>
     api.get(`/admin/payments/logs?limit=${limit}&offset=${offset}`),
   getStats: () => api.get('/admin/payments/stats'),
+  // 退款
+  processRefund: (data: {
+    paymentId: string
+    type: 'FULL' | 'PARTIAL'
+    amount?: number
+    reason?: string
+  }) => api.post('/admin/payments/refund', data),
+  confirmManualRefund: (refundId: string, notes?: string) =>
+    api.post(`/admin/payments/refund/${refundId}/confirm`, { notes }),
+  getRefunds: (paymentId: string) =>
+    api.get(`/admin/payments/${paymentId}/refunds`),
 }
