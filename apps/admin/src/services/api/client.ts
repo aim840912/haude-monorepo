@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '../../stores/authStore'
 
 // API 版本集中管理：升級版本時只需修改此處
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
@@ -32,13 +33,20 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Prevent multiple concurrent 401s from triggering repeated redirects
+let isRedirectingToLogin = false
+
 // Response interceptor - 處理錯誤
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('admin-token')
+    if (error.response?.status === 401 && !isRedirectingToLogin) {
+      isRedirectingToLogin = true
+
+      // Sync clear Zustand auth store (persists cleared state to localStorage)
+      useAuthStore.getState().logout()
       localStorage.removeItem('admin-csrf-token')
+
       window.location.href = '/login'
     }
     return Promise.reject(error)
