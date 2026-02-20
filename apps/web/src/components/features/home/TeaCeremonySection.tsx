@@ -59,20 +59,23 @@ function Teacup({ fillHeight }: { fillHeight: MotionValue<string> }) {
   )
 }
 
-// ===== 子元件：蒸氣 =====
+// ===== 子元件：蒸氣（多層煙霧 PNG 疊加） =====
 function SteamLines() {
-  const lines = [
-    { w: 'w-3.5', h: 'h-16 md:h-24', delay: '0s' },
-    { w: 'w-4', h: 'h-24 md:h-28', delay: '0.5s' },
-    { w: 'w-3.5', h: 'h-14 md:h-20', delay: '1s' },
+  const layers = [
+    { width: 'w-32 md:w-40', opacity: 'opacity-40', duration: '4.5s', delay: '0s' },
+    { width: 'w-24 md:w-32', opacity: 'opacity-30', duration: '5.5s', delay: '1.2s' },
+    { width: 'w-20 md:w-28', opacity: 'opacity-25', duration: '3.8s', delay: '0.6s' },
   ]
   return (
-    <div className="flex gap-4 justify-center">
-      {lines.map((line, i) => (
-        <div
+    <div className="relative flex justify-center h-24 md:h-32">
+      {layers.map((layer, i) => (
+        <img
           key={i}
-          className={`${line.w} ${line.h} bg-[#a1887f]/30 rounded-full blur-[4px] animate-float`}
-          style={{ animationDelay: line.delay, animationDuration: '2s' }}
+          src="/images/smoke.svg"
+          alt=""
+          aria-hidden="true"
+          className={`absolute bottom-0 ${layer.width} ${layer.opacity} animate-smoke-rise`}
+          style={{ animationDuration: layer.duration, animationDelay: layer.delay }}
         />
       ))}
     </div>

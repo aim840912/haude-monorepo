@@ -880,6 +880,30 @@ body {
   animation: float-tea-leaf 6s ease-in-out infinite;
 }
 
+/* 煙霧上升動畫 — 向上飄 + 微擺 + 淡出 + 放大 */
+@keyframes smoke-rise {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translateY(-15px) translateX(4px) scale(1.05);
+    opacity: 0.7;
+  }
+  70% {
+    transform: translateY(-30px) translateX(-3px) scale(1.12);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-50px) translateX(2px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-smoke-rise {
+  animation: smoke-rise 4s ease-out infinite;
+}
+
 /* 金色光暈效果 - 用於重點元素 */
 @keyframes gold-glow {
   0%,
@@ -985,6 +1009,10 @@ body {
   }
 
   .animate-float {
+    animation: none;
+  }
+
+  .animate-smoke-rise {
     animation: none;
   }
 
