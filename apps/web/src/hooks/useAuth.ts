@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import {
   useAuthStore,
   type User,
-  setRememberMe,
   clearAllAuthStorage,
 } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
@@ -19,22 +18,22 @@ interface UseAuthReturn {
 }
 
 export function useAuth(): UseAuthReturn {
-  const { user, token, isAuthenticated, setAuth, logout: storeLogout } = useAuthStore()
+  const { user, isAuthenticated, setAuth, logout: storeLogout } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const hasInitializedRef = useRef(false)
 
-  // 初始化時檢查 token 是否有效（使用 ref 確保只執行一次）
+  // Validate session on mount (httpOnly cookie sent automatically)
   useEffect(() => {
     if (hasInitializedRef.current) return
     hasInitializedRef.current = true
 
     const checkAuth = async () => {
-      if (token) {
+      if (isAuthenticated) {
         try {
           const data = await authService.getMe()
           if (data.user) {
-            setAuth(data.user, token)
+            setAuth(data.user)
           }
         } catch {
           storeLogout()
@@ -43,19 +42,16 @@ export function useAuth(): UseAuthReturn {
       setIsLoading(false)
     }
     checkAuth()
-  }, [token, setAuth, storeLogout])
+  }, [isAuthenticated, setAuth, storeLogout])
 
-  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+  const login = async (email: string, password: string, _rememberMe: boolean = false) => {
     setError(null)
     setIsLoading(true)
     try {
-      // 1. 設定「記住我」偏好（必須在 setAuth 之前設定）
-      setRememberMe(rememberMe)
-      // 2. 執行登入
+      // Login — tokens are in httpOnly cookies, response has { user, csrfToken }
       const data = await authService.login(email, password)
-      // 3. 儲存認證狀態（dynamicStorage 會根據 rememberMe 選擇 storage）
-      setAuth(data.user, data.accessToken, data.csrfToken)
-      // 4. 合併本地購物車到後端（訪客加入的商品會保留）
+      setAuth(data.user, data.csrfToken)
+      // Merge local cart to backend (guest items are preserved)
       await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
       const message = err instanceof Error ? err.message : '登入失敗'
@@ -71,8 +67,8 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(true)
     try {
       const data = await authService.register(email, password, name)
-      setAuth(data.user, data.accessToken, data.csrfToken)
-      // 合併本地購物車到後端（訪客加入的商品會保留）
+      setAuth(data.user, data.csrfToken)
+      // Merge local cart to backend (guest items are preserved)
       await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
       const message = err instanceof Error ? err.message : '註冊失敗'
@@ -84,9 +80,9 @@ export function useAuth(): UseAuthReturn {
   }
 
   const logout = () => {
-    clearAllAuthStorage() // 清除所有 storage
-    localStorage.removeItem('cart-storage') // 清除本地購物車
-    useCartStore.setState({ items: [] }) // 重置購物車狀態
+    clearAllAuthStorage() // Clear all storage
+    localStorage.removeItem('cart-storage') // Clear local cart
+    useCartStore.setState({ items: [] }) // Reset cart state
     storeLogout()
   }
 

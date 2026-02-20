@@ -40,7 +40,8 @@ function getAuthErrorMessage(error: unknown, defaultMessage: string): string {
  */
 export const realAuthService: AuthServiceInterface = {
   /**
-   * 登入
+   * Login — tokens are set via httpOnly cookies by the server
+   * Response body only contains { user, csrfToken }
    */
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
@@ -52,7 +53,8 @@ export const realAuthService: AuthServiceInterface = {
   },
 
   /**
-   * 註冊
+   * Register — tokens are set via httpOnly cookies by the server
+   * Response body only contains { user, csrfToken }
    */
   async register(email: string, password: string, name: string): Promise<AuthResponse> {
     try {
@@ -64,7 +66,7 @@ export const realAuthService: AuthServiceInterface = {
   },
 
   /**
-   * 驗證 Token / 取得當前用戶
+   * Verify session / get current user (httpOnly cookie sent automatically)
    */
   async getMe(): Promise<GetMeResponse> {
     const { data } = await api.get<GetMeResponse>('/auth/me')

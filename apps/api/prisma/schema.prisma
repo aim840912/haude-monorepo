@@ -38,6 +38,7 @@ model User {
   farmTourBookings    FarmTourBooking[]
   cart                Cart?
   passwordResetTokens PasswordResetToken[]
+  refreshTokens       RefreshToken[]
   discountUsages      DiscountUsage[]
   reviews             Review[]
   notifications       Notification[]
@@ -64,6 +65,23 @@ model PasswordResetToken {
   @@index([token])
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+// Refresh Token（httpOnly cookie 認證）
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // 關聯
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }
 
 enum Role {

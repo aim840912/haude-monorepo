@@ -1,10 +1,9 @@
 /**
- * 認證 Store 單元測試
+ * Auth Store unit tests
  *
- * 測試功能：
- * - 登入/登出
- * - 「記住我」功能
- * - Storage 策略（localStorage vs sessionStorage）
+ * Test features:
+ * - Login/logout
+ * - Auth state management (tokens in httpOnly cookies, only user+csrfToken in store)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -20,8 +19,6 @@ vi.mock('./cartStore', () => ({
 import {
   useAuthStore,
   isAuthenticated,
-  getRememberMe,
-  setRememberMe,
   clearAllAuthStorage,
   type User,
 } from './authStore'
@@ -45,7 +42,6 @@ describe('authStore', () => {
     // Reset store state
     useAuthStore.setState({
       user: null,
-      token: null,
       csrfToken: null,
       isAuthenticated: false,
     })
@@ -90,31 +86,28 @@ describe('authStore', () => {
   })
 
   // ========================================
-  // 基本認證功能
+  // Basic auth functionality
   // ========================================
 
   describe('基本認證功能', () => {
     it('應該設定認證狀態', () => {
       const user = createMockUser()
-      const token = 'jwt-token-123'
 
       act(() => {
-        useAuthStore.getState().setAuth(user, token)
+        useAuthStore.getState().setAuth(user)
       })
 
       const state = useAuthStore.getState()
       expect(state.user).toEqual(user)
-      expect(state.token).toBe(token)
       expect(state.isAuthenticated).toBe(true)
     })
 
     it('應該設定 CSRF Token', () => {
       const user = createMockUser()
-      const token = 'jwt-token-123'
       const csrfToken = 'csrf-token-456'
 
       act(() => {
-        useAuthStore.getState().setAuth(user, token, csrfToken)
+        useAuthStore.getState().setAuth(user, csrfToken)
       })
 
       expect(useAuthStore.getState().csrfToken).toBe(csrfToken)
@@ -131,13 +124,12 @@ describe('authStore', () => {
     it('應該登出並清除狀態', () => {
       const user = createMockUser()
       act(() => {
-        useAuthStore.getState().setAuth(user, 'token', 'csrf')
+        useAuthStore.getState().setAuth(user, 'csrf')
         useAuthStore.getState().logout()
       })
 
       const state = useAuthStore.getState()
       expect(state.user).toBeNull()
-      expect(state.token).toBeNull()
       expect(state.csrfToken).toBeNull()
       expect(state.isAuthenticated).toBe(false)
     })
@@ -145,7 +137,7 @@ describe('authStore', () => {
     it('登出時應該清除購物車', () => {
       const user = createMockUser()
       act(() => {
-        useAuthStore.getState().setAuth(user, 'token')
+        useAuthStore.getState().setAuth(user)
         useAuthStore.getState().logout()
       })
 
@@ -155,66 +147,33 @@ describe('authStore', () => {
   })
 
   // ========================================
-  // 「記住我」功能
-  // ========================================
-
-  describe('「記住我」功能', () => {
-    it('應該設定「記住我」為 true', () => {
-      setRememberMe(true)
-
-      expect(window.localStorage.setItem).toHaveBeenCalledWith(
-        'auth-remember-me',
-        'true'
-      )
-    })
-
-    it('應該設定「記住我」為 false', () => {
-      setRememberMe(false)
-
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith(
-        'auth-remember-me'
-      )
-    })
-
-    it('應該讀取「記住我」狀態', () => {
-      localStorageMock['auth-remember-me'] = 'true'
-
-      expect(getRememberMe()).toBe(true)
-    })
-
-    it('沒有設定時應該返回 false', () => {
-      expect(getRememberMe()).toBe(false)
-    })
-  })
-
-  // ========================================
-  // isAuthenticated 函數
+  // isAuthenticated function
   // ========================================
 
   describe('isAuthenticated 函數', () => {
-    it('localStorage 有 token 時應該返回 true', () => {
+    it('localStorage 有 user 時應該返回 true', () => {
       localStorageMock['auth-storage'] = JSON.stringify({
-        state: { token: 'jwt-token' },
+        state: { user: { id: '1', name: 'Test' } },
       })
 
       expect(isAuthenticated()).toBe(true)
     })
 
-    it('sessionStorage 有 token 時應該返回 true', () => {
+    it('sessionStorage 有 user 時應該返回 true', () => {
       sessionStorageMock['auth-storage'] = JSON.stringify({
-        state: { token: 'jwt-token' },
+        state: { user: { id: '1', name: 'Test' } },
       })
 
       expect(isAuthenticated()).toBe(true)
     })
 
-    it('沒有 token 時應該返回 false', () => {
+    it('沒有 user 時應該返回 false', () => {
       expect(isAuthenticated()).toBe(false)
     })
 
-    it('token 為空時應該返回 false', () => {
+    it('user 為 null 時應該返回 false', () => {
       localStorageMock['auth-storage'] = JSON.stringify({
-        state: { token: null },
+        state: { user: null },
       })
 
       expect(isAuthenticated()).toBe(false)
@@ -228,7 +187,7 @@ describe('authStore', () => {
   })
 
   // ========================================
-  // clearAllAuthStorage 函數
+  // clearAllAuthStorage function
   // ========================================
 
   describe('clearAllAuthStorage 函數', () => {
@@ -237,12 +196,11 @@ describe('authStore', () => {
 
       expect(window.localStorage.removeItem).toHaveBeenCalledWith('auth-storage')
       expect(window.sessionStorage.removeItem).toHaveBeenCalledWith('auth-storage')
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith('auth-remember-me')
     })
   })
 
   // ========================================
-  // 使用者角色
+  // User roles
   // ========================================
 
   describe('使用者角色', () => {
@@ -250,7 +208,7 @@ describe('authStore', () => {
       const adminUser = createMockUser({ role: 'ADMIN' })
 
       act(() => {
-        useAuthStore.getState().setAuth(adminUser, 'token')
+        useAuthStore.getState().setAuth(adminUser)
       })
 
       expect(useAuthStore.getState().user?.role).toBe('ADMIN')
@@ -265,7 +223,7 @@ describe('authStore', () => {
       })
 
       act(() => {
-        useAuthStore.getState().setAuth(vipUser, 'token')
+        useAuthStore.getState().setAuth(vipUser)
       })
 
       const user = useAuthStore.getState().user

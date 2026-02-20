@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import { ArrowLeft, Crown, Star, Award, Gift, Truck, Percent, ChevronRight } from 'lucide-react'
 import type { MemberLevelInfo, UpgradeProgress, MemberLevelConfig } from '@haude/types'
-import { API_URL } from '@/lib/api-url'
+import { api } from '@/services/api'
 
 // 等級顯示設定
 const levelConfig: Record<string, {
@@ -48,7 +48,7 @@ const levelConfig: Record<string, {
 
 export default function MembershipPage() {
   const router = useRouter()
-  const { user, isAuthenticated, token } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const [levelInfo, setLevelInfo] = useState<MemberLevelInfo | null>(null)
   const [upgradeProgress, setUpgradeProgress] = useState<UpgradeProgress | null>(null)
   const [levelConfigs, setLevelConfigs] = useState<MemberLevelConfig[]>([])
@@ -62,35 +62,23 @@ export default function MembershipPage() {
   }, [isAuthenticated, router])
 
   useEffect(() => {
-    if (!token) return
+    if (!isAuthenticated) return
 
     const fetchMembershipData = async () => {
       setIsLoading(true)
       setError(null)
 
       try {
-        const headers = { Authorization: `Bearer ${token}` }
-
-        // 並行獲取會員資訊
+        // Parallel fetch membership info (httpOnly cookies sent automatically)
         const [levelRes, progressRes, configsRes] = await Promise.all([
-          fetch(`${API_URL}/members/me/level`, { headers }),
-          fetch(`${API_URL}/members/me/upgrade-progress`, { headers }),
-          fetch(`${API_URL}/members/level-configs`, { headers }),
+          api.get<MemberLevelInfo>('/members/me/level'),
+          api.get<UpgradeProgress>('/members/me/upgrade-progress'),
+          api.get<MemberLevelConfig[]>('/members/level-configs'),
         ])
 
-        if (!levelRes.ok || !progressRes.ok || !configsRes.ok) {
-          throw new Error('無法載入會員資訊')
-        }
-
-        const [levelData, progressData, configsData] = await Promise.all([
-          levelRes.json(),
-          progressRes.json(),
-          configsRes.json(),
-        ])
-
-        setLevelInfo(levelData)
-        setUpgradeProgress(progressData)
-        setLevelConfigs(configsData)
+        setLevelInfo(levelRes.data)
+        setUpgradeProgress(progressRes.data)
+        setLevelConfigs(configsRes.data)
       } catch {
         setError('無法載入會員資訊，請稍後再試')
       } finally {
@@ -99,7 +87,7 @@ export default function MembershipPage() {
     }
 
     fetchMembershipData()
-  }, [token])
+  }, [isAuthenticated])
 
   if (!isAuthenticated || !user) {
     return (

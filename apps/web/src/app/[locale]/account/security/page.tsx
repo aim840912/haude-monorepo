@@ -14,7 +14,7 @@ interface UserInfo {
 
 export default function SecurityPage() {
   const router = useRouter()
-  const { user, isAuthenticated, token } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -42,7 +42,7 @@ export default function SecurityPage() {
     }
 
     fetchUserInfo()
-  }, [isAuthenticated, router, token])
+  }, [isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

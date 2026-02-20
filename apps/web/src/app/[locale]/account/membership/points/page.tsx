@@ -15,7 +15,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import type { PointTransactionType } from '@haude/types'
-import { API_URL } from '@/lib/api-url'
+import { api } from '@/services/api'
 
 interface PointsHistoryItem {
   id: string
@@ -84,7 +84,7 @@ const PAGE_SIZE = 20
 
 export default function PointsHistoryPage() {
   const router = useRouter()
-  const { isAuthenticated, token, user } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const [history, setHistory] = useState<PointsHistoryItem[]>([])
   const [currentPoints, setCurrentPoints] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -100,7 +100,7 @@ export default function PointsHistoryPage() {
 
   const fetchHistory = useCallback(
     async (offset = 0, append = false) => {
-      if (!token) return
+      if (!isAuthenticated) return
 
       if (offset === 0) {
         setIsLoading(true)
@@ -110,52 +110,29 @@ export default function PointsHistoryPage() {
       setError(null)
 
       try {
-        const headers = { Authorization: `Bearer ${token}` }
-
-        // 並行獲取積分餘額和歷史
-        const requests =
-          offset === 0
-            ? [
-                fetch(`${API_URL}/members/me/points`, { headers }),
-                fetch(
-                  `${API_URL}/members/me/points/history?limit=${PAGE_SIZE}&offset=${offset}`,
-                  { headers }
-                ),
-              ]
-            : [
-                fetch(
-                  `${API_URL}/members/me/points/history?limit=${PAGE_SIZE}&offset=${offset}`,
-                  { headers }
-                ),
-              ]
-
-        const responses = await Promise.all(requests)
-
-        // 檢查所有回應
-        for (const res of responses) {
-          if (!res.ok) throw new Error('無法載入積分資料')
-        }
-
+        // httpOnly cookie is sent automatically via api instance
         if (offset === 0) {
-          const [balanceRes, historyRes] = responses
-          const [balanceData, historyData]: [
-            { balance: number },
-            PointsHistoryResponse,
-          ] = await Promise.all([balanceRes.json(), historyRes.json()])
+          const [balanceRes, historyRes] = await Promise.all([
+            api.get<{ balance: number }>('/members/me/points'),
+            api.get<PointsHistoryResponse>(
+              `/members/me/points/history?limit=${PAGE_SIZE}&offset=${offset}`
+            ),
+          ])
 
-          setCurrentPoints(balanceData.balance)
-          setHistory(historyData.items)
-          setHasMore(historyData.hasMore)
+          setCurrentPoints(balanceRes.data.balance)
+          setHistory(historyRes.data.items)
+          setHasMore(historyRes.data.hasMore)
         } else {
-          const [historyRes] = responses
-          const historyData: PointsHistoryResponse = await historyRes.json()
+          const historyRes = await api.get<PointsHistoryResponse>(
+            `/members/me/points/history?limit=${PAGE_SIZE}&offset=${offset}`
+          )
 
           if (append) {
-            setHistory((prev) => [...prev, ...historyData.items])
+            setHistory((prev) => [...prev, ...historyRes.data.items])
           } else {
-            setHistory(historyData.items)
+            setHistory(historyRes.data.items)
           }
-          setHasMore(historyData.hasMore)
+          setHasMore(historyRes.data.hasMore)
         }
       } catch {
         setError('無法載入積分歷史，請稍後再試')
@@ -164,14 +141,14 @@ export default function PointsHistoryPage() {
         setIsLoadingMore(false)
       }
     },
-    [token]
+    [isAuthenticated]
   )
 
   useEffect(() => {
-    if (token) {
+    if (isAuthenticated) {
       fetchHistory(0)
     }
-  }, [token, fetchHistory])
+  }, [isAuthenticated, fetchHistory])
 
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore) {
