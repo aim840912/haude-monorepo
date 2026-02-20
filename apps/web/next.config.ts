@@ -30,6 +30,10 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(self)',
   },
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
+  },
 ]
 
 // 快取標頭配置

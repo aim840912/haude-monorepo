@@ -40,6 +40,14 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // CORS - 允許 web 和 admin 前端
+  // Production: 必須設定環境變數，不 fallback 到 localhost
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.FRONTEND_URL || !process.env.ADMIN_URL) {
+      throw new Error(
+        'FRONTEND_URL and ADMIN_URL environment variables are required in production',
+      );
+    }
+  }
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:5173',
     process.env.ADMIN_URL || 'http://localhost:5174',
@@ -73,8 +81,8 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalInterceptors(new CacheHeadersInterceptor(reflector));
 
-  // Swagger API documentation - 只在非生產環境啟用
-  if (process.env.NODE_ENV !== 'production') {
+  // Swagger API documentation - 僅在 development 環境啟用
+  if (process.env.NODE_ENV === 'development') {
     const config = new DocumentBuilder()
       .setTitle('Haude V2 API')
       .setDescription('The Haude V2 API documentation')
@@ -91,7 +99,7 @@ async function bootstrap() {
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 API endpoints: http://localhost:${port}/api/v1`);
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV === 'development') {
     console.log(`📚 Swagger documentation: http://localhost:${port}/docs`);
   }
 }
