@@ -12,7 +12,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Leaf, ArrowRight } from 'lucide-react'
+import { Leaf, ArrowRight, Play } from 'lucide-react'
 import {
   motion,
   useTransform,
@@ -89,8 +89,9 @@ export function TeaCeremonySection() {
   // Client hydration: mounted=false → isReduced=false → matches SSR ✅
   // Post-mount: mounted=true → respects actual user preference
   const [mounted, setMounted] = useState(false)
+  const [forceAnimation, setForceAnimation] = useState(false)
   useEffect(() => setMounted(true), [])
-  const isReduced = mounted && prefersReducedMotion
+  const isReduced = mounted && prefersReducedMotion && !forceAnimation
 
   const { scrollYProgress } = useElementScroll(containerRef, ['start start', 'end end'])
 
@@ -129,7 +130,7 @@ export function TeaCeremonySection() {
   // prefers-reduced-motion：靜態版本
   if (isReduced) {
     return (
-      <section className="py-24 px-6 bg-[#f8f5f0] dark:bg-[#1a120d]">
+      <section ref={containerRef} className="py-24 px-6 bg-[#f8f5f0] dark:bg-[#1a120d]">
         <div className="max-w-4xl mx-auto text-center">
           <Leaf className="w-12 h-12 text-[#5d4037] mx-auto mb-6" />
           <h2 className="text-4xl md:text-5xl font-serif text-[#3e2723] dark:text-[#d7ccc8] mb-4">
@@ -141,6 +142,19 @@ export function TeaCeremonySection() {
           <p className="text-[#5d4037] dark:text-[#bcaaa4] text-lg mb-8">
             每一口都是山林的滋味
           </p>
+          <button
+            onClick={() => {
+              setForceAnimation(true)
+              requestAnimationFrame(() => {
+                containerRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' })
+              })
+            }}
+            className="inline-flex items-center gap-2 text-[#5d4037] hover:text-[#3e2723] border border-[#d4af37]/50 hover:border-[#d4af37] px-6 py-2.5 rounded-full text-base transition-colors mb-4"
+          >
+            <Play className="w-4 h-4" />
+            顯示泡茶動畫
+          </button>
+          <br />
           <Link
             href="/products"
             className="inline-flex items-center text-[#d4af37] hover:text-[#c68a00] text-lg transition-colors"
