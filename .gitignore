@@ -31,6 +31,7 @@ out/
 .env.local
 .env.development
 .env.development.local
+.env.production
 .env.test.local
 .env.production.local
 # Keep example files
