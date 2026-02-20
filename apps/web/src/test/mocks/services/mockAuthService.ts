@@ -2,8 +2,7 @@ import type { AuthServiceInterface, AuthResponse, GetMeResponse } from '@/servic
 import type { User } from '@/stores/authStore'
 
 /**
- * Mock 用戶資料
- * 用於開發和測試環境
+ * Mock user data for development and testing
  */
 const MOCK_USERS: (User & { password: string })[] = [
   {
@@ -24,32 +23,25 @@ const MOCK_USERS: (User & { password: string })[] = [
   },
 ]
 
-// 儲存當前登入的 token 對應的用戶（模擬 session）
-const tokenUserMap = new Map<string, User>()
+// Track logged-in users (simulates session)
+const loggedInUsers = new Set<string>()
 
 /**
- * 模擬網路延遲
+ * Simulate network delay
  */
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
- * 生成 Mock JWT Token
- */
-const generateMockToken = (userId: string): string => {
-  const payload = { userId, exp: Date.now() + 24 * 60 * 60 * 1000 }
-  return `mock-jwt-${btoa(JSON.stringify(payload))}`
-}
-
-/**
  * Mock Auth Service
- * 模擬後端認證 API，用於前端獨立開發
+ * Simulates backend auth API for standalone frontend development
+ * Note: In real app, tokens are in httpOnly cookies. Mock simulates the response format.
  */
 export const mockAuthService: AuthServiceInterface = {
   /**
-   * 模擬登入
+   * Mock login — response matches real API (no accessToken in body)
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    await delay(500) // 模擬網路延遲
+    await delay(500)
 
     const user = MOCK_USERS.find(
       (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
@@ -59,28 +51,23 @@ export const mockAuthService: AuthServiceInterface = {
       throw new Error('帳號或密碼錯誤')
     }
 
-    // 移除密碼後回傳
     const { password: _, ...userWithoutPassword } = user
-    const token = generateMockToken(user.id)
-
-    // 儲存 token 對應的用戶
-    tokenUserMap.set(token, userWithoutPassword)
+    loggedInUsers.add(user.id)
 
     console.log('[Mock Auth] 登入成功:', userWithoutPassword.email)
 
     return {
       user: userWithoutPassword,
-      accessToken: token,
+      csrfToken: `mock-csrf-${Date.now()}`,
     }
   },
 
   /**
-   * 模擬註冊
+   * Mock register — response matches real API (no accessToken in body)
    */
-  async register(email: string, password: string, name: string): Promise<AuthResponse> {
-    await delay(500) // 模擬網路延遲
+  async register(email: string, _password: string, name: string): Promise<AuthResponse> {
+    await delay(500)
 
-    // 檢查 email 是否已存在
     const existingUser = MOCK_USERS.find(
       (u) => u.email.toLowerCase() === email.toLowerCase()
     )
@@ -89,7 +76,6 @@ export const mockAuthService: AuthServiceInterface = {
       throw new Error('此 Email 已被註冊')
     }
 
-    // 建立新用戶
     const newUser: User = {
       id: String(MOCK_USERS.length + 1),
       email,
@@ -98,57 +84,37 @@ export const mockAuthService: AuthServiceInterface = {
       createdAt: new Date().toISOString(),
     }
 
-    // 加入 Mock 用戶列表（包含密碼）
-    MOCK_USERS.push({ ...newUser, password })
-
-    const token = generateMockToken(newUser.id)
-    tokenUserMap.set(token, newUser)
+    MOCK_USERS.push({ ...newUser, password: _password })
+    loggedInUsers.add(newUser.id)
 
     console.log('[Mock Auth] 註冊成功:', newUser.email)
 
     return {
       user: newUser,
-      accessToken: token,
+      csrfToken: `mock-csrf-${Date.now()}`,
     }
   },
 
   /**
-   * 模擬驗證 Token
+   * Mock session check — in real app, httpOnly cookie is sent automatically
    */
   async getMe(): Promise<GetMeResponse> {
-    await delay(200) // 模擬網路延遲
+    await delay(200)
 
-    // 從 localStorage 或 sessionStorage 取得 token（根據「記住我」設定）
+    // In mock mode, check if user exists in auth store
     const authStorage = localStorage.getItem('auth-storage') || sessionStorage.getItem('auth-storage')
     if (!authStorage) {
       throw new Error('未登入')
     }
 
     const { state } = JSON.parse(authStorage)
-    const token = state?.token
+    const user = state?.user
 
-    if (!token) {
+    if (!user) {
       throw new Error('未登入')
     }
 
-    // 檢查 token 是否有效
-    const user = tokenUserMap.get(token)
-    if (!user) {
-      // 嘗試從 token 解析用戶 ID
-      try {
-        const payload = JSON.parse(atob(token.replace('mock-jwt-', '')))
-        const mockUser = MOCK_USERS.find((u) => u.id === payload.userId)
-        if (mockUser) {
-          const { password: _, ...userWithoutPassword } = mockUser
-          tokenUserMap.set(token, userWithoutPassword)
-          return { user: userWithoutPassword }
-        }
-      } catch {
-        // 解析失敗
-      }
-      throw new Error('Token 無效')
-    }
-
+    // Return the stored user (simulates /auth/me endpoint)
     return { user }
   },
 }

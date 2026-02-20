@@ -49,7 +49,7 @@ test.describe('結帳流程', () => {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
             user: { id: '1', email: 'test@example.com', name: 'Test User' },
-            token: 'fake-token',
+            csrfToken: null,
             isAuthenticated: true
           }
         }))
@@ -80,7 +80,7 @@ test.describe('結帳流程', () => {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
             user: { id: '1', email: 'test@example.com', name: 'Test User' },
-            token: 'fake-token',
+            csrfToken: null,
             isAuthenticated: true
           }
         }))
@@ -124,7 +124,7 @@ test.describe('結帳流程', () => {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
             user: { id: '1', email: 'test@example.com', name: 'Test User' },
-            token: 'fake-token',
+            csrfToken: null,
             isAuthenticated: true
           }
         }))
@@ -167,7 +167,7 @@ test.describe('結帳流程', () => {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
             user: { id: '1', email: 'test@example.com', name: 'Test User' },
-            token: 'fake-token',
+            csrfToken: null,
             isAuthenticated: true
           }
         }))
@@ -210,7 +210,7 @@ test.describe('結帳流程', () => {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
             user: { id: '1', email: 'test@example.com', name: 'Test User' },
-            token: 'fake-token',
+            csrfToken: null,
             isAuthenticated: true
           }
         }))

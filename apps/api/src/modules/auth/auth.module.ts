@@ -47,7 +47,7 @@ const googleStrategyProvider = {
         return {
           secret: jwtSecret,
           signOptions: {
-            expiresIn: 604800, // 7 天（秒）
+            expiresIn: 900, // 15 分鐘（秒）
           },
         };
       },

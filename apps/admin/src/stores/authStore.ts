@@ -12,11 +12,10 @@ export interface AdminUser {
 
 interface AuthState {
   user: AdminUser | null
-  token: string | null
   isAuthenticated: boolean
   isAdmin: boolean
   isHydrated: boolean
-  setAuth: (user: AdminUser, token: string) => void
+  setAuth: (user: AdminUser) => void
   logout: () => void
   setHydrated: (value: boolean) => void
 }
@@ -25,25 +24,20 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
       isAdmin: false,
       isHydrated: false,
 
-      setAuth: (user, token) =>
+      setAuth: (user) =>
         set({
           user,
-          token,
           isAuthenticated: true,
           isAdmin: user.role === 'ADMIN',
         }),
 
       logout: () => {
-        // 清除 localStorage
-        localStorage.removeItem('admin-token')
         set({
           user: null,
-          token: null,
           isAuthenticated: false,
           isAdmin: false,
         })

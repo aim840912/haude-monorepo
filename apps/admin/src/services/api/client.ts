@@ -1,7 +1,7 @@
-import axios from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../../stores/authStore'
 
-// API 版本集中管理：升級版本時只需修改此處
+// API version centrally managed: only change here when upgrading
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 const API_VERSION = 'v1'
 const API_URL = `${API_BASE}/api/${API_VERSION}`
@@ -11,19 +11,13 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // 攜帶 Cookie（CSRF 防護所需）
+  withCredentials: true, // Send httpOnly cookies automatically
 })
 
-// Request interceptor - 加入 JWT token 和 CSRF token
+// Request interceptor - attach CSRF token (JWT is in httpOnly cookie)
 api.interceptors.request.use((config) => {
-  // JWT Token
-  const token = localStorage.getItem('admin-token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-
-  // CSRF Token（僅非安全方法需要）
-  const csrfToken = localStorage.getItem('admin-csrf-token')
+  // CSRF Token (only for non-safe methods)
+  const csrfToken = getCsrfToken()
   const method = config.method?.toUpperCase()
   const safeMethods = ['GET', 'HEAD', 'OPTIONS']
   if (csrfToken && method && !safeMethods.includes(method)) {
@@ -33,44 +27,97 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Prevent multiple concurrent 401s from triggering repeated redirects
-let isRedirectingToLogin = false
+// ==================== Token Refresh Queue ====================
 
-// Response interceptor - 處理錯誤
+let isRefreshing = false
+let isRedirectingToLogin = false
+let failedQueue: Array<{
+  resolve: (config: InternalAxiosRequestConfig) => void
+  reject: (error: unknown) => void
+  config: InternalAxiosRequestConfig
+}> = []
+
+function processQueue(error: unknown) {
+  failedQueue.forEach(({ reject }) => reject(error))
+  failedQueue = []
+}
+
+function retryQueue() {
+  failedQueue.forEach(({ resolve, config }) => resolve(config))
+  failedQueue = []
+}
+
+// Response interceptor - refresh token on 401
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401 && !isRedirectingToLogin) {
-      isRedirectingToLogin = true
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const requestUrl = originalRequest?.url || ''
+    const isAuthEndpoint = requestUrl.startsWith('/auth/')
 
-      // Sync clear Zustand auth store (persists cleared state to localStorage)
-      useAuthStore.getState().logout()
-      localStorage.removeItem('admin-csrf-token')
-
-      window.location.href = '/login'
+    if (error.response?.status !== 401 || isAuthEndpoint || originalRequest?._retry) {
+      return Promise.reject(error)
     }
-    return Promise.reject(error)
+
+    // If already refreshing, queue this request
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject, config: originalRequest })
+      }).then((config) => api(config as InternalAxiosRequestConfig))
+    }
+
+    originalRequest._retry = true
+    isRefreshing = true
+
+    try {
+      const { data } = await axios.post(
+        `${API_URL}/auth/refresh`,
+        {},
+        { withCredentials: true }
+      )
+
+      // Update CSRF token
+      if (data.csrfToken) {
+        setCsrfToken(data.csrfToken)
+      }
+
+      retryQueue()
+      return api(originalRequest)
+    } catch {
+      processQueue(error)
+
+      if (!isRedirectingToLogin) {
+        isRedirectingToLogin = true
+        useAuthStore.getState().logout()
+        clearCsrfToken()
+        window.location.href = '/login'
+      }
+
+      return Promise.reject(error)
+    } finally {
+      isRefreshing = false
+    }
   }
 )
 
-// ==================== CSRF Token 存取 ====================
+// ==================== CSRF Token Storage ====================
 
 /**
- * 設定 CSRF Token
+ * Set CSRF Token
  */
 export function setCsrfToken(token: string): void {
   localStorage.setItem('admin-csrf-token', token)
 }
 
 /**
- * 取得 CSRF Token
+ * Get CSRF Token
  */
 export function getCsrfToken(): string | null {
   return localStorage.getItem('admin-csrf-token')
 }
 
 /**
- * 清除 CSRF Token
+ * Clear CSRF Token
  */
 export function clearCsrfToken(): void {
   localStorage.removeItem('admin-csrf-token')

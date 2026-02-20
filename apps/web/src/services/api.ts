@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../stores/authStore'
 import { API_URL } from '@/lib/api-url'
 
@@ -7,20 +7,15 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // 攜帶 Cookie（CSRF 防護所需）
+  withCredentials: true, // Send httpOnly cookies automatically
 })
 
-// Request interceptor - add auth token and CSRF token
+// Request interceptor - attach CSRF token (JWT is in httpOnly cookie, sent automatically)
 api.interceptors.request.use(
   (config) => {
     const state = useAuthStore.getState()
 
-    // JWT Token
-    if (state.token) {
-      config.headers.Authorization = `Bearer ${state.token}`
-    }
-
-    // CSRF Token（僅非安全方法需要）
+    // CSRF Token (only for non-safe methods)
     const method = config.method?.toUpperCase()
     const safeMethods = ['GET', 'HEAD', 'OPTIONS']
     if (state.csrfToken && method && !safeMethods.includes(method)) {
@@ -34,19 +29,77 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor - handle errors
+// ==================== Token Refresh Queue ====================
+// Queues concurrent 401s so only ONE refresh request is made
+
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (config: InternalAxiosRequestConfig) => void
+  reject: (error: unknown) => void
+  config: InternalAxiosRequestConfig
+}> = []
+
+function processQueue(error: unknown) {
+  failedQueue.forEach(({ reject }) => reject(error))
+  failedQueue = []
+}
+
+function retryQueue() {
+  failedQueue.forEach(({ resolve, config }) => resolve(config))
+  failedQueue = []
+}
+
+// Response interceptor - refresh token on 401
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    const requestUrl = error.config?.url || ''
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+
+    // Skip refresh for auth endpoints and already-retried requests
+    const requestUrl = originalRequest?.url || ''
     const isAuthEndpoint = requestUrl.startsWith('/auth/')
 
-    if (error.response?.status === 401 && !isAuthEndpoint) {
-      // Token expired or invalid (排除登入/註冊等認證端點的 401)
+    if (error.response?.status !== 401 || isAuthEndpoint || originalRequest?._retry) {
+      return Promise.reject(error)
+    }
+
+    // If already refreshing, queue this request
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject, config: originalRequest })
+      }).then((config) => api(config as InternalAxiosRequestConfig))
+    }
+
+    originalRequest._retry = true
+    isRefreshing = true
+
+    try {
+      // Attempt to refresh tokens (cookies are sent automatically)
+      const { data } = await axios.post(
+        `${API_URL}/auth/refresh`,
+        {},
+        { withCredentials: true }
+      )
+
+      // Update CSRF token from refresh response
+      if (data.csrfToken) {
+        useAuthStore.getState().setCsrfToken(data.csrfToken)
+      }
+
+      // Retry all queued requests
+      retryQueue()
+
+      // Retry the original request
+      return api(originalRequest)
+    } catch {
+      // Refresh failed — session is dead, force logout
+      processQueue(error)
       useAuthStore.getState().logout()
       window.location.href = '/login'
+      return Promise.reject(error)
+    } finally {
+      isRefreshing = false
     }
-    return Promise.reject(error)
   }
 )
 

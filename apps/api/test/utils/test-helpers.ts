@@ -77,6 +77,22 @@ export function createMockPrismaService() {
       aggregate: jest.fn(),
     },
 
+    // RefreshToken
+    refreshToken: {
+      findUnique: jest.fn(),
+      create: jest.fn().mockResolvedValue({
+        id: 'refresh-token-1',
+        userId: 'user-1',
+        token: 'mock-refresh-token',
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        revokedAt: null,
+        createdAt: new Date(),
+      }),
+      update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+
     // PasswordResetToken
     passwordResetToken: {
       findUnique: jest.fn(),

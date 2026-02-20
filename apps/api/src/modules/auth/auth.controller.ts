@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,11 +40,50 @@ import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly isProd: boolean;
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly csrfService: CsrfService,
-  ) {}
+  ) {
+    this.isProd = configService.get('NODE_ENV') === 'production';
+  }
+
+  // ─── Cookie Helpers ──────────────────────────────────────
+
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+    rememberMe = false,
+  ) {
+    const cookieBase = {
+      httpOnly: true,
+      secure: this.isProd,
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+
+    // Access token cookie — 15 min
+    res.cookie('access_token', accessToken, {
+      ...cookieBase,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    // Refresh token cookie — restricted path, 30d or session
+    res.cookie('refresh_token', refreshToken, {
+      ...cookieBase,
+      path: '/api/v1/auth/refresh',
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined,
+    });
+  }
+
+  private clearAuthCookies(res: Response) {
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/api/v1/auth/refresh' });
+    res.clearCookie('csrf-token', { path: '/' });
+  }
 
   @Post('register')
   @SkipCsrf() // 註冊時尚無 CSRF Token
@@ -68,10 +108,18 @@ export class AuthController {
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.register(registerDto);
+    const { user, accessToken, refreshToken } =
+      await this.authService.register(registerDto);
+
+    // Set httpOnly auth cookies
+    this.setAuthCookies(res, accessToken, refreshToken);
+
+    // CSRF cookie (readable by JS)
     const csrfToken = this.csrfService.generateToken();
     res.cookie('csrf-token', csrfToken, this.csrfService.getCookieOptions());
-    return { ...result, csrfToken };
+
+    // Body only contains user (tokens are in cookies)
+    return { user, csrfToken };
   }
 
   @Post('login')
@@ -97,10 +145,18 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(loginDto);
+    const { user, accessToken, refreshToken } =
+      await this.authService.login(loginDto);
+
+    // Set httpOnly auth cookies
+    this.setAuthCookies(res, accessToken, refreshToken, loginDto.rememberMe);
+
+    // CSRF cookie (readable by JS)
     const csrfToken = this.csrfService.generateToken();
     res.cookie('csrf-token', csrfToken, this.csrfService.getCookieOptions());
-    return { ...result, csrfToken };
+
+    // Body only contains user (tokens are in cookies)
+    return { user, csrfToken };
   }
 
   @Get('me')
@@ -130,9 +186,16 @@ export class AuthController {
     description: 'Logout successful.',
     type: MessageResponseDto,
   })
-  logout(@Res({ passthrough: true }) res: Response) {
-    // 清除 CSRF Cookie
-    res.clearCookie('csrf-token', { path: '/' });
+  async logout(
+    @Request() req: { user: { userId: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Revoke all refresh tokens for this user
+    await this.authService.revokeAllUserTokens(req.user.userId);
+
+    // Clear all auth cookies (access_token, refresh_token, csrf-token)
+    this.clearAuthCookies(res);
+
     return { message: 'Logged out successfully' };
   }
 
@@ -234,7 +297,7 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiExcludeEndpoint() // 不在 Swagger 中顯示
-  googleAuthCallback(
+  async googleAuthCallback(
     @Request()
     req: ExpressRequest & {
       user: {
@@ -251,10 +314,14 @@ export class AuthController {
     // 從 user 物件取得 oauthState（由 GoogleStrategy 附加）
     const { oauthState, ...userData } = req.user;
 
-    // Google OAuth 回調處理
-    const { user, accessToken } = this.authService.googleLogin(userData);
+    // Google OAuth — now returns token pair
+    const { user, accessToken, refreshToken } =
+      await this.authService.googleLogin(userData);
 
-    // 設定 CSRF Cookie
+    // Set httpOnly auth cookies
+    this.setAuthCookies(res, accessToken, refreshToken);
+
+    // CSRF cookie (readable by JS)
     const csrfToken = this.csrfService.generateToken();
     res.cookie('csrf-token', csrfToken, this.csrfService.getCookieOptions());
 
@@ -264,25 +331,67 @@ export class AuthController {
         this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';
 
       if (user.role !== 'ADMIN') {
-        // 非管理員，重導向到錯誤頁面，清除 CSRF Cookie
-        res.clearCookie('csrf-token', { path: '/' });
+        // 非管理員，清除所有 auth cookies 並重導向到錯誤頁面
+        this.clearAuthCookies(res);
         res.redirect(
           `${adminUrl}/auth/callback#error=${encodeURIComponent('您沒有管理員權限')}`,
         );
         return;
       }
 
-      const redirectUrl = `${adminUrl}/auth/callback#token=${accessToken}&user=${encodeURIComponent(JSON.stringify(user))}&csrfToken=${csrfToken}`;
-      res.redirect(redirectUrl);
+      // Redirect with user info only (tokens are in httpOnly cookies)
+      res.redirect(
+        `${adminUrl}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}&csrfToken=${csrfToken}`,
+      );
       return;
     }
 
-    // Web 登入（預設）
+    // Web 登入（預設）— tokens in cookies, only user info in URL
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-    const redirectUrl = `${frontendUrl}/auth/callback#token=${accessToken}&user=${encodeURIComponent(JSON.stringify(user))}&csrfToken=${csrfToken}`;
+    res.redirect(
+      `${frontendUrl}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}&csrfToken=${csrfToken}`,
+    );
+  }
 
-    res.redirect(redirectUrl);
+  // ========================================
+  // Token Refresh 端點
+  // ========================================
+
+  @Post('refresh')
+  @SkipCsrf() // Token refresh does not require CSRF validation
+  @Throttle({ short: { limit: 10, ttl: 60000 } }) // Max 10 refresh per minute
+  @ApiOperation({ summary: 'Refresh access token using refresh token cookie' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token.',
+    type: ErrorResponseDto,
+  })
+  async refresh(
+    @Request() req: ExpressRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token provided');
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.authService.refreshAccessToken(refreshToken);
+
+    // Set new httpOnly auth cookies
+    this.setAuthCookies(res, accessToken, newRefreshToken);
+
+    // New CSRF token
+    const csrfToken = this.csrfService.generateToken();
+    res.cookie('csrf-token', csrfToken, this.csrfService.getCookieOptions());
+
+    return { csrfToken };
   }
 
   // ========================================

@@ -5,10 +5,10 @@ import { setCsrfToken } from '../services/api'
 import logger from '../lib/logger'
 
 /**
- * Google OAuth 回調頁面
- * 處理從後端重導向回來的 token 和用戶資訊
- * URL 格式: /auth/callback#token=xxx&user=xxx&csrfToken=xxx
- * 或錯誤: /auth/callback#error=xxx
+ * Google OAuth callback page
+ * Processes user info from server redirect — tokens are in httpOnly cookies
+ * URL format: /auth/callback#user=xxx&csrfToken=xxx
+ * Or error: /auth/callback#error=xxx
  */
 export function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -19,44 +19,40 @@ export function AuthCallbackPage() {
   useEffect(() => {
     const processCallback = async () => {
       try {
-        // 從 URL fragment 取得參數
-        const hash = window.location.hash.substring(1) // 移除 #
+        // Read parameters from URL fragment
+        const hash = window.location.hash.substring(1) // Remove #
         const params = new URLSearchParams(hash)
 
-        // 檢查是否有錯誤
+        // Check for errors
         const errorMsg = params.get('error')
         if (errorMsg) {
           throw new Error(decodeURIComponent(errorMsg))
         }
 
-        const token = params.get('token')
         const userJson = params.get('user')
         const csrfTokenValue = params.get('csrfToken')
 
-        if (!token || !userJson) {
+        if (!userJson) {
           throw new Error('缺少認證資訊')
         }
 
-        // 解析用戶資訊
+        // Parse user info
         const user = JSON.parse(decodeURIComponent(userJson))
 
-        // 再次確認是 ADMIN 角色（雙重驗證）
+        // Double-check ADMIN role (belt-and-suspenders)
         if (user.role !== 'ADMIN') {
           throw new Error('您沒有管理員權限')
         }
 
-        // 儲存到 authStore
-        setAuth(user, token)
+        // Save to authStore (tokens already in httpOnly cookies)
+        setAuth(user)
 
-        // 同時儲存 token 到 localStorage（供 API 攔截器使用）
-        localStorage.setItem('admin-token', token)
-
-        // 儲存 CSRF Token（CSRF 防護所需）
+        // Store CSRF Token (needed for CSRF protection)
         if (csrfTokenValue) {
           setCsrfToken(csrfTokenValue)
         }
 
-        // 導向到首頁
+        // Navigate to home
         navigate('/')
       } catch (err) {
         logger.error('Google 登入處理失敗', { error: err })

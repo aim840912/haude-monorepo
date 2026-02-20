@@ -35,6 +35,8 @@ describe('AuthController', () => {
     verifyResetToken: jest.fn(),
     setPassword: jest.fn(),
     googleLogin: jest.fn(),
+    revokeAllUserTokens: jest.fn().mockResolvedValue(undefined),
+    refreshAccessToken: jest.fn(),
   };
 
   // Mock ConfigService
@@ -192,10 +194,20 @@ describe('AuthController', () => {
   // ========================================
 
   describe('logout', () => {
-    it('應清除 CSRF Cookie 並回傳成功訊息', () => {
-      const result = controller.logout(mockResponse);
+    it('應撤銷 refresh tokens、清除所有 auth cookies 並回傳成功訊息', async () => {
+      const mockReq = { user: { userId: 'user-1' } };
+      const result = await controller.logout(mockReq, mockResponse);
 
       expect(result).toEqual({ message: 'Logged out successfully' });
+      expect(mockAuthService.revokeAllUserTokens).toHaveBeenCalledWith(
+        'user-1',
+      );
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('access_token', {
+        path: '/',
+      });
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh_token', {
+        path: '/api/v1/auth/refresh',
+      });
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('csrf-token', {
         path: '/',
       });

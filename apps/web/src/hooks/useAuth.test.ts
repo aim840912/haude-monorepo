@@ -1,11 +1,11 @@
 /**
- * 認證 Hook 單元測試
+ * Auth Hook unit tests
  *
- * 測試功能：
- * - 登入
- * - 註冊
- * - 登出
- * - Token 驗證
+ * Test features:
+ * - Login
+ * - Register
+ * - Logout
+ * - Session validation (httpOnly cookies — no token in store)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -15,12 +15,10 @@ import { renderHook, waitFor, act } from '@testing-library/react'
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: vi.fn(() => ({
     user: null,
-    token: null,
     isAuthenticated: false,
     setAuth: vi.fn(),
     logout: vi.fn(),
   })),
-  setRememberMe: vi.fn(),
   clearAllAuthStorage: vi.fn(),
 }))
 
@@ -48,7 +46,7 @@ vi.mock('@/services/auth', () => ({
 }))
 
 import { useAuth } from './useAuth'
-import { useAuthStore, setRememberMe, clearAllAuthStorage } from '@/stores/authStore'
+import { useAuthStore, clearAllAuthStorage } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import { authService } from '@/services/auth'
 
@@ -89,7 +87,6 @@ describe('useAuth', () => {
 
     vi.mocked(useAuthStore).mockReturnValue({
       user: null,
-      token: null,
       isAuthenticated: false,
       setAuth: mockSetAuth,
       logout: mockStoreLogout,
@@ -113,14 +110,13 @@ describe('useAuth', () => {
   })
 
   // ========================================
-  // 初始狀態
+  // Initial state
   // ========================================
 
   describe('初始狀態', () => {
     it('應該返回初始狀態', async () => {
       const { result } = renderHook(() => useAuth())
 
-      // 等待初始化完成
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
       })
@@ -130,11 +126,10 @@ describe('useAuth', () => {
       expect(result.current.error).toBeNull()
     })
 
-    it('有 token 時應該驗證用戶', async () => {
+    it('已認證時應該驗證 session', async () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        user: null,
-        token: 'existing-token',
-        isAuthenticated: false,
+        user: mockUser,
+        isAuthenticated: true,
         setAuth: mockSetAuth,
         logout: mockStoreLogout,
       })
@@ -148,14 +143,13 @@ describe('useAuth', () => {
       })
 
       expect(authService.getMe).toHaveBeenCalled()
-      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'existing-token')
+      expect(mockSetAuth).toHaveBeenCalledWith(mockUser)
     })
 
-    it('token 無效時應該登出', async () => {
+    it('session 無效時應該登出', async () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        user: null,
-        token: 'invalid-token',
-        isAuthenticated: false,
+        user: mockUser,
+        isAuthenticated: true,
         setAuth: mockSetAuth,
         logout: mockStoreLogout,
       })
@@ -173,14 +167,14 @@ describe('useAuth', () => {
   })
 
   // ========================================
-  // 登入
+  // Login
   // ========================================
 
   describe('登入', () => {
     it('應該成功登入', async () => {
       vi.mocked(authService.login).mockResolvedValue({
         user: mockUser,
-        accessToken: 'new-token',
+        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -190,22 +184,7 @@ describe('useAuth', () => {
       })
 
       expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123')
-      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'new-token')
-    })
-
-    it('應該設定「記住我」', async () => {
-      vi.mocked(authService.login).mockResolvedValue({
-        user: mockUser,
-        accessToken: 'new-token',
-      })
-
-      const { result } = renderHook(() => useAuth())
-
-      await act(async () => {
-        await result.current.login('test@example.com', 'password123', true)
-      })
-
-      expect(setRememberMe).toHaveBeenCalledWith(true)
+      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'csrf-token')
     })
 
     it('登入後應該合併購物車', async () => {
@@ -216,7 +195,7 @@ describe('useAuth', () => {
 
       vi.mocked(authService.login).mockResolvedValue({
         user: mockUser,
-        accessToken: 'new-token',
+        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -233,12 +212,11 @@ describe('useAuth', () => {
 
       const { result } = renderHook(() => useAuth())
 
-      // 使用 try-catch 捕獲錯誤，然後等待狀態更新
       await act(async () => {
         try {
           await result.current.login('test@example.com', 'wrong-password')
         } catch {
-          // 預期會拋出錯誤
+          // Expected
         }
       })
 
@@ -249,14 +227,14 @@ describe('useAuth', () => {
   })
 
   // ========================================
-  // 註冊
+  // Register
   // ========================================
 
   describe('註冊', () => {
     it('應該成功註冊', async () => {
       vi.mocked(authService.register).mockResolvedValue({
         user: mockUser,
-        accessToken: 'new-token',
+        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -266,7 +244,7 @@ describe('useAuth', () => {
       })
 
       expect(authService.register).toHaveBeenCalledWith('new@example.com', 'password123', '新用戶')
-      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'new-token')
+      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'csrf-token')
     })
 
     it('註冊後應該合併購物車', async () => {
@@ -277,7 +255,7 @@ describe('useAuth', () => {
 
       vi.mocked(authService.register).mockResolvedValue({
         user: mockUser,
-        accessToken: 'new-token',
+        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -294,12 +272,11 @@ describe('useAuth', () => {
 
       const { result } = renderHook(() => useAuth())
 
-      // 使用 try-catch 捕獲錯誤，然後等待狀態更新
       await act(async () => {
         try {
           await result.current.register('existing@example.com', 'password123', '用戶')
         } catch {
-          // 預期會拋出錯誤
+          // Expected
         }
       })
 
@@ -310,7 +287,7 @@ describe('useAuth', () => {
   })
 
   // ========================================
-  // 登出
+  // Logout
   // ========================================
 
   describe('登出', () => {

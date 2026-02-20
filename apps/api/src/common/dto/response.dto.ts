@@ -42,14 +42,9 @@ export class PaginatedResponseDto<T> {
 
 /**
  * 認證回應 DTO - 登入/註冊成功
+ * JWT access token is stored in httpOnly cookie, not in response body
  */
 export class AuthResponseDto {
-  @ApiProperty({
-    description: 'JWT 存取令牌',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-  })
-  accessToken: string;
-
   @ApiProperty({
     description: '使用者資訊',
     example: {
@@ -65,6 +60,12 @@ export class AuthResponseDto {
     name: string;
     role: string;
   };
+
+  @ApiPropertyOptional({
+    description: 'CSRF 防護令牌（搭配 httpOnly cookie 使用）',
+    example: 'a1b2c3d4e5f6...',
+  })
+  csrfToken?: string;
 }
 
 /**

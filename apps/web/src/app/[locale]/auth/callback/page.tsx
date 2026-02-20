@@ -7,9 +7,9 @@ import { useCartStore } from '@/stores/cartStore'
 import logger from '@/lib/logger'
 
 /**
- * Google OAuth 回調頁面
- * 處理從後端重導向回來的 token 和用戶資訊
- * URL 格式: /auth/callback#token=xxx&user=xxx&csrfToken=xxx
+ * Google OAuth callback page
+ * Processes user info from server redirect — tokens are in httpOnly cookies
+ * URL format: /auth/callback#user=xxx&csrfToken=xxx
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -20,33 +20,32 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const processCallback = async () => {
       try {
-        // 從 URL fragment 取得 token 和 user
-        const hash = window.location.hash.substring(1) // 移除 #
+        // Read user info from URL fragment (tokens are in httpOnly cookies)
+        const hash = window.location.hash.substring(1) // Remove #
         const params = new URLSearchParams(hash)
 
-        const token = params.get('token')
         const userJson = params.get('user')
         const csrfToken = params.get('csrfToken')
 
-        if (!token || !userJson) {
+        if (!userJson) {
           throw new Error('缺少認證資訊')
         }
 
-        // 解析用戶資訊
+        // Parse user info
         const user = JSON.parse(decodeURIComponent(userJson))
 
-        // 儲存到 authStore（包含 CSRF Token）
-        setAuth(user, token, csrfToken ?? undefined)
+        // Save to authStore (tokens already in httpOnly cookies)
+        setAuth(user, csrfToken ?? undefined)
 
-        // 合併本地購物車到後端（如果有的話）
+        // Merge local cart to backend (if any)
         try {
           await useCartStore.getState().mergeLocalToBackend()
         } catch {
-          // 忽略購物車合併錯誤
+          // Ignore cart merge errors
           logger.warn('購物車合併失敗')
         }
 
-        // 導向到首頁
+        // Navigate to home
         router.push('/')
       } catch (err) {
         logger.error('Google 登入處理失敗', { error: err })

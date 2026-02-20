@@ -20,9 +20,10 @@ import { EmailService } from '../email/email.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly TOKEN_EXPIRY_HOURS = 1; // Token 有效期 1 小時
+  private readonly TOKEN_EXPIRY_HOURS = 1; // Password Reset Token 有效期 1 小時
   private readonly MAX_LOGIN_ATTEMPTS = 5; // 最大登入失敗次數
   private readonly LOCKOUT_DURATION_MINUTES = 15; // 帳號鎖定時間（分鐘）
+  private readonly REFRESH_TOKEN_DAYS = 30; // Refresh token 有效期 30 天
 
   constructor(
     private prisma: PrismaService,
@@ -81,9 +82,9 @@ export class AuthService {
   }
 
   /**
-   * 處理 Google OAuth 登入，返回 JWT Token
+   * 處理 Google OAuth 登入，返回 token pair
    */
-  googleLogin(user: {
+  async googleLogin(user: {
     id: string;
     email: string;
     name: string;
@@ -95,7 +96,10 @@ export class AuthService {
       throw new UnauthorizedException('您的帳號已被停用，請聯絡客服');
     }
 
-    const accessToken = this.generateToken(user.id, user.email);
+    const { accessToken, refreshToken } = await this.generateTokenPair(
+      user.id,
+      user.email,
+    );
 
     return {
       user: {
@@ -105,6 +109,7 @@ export class AuthService {
         role: user.role,
       },
       accessToken,
+      refreshToken,
     };
   }
 
@@ -139,12 +144,16 @@ export class AuthService {
       },
     });
 
-    // Generate token
-    const accessToken = this.generateToken(user.id, user.email);
+    // Generate token pair
+    const { accessToken, refreshToken } = await this.generateTokenPair(
+      user.id,
+      user.email,
+    );
 
     return {
       user,
       accessToken,
+      refreshToken,
     };
   }
 
@@ -247,8 +256,11 @@ export class AuthService {
       });
     }
 
-    // Generate token
-    const accessToken = this.generateToken(user.id, user.email);
+    // Generate token pair
+    const { accessToken, refreshToken } = await this.generateTokenPair(
+      user.id,
+      user.email,
+    );
 
     return {
       user: {
@@ -259,6 +271,7 @@ export class AuthService {
         createdAt: user.createdAt,
       },
       accessToken,
+      refreshToken,
     };
   }
 
@@ -468,6 +481,126 @@ export class AuthService {
     return { message: '密碼設定成功，現在您可以使用 Email 和密碼登入' };
   }
 
+  // ========================================
+  // Token Pair 管理（httpOnly cookie 認證）
+  // ========================================
+
+  /**
+   * 產生 access token + refresh token pair
+   * - Access token: JWT, 15 min
+   * - Refresh token: crypto random, 30 days, 存入 DB
+   */
+  async generateTokenPair(
+    userId: string,
+    email: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const accessToken = this.jwtService.sign({ sub: userId, email });
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    const expiresAt = new Date(
+      Date.now() + this.REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    // 存入 DB
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        token: refreshToken,
+        expiresAt,
+      },
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  /**
+   * 使用 refresh token 換取新的 token pair（Rotation）
+   * 舊 token 立即 revoke，防止 replay attack
+   */
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: {
+        user: { select: { id: true, email: true, isActive: true } },
+      },
+    });
+
+    if (!stored) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (stored.revokedAt) {
+      // Possible token reuse attack — revoke ALL tokens for this user
+      this.logger.warn(
+        `Refresh token reuse detected for user ${stored.userId}`,
+      );
+      await this.revokeAllUserTokens(stored.userId);
+      throw new UnauthorizedException('Refresh token has been revoked');
+    }
+
+    if (stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    if (!stored.user.isActive) {
+      throw new UnauthorizedException('帳戶已被停用');
+    }
+
+    // Rotation: revoke old token, generate new pair
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.generateTokenPair(stored.user.id, stored.user.email);
+  }
+
+  /**
+   * 撤銷單一 refresh token（登出時呼叫）
+   */
+  async revokeRefreshToken(refreshToken: string): Promise<void> {
+    await this.prisma.refreshToken
+      .update({
+        where: { token: refreshToken },
+        data: { revokedAt: new Date() },
+      })
+      .catch(() => {
+        // Token may not exist, ignore
+      });
+  }
+
+  /**
+   * 撤銷用戶的所有 refresh token（登出所有裝置 / 安全事件）
+   */
+  async revokeAllUserTokens(userId: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  /**
+   * 清理已過期的 refresh token（可由 cron job 呼叫）
+   */
+  async cleanupExpiredTokens(): Promise<number> {
+    const result = await this.prisma.refreshToken.deleteMany({
+      where: {
+        OR: [
+          { expiresAt: { lt: new Date() } },
+          {
+            revokedAt: {
+              not: null,
+              lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // revoked > 7 days ago
+            },
+          },
+        ],
+      },
+    });
+    return result.count;
+  }
+
+  // Legacy helper（保留向後相容）
   private generateToken(userId: string, email: string): string {
     const payload = { sub: userId, email };
     return this.jwtService.sign(payload);

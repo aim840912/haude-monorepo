@@ -1,18 +1,17 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { useCartStore } from './cartStore'
 
-// Storage key 常數
+// Storage key constant
 const AUTH_STORAGE_KEY = 'auth-storage'
-const REMEMBER_ME_KEY = 'auth-remember-me'
 
 export interface User {
   id: string
   email: string
   name: string
   role?: 'USER' | 'VIP' | 'STAFF' | 'ADMIN'
-  avatar?: string // Google OAuth 頭像
-  // 會員等級相關
+  avatar?: string // Google OAuth avatar
+  // Membership-related
   memberLevel?: 'NORMAL' | 'BRONZE' | 'SILVER' | 'GOLD'
   totalSpent?: number
   currentPoints?: number
@@ -22,48 +21,24 @@ export interface User {
 
 interface AuthState {
   user: User | null
-  token: string | null
   csrfToken: string | null
   isAuthenticated: boolean
-  setAuth: (user: User, token: string, csrfToken?: string) => void
+  setAuth: (user: User, csrfToken?: string) => void
   setCsrfToken: (csrfToken: string) => void
   logout: () => void
 }
 
-// ==================== 「記住我」功能函數 ====================
-
 /**
- * 取得「記住我」偏好設定
- * @returns 如果之前有勾選「記住我」則返回 true
- */
-export function getRememberMe(): boolean {
-  return localStorage.getItem(REMEMBER_ME_KEY) === 'true'
-}
-
-/**
- * 設定「記住我」偏好
- * @param value 是否記住登入狀態
- */
-export function setRememberMe(value: boolean): void {
-  if (value) {
-    localStorage.setItem(REMEMBER_ME_KEY, 'true')
-  } else {
-    localStorage.removeItem(REMEMBER_ME_KEY)
-  }
-}
-
-/**
- * 清除所有認證相關的 storage（登出時呼叫）
+ * Clear all auth-related storage (called on logout)
  */
 export function clearAllAuthStorage(): void {
   localStorage.removeItem(AUTH_STORAGE_KEY)
   sessionStorage.removeItem(AUTH_STORAGE_KEY)
-  localStorage.removeItem(REMEMBER_ME_KEY)
 }
 
 /**
- * 統一的認證檢查函數（供其他模組使用，如 cartStore）
- * 同時檢查 localStorage 和 sessionStorage，配合 dynamicStorage 的存儲策略
+ * Unified auth check function (used by other modules like cartStore)
+ * With httpOnly cookies, we check if user exists in store
  */
 export function isAuthenticated(): boolean {
   try {
@@ -72,7 +47,7 @@ export function isAuthenticated(): boolean {
       sessionStorage.getItem(AUTH_STORAGE_KEY)
     if (authStorage) {
       const parsed = JSON.parse(authStorage)
-      return !!parsed?.state?.token
+      return !!parsed?.state?.user
     }
   } catch {
     // ignore parsing errors
@@ -80,52 +55,16 @@ export function isAuthenticated(): boolean {
   return false
 }
 
-/**
- * 自定義 Storage Adapter
- * 根據「記住我」偏好動態選擇 localStorage 或 sessionStorage
- */
-const dynamicStorage: StateStorage = {
-  getItem: (name: string): string | null => {
-    // 優先從 localStorage 讀取（如果有 remember-me 設定）
-    // 否則從 sessionStorage 讀取
-    const rememberMe = getRememberMe()
-    if (rememberMe) {
-      return localStorage.getItem(name)
-    }
-    // 沒有 remember-me 時，優先檢查 sessionStorage
-    const sessionData = sessionStorage.getItem(name)
-    if (sessionData) return sessionData
-    // 如果 sessionStorage 也沒有，檢查 localStorage（向後兼容）
-    return localStorage.getItem(name)
-  },
-  setItem: (name: string, value: string): void => {
-    const rememberMe = getRememberMe()
-    if (rememberMe) {
-      localStorage.setItem(name, value)
-      sessionStorage.removeItem(name) // 清除另一邊
-    } else {
-      sessionStorage.setItem(name, value)
-      localStorage.removeItem(name) // 清除另一邊
-    }
-  },
-  removeItem: (name: string): void => {
-    localStorage.removeItem(name)
-    sessionStorage.removeItem(name)
-  },
-}
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       csrfToken: null,
       isAuthenticated: false,
 
-      setAuth: (user, token, csrfToken) =>
+      setAuth: (user, csrfToken) =>
         set({
           user,
-          token,
           csrfToken: csrfToken ?? null,
           isAuthenticated: true,
         }),
@@ -134,12 +73,11 @@ export const useAuthStore = create<AuthState>()(
         set({ csrfToken }),
 
       logout: () => {
-        // 清除本地購物車（避免登出後還顯示之前的訪客購物車）
+        // Clear local cart (avoid stale guest cart after logout)
         localStorage.removeItem('cart-storage')
-        useCartStore.setState({ items: [] }) // 重置購物車記憶體狀態，讓 UI 立即更新
+        useCartStore.setState({ items: [] }) // Reset cart in-memory state for immediate UI update
         set({
           user: null,
-          token: null,
           csrfToken: null,
           isAuthenticated: false,
         })
@@ -147,7 +85,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: AUTH_STORAGE_KEY,
-      storage: createJSONStorage(() => dynamicStorage),
     }
   )
 )
