@@ -41,6 +41,8 @@ export class CacheHeadersInterceptor implements NestInterceptor {
     if (request.method !== 'GET') {
       return next.handle().pipe(
         tap(() => {
+          // Skip if response already sent (e.g., redirect)
+          if (response.headersSent) return;
           response.setHeader('Cache-Control', 'no-store');
         }),
       );
@@ -57,6 +59,9 @@ export class CacheHeadersInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
+        // Skip if response already sent (e.g., OAuth redirect)
+        if (response.headersSent) return;
+
         if (maxAge === 0) {
           // 明確禁用快取
           response.setHeader('Cache-Control', 'no-store');

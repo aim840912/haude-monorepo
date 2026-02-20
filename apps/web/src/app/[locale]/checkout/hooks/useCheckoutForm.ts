@@ -75,7 +75,7 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
     country: '台灣',
     notes: '',
   })
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CREDIT')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('STORE_CONTACT')
   const [orderNotes, setOrderNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<CheckoutFormErrors>({})

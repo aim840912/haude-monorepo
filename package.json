@@ -19,6 +19,7 @@
     "load-test": "k6 run load-tests/api-load.js"
   },
   "devDependencies": {
+    "agentation": "^2.2.0",
     "turbo": "^2.7.3"
   },
   "pnpm": {

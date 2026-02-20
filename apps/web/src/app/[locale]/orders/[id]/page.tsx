@@ -17,6 +17,7 @@ import {
   CreditCard,
 } from 'lucide-react'
 import { useOrder, useCancelOrder } from '@/hooks/useOrders'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useToast } from '@/components/ui/feedback/toast'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { PaymentButton, PaymentStatusBadge } from '@/components/features/payment'
@@ -47,6 +48,14 @@ interface OrderDetailPageProps {
  * - 取消訂單功能
  */
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
+  return (
+    <ProtectedRoute>
+      <OrderDetailContent params={params} />
+    </ProtectedRoute>
+  )
+}
+
+function OrderDetailContent({ params }: OrderDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
   const { error: showError } = useToast()
@@ -86,8 +95,9 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const status = statusConfig[order.status]
   const StatusIcon = status.icon
 
-  // 判斷是否可以付款
-  const canPay = order.status === 'pending' && order.paymentStatus !== 'paid'
+  // 判斷是否可以付款（STORE_CONTACT 不走線上付款）
+  const isStoreContact = order.paymentMethod === 'STORE_CONTACT'
+  const canPay = order.status === 'pending' && order.paymentStatus !== 'paid' && !isStoreContact
 
   // 判斷是否可以取消
   const canCancel = ['pending', 'confirmed'].includes(order.status)
@@ -200,6 +210,33 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               onError={handlePaymentError}
               className="w-full sm:w-auto sm:min-w-[200px] sm:ml-auto"
             />
+          </div>
+        )}
+
+        {/* 電話確認訂單提示 */}
+        {isStoreContact && order.status === 'pending' && order.paymentStatus !== 'paid' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Phone className="w-6 h-6 text-amber-600" />
+              <h2 className="text-lg font-semibold text-gray-900">電話確認訂單</h2>
+            </div>
+            <p className="text-gray-700">
+              您的訂單已成立，店家將盡快致電與您確認訂單內容及付款方式。
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              如有疑問，歡迎透過電話或 LINE 聯繫我們。
+            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">應付金額</p>
+                <p className="text-2xl font-bold text-green-900">
+                  NT$ {order.totalAmount.toLocaleString()}
+                </p>
+              </div>
+              <PaymentStatusBadge
+                status={(order.paymentStatus as PaymentStatus) || 'pending'}
+              />
+            </div>
           </div>
         )}
 

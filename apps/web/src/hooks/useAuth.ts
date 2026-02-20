@@ -54,7 +54,7 @@ export function useAuth(): UseAuthReturn {
       // 2. 執行登入
       const data = await authService.login(email, password)
       // 3. 儲存認證狀態（dynamicStorage 會根據 rememberMe 選擇 storage）
-      setAuth(data.user, data.accessToken)
+      setAuth(data.user, data.accessToken, data.csrfToken)
       // 4. 合併本地購物車到後端（訪客加入的商品會保留）
       await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
@@ -71,7 +71,7 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(true)
     try {
       const data = await authService.register(email, password, name)
-      setAuth(data.user, data.accessToken)
+      setAuth(data.user, data.accessToken, data.csrfToken)
       // 合併本地購物車到後端（訪客加入的商品會保留）
       await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {

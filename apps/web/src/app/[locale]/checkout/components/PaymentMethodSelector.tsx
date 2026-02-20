@@ -1,6 +1,6 @@
 'use client'
 
-import { CreditCard, Building2, Store } from 'lucide-react'
+import { CreditCard, Building2, Store, Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PaymentMethod } from '@/types/order'
 
@@ -12,9 +12,10 @@ const paymentMethods: {
   icon: typeof CreditCard
   enabled: boolean
 }[] = [
-  { value: 'CREDIT', label: '信用卡', description: '支援 Visa、MasterCard、JCB', icon: CreditCard, enabled: true },
-  { value: 'VACC', label: 'ATM 轉帳', description: '取得虛擬帳號後 3 天內轉帳', icon: Building2, enabled: true },
-  { value: 'CVS', label: '超商代碼', description: '取得代碼後 7 天內至超商繳費', icon: Store, enabled: true },
+  { value: 'STORE_CONTACT', label: '電話確認訂單', description: '下單後由店家致電確認，再約定付款方式', icon: Phone, enabled: true },
+  { value: 'CREDIT', label: '信用卡', description: '支援 Visa、MasterCard、JCB（即將開放）', icon: CreditCard, enabled: false },
+  { value: 'VACC', label: 'ATM 轉帳', description: '取得虛擬帳號後 3 天內轉帳（即將開放）', icon: Building2, enabled: false },
+  { value: 'CVS', label: '超商代碼', description: '取得代碼後 7 天內至超商繳費（即將開放）', icon: Store, enabled: false },
 ]
 
 interface PaymentMethodSelectorProps {

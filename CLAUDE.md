@@ -364,6 +364,14 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 |------|----------|
 | 在 apps/ 建立共用型別 | 共用型別放 `packages/types/` |
 
+### 開發伺服器（本專案特定）
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| `/preview` 用全域版（port 3000、只啟動 web） | 先讀專案版 `.claude/commands/preview.md`（port 5173+3001、雙 server、ulimit fix） |
+| 直接 `pnpm dev` 不處理 EMFILE | 先 `source ~/.zshrc` 設定 `ulimit -n 65536`，再啟動 dev server |
+| 只啟動 web 不啟動 API | 本專案前後端耦合，預覽必須同時啟動 web(:5173) + API(:3001) |
+
 ---
 
 ## 相關文件

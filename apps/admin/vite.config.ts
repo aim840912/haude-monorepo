@@ -28,6 +28,9 @@ export default defineConfig({
   },
   server: {
     port: 5174,
+    watch: {
+      ignored: ['**/node_modules/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

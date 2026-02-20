@@ -56,6 +56,17 @@ const nextConfig: NextConfig = {
   // 輸出獨立部署包
   output: 'standalone',
 
+  // Reduce file watching scope to prevent EMFILE on macOS
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: ['**/node_modules/**', '**/.next/**'],
+      }
+    }
+    return config
+  },
+
   // 圖片優化設定
   images: {
     remotePatterns: [

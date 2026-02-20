@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Crown, Award, Star } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useToast } from '@/components/ui/feedback/toast'
 import { Breadcrumb } from '@/components/ui/navigation'
 import { cn } from '@/lib/utils'
 import type { MemberLevel } from '@haude/types'
@@ -34,8 +35,34 @@ const MEMBER_DISCOUNT_CONFIG: Record<MemberLevel, {
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart } = useCartStore()
   const { user, isAuthenticated } = useAuthStore()
+  const { error: showError } = useToast()
   const totalItems = useTotalItems()
   const totalPrice = useTotalPrice()
+
+  // Wrap async cart actions with error handling to prevent unhandled promise rejections
+  const handleUpdateQuantity = async (productId: string, quantity: number) => {
+    try {
+      await updateQuantity(productId, quantity)
+    } catch {
+      showError('更新數量失敗', '請稍後再試')
+    }
+  }
+
+  const handleRemoveItem = async (productId: string) => {
+    try {
+      await removeItem(productId)
+    } catch {
+      showError('移除商品失敗', '請稍後再試')
+    }
+  }
+
+  const handleClearCart = async () => {
+    try {
+      await clearCart()
+    } catch {
+      showError('清空購物車失敗', '請稍後再試')
+    }
+  }
 
   // 取得會員等級與折扣資訊
   const memberLevel = (user?.memberLevel || 'NORMAL') as MemberLevel
@@ -108,7 +135,7 @@ export default function CartPage() {
                   {/* 數量控制 */}
                   <div className="flex items-center gap-2 mt-3">
                     <button
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                      onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
                       disabled={item.quantity <= 1}
                       className={cn(
                         'p-1 rounded border',
@@ -121,7 +148,7 @@ export default function CartPage() {
                     </button>
                     <span className="w-8 text-center text-gray-900">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                      onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
                       className="p-1 rounded border border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600"
                     >
                       <Plus className="w-4 h-4" />
@@ -135,7 +162,7 @@ export default function CartPage() {
                     NT$ {(item.price * item.quantity).toLocaleString()}
                   </p>
                   <button
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => handleRemoveItem(item.productId)}
                     className="mt-2 p-1 text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -147,7 +174,7 @@ export default function CartPage() {
             {/* 清空購物車 */}
             <div className="text-right">
               <button
-                onClick={clearCart}
+                onClick={handleClearCart}
                 className="text-sm text-gray-500 hover:text-red-500 transition-colors"
               >
                 清空購物車

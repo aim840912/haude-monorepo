@@ -50,7 +50,7 @@ const defaultShippingAddress: ShippingAddress = {
 }
 
 // 預設付款方式
-const defaultPaymentMethod: PaymentMethod = 'CREDIT'
+const defaultPaymentMethod: PaymentMethod = 'STORE_CONTACT'
 
 export const useCheckoutStore = create<CheckoutFormState>()(
   persist(

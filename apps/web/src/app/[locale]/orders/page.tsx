@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight } from 'lucide-react'
 import { useOrders } from '@/hooks/useOrders'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { OrderStatus } from '@/types/order'
@@ -28,6 +29,14 @@ const statusConfig: Record<OrderStatus, { label: string; color: string; icon: ty
  * - 點擊查看詳情
  */
 export default function OrdersPage() {
+  return (
+    <ProtectedRoute>
+      <OrdersContent />
+    </ProtectedRoute>
+  )
+}
+
+function OrdersContent() {
   const { orders, isLoading, error, hasMore, loadMore } = useOrders()
 
   // 載入狀態

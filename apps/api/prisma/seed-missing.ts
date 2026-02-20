@@ -28,7 +28,7 @@ const PRODUCT_IMAGES = [
   `${UNSPLASH_BASE}/photo-1563822249548-9a72b6353cd1?w=640&h=360&fit=crop`, // 茶園
   `${UNSPLASH_BASE}/photo-1518568814500-bf0f8d125f46?w=640&h=360&fit=crop`, // 茶葉
   `${UNSPLASH_BASE}/photo-1571934811356-5cc061b6821f?w=640&h=360&fit=crop`, // 果醬
-  `${UNSPLASH_BASE}/photo-1597227507333-aceb8dcbf5c6?w=640&h=360&fit=crop`, // 乾貨
+  `${UNSPLASH_BASE}/photo-1596040033229-a9821ebd058d?w=640&h=360&fit=crop`, // 乾貨
   `${UNSPLASH_BASE}/photo-1628619876503-2db74e724757?w=640&h=360&fit=crop`, // 竹筍
   `${UNSPLASH_BASE}/photo-1605651202774-7d573fd3f12d?w=640&h=360&fit=crop`, // 梅子
 ]

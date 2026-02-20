@@ -4,7 +4,7 @@ import { IsNotEmpty, IsUUID, IsOptional, IsIn } from 'class-validator';
 /**
  * 付款方式類型
  */
-export type PaymentMethodType = 'CREDIT' | 'ATM' | 'CVS';
+export type PaymentMethodType = 'CREDIT' | 'ATM' | 'CVS' | 'STORE_CONTACT';
 
 /**
  * 建立付款請求 DTO
@@ -20,11 +20,11 @@ export class CreatePaymentDto {
 
   @ApiPropertyOptional({
     description: '付款方式',
-    enum: ['CREDIT', 'ATM', 'CVS'],
+    enum: ['CREDIT', 'ATM', 'CVS', 'STORE_CONTACT'],
     default: 'CREDIT',
     example: 'CREDIT',
   })
   @IsOptional()
-  @IsIn(['CREDIT', 'ATM', 'CVS'])
+  @IsIn(['CREDIT', 'ATM', 'CVS', 'STORE_CONTACT'])
   paymentMethod?: PaymentMethodType;
 }

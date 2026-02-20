@@ -229,6 +229,7 @@ export class CreatePaymentService {
       CREDIT: 'Credit',
       ATM: 'ATM',
       CVS: 'CVS',
+      STORE_CONTACT: 'CVS', // 到店取貨付款，使用超商付款流程
     };
     return map[method] || 'Credit';
   }
