@@ -17,7 +17,7 @@ export class CsrfService {
 
   /**
    * 取得 CSRF Cookie 設定
-   * 生產環境使用 secure: true 和 sameSite: 'strict'
+   * 生產環境使用 secure: true 和 sameSite: 'none'（跨域部署需要）
    */
   getCookieOptions(): CookieOptions {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
@@ -25,7 +25,7 @@ export class CsrfService {
     return {
       httpOnly: false, // 前端需要讀取 Cookie 值
       secure: isProduction, // 生產環境僅 HTTPS
-      sameSite: isProduction ? 'strict' : 'lax', // 防止跨站請求
+      sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax', // 跨域部署需 none；CSRF 由 X-CSRF-Token header 補償
       path: '/',
       maxAge: 24 * 60 * 60 * 1000, // 24 小時
     };

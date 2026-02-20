@@ -61,7 +61,7 @@ export class AuthController {
     const cookieBase = {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: 'lax' as const,
+      sameSite: (this.isProd ? 'none' : 'lax') as 'none' | 'lax',
       path: '/',
     };
 
