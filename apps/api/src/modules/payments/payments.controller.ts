@@ -26,7 +26,7 @@ import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto, RefundPaymentDto, ConfirmManualRefundDto } from './dto';
 import { ConfigService } from '@nestjs/config';
@@ -37,7 +37,6 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('payments')
 @Controller('payments')
-@SkipCsrf() // JWT + CORS already prevent CSRF in cross-domain deployment
 export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
   private readonly frontendUrl: string;
@@ -117,7 +116,6 @@ export class PaymentsController {
    * 不需要認證，但會驗證 CheckMacValue
    */
   @Post('ecpay/notify')
-  @SkipCsrf() // 外部 Webhook，使用 CheckMacValue 驗證
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '綠界付款通知（Webhook）' })
   @ApiResponse({ status: 200, description: '處理成功' })
@@ -144,7 +142,6 @@ export class PaymentsController {
    * 包含虛擬帳號、銀行代碼、繳費代碼等資訊
    */
   @Post('ecpay/info')
-  @SkipCsrf() // 外部 Webhook，使用 CheckMacValue 驗證
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '綠界取號結果通知（ATM/CVS）' })
   @ApiResponse({ status: 200, description: '處理成功' })
@@ -173,7 +170,6 @@ export class PaymentsController {
    * 然後重定向到前端結果頁
    */
   @Post('ecpay/return')
-  @SkipCsrf() // 綠界表單提交返回，非用戶直接操作
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '綠界付款返回' })
   async handleReturn(
@@ -202,7 +198,6 @@ export class PaymentsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminPaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 

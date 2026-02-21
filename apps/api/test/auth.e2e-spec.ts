@@ -34,7 +34,7 @@ describe('Auth API (e2e)', () => {
   // ========================================
 
   describe('POST /auth/register', () => {
-    it('應該成功註冊新用戶並返回 user + csrfToken', async () => {
+    it('應該成功註冊新用戶並返回 user', async () => {
       const registerDto = {
         email: 'newuser@example.com',
         password: 'password123',
@@ -58,7 +58,6 @@ describe('Auth API (e2e)', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('user');
-      expect(response.body).toHaveProperty('csrfToken');
       expect(response.body).not.toHaveProperty('accessToken');
       expect(response.body.user.email).toBe(registerDto.email);
       expect(response.body.user.name).toBe(registerDto.name);
@@ -117,7 +116,7 @@ describe('Auth API (e2e)', () => {
   // ========================================
 
   describe('POST /auth/login', () => {
-    it('應該成功登入並返回 user + csrfToken', async () => {
+    it('應該成功登入並返回 user', async () => {
       const loginDto = {
         email: 'test@example.com',
         password: 'password123',
@@ -139,7 +138,6 @@ describe('Auth API (e2e)', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('user');
-      expect(response.body).toHaveProperty('csrfToken');
       expect(response.body).not.toHaveProperty('accessToken');
       expect(response.body.user.email).toBe(loginDto.email);
     });

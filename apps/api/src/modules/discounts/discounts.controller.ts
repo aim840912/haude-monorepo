@@ -18,11 +18,10 @@ import { Role } from '@prisma/client';
 import { DiscountsService } from './discounts.service';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { UpdateDiscountDto } from './dto/update-discount.dto';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 
 @ApiTags('discounts')
 @Controller()
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
 

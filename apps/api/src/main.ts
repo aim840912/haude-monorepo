@@ -36,7 +36,7 @@ async function bootstrap() {
     }),
   );
 
-  // Cookie Parser - CSRF 防護所需
+  // Cookie Parser - httpOnly cookie 認證所需
   app.use(cookieParser());
 
   // CORS - 允許 web 和 admin 前端

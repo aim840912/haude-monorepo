@@ -14,7 +14,7 @@ import { CreateScheduleDto, UpdateScheduleDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 
 /**
  * 公開 API
@@ -50,7 +50,6 @@ export class SchedulesController {
 @Controller('admin/schedules')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('STAFF', 'ADMIN')
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminSchedulesController {
   constructor(private readonly schedulesService: SchedulesService) {}
 

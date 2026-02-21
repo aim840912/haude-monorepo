@@ -61,11 +61,6 @@ export class AuthResponseDto {
     role: string;
   };
 
-  @ApiPropertyOptional({
-    description: 'CSRF 防護令牌（搭配 httpOnly cookie 使用）',
-    example: 'a1b2c3d4e5f6...',
-  })
-  csrfToken?: string;
 }
 
 /**

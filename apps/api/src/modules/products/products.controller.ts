@@ -35,7 +35,7 @@ import {
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 @ApiTags('products')
@@ -111,7 +111,6 @@ export class ProductsController {
   // ========================================
 
   @Post()
-  @SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -128,7 +127,6 @@ export class ProductsController {
   }
 
   @Put(':id')
-  @SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -153,7 +151,6 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -181,7 +178,6 @@ export class ProductsController {
 
 @ApiTags('admin/products')
 @Controller('admin/products')
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()

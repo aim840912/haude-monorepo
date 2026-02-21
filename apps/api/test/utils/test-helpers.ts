@@ -614,23 +614,6 @@ export function createMockSupabaseService() {
   };
 }
 
-/**
- * 建立 Mock CSRF Service
- * 在測試環境中，讓所有 CSRF 驗證都通過
- */
-export function createMockCsrfService() {
-  return {
-    generateToken: jest.fn().mockReturnValue('mock-csrf-token'),
-    getCookieOptions: jest.fn().mockReturnValue({
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax' as const,
-      path: '/',
-      maxAge: 86400000,
-    }),
-    validateToken: jest.fn().mockReturnValue(true),
-  };
-}
 
 /**
  * 建立 Mock Cart

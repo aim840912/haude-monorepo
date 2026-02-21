@@ -22,7 +22,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('admin/notifications')
@@ -30,7 +30,6 @@ import { NotificationsService } from './notifications.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
@@ -89,7 +88,6 @@ export class NotificationsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class StockAlertsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

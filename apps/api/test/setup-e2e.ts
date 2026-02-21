@@ -22,7 +22,6 @@ import {
   createMockSupabaseService,
   createMockDiscountsService,
   createMockMembersService,
-  createMockCsrfService,
 } from './utils/test-helpers';
 import { EmailService } from '../src/modules/email/email.service';
 import { JwtService } from '@nestjs/jwt';
@@ -31,8 +30,6 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { SupabaseService } from '../src/common/supabase/supabase.service';
 import { DiscountsService } from '../src/modules/discounts/discounts.service';
 import { MembersService } from '../src/modules/members/members.service';
-import { CsrfGuard } from '../src/common/guards/csrf.guard';
-import { CsrfService } from '../src/common/csrf/csrf.service';
 import { JwtAuthGuard } from '../src/modules/auth/guards/jwt-auth.guard';
 
 /**
@@ -118,7 +115,6 @@ export async function createTestApp(
   const mockSupabase = createMockSupabaseService();
   const mockDiscounts = options.mockDiscounts ?? createMockDiscountsService();
   const mockMembers = options.mockMembers ?? createMockMembersService();
-  const mockCsrf = createMockCsrfService();
 
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
@@ -138,16 +134,8 @@ export async function createTestApp(
     .useValue(mockDiscounts)
     .overrideProvider(MembersService)
     .useValue(mockMembers)
-    // 覆蓋 CSRF Service - 讓所有 CSRF 驗證通過
-    // 注意：CsrfGuard 是通過 APP_GUARD 註冊的，無法用 overrideGuard 覆蓋
-    // 但可以覆蓋它依賴的 CsrfService
-    .overrideProvider(CsrfService)
-    .useValue(mockCsrf)
     // 停用 Throttle Guard（避免測試受限流影響）
     .overrideGuard(ThrottlerGuard)
-    .useValue({ canActivate: () => true })
-    // 保留 CSRF Guard 覆蓋（作為備用，主要靠 CsrfService mock）
-    .overrideGuard(CsrfGuard)
     .useValue({ canActivate: () => true })
     // 使用 Mock JWT Guard（簡化 token 驗證邏輯）
     .overrideGuard(JwtAuthGuard)

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
-import { CsrfService } from '@/common/csrf/csrf.service';
+import { UsersService } from '../users/users.service';
 import { Response } from 'express';
 
 /**
@@ -11,7 +11,7 @@ import { Response } from 'express';
  * 測試認證相關的 API 端點：
  * - 使用者註冊和登入
  * - 當前使用者資訊
- * - 登出和 CSRF Token
+ * - 登出
  * - 密碼重設流程
  * - Google OAuth 設定密碼
  */
@@ -39,20 +39,14 @@ describe('AuthController', () => {
     refreshAccessToken: jest.fn(),
   };
 
+  // Mock UsersService
+  const mockUsersService = {
+    findByEmail: jest.fn(),
+  };
+
   // Mock ConfigService
   const mockConfigService = {
     get: jest.fn(),
-  };
-
-  // Mock CsrfService
-  const mockCsrfService = {
-    generateToken: jest.fn(() => 'mock-csrf-token'),
-    getCookieOptions: jest.fn(() => ({
-      httpOnly: true,
-      secure: false,
-      sameSite: 'strict',
-      path: '/',
-    })),
   };
 
   beforeEach(async () => {
@@ -64,12 +58,12 @@ describe('AuthController', () => {
           useValue: mockAuthService,
         },
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: UsersService,
+          useValue: mockUsersService,
         },
         {
-          provide: CsrfService,
-          useValue: mockCsrfService,
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -96,34 +90,18 @@ describe('AuthController', () => {
       name: '測試用戶',
     };
 
-    it('應成功註冊並回傳 token 和 csrfToken', async () => {
+    it('應成功註冊並回傳 user', async () => {
       const authResult = {
         accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
         user: { id: 'user-1', email: 'test@example.com', name: '測試用戶' },
       };
       mockAuthService.register.mockResolvedValue(authResult);
 
       const result = await controller.register(registerDto, mockResponse);
 
-      expect(result).toEqual({
-        ...authResult,
-        csrfToken: 'mock-csrf-token',
-      });
+      expect(result).toEqual({ user: authResult.user });
       expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'csrf-token',
-        'mock-csrf-token',
-        expect.any(Object),
-      );
-    });
-
-    it('應呼叫 CsrfService 產生 Token', async () => {
-      mockAuthService.register.mockResolvedValue({});
-
-      await controller.register(registerDto, mockResponse);
-
-      expect(mockCsrfService.generateToken).toHaveBeenCalled();
-      expect(mockCsrfService.getCookieOptions).toHaveBeenCalled();
     });
   });
 
@@ -137,34 +115,18 @@ describe('AuthController', () => {
       password: 'password123',
     };
 
-    it('應成功登入並回傳 token 和 csrfToken', async () => {
+    it('應成功登入並回傳 user', async () => {
       const authResult = {
         accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
         user: { id: 'user-1', email: 'test@example.com' },
       };
       mockAuthService.login.mockResolvedValue(authResult);
 
       const result = await controller.login(loginDto, mockResponse);
 
-      expect(result).toEqual({
-        ...authResult,
-        csrfToken: 'mock-csrf-token',
-      });
+      expect(result).toEqual({ user: authResult.user });
       expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
-    });
-
-    it('應設定 CSRF Cookie', async () => {
-      mockAuthService.login.mockResolvedValue({});
-
-      await controller.login(loginDto, mockResponse);
-
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'csrf-token',
-        'mock-csrf-token',
-        expect.objectContaining({
-          httpOnly: true,
-        }),
-      );
     });
   });
 
@@ -207,9 +169,6 @@ describe('AuthController', () => {
       });
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh_token', {
         path: '/api/v1/auth/refresh',
-      });
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('csrf-token', {
-        path: '/',
       });
     });
   });
@@ -304,24 +263,6 @@ describe('AuthController', () => {
   });
 
   // ========================================
-  // getCsrfToken 測試
-  // ========================================
-
-  describe('getCsrfToken', () => {
-    it('應產生新的 CSRF Token 並設定 Cookie', () => {
-      const result = controller.getCsrfToken(mockResponse);
-
-      expect(result).toEqual({ csrfToken: 'mock-csrf-token' });
-      expect(mockCsrfService.generateToken).toHaveBeenCalled();
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'csrf-token',
-        'mock-csrf-token',
-        expect.any(Object),
-      );
-    });
-  });
-
-  // ========================================
   // googleAuth 測試
   // ========================================
 
@@ -395,31 +336,11 @@ describe('AuthController', () => {
 
       controller.googleAuthCallback(req, mockResponse);
 
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('csrf-token', {
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('access_token', {
         path: '/',
       });
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         expect.stringContaining('error='),
-      );
-    });
-
-    it('應在回調中設定 CSRF Cookie', () => {
-      mockAuthService.googleLogin.mockReturnValue({
-        user: mockUser,
-        accessToken: 'jwt-token',
-      });
-      mockConfigService.get.mockReturnValue('http://localhost:5173');
-
-      const req = {
-        user: { ...mockUser, oauthState: undefined },
-      } as any;
-
-      controller.googleAuthCallback(req, mockResponse);
-
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'csrf-token',
-        'mock-csrf-token',
-        expect.any(Object),
       );
     });
   });

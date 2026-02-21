@@ -22,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { MembersService } from './members.service';
 import { AdjustLevelDto, AdjustPointsDto } from './dto';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 
 @ApiTags('members')
 @Controller('members')
@@ -101,7 +101,6 @@ export class MembersController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminMembersController {
   constructor(private readonly membersService: MembersService) {}
 

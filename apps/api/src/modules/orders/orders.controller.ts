@@ -31,7 +31,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
-import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+
 
 // ========================================
 // 使用者訂單 API
@@ -41,7 +41,6 @@ import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@SkipCsrf() // JWT + CORS already prevent CSRF in cross-domain deployment
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
@@ -136,7 +135,6 @@ export class OrdersController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
-@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
