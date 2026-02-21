@@ -25,11 +25,13 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 
 /**
  * 公開 API
  */
 @Controller('farm-tours')
+@SkipCsrf() // JWT + CORS already prevent CSRF in cross-domain deployment
 export class FarmToursController {
   constructor(private readonly farmToursService: FarmToursService) {}
 
@@ -77,6 +79,7 @@ export class FarmToursController {
 @Controller('admin/farm-tours')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
+@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminFarmToursController {
   constructor(private readonly farmToursService: FarmToursService) {}
 

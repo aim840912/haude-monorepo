@@ -37,6 +37,7 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('payments')
 @Controller('payments')
+@SkipCsrf() // JWT + CORS already prevent CSRF in cross-domain deployment
 export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
   private readonly frontendUrl: string;
@@ -201,6 +202,7 @@ export class PaymentsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
+@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminPaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 

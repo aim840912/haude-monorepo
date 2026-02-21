@@ -21,6 +21,7 @@ import { UpdateMaintenanceDto, CreateBannerDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 
 /**
  * 系統狀態控制器（公開 API）
@@ -50,6 +51,7 @@ export class SystemController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
+@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminSystemController {
   constructor(private readonly systemService: SystemService) {}
 

@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
+import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 
 /**
  * 評論 Controller
@@ -37,6 +38,7 @@ import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
  * - DELETE /admin/reviews/:id - 刪除評論
  */
 @Controller()
+@SkipCsrf() // JWT + CORS already prevent CSRF in cross-domain deployment
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 

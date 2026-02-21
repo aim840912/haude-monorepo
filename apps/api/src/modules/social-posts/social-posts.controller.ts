@@ -21,6 +21,7 @@ import { CreateSocialPostDto, UpdateSocialPostDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
 
 // ========================================
 // 公開 API
@@ -56,6 +57,7 @@ export class SocialPostsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
+@SkipCsrf() // JWT + CORS + RolesGuard already prevent CSRF in cross-domain deployment
 export class AdminSocialPostsController {
   constructor(private readonly socialPostsService: SocialPostsService) {}
 
