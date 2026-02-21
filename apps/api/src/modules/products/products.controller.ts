@@ -36,6 +36,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 @ApiTags('products')
 @Controller('products')
@@ -47,6 +48,7 @@ export class ProductsController {
   // ========================================
 
   @Get()
+  @NoCache()
   @ApiOperation({ summary: '取得所有啟用產品' })
   @ApiResponse({
     status: 200,
@@ -187,6 +189,7 @@ export class AdminProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
+  @NoCache()
   @ApiOperation({ summary: '取得所有產品（含下架及草稿）' })
   @ApiResponse({ status: 200, description: '成功取得所有產品列表' })
   @ApiResponse({ status: 401, description: '未認證' })

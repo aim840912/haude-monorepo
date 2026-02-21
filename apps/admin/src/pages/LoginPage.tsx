@@ -64,6 +64,33 @@ export function LoginPage() {
             </svg>
             <span className="text-gray-700 font-medium">使用 Google 登入</span>
           </button>
+
+          {/* Dev Login — development only */}
+          {import.meta.env.DEV && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-2 text-gray-400">DEV</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  window.location.href = `${API_URL}/auth/dev-login`
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-orange-300 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400"
+              >
+                <svg className="w-4 h-4 text-orange-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+                <span className="text-orange-700 font-medium text-sm">Dev Login (skip OAuth)</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* 底部資訊 */}

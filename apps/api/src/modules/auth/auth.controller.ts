@@ -8,6 +8,8 @@ import {
   Request,
   Res,
   UnauthorizedException,
+  NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,14 +38,17 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { CsrfService } from '@/common/csrf/csrf.service';
 import { SkipCsrf } from '@/common/decorators/skip-csrf.decorator';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   private readonly isProd: boolean;
+  private readonly logger = new Logger(AuthController.name);
 
   constructor(
     private readonly authService: AuthService,
+    private readonly usersService: UsersService,
     private readonly configService: ConfigService,
     private readonly csrfService: CsrfService,
   ) {
@@ -274,6 +279,78 @@ export class AuthController {
     @Body() setPasswordDto: SetPasswordDto,
   ) {
     return this.authService.setPassword(req.user.userId, setPasswordDto);
+  }
+
+  // ========================================
+  // Dev Login（開發環境限定）
+  // ========================================
+
+  @Get('dev-login')
+  @SkipCsrf()
+  @ApiExcludeEndpoint()
+  async devLogin(@Res() res: Response) {
+    // Production safety gate — hard 404
+    if (this.isProd) {
+      throw new NotFoundException();
+    }
+
+    this.logger.warn('Dev login triggered — bypassing Google OAuth');
+
+    const adminUrl =
+      this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';
+
+    try {
+      // 1. Find any existing ADMIN user
+      const devEmail = 'dev@haude.tw';
+      let admin = await this.usersService.findByEmail(devEmail);
+
+      if (!admin || admin.role !== 'ADMIN') {
+        // Try to find any ADMIN user in the database
+        const existingAdmin =
+          await this.authService.findFirstAdmin();
+
+        if (existingAdmin) {
+          admin = existingAdmin;
+        } else {
+          // No admin exists — create a dev admin
+          admin = await this.authService.createDevAdmin(
+            devEmail,
+            'Dev Admin',
+          );
+          this.logger.warn(`Created dev admin: ${devEmail}`);
+        }
+      }
+
+      // 2. Generate token pair + set cookies
+      const { accessToken, refreshToken } =
+        await this.authService.generateTokenPair(admin.id, admin.email);
+      this.setAuthCookies(res, accessToken, refreshToken);
+
+      // 3. CSRF token
+      const csrfToken = this.csrfService.generateToken();
+      res.cookie(
+        'csrf-token',
+        csrfToken,
+        this.csrfService.getCookieOptions(),
+      );
+
+      // 4. Redirect to admin callback (same flow as Google OAuth)
+      const user = {
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role,
+      };
+
+      res.redirect(
+        `${adminUrl}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}&csrfToken=${csrfToken}`,
+      );
+    } catch (error) {
+      this.logger.error('Dev login failed', error);
+      res.redirect(
+        `${adminUrl}/auth/callback#error=${encodeURIComponent('Dev login failed: ' + (error as Error).message)}`,
+      );
+    }
   }
 
   // ========================================

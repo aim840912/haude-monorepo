@@ -512,6 +512,29 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  // ========================================
+  // Dev Login Helpers（開發環境限定）
+  // ========================================
+
+  /** Find the first ADMIN user in the database */
+  async findFirstAdmin() {
+    return this.prisma.user.findFirst({
+      where: { role: 'ADMIN', isActive: true },
+    });
+  }
+
+  /** Create a dev admin user (development only) */
+  async createDevAdmin(email: string, name: string) {
+    return this.prisma.user.create({
+      data: {
+        email,
+        name,
+        role: 'ADMIN',
+        isActive: true,
+      },
+    });
+  }
+
   /**
    * 使用 refresh token 換取新的 token pair（Rotation）
    * 舊 token 立即 revoke，防止 replay attack
