@@ -155,15 +155,21 @@ export function ProductsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        product.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {product.isActive ? '上架' : '下架'}
-                    </span>
+                    {product.isDraft ? (
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                        草稿
+                      </span>
+                    ) : (
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          product.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {product.isActive ? '上架' : '下架'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <button

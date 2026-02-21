@@ -182,12 +182,12 @@ export class AdminProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: '取得所有產品（含下架，預設排除草稿）' })
+  @ApiOperation({ summary: '取得所有產品（含下架及草稿）' })
   @ApiResponse({ status: 200, description: '成功取得所有產品列表' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   findAll() {
-    return this.productsService.findAllAdmin();
+    return this.productsService.findAllAdmin(true);
   }
 
   @Post('draft')
