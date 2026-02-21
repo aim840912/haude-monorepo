@@ -24,17 +24,17 @@ import { useElementScroll } from '@/hooks/useElementScroll'
 // ===== 子元件：CSS 茶壺 =====
 function Teapot() {
   return (
-    <div className="relative w-56 h-44 md:w-72 md:h-56">
+    <div className="relative w-44 h-36 md:w-72 md:h-56">
       {/* 壺身 */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-44 h-36 md:w-56 md:h-48 bg-[#5d4037] rounded-[50%_50%_45%_45%] shadow-lg" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-28 md:w-56 md:h-48 bg-[#5d4037] rounded-[50%_50%_45%_45%] shadow-lg" />
       {/* 壺蓋 — 緊貼壺身頂部 */}
-      <div className="absolute bottom-[74%] left-1/2 -translate-x-1/2 w-24 h-6 md:w-32 md:h-8 bg-[#4e342e] rounded-full" />
+      <div className="absolute bottom-[74%] left-1/2 -translate-x-1/2 w-20 h-5 md:w-32 md:h-8 bg-[#4e342e] rounded-full" />
       {/* 蓋鈕 */}
-      <div className="absolute bottom-[82%] left-1/2 -translate-x-1/2 w-7 h-5 md:w-9 md:h-7 bg-[#4e342e] rounded-full" />
+      <div className="absolute bottom-[82%] left-1/2 -translate-x-1/2 w-6 h-4 md:w-9 md:h-7 bg-[#4e342e] rounded-full" />
       {/* 壺嘴 */}
-      <div className="absolute bottom-12 -right-6 md:-right-8 w-14 h-6 md:w-20 md:h-7 bg-[#5d4037] rounded-r-full origin-left -rotate-12" />
+      <div className="absolute bottom-10 -right-5 md:-right-8 w-12 h-5 md:w-20 md:h-7 bg-[#5d4037] rounded-r-full origin-left -rotate-12" />
       {/* 壺把 */}
-      <div className="absolute bottom-8 -left-4 md:-left-6 w-10 h-24 md:w-14 md:h-28 border-[6px] border-[#5d4037] rounded-l-full border-r-0" />
+      <div className="absolute bottom-6 -left-3 md:-left-6 w-8 h-20 md:w-14 md:h-28 border-[5px] md:border-[6px] border-[#5d4037] rounded-l-full border-r-0" />
     </div>
   )
 }
@@ -42,9 +42,9 @@ function Teapot() {
 // ===== 子元件：CSS 茶杯 =====
 function Teacup({ fillHeight }: { fillHeight: MotionValue<string> }) {
   return (
-    <div className="relative w-44 h-36 md:w-56 md:h-44">
+    <div className="relative w-36 h-28 md:w-56 md:h-44">
       {/* 杯身 — 梯形用 border trick */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-28 md:w-48 md:h-36 bg-white/90 dark:bg-[#d7ccc8] rounded-b-[40%] overflow-hidden shadow-md border border-[#d4af37]/30">
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-22 md:w-48 md:h-36 bg-white/90 dark:bg-[#d7ccc8] rounded-b-[40%] overflow-hidden shadow-md border border-[#d4af37]/30">
         {/* 茶水填充 */}
         <motion.div
           className="absolute bottom-0 left-0 right-0 bg-[#c68a4a]/70"
@@ -52,9 +52,9 @@ function Teacup({ fillHeight }: { fillHeight: MotionValue<string> }) {
         />
       </div>
       {/* 杯把 — 位置上移、加粗 */}
-      <div className="absolute bottom-8 -right-2 md:-right-3 w-6 h-14 md:w-8 md:h-16 border-[6px] border-white/80 dark:border-[#d7ccc8] rounded-r-full border-l-0" />
+      <div className="absolute bottom-6 -right-1.5 md:-right-3 w-5 h-11 md:w-8 md:h-16 border-[5px] md:border-[6px] border-white/80 dark:border-[#d7ccc8] rounded-r-full border-l-0" />
       {/* 杯碟 */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-48 h-5 md:w-60 md:h-6 bg-white/70 dark:bg-[#d7ccc8]/70 rounded-full shadow-sm" />
+      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-40 h-4 md:w-60 md:h-6 bg-white/70 dark:bg-[#d7ccc8]/70 rounded-full shadow-sm" />
     </div>
   )
 }
@@ -189,7 +189,7 @@ export function TeaCeremonySection() {
 
         {/* Text 1 — 左側 */}
         <motion.div
-          className="absolute left-6 md:left-[10%] top-[12%] md:top-[15%] z-10 text-left max-w-[200px] md:max-w-xs"
+          className="absolute left-6 md:left-[10%] top-[10%] md:top-[15%] z-30 text-left max-w-[200px] md:max-w-xs"
           style={{ opacity: text1Opacity }}
         >
           <h2 className="text-2xl md:text-4xl font-serif text-[#3e2723] dark:text-[#d7ccc8] mb-2">
@@ -202,7 +202,7 @@ export function TeaCeremonySection() {
 
         {/* Text 2 — 右側 */}
         <motion.div
-          className="absolute right-6 md:right-[10%] top-[40%] md:top-[42%] z-10 text-right max-w-[200px] md:max-w-xs"
+          className="absolute right-6 md:right-[10%] top-[18%] md:top-[42%] z-30 text-right max-w-[200px] md:max-w-xs"
           style={{ opacity: text2Opacity }}
         >
           <h2 className="text-2xl md:text-4xl font-serif text-[#3e2723] dark:text-[#d7ccc8] mb-2">
@@ -215,7 +215,7 @@ export function TeaCeremonySection() {
 
         {/* Text 3 — 左側 */}
         <motion.div
-          className="absolute left-6 md:left-[10%] top-[65%] md:top-[68%] z-10 text-left max-w-[200px] md:max-w-xs"
+          className="absolute left-6 md:left-[10%] top-[78%] md:top-[68%] z-30 text-left max-w-[200px] md:max-w-xs"
           style={{ opacity: text3Opacity }}
         >
           <h2 className="text-2xl md:text-4xl font-serif text-[#3e2723] dark:text-[#d7ccc8] mb-2">
@@ -228,15 +228,15 @@ export function TeaCeremonySection() {
 
         {/* 茶葉飄落層 (z-20) */}
         <motion.div
-          className="absolute inset-0 z-20 pointer-events-none"
+          className="absolute inset-0 z-20 pointer-events-none overflow-hidden"
           style={{ opacity: leafOpacity }}
         >
           {/* 葉 1：右上角（遠離所有元素） */}
-          <motion.div className="absolute left-[88%] top-[8%]" style={{ y: leaf1Y }}>
+          <motion.div className="absolute left-[82%] md:left-[88%] top-[8%]" style={{ y: leaf1Y }}>
             <Leaf className="w-12 h-12 md:w-16 md:h-16 text-[#3e2723] rotate-45" />
           </motion.div>
           {/* 葉 2：右中（Text1-Text2 間隙） */}
-          <motion.div className="absolute left-[85%] top-[32%]" style={{ y: leaf2Y }}>
+          <motion.div className="absolute left-[78%] md:left-[85%] top-[32%]" style={{ y: leaf2Y }}>
             <Leaf className="w-10 h-10 md:w-14 md:h-14 text-[#4e342e] -rotate-30" />
           </motion.div>
           {/* 葉 3：左中（Text2-Text3 間隙） */}
@@ -247,7 +247,7 @@ export function TeaCeremonySection() {
 
         {/* 茶壺層 (z-30) */}
         <motion.div
-          className="absolute left-1/2 -translate-x-[70%] md:-translate-x-[75%] top-[28%] md:top-[22%] z-30 transform-gpu"
+          className="absolute left-1/2 -translate-x-1/2 md:-translate-x-[75%] top-[35%] md:top-[22%] z-30 transform-gpu"
           style={{
             y: teapotY,
             opacity: teapotOpacity,
@@ -259,7 +259,7 @@ export function TeaCeremonySection() {
 
         {/* 茶杯層 (z-40) */}
         <motion.div
-          className="absolute left-1/2 -translate-x-[40%] md:-translate-x-[35%] top-[60%] md:top-[56%] z-40 transform-gpu"
+          className="absolute left-1/2 -translate-x-1/2 md:-translate-x-[35%] top-[60%] md:top-[56%] z-40 transform-gpu"
           style={{
             y: cupY,
             scale: cupScale,
@@ -271,7 +271,7 @@ export function TeaCeremonySection() {
 
         {/* 蒸氣層 (z-50) */}
         <motion.div
-          className="absolute left-1/2 -translate-x-[40%] md:-translate-x-[35%] top-[57%] md:top-[52%] z-50 w-44 md:w-56 transform-gpu"
+          className="absolute left-1/2 -translate-x-1/2 md:-translate-x-[35%] top-[57%] md:top-[52%] z-50 w-32 md:w-56 transform-gpu"
           style={{ opacity: steamOpacity, y: steamY }}
         >
           <SteamLines />
@@ -279,7 +279,7 @@ export function TeaCeremonySection() {
 
         {/* CTA 按鈕 (z-50) */}
         <motion.div
-          className="absolute bottom-[2%] md:bottom-[2%] inset-x-0 z-50 text-center"
+          className="absolute bottom-[1%] md:bottom-[2%] inset-x-0 z-50 text-center"
           style={{ opacity: ctaOpacity, y: ctaY }}
         >
           <Link
