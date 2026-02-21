@@ -31,6 +31,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 
 // ========================================
@@ -135,6 +136,7 @@ export class OrdersController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
@@ -194,6 +196,7 @@ export class AdminOrdersController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminDashboardController {
   constructor(private readonly ordersService: OrdersService) {}
 

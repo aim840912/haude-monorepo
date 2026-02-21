@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
+import { Cacheable } from '@/common/decorators/cacheable.decorator';
 
 
 /**
@@ -49,6 +50,7 @@ export class ReviewsController {
    * 取得產品評論
    */
   @Get('products/:productId/reviews')
+  @Cacheable(300)
   async getProductReviews(
     @Param('productId') productId: string,
     @Query('limit') limit?: string,
@@ -65,6 +67,7 @@ export class ReviewsController {
    * 取得產品評分統計
    */
   @Get('products/:productId/reviews/stats')
+  @Cacheable(300)
   async getReviewStats(@Param('productId') productId: string) {
     return this.reviewsService.getReviewStats(productId);
   }

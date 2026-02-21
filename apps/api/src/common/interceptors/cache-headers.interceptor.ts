@@ -14,19 +14,20 @@ import { CACHE_MAX_AGE_KEY } from '../decorators/cacheable.decorator';
  * HTTP 快取標頭攔截器
  *
  * 自動為 GET 請求設置 Cache-Control 標頭。
- * - GET 請求：預設 5 分鐘公開快取（可透過 @Cacheable 覆寫）
+ * - GET 請求：預設不快取（安全優先，需透過 @Cacheable 明確啟用）
  * - 其他請求：no-store（不快取）
  *
- * 快取策略：
+ * 快取策略（當 @Cacheable(n) 啟用時）：
  * - public：允許 CDN 和瀏覽器快取
  * - max-age：瀏覽器快取時間
- * - s-maxage：CDN/代理伺服器快取時間（可設為較長）
+ * - s-maxage：CDN/代理伺服器快取時間（設為 max-age 的兩倍）
  * - stale-while-revalidate：背景更新時仍可使用舊快取
  */
 @Injectable()
 export class CacheHeadersInterceptor implements NestInterceptor {
-  // GET 請求預設快取時間（秒）
-  private readonly DEFAULT_MAX_AGE = 300; // 5 分鐘
+  // GET 請求預設不快取（安全優先：避免快取使用者個人資料）
+  // 需要快取的公開端點應使用 @Cacheable(seconds) 明確啟用
+  private readonly DEFAULT_MAX_AGE = 0;
 
   // stale-while-revalidate 時間（秒）
   private readonly STALE_WHILE_REVALIDATE = 60; // 1 分鐘
@@ -49,9 +50,10 @@ export class CacheHeadersInterceptor implements NestInterceptor {
     }
 
     // 從裝飾器取得自訂快取時間（如有）
-    const customMaxAge = this.reflector.get<number>(
+    // 支援 method 層級和 class 層級，method 優先
+    const customMaxAge = this.reflector.getAllAndOverride<number>(
       CACHE_MAX_AGE_KEY,
-      context.getHandler(),
+      [context.getHandler(), context.getClass()],
     );
 
     // 決定最終快取時間

@@ -26,6 +26,7 @@ import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto, RefundPaymentDto, ConfirmManualRefundDto } from './dto';
@@ -198,6 +199,7 @@ export class PaymentsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminPaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 

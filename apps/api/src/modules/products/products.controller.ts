@@ -36,10 +36,11 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 
-import { NoCache } from '@/common/decorators/cacheable.decorator';
+import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 @ApiTags('products')
 @Controller('products')
+@Cacheable(300)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -48,7 +49,6 @@ export class ProductsController {
   // ========================================
 
   @Get()
-  @NoCache()
   @ApiOperation({ summary: '取得所有啟用產品' })
   @ApiResponse({
     status: 200,
@@ -181,6 +181,7 @@ export class ProductsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminProductsController {
   constructor(private readonly productsService: ProductsService) {}
 

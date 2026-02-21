@@ -6,11 +6,13 @@ import {
   ReportFiltersDto,
   SalesDetailFiltersDto,
 } from './dto/report-filters.dto';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 @ApiTags('admin/reports')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('admin/reports')
+@NoCache()
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 

@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { MembersService } from './members.service';
 import { AdjustLevelDto, AdjustPointsDto } from './dto';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 
 @ApiTags('members')
@@ -101,6 +102,7 @@ export class MembersController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminMembersController {
   constructor(private readonly membersService: MembersService) {}
 

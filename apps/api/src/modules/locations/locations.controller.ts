@@ -21,12 +21,14 @@ import {
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 
 /**
  * 公開 API
  */
 @Controller('locations')
+@Cacheable(300)
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
@@ -52,6 +54,7 @@ export class LocationsController {
 @Controller('admin/locations')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
+@NoCache()
 export class AdminLocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 

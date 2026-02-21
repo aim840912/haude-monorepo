@@ -21,6 +21,7 @@ import { CreateSocialPostDto, UpdateSocialPostDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 
 // ========================================
@@ -29,6 +30,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 
 @ApiTags('social-posts')
 @Controller('social-posts')
+@Cacheable(300)
 export class SocialPostsController {
   constructor(private readonly socialPostsService: SocialPostsService) {}
 
@@ -57,6 +59,7 @@ export class SocialPostsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminSocialPostsController {
   constructor(private readonly socialPostsService: SocialPostsService) {}
 

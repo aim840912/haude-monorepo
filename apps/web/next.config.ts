@@ -57,8 +57,9 @@ const apiNoCacheHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  // 輸出獨立部署包
-  output: 'standalone',
+  // Standalone output only on Vercel CI (VERCEL=1 is auto-set).
+  // Disabled locally to avoid Windows symlink EPERM errors.
+  output: process.env.VERCEL ? 'standalone' : undefined,
 
   // Reduce file watching scope to prevent EMFILE on macOS
   webpack: (config, { dev }) => {

@@ -25,12 +25,16 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 
 /**
- * 公開 API
+ * 公開 API + 使用者預約
+ * Class 層級 @Cacheable(300) 讓公開 GET 有快取
+ * 認證端點用 @NoCache() 覆蓋
  */
 @Controller('farm-tours')
+@Cacheable(300)
 export class FarmToursController {
   constructor(private readonly farmToursService: FarmToursService) {}
 
@@ -49,9 +53,10 @@ export class FarmToursController {
     return this.farmToursService.findOne(id);
   }
 
-  // 需要登入的操作
+  // 需要登入的操作（覆蓋 class 層級的 @Cacheable）
   @Post('bookings')
   @UseGuards(JwtAuthGuard)
+  @NoCache()
   createBooking(
     @Request() req: { user: JwtUser },
     @Body() dto: CreateBookingDto,
@@ -61,12 +66,14 @@ export class FarmToursController {
 
   @Get('bookings/my')
   @UseGuards(JwtAuthGuard)
+  @NoCache()
   getMyBookings(@Request() req: { user: JwtUser }) {
     return this.farmToursService.getUserBookings(req.user.userId);
   }
 
   @Patch('bookings/:id/cancel')
   @UseGuards(JwtAuthGuard)
+  @NoCache()
   cancelBooking(@Request() req: { user: JwtUser }, @Param('id') id: string) {
     return this.farmToursService.cancelBooking(req.user.userId, id);
   }
@@ -78,6 +85,7 @@ export class FarmToursController {
 @Controller('admin/farm-tours')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
+@NoCache()
 export class AdminFarmToursController {
   constructor(private readonly farmToursService: FarmToursService) {}
 

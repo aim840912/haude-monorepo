@@ -21,6 +21,7 @@ import { UpdateMaintenanceDto, CreateBannerDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 
 /**
@@ -33,6 +34,7 @@ export class SystemController {
 
   @Get('status')
   @SkipThrottle() // 狀態檢查不受速率限制，方便前端輪詢
+  @Cacheable(60)
   @ApiOperation({ summary: '取得系統狀態' })
   @ApiResponse({
     status: 200,
@@ -51,6 +53,7 @@ export class SystemController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class AdminSystemController {
   constructor(private readonly systemService: SystemService) {}
 

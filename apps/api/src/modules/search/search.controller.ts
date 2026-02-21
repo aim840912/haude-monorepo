@@ -1,8 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SearchQueryDto, SearchSuggestionDto } from './dto/search.dto';
+import { Cacheable } from '@/common/decorators/cacheable.decorator';
 
 @Controller('search')
+@Cacheable(60)
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 

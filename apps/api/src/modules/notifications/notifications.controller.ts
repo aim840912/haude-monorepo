@@ -24,12 +24,14 @@ import { Roles } from '@/modules/auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 
 import { NotificationsService } from './notifications.service';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 @ApiTags('admin/notifications')
 @Controller('admin/notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
@@ -88,6 +90,7 @@ export class NotificationsController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.STAFF, Role.ADMIN)
 @ApiBearerAuth()
+@NoCache()
 export class StockAlertsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
