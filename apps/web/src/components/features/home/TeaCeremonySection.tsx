@@ -33,8 +33,8 @@ function Teapot() {
       <div className="absolute bottom-[82%] left-1/2 -translate-x-1/2 w-6 h-4 md:w-9 md:h-7 bg-[#4e342e] rounded-full" />
       {/* 壺嘴 */}
       <div className="absolute bottom-10 -right-5 md:-right-8 w-12 h-5 md:w-20 md:h-7 bg-[#5d4037] rounded-r-full origin-left -rotate-12" />
-      {/* 壺把 */}
-      <div className="absolute bottom-6 -left-3 md:-left-6 w-8 h-20 md:w-14 md:h-28 border-[5px] md:border-[6px] border-[#5d4037] rounded-l-full border-r-0" />
+      {/* 壺把 — 貼合壺身圓弧 */}
+      <div className="absolute bottom-10 -left-1 md:-left-2 w-8 h-20 md:w-14 md:h-28 border-[5px] md:border-[6px] border-[#5d4037] rounded-l-full border-r-0" />
     </div>
   )
 }
