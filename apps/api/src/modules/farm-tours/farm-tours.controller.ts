@@ -27,7 +27,6 @@ import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
-
 /**
  * 公開 API + 使用者預約
  * Class 層級 @Cacheable(300) 讓公開 GET 有快取

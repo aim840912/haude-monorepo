@@ -13,7 +13,10 @@ import * as Joi from 'joi';
  */
 export const envValidationSchema = Joi.object({
   // === 必要環境變數（缺少會啟動失敗）===
-  DATABASE_URL: Joi.string().uri().required().description('PostgreSQL 連線字串'),
+  DATABASE_URL: Joi.string()
+    .uri()
+    .required()
+    .description('PostgreSQL 連線字串'),
   JWT_SECRET: Joi.string()
     .min(32)
     .required()
@@ -37,8 +40,12 @@ export const envValidationSchema = Joi.object({
     .description('管理後台 URL（用於 CORS）'),
 
   // === Google OAuth（選填，但若填了核心欄位需成對）===
-  GOOGLE_CLIENT_ID: Joi.string().optional().description('Google OAuth Client ID'),
-  GOOGLE_CLIENT_SECRET: Joi.string().optional().description('Google OAuth Client Secret'),
+  GOOGLE_CLIENT_ID: Joi.string()
+    .optional()
+    .description('Google OAuth Client ID'),
+  GOOGLE_CLIENT_SECRET: Joi.string()
+    .optional()
+    .description('Google OAuth Client Secret'),
   GOOGLE_CALLBACK_URL: Joi.string()
     .uri()
     .optional()

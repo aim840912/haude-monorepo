@@ -126,7 +126,9 @@ export class OrderExpiryService {
 
     if (!payment) {
       // 無付款記錄：以訂單建立時間 + 24 小時判定
-      return now > orderCreatedAt.getTime() + OrderExpiryService.EXPIRY_MS.DEFAULT;
+      return (
+        now > orderCreatedAt.getTime() + OrderExpiryService.EXPIRY_MS.DEFAULT
+      );
     }
 
     // 優先使用 ECPay 回傳的 expireDate（ATM/CVS 取號後會設定）

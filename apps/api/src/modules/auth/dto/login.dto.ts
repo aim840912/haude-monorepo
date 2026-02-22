@@ -10,7 +10,10 @@ export class LoginDto {
   @IsString()
   password: string;
 
-  @ApiPropertyOptional({ example: false, description: '記住我（延長 refresh token 有效期）' })
+  @ApiPropertyOptional({
+    example: false,
+    description: '記住我（延長 refresh token 有效期）',
+  })
   @IsOptional()
   @IsBoolean()
   rememberMe?: boolean;

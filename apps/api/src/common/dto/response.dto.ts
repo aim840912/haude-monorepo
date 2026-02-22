@@ -60,7 +60,6 @@ export class AuthResponseDto {
     name: string;
     role: string;
   };
-
 }
 
 /**

@@ -24,7 +24,6 @@ import { MembersService } from './members.service';
 import { AdjustLevelDto, AdjustPointsDto } from './dto';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
 
-
 @ApiTags('members')
 @Controller('members')
 @UseGuards(JwtAuthGuard)

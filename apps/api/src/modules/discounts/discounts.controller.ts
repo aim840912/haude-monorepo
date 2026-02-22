@@ -19,7 +19,6 @@ import { DiscountsService } from './discounts.service';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { UpdateDiscountDto } from './dto/update-discount.dto';
 
-
 @ApiTags('discounts')
 @Controller()
 export class DiscountsController {

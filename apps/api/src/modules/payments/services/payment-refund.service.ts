@@ -56,7 +56,9 @@ export class PaymentRefundService {
       where: { id: paymentId },
       include: {
         order: { include: { user: { select: { email: true, name: true } } } },
-        refunds: { where: { status: { in: ['completed', 'processing', 'pending'] } } },
+        refunds: {
+          where: { status: { in: ['completed', 'processing', 'pending'] } },
+        },
       },
     });
 
@@ -130,9 +132,7 @@ export class PaymentRefundService {
     reason?: string,
   ) {
     if (!payment.tradeNo) {
-      throw new BadRequestException(
-        '此付款無綠界交易編號，無法自動退款',
-      );
+      throw new BadRequestException('此付款無綠界交易編號，無法自動退款');
     }
 
     // 建立退款記錄（processing 狀態）
@@ -225,9 +225,7 @@ export class PaymentRefundService {
           refundAmount,
           'CREDIT',
           payment.order.user.name,
-        ).catch((err) =>
-          this.logger.error('發送退款通知郵件失敗', err),
-        );
+        ).catch((err) => this.logger.error('發送退款通知郵件失敗', err));
 
         this.logger.log(
           `信用卡退款成功：${payment.merchantOrderNo}，金額：${refundAmount}`,
@@ -253,9 +251,7 @@ export class PaymentRefundService {
           `信用卡退款失敗：${payment.merchantOrderNo}，RtnCode=${rtnCode}，RtnMsg=${rtnMsg}`,
         );
 
-        throw new BadRequestException(
-          `退款失敗：${rtnMsg || '綠界回應異常'}`,
-        );
+        throw new BadRequestException(`退款失敗：${rtnMsg || '綠界回應異常'}`);
       }
     } catch (error) {
       // 如果是已經處理過的 BadRequestException，直接拋出
@@ -354,7 +350,9 @@ export class PaymentRefundService {
         data: {
           status: 'completed',
           completedAt: new Date(),
-          reason: notes ? `${refund.reason || ''}${refund.reason ? '；' : ''}確認備註：${notes}` : refund.reason,
+          reason: notes
+            ? `${refund.reason || ''}${refund.reason ? '；' : ''}確認備註：${notes}`
+            : refund.reason,
         },
       }),
       this.prisma.payment.update({
@@ -377,13 +375,9 @@ export class PaymentRefundService {
       refund.amount,
       refund.payment.paymentType,
       refund.order.user.name,
-    ).catch((err) =>
-      this.logger.error('發送退款通知郵件失敗', err),
-    );
+    ).catch((err) => this.logger.error('發送退款通知郵件失敗', err));
 
-    this.logger.log(
-      `人工退款已確認：${refund.id}，操作員：${operatorId}`,
-    );
+    this.logger.log(`人工退款已確認：${refund.id}，操作員：${operatorId}`);
 
     return {
       refundId: refund.id,
