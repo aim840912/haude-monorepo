@@ -96,7 +96,7 @@ export function TeaCeremonySection() {
   useEffect(() => setMounted(true), [])
   const isReduced = mounted && prefersReducedMotion && !forceAnimation
 
-  const { scrollYProgress } = useElementScroll(containerRef, ['start start', 'end end'])
+  const { scrollYProgress } = useElementScroll(containerRef, ['start 80%', 'end end'])
 
   // --- 茶葉飄落 (0.00 - 0.30+) — 輕微浮動，不掃過其他元素 ---
   const leaf1Y = useTransform(scrollYProgress, [0, 0.3], ['-3%', '8%'])

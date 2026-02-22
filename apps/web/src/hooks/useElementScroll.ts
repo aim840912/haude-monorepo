@@ -13,7 +13,8 @@
 import { useEffect, type RefObject } from 'react'
 import { useMotionValue } from 'framer-motion'
 
-type ScrollOffset = 'start' | 'end' | 'center'
+type ScrollKeyword = 'start' | 'end' | 'center'
+type ScrollOffset = ScrollKeyword | `${number}%`
 type OffsetPair = `${ScrollOffset} ${ScrollOffset}`
 
 /**
@@ -91,20 +92,23 @@ function getPosition(
   const [elementEdge, viewportEdge] = offsetStr.split(' ') as [ScrollOffset, ScrollOffset]
 
   // 元素參考點（相對於視窗頂部）
-  let elementPos: number
-  switch (elementEdge) {
-    case 'start': elementPos = rect.top; break
-    case 'end': elementPos = rect.top + elementHeight; break
-    case 'center': elementPos = rect.top + elementHeight / 2; break
-  }
+  const elementPos = resolveOffset(elementEdge, rect.top, elementHeight)
 
   // 視窗參考點
-  let viewportPos: number
-  switch (viewportEdge) {
-    case 'start': viewportPos = 0; break
-    case 'end': viewportPos = windowHeight; break
-    case 'center': viewportPos = windowHeight / 2; break
-  }
+  const viewportPos = resolveOffset(viewportEdge, 0, windowHeight)
 
   return elementPos - viewportPos
+}
+
+/** Resolve a keyword or percentage offset to a pixel value */
+function resolveOffset(offset: ScrollOffset, base: number, size: number): number {
+  if (offset.endsWith('%')) {
+    return base + size * (parseFloat(offset) / 100)
+  }
+  switch (offset) {
+    case 'start': return base
+    case 'end': return base + size
+    case 'center': return base + size / 2
+    default: return base
+  }
 }
