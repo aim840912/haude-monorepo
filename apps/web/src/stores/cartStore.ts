@@ -5,6 +5,9 @@ import { isAuthenticated } from '@/stores/authStore'
 import type { Product } from '@/types/product'
 import logger from '@/lib/logger'
 
+// Local cart expires after 14 days of inactivity
+const CART_TTL_MS = 14 * 24 * 60 * 60 * 1000
+
 export interface CartItem {
   id: string
   productId: string
@@ -19,6 +22,7 @@ interface CartState {
   items: CartItem[]
   isLoaded: boolean
   isLoading: boolean
+  lastUpdatedAt: number | null
 
   // Actions
   addItem: (product: Product, quantity?: number) => Promise<void>
@@ -69,6 +73,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       isLoaded: false,
       isLoading: false,
+      lastUpdatedAt: null,
 
       /**
        * 新增商品到購物車
@@ -117,9 +122,9 @@ export const useCartStore = create<CartState>()(
               ...updatedItems[existingIndex],
               quantity: newQuantity,
             }
-            set({ items: updatedItems })
+            set({ items: updatedItems, lastUpdatedAt: Date.now() })
           } else {
-            set({ items: [...items, cartItem] })
+            set({ items: [...items, cartItem], lastUpdatedAt: Date.now() })
           }
         }
       },
@@ -141,6 +146,7 @@ export const useCartStore = create<CartState>()(
         } else {
           set(state => ({
             items: state.items.filter(item => item.productId !== productId),
+            lastUpdatedAt: Date.now(),
           }))
         }
       },
@@ -170,6 +176,7 @@ export const useCartStore = create<CartState>()(
                 ? { ...item, quantity: Math.min(quantity, item.maxQuantity) }
                 : item
             ),
+            lastUpdatedAt: Date.now(),
           }))
         }
       },
@@ -189,7 +196,7 @@ export const useCartStore = create<CartState>()(
             throw error
           }
         } else {
-          set({ items: [] })
+          set({ items: [], lastUpdatedAt: null })
         }
       },
 
@@ -262,12 +269,19 @@ export const useCartStore = create<CartState>()(
       name: 'cart-storage',
       partialize: (state) => ({
         items: state.items,
+        lastUpdatedAt: state.lastUpdatedAt,
       }),
       merge: (persisted, current) => {
-        const persistedState = persisted as { items?: CartItem[] } | undefined
+        const persistedState = persisted as { items?: CartItem[]; lastUpdatedAt?: number | null } | undefined
+
+        // Discard local cart if inactive for more than 14 days
+        const lastUpdated = persistedState?.lastUpdatedAt
+        const isExpired = lastUpdated != null && Date.now() - lastUpdated > CART_TTL_MS
+
         return {
           ...current,
-          items: persistedState?.items ?? [],
+          items: isExpired ? [] : (persistedState?.items ?? []),
+          lastUpdatedAt: isExpired ? null : (lastUpdated ?? null),
         }
       },
     }

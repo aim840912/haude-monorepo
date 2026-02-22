@@ -45,6 +45,7 @@ describe('cartStore', () => {
       items: [],
       isLoaded: false,
       isLoading: false,
+      lastUpdatedAt: null,
       totalItems: 0,
       totalPrice: 0,
     })

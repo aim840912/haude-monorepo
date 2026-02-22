@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useCartStore } from '@/stores/cartStore'
+import { isAuthenticated } from '@/stores/authStore'
 import { useToast } from '@/components/ui/feedback/toast'
 import { ImageCarousel } from '@/components/ui/ImageCarousel'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
@@ -36,7 +37,7 @@ interface ProductDetailClientProps {
  */
 export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const router = useRouter()
-  const { success, error: showError } = useToast()
+  const { success, error: showError, info } = useToast()
   const { addItem, isLoading: isAddingToCart } = useCartStore()
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
@@ -84,6 +85,15 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
       await addItem(product, quantity)
       setAddedToCart(true)
       setTimeout(() => setAddedToCart(false), 2000)
+
+      // Prompt unauthenticated users to log in (once per session)
+      if (!isAuthenticated()) {
+        const hintKey = 'cart-login-hint-shown'
+        if (!sessionStorage.getItem(hintKey)) {
+          sessionStorage.setItem(hintKey, 'true')
+          info('登入後可跨裝置同步購物車', '目前購物車僅儲存在此裝置')
+        }
+      }
     } catch (err) {
       logger.error('加入購物車失敗', { error: err })
       showError('加入購物車失敗', '請稍後再試')

@@ -230,7 +230,7 @@ describe('checkoutStore', () => {
       const state = useCheckoutStore.getState()
       expect(state.shippingAddress.name).toBe('')
       expect(state.shippingAddress.phone).toBe('')
-      expect(state.paymentMethod).toBe('CREDIT')
+      expect(state.paymentMethod).toBe('STORE_CONTACT')
       expect(state.discountCode).toBe('')
       expect(state.discountInfo).toBeNull()
     })
