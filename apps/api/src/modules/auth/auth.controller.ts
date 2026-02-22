@@ -63,7 +63,7 @@ export class AuthController {
     const cookieBase = {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: (this.isProd ? 'none' : 'lax') as 'none' | 'lax',
+      sameSite: this.isProd ? ('none' as const) : ('lax' as const),
       path: '/',
     };
 
@@ -289,17 +289,13 @@ export class AuthController {
 
       if (!admin || admin.role !== 'ADMIN') {
         // Try to find any ADMIN user in the database
-        const existingAdmin =
-          await this.authService.findFirstAdmin();
+        const existingAdmin = await this.authService.findFirstAdmin();
 
         if (existingAdmin) {
           admin = existingAdmin;
         } else {
           // No admin exists — create a dev admin
-          admin = await this.authService.createDevAdmin(
-            devEmail,
-            'Dev Admin',
-          );
+          admin = await this.authService.createDevAdmin(devEmail, 'Dev Admin');
           this.logger.warn(`Created dev admin: ${devEmail}`);
         }
       }
@@ -422,7 +418,7 @@ export class AuthController {
     @Request() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies?.refresh_token;
+    const refreshToken = req.cookies?.refresh_token as string | undefined;
 
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token provided');
@@ -436,5 +432,4 @@ export class AuthController {
 
     return { message: 'Token refreshed successfully' };
   }
-
 }

@@ -33,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Dual extraction: httpOnly cookie first, Bearer header fallback
       jwtFromRequest: (req: Request) => {
         // 1. Primary: read from httpOnly cookie (secure)
-        const cookieToken = req?.cookies?.access_token;
+        const cookieToken = req?.cookies?.access_token as string | undefined;
         if (cookieToken) return cookieToken;
 
         // 2. Fallback: Authorization header (migration period / mobile)
