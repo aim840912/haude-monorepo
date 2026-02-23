@@ -20,10 +20,11 @@ interface ProductCardProps {
  * 產品卡片組件
  *
  * 特色：
- * - 1:1 正方形圖片比例
- * - 響應式設計
+ * - 4:3 圖片比例
+ * - 響應式設計（填滿 grid 欄位）
  * - Hover 效果
  * - 促銷標籤
+ * - 友善庫存標示
  */
 export function ProductCard({
   product,
@@ -65,7 +66,7 @@ export function ProductCard({
         'border border-card-border',
         'transition-all duration-300 ease-out',
         'hover:-translate-y-2 hover:scale-[1.01]',
-        'w-full max-w-[300px] mx-auto',
+        'w-full',
         'tea-card'
       )}
       onClick={handleClick}
@@ -110,7 +111,7 @@ export function ProductCard({
 
       {/* 產品圖片 */}
       <div className="relative overflow-hidden rounded-t-xl product-image-wrapper">
-        <div className="pb-[100%] bg-card-bg-secondary relative">
+        <div className="pb-[75%] bg-card-bg-secondary relative">
           {!imageError ? (
             <Image
               src={imageUrl}
@@ -166,6 +167,11 @@ export function ProductCard({
           {product.name}
         </h3>
 
+        {/* 產品描述 */}
+        <p className="text-sm text-text-secondary line-clamp-2">
+          {product.description}
+        </p>
+
         {/* 價格區域 */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* 現價 */}
@@ -184,12 +190,18 @@ export function ProductCard({
           )}
         </div>
 
-        {/* 庫存資訊 */}
-        <div className="text-xs text-text-tertiary">
+        {/* 庫存狀態（友善標示） */}
+        <div className="text-xs">
           {stock > 0 ? (
-            <span className="text-primary-green">庫存: {stock}</span>
+            <span className="inline-flex items-center gap-1.5 text-primary-green">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              有現貨
+            </span>
           ) : (
-            <span className="text-accent-red">缺貨中</span>
+            <span className="inline-flex items-center gap-1.5 text-accent-red">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              缺貨中
+            </span>
           )}
         </div>
       </div>

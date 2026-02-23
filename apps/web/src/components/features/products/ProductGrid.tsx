@@ -23,9 +23,9 @@ interface ProductGridProps {
  * 產品網格元件
  *
  * 響應式佈局：
- * - 手機：1 列
- * - 平板：2 列
- * - 桌面：3-4 列
+ * - 小手機 (<480px)：1 列
+ * - 手機 (480px+)：2 列
+ * - 桌面 (1024px+)：3 列
  */
 export function ProductGrid({
   products,
@@ -97,7 +97,7 @@ export function ProductGrid({
 
   // 產品網格
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.map((product) => (
         <ProductCard
           key={product.id}

@@ -9,7 +9,7 @@
 const PLACEHOLD_BASE = 'https://placehold.co'
 
 /**
- * 圖片尺寸預設值
+ * Placeholder 圖片尺寸（用於 placehold.co 佔位圖）
  */
 export const IMAGE_SIZES = {
   /** 產品圖片 - 正方形 */
@@ -23,6 +23,29 @@ export const IMAGE_SIZES = {
   /** 橫幅 */
   banner: { width: 1200, height: 400 },
 } as const
+
+/**
+ * 產品圖片上傳建議尺寸
+ *
+ * Next.js <Image> 會自動壓縮和轉換格式（WebP），
+ * 來源圖片只需確保尺寸足夠覆蓋 2x Retina 螢幕。
+ *
+ * 頁面佈局：
+ * - Hero 卡片：16:10 比例，桌面佔 55% 寬度（~634px），Retina 需 ~1268px
+ * - Grid 卡片：4:3 比例，桌面 3 欄（~360px），Retina 需 ~720px
+ * - 統一尺寸 1280×960 (4:3) 可同時滿足兩種用途（Hero 會用 object-cover 自動裁切）
+ */
+export const RECOMMENDED_IMAGE_SIZES = {
+  /** 統一建議尺寸（一張圖搞定 Hero + Grid） */
+  product: { width: 1280, height: 960, ratio: '4:3', maxFileSize: '300KB' },
+  /** Hero 專用（需要更寬的構圖時使用） */
+  productHero: { width: 1280, height: 800, ratio: '16:10', maxFileSize: '300KB' },
+  /** Grid 最低要求（只用在 Grid 卡片時） */
+  productGrid: { width: 800, height: 600, ratio: '4:3', maxFileSize: '150KB' },
+} as const
+
+/** Upload hint message for product images */
+export const PRODUCT_IMAGE_HINT = '建議尺寸 1280×960 (4:3)，檔案大小 300KB 以內。支援 JPG、PNG、WebP。'
 
 /**
  * 產品分類配色方案
