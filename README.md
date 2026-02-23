@@ -446,11 +446,9 @@ VITE_API_BASE_URL="http://localhost:3001"
 
 ### Vercel + Supabase (Recommended)
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Vercel    │     │   Vercel    │     │  Supabase   │
-│    (Web)    │────>│    (API)    │────>│ (DB/Storage)│
-└─────────────┘     └─────────────┘     └─────────────┘
+```mermaid
+flowchart LR
+    Web["Vercel<br/>(Web)"] --> API["Vercel<br/>(API)"] --> Supabase["Supabase<br/>(DB / Storage)"]
 ```
 
 ### Docker
