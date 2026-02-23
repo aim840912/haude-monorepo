@@ -106,45 +106,28 @@ The monorepo uses Turborepo's dependency graph to determine build order (`types`
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                       Client Devices                            │
-│                   (Browser / Mobile)                            │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-            ┌───────────────┴───────────────┐
-            v                               v
-┌───────────────────────┐       ┌───────────────────────┐
-│   Web (Next.js 15)    │       │   Admin (Vite)        │
-│   Port: 5173          │       │   Port: 5174          │
-│                       │       │                       │
-│  - App Router (SSR)   │       │  - React Router (SPA) │
-│  - Server Components  │       │  - Axios Client       │
-│  - Zustand Store      │       │  - TanStack Query     │
-└───────────┬───────────┘       └───────────┬───────────┘
-            │                               │
-            └───────────────┬───────────────┘
-                            v
-┌─────────────────────────────────────────────────────────────────┐
-│                    API Server (NestJS 11)                        │
-│                       Port: 3001                                │
-│                                                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
-│  │   Auth   │ │ Products │ │  Orders  │ │ Payments │  ...x19   │
-│  │  Module  │ │  Module  │ │  Module  │ │  Module  │           │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │                    Prisma ORM (27 models)                │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-            ┌───────────────┼───────────────┐
-            v               v               v
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│  PostgreSQL   │   │   Supabase    │   │    ECPay      │
-│   Database    │   │   Storage     │   │   Payment     │
-└───────────────┘   └───────────────┘   └───────────────┘
+```mermaid
+flowchart TD
+    Client["Client Devices<br/>(Browser / Mobile)"]
+
+    Client --> Web
+    Client --> Admin
+
+    subgraph Frontend
+        Web["<b>Web</b><br/>Next.js 15 · Port 5173<br/>App Router · SSR · Zustand"]
+        Admin["<b>Admin</b><br/>Vite + React · Port 5174<br/>SPA · TanStack Query"]
+    end
+
+    Web --> API
+    Admin --> API
+
+    subgraph Backend
+        API["<b>API Server</b><br/>NestJS 11 · Port 3001<br/>19 Modules · Prisma ORM (27 models)"]
+    end
+
+    API --> DB["PostgreSQL<br/>Database"]
+    API --> Storage["Supabase<br/>Storage"]
+    API --> Payment["ECPay<br/>Payment"]
 ```
 
 ---
