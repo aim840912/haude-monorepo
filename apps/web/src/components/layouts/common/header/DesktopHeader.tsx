@@ -16,6 +16,7 @@ const navItemsConfig = [
   { href: '/products', labelKey: 'products' },
   { href: '/locations', labelKey: 'locations' },
   { href: '/schedule', labelKey: 'schedule' },
+  { href: '/news', labelKey: 'news' },
 ] as const
 
 // 用戶選單配置
