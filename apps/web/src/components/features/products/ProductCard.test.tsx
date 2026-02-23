@@ -71,11 +71,11 @@ describe('ProductCard', () => {
       expect(screen.getByText(/NT\$ 1,500/)).toBeInTheDocument()
     })
 
-    it('應該正確渲染庫存數量', () => {
+    it('有庫存時應該顯示有現貨狀態', () => {
       const product = createMockProduct({ stock: 50 })
       render(<ProductCard product={product} />)
 
-      expect(screen.getByText('庫存: 50')).toBeInTheDocument()
+      expect(screen.getByText('有現貨')).toBeInTheDocument()
     })
 
     it('應該顯示價格單位', () => {
@@ -183,12 +183,11 @@ describe('ProductCard', () => {
       expect(outOfStockTexts).toHaveLength(2)
     })
 
-    it('有庫存時應該顯示綠色庫存數量', () => {
+    it('有庫存時應該顯示有現貨狀態', () => {
       const product = createMockProduct({ stock: 100 })
       render(<ProductCard product={product} />)
 
-      const stockText = screen.getByText('庫存: 100')
-      expect(stockText).toBeInTheDocument()
+      expect(screen.getByText('有現貨')).toBeInTheDocument()
     })
   })
 
@@ -334,7 +333,7 @@ describe('ProductCard', () => {
       expect(screen.getByText(/\/ 盒/)).toBeInTheDocument()
       expect(screen.getByText('NT$ 3,000')).toBeInTheDocument()
       expect(screen.getByText('特價 -20%')).toBeInTheDocument()
-      expect(screen.getByText('庫存: 25')).toBeInTheDocument()
+      expect(screen.getByText('有現貨')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: '加入收藏' })).toBeInTheDocument()
     })
   })
