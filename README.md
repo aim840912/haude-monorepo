@@ -1,232 +1,170 @@
 <div align="center">
 
-# 豪德製茶所
+# 豪德製茶所 Haude Tea
 
-**全棧電商平台 | Full-Stack E-Commerce Platform**
+**Monorepo Full-Stack E-Commerce Platform**
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+A production-grade tea e-commerce platform built with Next.js 15, NestJS 11, and PostgreSQL. Features ECPay payment integration, JWT refresh token rotation, scroll-driven animations, and a complete admin dashboard.
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-haude--web.vercel.app-00C853?style=for-the-badge&logo=vercel&logoColor=white)](https://haude-web.vercel.app/)
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?style=flat-square&logo=prisma)](https://www.prisma.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.1-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![pnpm](https://img.shields.io/badge/pnpm-Monorepo-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
-[Demo](#demo) · [功能特色](#-功能特色) · [快速開始](#-快速開始) · [技術架構](#-技術架構) · [API 文檔](#-api-端點)
-
 </div>
 
 ---
 
-## Demo
+## Screenshots
 
-> 🚧 線上 Demo 部署中...
-
-<!--
-**線上展示**：[https://haude.vercel.app](https://haude.vercel.app)
-
-**管理後台**：[https://admin.haude.vercel.app](https://admin.haude.vercel.app)
--->
-
-<details>
-<summary>📸 專案截圖</summary>
-
-| 首頁 | 產品列表 |
+| Desktop | Mobile |
 |:---:|:---:|
-| ![首頁](docs/screenshots/home.png) | ![產品](docs/screenshots/products.png) |
+| ![Home](docs/screenshots/home.png) | ![Mobile](docs/screenshots/mobile.png) |
 
-| 購物車 | 結帳 |
+| Products | Cart |
 |:---:|:---:|
-| ![購物車](docs/screenshots/cart.png) | ![結帳](docs/screenshots/checkout.png) |
-
-| 管理後台 | 訂單管理 |
-|:---:|:---:|
-| ![後台](docs/screenshots/admin.png) | ![訂單](docs/screenshots/orders.png) |
-
-</details>
+| ![Products](docs/screenshots/products.png) | ![Cart](docs/screenshots/cart.png) |
 
 ---
 
-## 專案亮點
+## Project Stats
 
 <table>
 <tr>
-<td width="50%">
-
-### 完整電商功能
-- 產品瀏覽與搜尋
-- 購物車與結帳
-- 多種支付方式
-- 訂單追蹤
-
-</td>
-<td width="50%">
-
-### 企業級架構
-- Monorepo 多應用協作
-- TypeScript 全覆蓋
-- 模組化可擴展設計
-- Docker 容器化部署
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 金流整合
-- 綠界支付 ECPay
-- 信用卡 / ATM / 超商代碼
-- 完整回調處理
-- 支付狀態追蹤
-
-</td>
-<td width="50%">
-
-### 管理後台
-- 產品與庫存管理
-- 訂單與支付管理
-- 用戶與權限管理
-- 折扣碼系統
-
-</td>
+<td align="center"><strong>613</strong><br/>TypeScript Files</td>
+<td align="center"><strong>19</strong><br/>API Modules</td>
+<td align="center"><strong>27</strong><br/>Prisma Models</td>
+<td align="center"><strong>16</strong><br/>Admin Pages</td>
 </tr>
 </table>
 
 ---
 
-## 功能特色
+## Architecture Highlights
 
-### 用戶端
+### Security: JWT Refresh Token Rotation with Replay Attack Detection
 
-| 功能 | 說明 |
-|------|------|
-| 🛒 購物流程 | 完整的 瀏覽 → 購物車 → 結帳 → 付款 流程 |
-| 💳 多種支付 | 信用卡、ATM 轉帳、超商代碼、WebATM |
-| 👤 會員系統 | 註冊、登入、密碼重設、帳戶管理 |
-| 📦 訂單追蹤 | 即時訂單狀態、歷史訂單查詢 |
-| 🎫 折扣系統 | 折扣碼驗證與套用 |
-| 🍵 農場體驗 | 體驗活動瀏覽與預約 |
-| 📍 據點資訊 | 實體店面與市集資訊 |
+The auth system implements a **token family** approach: each refresh token is single-use and linked to a family ID. When a revoked token is reused (potential replay attack), the system automatically revokes **all tokens** for that user, forcing re-authentication. This mitigates token theft scenarios where an attacker and legitimate user race to refresh.
 
-### 管理後台
+### Payments: ECPay Facade Pattern
 
-| 功能 | 說明 |
-|------|------|
-| 📊 Dashboard | 營收統計、訂單概覽、用戶分析 |
-| 📦 產品管理 | CRUD、圖片上傳、庫存管理 |
-| 🧾 訂單管理 | 狀態更新、出貨處理 |
-| 💰 支付管理 | 支付記錄、退款處理 |
-| 🎫 折扣管理 | 折扣碼設定、使用統計 |
-| 👥 用戶管理 | 角色分配、狀態管理 |
+The payment module uses a **Facade pattern** with 6 specialized services behind a unified interface:
+- `EcpayOrderService` &mdash; trade creation & CheckMacValue signing
+- `EcpayNotifyService` &mdash; async payment notification handling
+- `EcpayRefundService` &mdash; full & partial refund logic across all channels
+- `EcpayQueryService` &mdash; payment status polling
+- `EcpayReturnService` &mdash; browser redirect handling
+- `EcpayConfigService` &mdash; environment-aware credential management
+
+### Frontend: Scroll-Driven Narrative Animations
+
+The homepage tea ceremony section uses a **300vh scroll container** to drive keyframe animations tied to scroll progress. Built with a custom `useScrollProgress` hook that is SSR-safe (guards against `window` access) and uses `requestAnimationFrame` for smooth 60fps updates.
+
+### Cart: Guest / Logged-in Dual-Track Architecture
+
+- **Guest users**: cart stored in `localStorage` with 14-day TTL
+- **Logged-in users**: cart synced to database via API
+- **Auto-merge on login**: guest cart items are merged into the server cart, with conflict resolution (higher quantity wins)
+
+### Storage: Supabase Signed Upload
+
+Product images are uploaded **directly from the browser to Supabase Storage** using signed URLs. The API server generates a short-lived upload URL, keeping file transfer off the Node.js event loop and reducing server bandwidth costs.
+
+### Build: Turborepo Smart Caching
+
+The monorepo uses Turborepo's dependency graph to determine build order (`types` &rarr; `api` / `web` / `admin`). Each task defines precise `inputs` and `outputs` for cache invalidation, skipping rebuilds when upstream files haven't changed.
 
 ---
 
-## 技術架構
+## Features
 
-### 系統架構圖
+### Customer-Facing (Next.js)
+
+- Full shopping flow: browse &rarr; cart &rarr; checkout &rarr; payment
+- Multiple payment methods via ECPay (credit card, ATM, convenience store)
+- Member system with registration, login, password reset
+- Order tracking with real-time status updates
+- Discount code validation and application
+- Farm tour browsing and booking
+- i18n support (Traditional Chinese / English)
+- Responsive design (320px+)
+
+### Admin Dashboard (Vite + React)
+
+- Revenue analytics and order overview
+- Product CRUD with image upload (Supabase Storage)
+- Order status management and shipment processing
+- Payment records and refund processing
+- Discount code management with usage statistics
+- User management with role-based access control
+
+---
+
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         用戶端裝置                                │
-│                    (瀏覽器 / 行動裝置)                            │
+│                       Client Devices                            │
+│                   (Browser / Mobile)                            │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
             ┌───────────────┴───────────────┐
-            ▼                               ▼
+            v                               v
 ┌───────────────────────┐       ┌───────────────────────┐
-│    用戶端 (Web)        │       │   管理後台 (Admin)     │
-│    Next.js 15         │       │   Vite + React        │
-│    Port: 5173         │       │   Port: 5174          │
+│   Web (Next.js 15)    │       │   Admin (Vite)        │
+│   Port: 5173          │       │   Port: 5174          │
 │                       │       │                       │
-│  ┌─────────────────┐  │       │  ┌─────────────────┐  │
-│  │  App Router     │  │       │  │  React Router   │  │
-│  │  Server Comp.   │  │       │  │  SPA            │  │
-│  │  Zustand Store  │  │       │  │  Axios Client   │  │
-│  └─────────────────┘  │       │  └─────────────────┘  │
+│  - App Router (SSR)   │       │  - React Router (SPA) │
+│  - Server Components  │       │  - Axios Client       │
+│  - Zustand Store      │       │  - TanStack Query     │
 └───────────┬───────────┘       └───────────┬───────────┘
             │                               │
             └───────────────┬───────────────┘
-                            ▼
+                            v
 ┌─────────────────────────────────────────────────────────────────┐
-│                      後端 API (NestJS)                           │
-│                        Port: 3001                                │
+│                    API Server (NestJS 11)                        │
+│                       Port: 3001                                │
 │                                                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │
-│  │   Auth   │ │ Products │ │  Orders  │ │ Payments │   ...      │
-│  │  Module  │ │  Module  │ │  Module  │ │  Module  │            │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘            │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
+│  │   Auth   │ │ Products │ │  Orders  │ │ Payments │  ...x19   │
+│  │  Module  │ │  Module  │ │  Module  │ │  Module  │           │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │
 │                                                                  │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │                    Prisma ORM                            │    │
+│  │                    Prisma ORM (27 models)                │    │
 │  └─────────────────────────────────────────────────────────┘    │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
             ┌───────────────┼───────────────┐
-            ▼               ▼               ▼
+            v               v               v
 ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
 │  PostgreSQL   │   │   Supabase    │   │    ECPay      │
 │   Database    │   │   Storage     │   │   Payment     │
 └───────────────┘   └───────────────┘   └───────────────┘
 ```
 
-### Monorepo 結構
+---
 
-```
-haude-monorepo/
-├── apps/
-│   ├── web/                 # @haude/web - 用戶端 (Next.js 15)
-│   │   ├── src/
-│   │   │   ├── app/         # App Router 頁面
-│   │   │   ├── components/  # React 元件 (90+ 個)
-│   │   │   ├── stores/      # Zustand 狀態
-│   │   │   ├── services/    # API 服務層
-│   │   │   └── hooks/       # 自訂 Hooks
-│   │   └── package.json
-│   │
-│   ├── admin/               # @haude/admin - 管理後台 (Vite)
-│   │   ├── src/
-│   │   │   ├── pages/       # 後台頁面 (10 個)
-│   │   │   ├── components/  # 後台元件
-│   │   │   └── services/    # API 服務
-│   │   └── package.json
-│   │
-│   └── api/                 # @haude/api - 後端 API (NestJS)
-│       ├── src/
-│       │   ├── modules/     # 功能模組 (18 個)
-│       │   └── prisma/      # Prisma 服務
-│       ├── prisma/
-│       │   └── schema.prisma # 資料庫 Schema
-│       └── package.json
-│
-├── packages/
-│   └── types/               # @haude/types - 共用型別
-│       └── src/
-│           ├── product.ts   # 產品型別
-│           ├── order.ts     # 訂單型別
-│           ├── user.ts      # 用戶型別
-│           └── review.ts    # 評論型別
-│
-├── docker-compose.yml       # Docker 編排
-├── turbo.json              # Turborepo 設定
-├── pnpm-workspace.yaml     # pnpm 工作區
-└── package.json            # 根設定
-```
-
-### 技術棧
+## Tech Stack
 
 <table>
 <tr>
-<th>層級</th>
-<th>技術</th>
-<th>版本</th>
+<th>Layer</th>
+<th>Technology</th>
+<th>Version</th>
 </tr>
 <tr>
-<td rowspan="5"><strong>前端</strong></td>
+<td rowspan="5"><strong>Frontend</strong></td>
 <td>Next.js (App Router)</td>
-<td>15.5</td>
+<td>15</td>
 </tr>
 <tr>
 <td>React</td>
-<td>19.2</td>
+<td>19</td>
 </tr>
 <tr>
 <td>TypeScript</td>
@@ -234,14 +172,14 @@ haude-monorepo/
 </tr>
 <tr>
 <td>Tailwind CSS</td>
-<td>4.1</td>
+<td>4</td>
 </tr>
 <tr>
 <td>Zustand</td>
-<td>5.0</td>
+<td>5</td>
 </tr>
 <tr>
-<td rowspan="3"><strong>後端</strong></td>
+<td rowspan="3"><strong>Backend</strong></td>
 <td>NestJS</td>
 <td>11</td>
 </tr>
@@ -254,17 +192,23 @@ haude-monorepo/
 <td>15</td>
 </tr>
 <tr>
-<td rowspan="2"><strong>工具</strong></td>
+<td rowspan="3"><strong>Infra</strong></td>
 <td>pnpm + Turborepo</td>
-<td>-</td>
+<td>Monorepo</td>
 </tr>
 <tr>
 <td>Docker</td>
-<td>-</td>
+<td>Compose</td>
+</tr>
+<tr>
+<td>Vercel + Supabase</td>
+<td>Deployment</td>
 </tr>
 </table>
 
-### 資料庫模型
+---
+
+## Data Model
 
 ```mermaid
 erDiagram
@@ -322,183 +266,178 @@ erDiagram
 
 ---
 
-## 快速開始
+## Monorepo Structure
 
-### 環境需求
+```
+haude-monorepo/
+├── apps/
+│   ├── web/                 # @haude/web - Customer frontend (Next.js 15)
+│   │   ├── src/
+│   │   │   ├── app/         # App Router pages
+│   │   │   ├── components/  # React components (90+)
+│   │   │   ├── stores/      # Zustand state
+│   │   │   ├── services/    # API service layer
+│   │   │   └── hooks/       # Custom hooks
+│   │   └── package.json
+│   │
+│   ├── admin/               # @haude/admin - Admin dashboard (Vite)
+│   │   ├── src/
+│   │   │   ├── pages/       # Admin pages (16)
+│   │   │   ├── components/  # Admin components
+│   │   │   └── services/    # API services
+│   │   └── package.json
+│   │
+│   └── api/                 # @haude/api - Backend API (NestJS 11)
+│       ├── src/
+│       │   ├── modules/     # Feature modules (19)
+│       │   └── prisma/      # Prisma service
+│       ├── prisma/
+│       │   └── schema.prisma
+│       └── package.json
+│
+├── packages/
+│   └── types/               # @haude/types - Shared TypeScript types
+│
+├── docker-compose.yml
+├── turbo.json
+├── pnpm-workspace.yaml
+└── package.json
+```
+
+---
+
+<details>
+<summary><strong>Getting Started</strong></summary>
+
+### Prerequisites
 
 - Node.js 20+
 - pnpm 9+
-- PostgreSQL 15+ (或 Supabase)
+- PostgreSQL 15+ (or Supabase)
 
-### 安裝步驟
+### Installation
 
 ```bash
-# 1. Clone 專案
-git clone https://github.com/your-username/haude-monorepo.git
+# 1. Clone
+git clone https://github.com/aim840912/haude-monorepo.git
 cd haude-monorepo
 
-# 2. 安裝依賴
+# 2. Install dependencies
 pnpm install
 
-# 3. 設定環境變數
+# 3. Configure environment variables
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 cp apps/admin/.env.example apps/admin/.env.development
 
-# 4. 初始化資料庫
+# 4. Initialize database
 cd apps/api
 npx prisma generate
 npx prisma migrate dev
 cd ../..
 
-# 5. 啟動所有服務
+# 5. Start all services
 pnpm dev
 ```
 
-### 存取服務
+### Service URLs
 
-| 服務 | 網址 | 說明 |
-|------|------|------|
-| 用戶端 | http://localhost:5173 | Next.js 電商前台 |
-| 管理後台 | http://localhost:5174 | Vite 管理系統 |
-| API | http://localhost:3001/api/v1 | NestJS 後端 (API v1) |
-| API 文檔 | http://localhost:3001/docs | Swagger UI |
-| 健康檢查 | http://localhost:3001/health | 無版本前綴 |
-
-### 常用指令
-
-```bash
-# 開發
-pnpm dev                      # 啟動所有服務
-pnpm dev --filter=@haude/web  # 只啟動用戶端
-pnpm dev --filter=@haude/api  # 只啟動 API
-
-# 建置
-pnpm build                    # 建置所有專案
-pnpm type-check               # TypeScript 檢查
-
-# 資料庫
-cd apps/api
-npx prisma studio             # 開啟資料庫 GUI
-npx prisma migrate dev        # 執行遷移
-
-# 測試
-pnpm test:e2e                 # 執行 E2E 測試 (Playwright)
-pnpm load-test                # 執行負載測試 (k6)
-```
-
-> 📝 詳細測試指南請參考 [TESTING.md](./TESTING.md)
-
----
-
-## API 端點
-
-> **API v1 版本**：所有端點前綴 `/api/v1`，健康檢查除外
-
-### 認證 (Auth)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| POST | `/api/v1/auth/register` | 用戶註冊 |
-| POST | `/api/v1/auth/login` | 用戶登入 |
-| GET | `/api/v1/auth/me` | 取得當前用戶 |
-| POST | `/api/v1/auth/forgot-password` | 忘記密碼 |
-| POST | `/api/v1/auth/reset-password` | 重設密碼 |
-
-### 產品 (Products)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| GET | `/api/v1/products` | 產品列表 |
-| GET | `/api/v1/products/:id` | 產品詳情 |
-| POST | `/api/v1/admin/products` | 建立產品 (管理員) |
-| PUT | `/api/v1/admin/products/:id` | 更新產品 (管理員) |
-| DELETE | `/api/v1/admin/products/:id` | 刪除產品 (管理員) |
-
-### 訂單 (Orders)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| GET | `/api/v1/orders` | 用戶訂單列表 |
-| GET | `/api/v1/orders/:id` | 訂單詳情 |
-| POST | `/api/v1/orders` | 建立訂單 |
-| PATCH | `/api/v1/orders/:id/cancel` | 取消訂單 |
-
-### 支付 (Payments)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| POST | `/api/v1/payments/ecpay/create` | 發起支付 |
-| POST | `/api/v1/payments/ecpay/notify` | 支付回調 |
-| GET | `/api/v1/payments/ecpay/return` | 支付返回頁 |
-
-### 購物車 (Cart)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| GET | `/api/v1/cart` | 取得購物車 |
-| POST | `/api/v1/cart/items` | 加入商品 |
-| PUT | `/api/v1/cart/items/:productId` | 更新數量 |
-| DELETE | `/api/v1/cart/items/:productId` | 移除商品 |
-
-### 健康檢查 (Health)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| GET | `/health` | 健康檢查（無版本前綴）|
-
-<details>
-<summary>查看更多 API 端點</summary>
-
-### 折扣碼 (Discounts)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| POST | `/api/v1/discounts/validate` | 驗證折扣碼 |
-| GET | `/api/v1/admin/discounts` | 折扣碼列表 |
-| POST | `/api/v1/admin/discounts` | 建立折扣碼 |
-
-### 評論 (Reviews)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| GET | `/api/v1/products/:id/reviews` | 產品評論 |
-| POST | `/api/v1/products/:id/reviews` | 發表評論 |
-
-### 農場體驗 (Farm Tours)
-
-| 方法 | 端點 | 說明 |
-|------|------|------|
-| GET | `/api/v1/farm-tours` | 體驗列表 |
-| GET | `/api/v1/farm-tours/:id` | 體驗詳情 |
-| POST | `/api/v1/farm-tours/:id/book` | 預約體驗 |
+| Service | URL | Description |
+|---------|-----|-------------|
+| Web | http://localhost:5173 | Next.js storefront |
+| Admin | http://localhost:5174 | Vite admin dashboard |
+| API | http://localhost:3001/api/v1 | NestJS REST API |
+| API Docs | http://localhost:3001/docs | Swagger UI |
 
 </details>
 
----
+<details>
+<summary><strong>API Documentation</strong></summary>
 
-## 環境變數
+> All endpoints prefixed with `/api/v1` (except health check)
+
+### Auth
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/auth/register` | User registration |
+| POST | `/api/v1/auth/login` | User login |
+| GET | `/api/v1/auth/me` | Get current user |
+| POST | `/api/v1/auth/forgot-password` | Forgot password |
+| POST | `/api/v1/auth/reset-password` | Reset password |
+
+### Products
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/products` | List products |
+| GET | `/api/v1/products/:id` | Product details |
+| POST | `/api/v1/admin/products` | Create product (admin) |
+| PUT | `/api/v1/admin/products/:id` | Update product (admin) |
+| DELETE | `/api/v1/admin/products/:id` | Delete product (admin) |
+
+### Orders
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/orders` | User orders |
+| GET | `/api/v1/orders/:id` | Order details |
+| POST | `/api/v1/orders` | Create order |
+| PATCH | `/api/v1/orders/:id/cancel` | Cancel order |
+
+### Payments (ECPay)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/payments/ecpay/create` | Initiate payment |
+| POST | `/api/v1/payments/ecpay/notify` | Payment callback |
+| GET | `/api/v1/payments/ecpay/return` | Payment return page |
+
+### Cart
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/cart` | Get cart |
+| POST | `/api/v1/cart/items` | Add item |
+| PUT | `/api/v1/cart/items/:productId` | Update quantity |
+| DELETE | `/api/v1/cart/items/:productId` | Remove item |
+
+### More Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/discounts/validate` | Validate discount code |
+| GET | `/api/v1/products/:id/reviews` | Product reviews |
+| POST | `/api/v1/products/:id/reviews` | Submit review |
+| GET | `/api/v1/farm-tours` | List farm tours |
+| POST | `/api/v1/farm-tours/:id/book` | Book farm tour |
+| GET | `/health` | Health check (no prefix) |
+
+</details>
+
+<details>
+<summary><strong>Environment Variables</strong></summary>
 
 ### apps/api/.env
 
 ```env
-# 資料庫
+# Database
 DATABASE_URL="postgresql://user:password@localhost:5432/haude"
 
 # JWT
 JWT_SECRET="your-jwt-secret"
 JWT_EXPIRES_IN="7d"
 
-# 伺服器
+# Server
 PORT=3001
 FRONTEND_URL="http://localhost:5173"
 
-# 綠界支付 (ECPay)
+# ECPay
 ECPAY_MERCHANT_ID="your-merchant-id"
 ECPAY_HASH_KEY="your-hash-key"
 ECPAY_HASH_IV="your-hash-iv"
 
-# Supabase (儲存)
+# Supabase (Storage)
 SUPABASE_URL="your-supabase-url"
 SUPABASE_KEY="your-supabase-key"
 ```
@@ -506,72 +445,57 @@ SUPABASE_KEY="your-supabase-key"
 ### apps/web/.env.local
 
 ```env
-# API URL 必須包含 /api/v1 前綴
-NEXT_PUBLIC_API_URL="http://localhost:3001/api/v1"
+# Base URL only (version is managed in lib/api-url.ts)
+NEXT_PUBLIC_API_BASE_URL="http://localhost:3001"
 ```
 
 ### apps/admin/.env.development
 
 ```env
-# API URL 必須包含 /api/v1 前綴
-VITE_API_URL="http://localhost:3001/api/v1"
+# Base URL only (version is managed in client.ts)
+VITE_API_BASE_URL="http://localhost:3001"
 ```
 
----
+</details>
 
-## 部署
+<details>
+<summary><strong>Deployment</strong></summary>
 
-### Vercel + Render + Supabase (推薦)
+### Vercel + Supabase (Recommended)
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Vercel    │     │   Render    │     │  Supabase   │
-│  (Web/Admin)│────▶│    (API)    │────▶│ (DB/Storage)│
+│   Vercel    │     │   Vercel    │     │  Supabase   │
+│    (Web)    │────>│    (API)    │────>│ (DB/Storage)│
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
 ### Docker
 
 ```bash
-# 建置並啟動
-docker-compose up -d
-
-# 查看日誌
-docker-compose logs -f
-
-# 停止服務
-docker-compose down
+docker-compose up -d     # Build & start
+docker-compose logs -f   # View logs
+docker-compose down      # Stop services
 ```
 
----
-
-## 專案統計
-
-<table>
-<tr>
-<td align="center"><strong>40,000+</strong><br/>程式碼行數</td>
-<td align="center"><strong>435</strong><br/>TypeScript 檔案</td>
-<td align="center"><strong>24+</strong><br/>前端頁面</td>
-<td align="center"><strong>18</strong><br/>API 模組</td>
-</tr>
-<tr>
-<td align="center"><strong>29</strong><br/>資料庫模型</td>
-<td align="center"><strong>90+</strong><br/>UI 元件</td>
-<td align="center"><strong>4</strong><br/>支付方式</td>
-<td align="center"><strong>4</strong><br/>用戶角色</td>
-</tr>
-</table>
+</details>
 
 ---
 
-## 授權
+## Author
+
+**Tien-Chih Cheng**
+
+- GitHub: [@aim840912](https://github.com/aim840912)
+
+---
+
+## License
 
 MIT License
 
----
-
 <div align="center">
 
-**[回到頂部](#豪德製茶所)**
+**[Back to Top](#豪德製茶所-haude-tea)**
 
 </div>

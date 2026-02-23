@@ -148,8 +148,9 @@ temp/
 # Local analysis & docs (not for git)
 # ================================
 PROJECT_ANALYSIS.md
-docs/
+docs/*
+!docs/screenshots/
 TESTpic/
 
-# Screenshots (local only)
-screenshots/
+# Screenshots (Playwright preview - local only)
+/screenshots/
