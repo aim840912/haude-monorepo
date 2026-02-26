@@ -67,6 +67,8 @@ out/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+*.stackdump
+nul
 
 # ================================
 # Logs
