@@ -220,6 +220,24 @@ export class ProductsService {
     // 確認產品存在
     await this.findOne(id);
 
+    // Clean up image files from Supabase Storage before cascade delete
+    try {
+      const images = await this.prisma.productImage.findMany({
+        where: { productId: id },
+        select: { filePath: true },
+      });
+      const paths = images.map((img) => img.filePath).filter(Boolean);
+      if (paths.length > 0) {
+        await this.supabase.deleteFiles(PRODUCT_IMAGES_BUCKET, paths);
+      }
+    } catch (error) {
+      // Storage cleanup failure should not block product deletion
+      console.warn(
+        `Failed to cleanup storage files for product ${id}:`,
+        error,
+      );
+    }
+
     try {
       await this.prisma.product.delete({ where: { id } });
       return { message: '產品已刪除' };
