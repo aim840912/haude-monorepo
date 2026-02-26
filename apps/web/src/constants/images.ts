@@ -59,10 +59,42 @@ export const DEFAULT_FEATURE_CARD_IMAGES: string[] = [
 ]
 
 // ========================================
+// 品牌故事圖片
+// ========================================
+
+export const DEFAULT_BRAND_STORY_IMAGE = unsplash(PHOTO_IDS.teaPlantation, 800, 1067)
+
+// ========================================
+// 關於我們頁面圖片
+// ========================================
+
+export const DEFAULT_ABOUT_HERO_IMAGE = unsplash(PHOTO_IDS.teaPlantation, 1920, 800)
+
+export const DEFAULT_ABOUT_STORY_IMAGES: string[] = [
+  unsplash(PHOTO_IDS.teaLandscape, 800, 600), // 三代傳承故事圖
+  unsplash(PHOTO_IDS.teaLeaves, 800, 600), // 自然農法故事圖
+]
+
+// ========================================
+// 最新消息頁面圖片
+// ========================================
+
+export const DEFAULT_NEWS_HERO_IMAGE =
+  'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w=1920&h=800&fit=crop'
+
+// ========================================
 // 匯出所有圖片常數
 // ========================================
 
 export const DEFAULT_IMAGES = {
   hero: DEFAULT_HERO_IMAGES,
   featureCards: DEFAULT_FEATURE_CARD_IMAGES,
+  brandStory: DEFAULT_BRAND_STORY_IMAGE,
+  about: {
+    hero: DEFAULT_ABOUT_HERO_IMAGE,
+    storyImages: DEFAULT_ABOUT_STORY_IMAGES,
+  },
+  news: {
+    hero: DEFAULT_NEWS_HERO_IMAGE,
+  },
 }

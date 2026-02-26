@@ -12,6 +12,7 @@ import { DiscountsPage } from './pages/DiscountsPage'
 import { SocialPostsPage } from './pages/SocialPostsPage'
 import { UsersPage } from './pages/UsersPage'
 import { UserDetailPage } from './pages/UserDetailPage'
+import { SiteImagesPage } from './pages/SiteImagesPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { SystemPage } from './pages/SystemPage'
@@ -53,6 +54,7 @@ function App() {
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/:id" element={<UserDetailPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/site-images" element={<SiteImagesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/system" element={<SystemPage />} />
               </Route>

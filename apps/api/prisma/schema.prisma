@@ -748,3 +748,17 @@ model StockAlertSetting {
 
   @@map("stock_alert_settings")
 }
+
+// Site settings for CMS content management
+model SiteSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  type        String   @default("string")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([key])
+  @@map("site_settings")
+}

@@ -27,6 +27,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ReportsModule } from './modules/reports/reports.module';
 import { MembersModule } from './modules/members/members.module';
 import { SystemModule } from './modules/system/system.module';
+import { SiteSettingsModule } from './modules/site-settings/site-settings.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { SystemModule } from './modules/system/system.module';
     ReportsModule,
     MembersModule,
     SystemModule,
+    SiteSettingsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -10,10 +10,9 @@
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Calendar, Tag } from 'lucide-react'
-
-// Hero image (tea garden scene)
-const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w=1920&h=800&fit=crop'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
+import { SETTING_KEYS } from '@/types/siteSettings'
+import { DEFAULT_NEWS_HERO_IMAGE } from '@/constants/images'
 
 // Category color mapping
 const categoryColors: Record<string, { bg: string; text: string }> = {
@@ -96,6 +95,11 @@ const newsItems = [
 export function NewsPageClient() {
   const observerRef = useRef<IntersectionObserver | null>(null)
 
+  // CMS hero image with fallback to default
+  const { settings } = useSiteSettings([SETTING_KEYS.NEWS_HERO_IMAGE])
+  const heroImage =
+    settings[SETTING_KEYS.NEWS_HERO_IMAGE]?.value || DEFAULT_NEWS_HERO_IMAGE
+
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -119,7 +123,7 @@ export function NewsPageClient() {
       {/* ===== Hero Banner ===== */}
       <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden">
         <Image
-          src={HERO_IMAGE}
+          src={heroImage}
           alt="豪德製茶所最新動態"
           fill
           className="object-cover"

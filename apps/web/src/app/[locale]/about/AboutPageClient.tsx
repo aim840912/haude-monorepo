@@ -20,14 +20,12 @@ import {
   Leaf,
   Heart,
 } from 'lucide-react'
-
-// 品牌故事圖片（複用 constants/images.ts 的 Unsplash 圖片）
-const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1556881286-fc6915169721?w=1920&h=800&fit=crop'
-const STORY_IMAGE_1 =
-  'https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?w=800&h=600&fit=crop'
-const STORY_IMAGE_2 =
-  'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=800&h=600&fit=crop'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
+import { SETTING_KEYS } from '@/types/siteSettings'
+import {
+  DEFAULT_ABOUT_HERO_IMAGE,
+  DEFAULT_ABOUT_STORY_IMAGES,
+} from '@/constants/images'
 
 // 核心價值資料（擴展自 FeatureCards）
 const coreValues = [
@@ -72,6 +70,20 @@ const coreValues = [
 export function AboutPageClient() {
   const observerRef = useRef<IntersectionObserver | null>(null)
 
+  // CMS image settings with fallback to defaults
+  const { settings } = useSiteSettings([
+    SETTING_KEYS.ABOUT_HERO_IMAGE,
+    SETTING_KEYS.ABOUT_STORY_IMAGE_1,
+    SETTING_KEYS.ABOUT_STORY_IMAGE_2,
+  ])
+
+  const heroImage =
+    settings[SETTING_KEYS.ABOUT_HERO_IMAGE]?.value || DEFAULT_ABOUT_HERO_IMAGE
+  const storyImage1 =
+    settings[SETTING_KEYS.ABOUT_STORY_IMAGE_1]?.value || DEFAULT_ABOUT_STORY_IMAGES[0]
+  const storyImage2 =
+    settings[SETTING_KEYS.ABOUT_STORY_IMAGE_2]?.value || DEFAULT_ABOUT_STORY_IMAGES[1]
+
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -95,7 +107,7 @@ export function AboutPageClient() {
       {/* ===== 1. Hero 橫幅 ===== */}
       <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden">
         <Image
-          src={HERO_IMAGE}
+          src={heroImage}
           alt="豪德製茶所梅山茶園"
           fill
           className="object-cover"
@@ -157,7 +169,7 @@ export function AboutPageClient() {
             <div className="animate-on-scroll animate-stagger-2">
               <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
                 <Image
-                  src={STORY_IMAGE_1}
+                  src={storyImage1}
                   alt="梅山茶園晨景"
                   fill
                   className="object-cover"
@@ -172,7 +184,7 @@ export function AboutPageClient() {
             <div className="animate-on-scroll order-2 lg:order-1">
               <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
                 <Image
-                  src={STORY_IMAGE_2}
+                  src={storyImage2}
                   alt="自然農法茶葉特寫"
                   fill
                   className="object-cover"

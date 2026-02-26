@@ -570,6 +570,89 @@ const memberLevelConfigsData = [
 ]
 
 // ========================================
+// 網站設定資料（圖片 CMS）
+// ========================================
+
+const siteSettingsData = [
+  // 首頁 Hero 輪播（images_array）
+  {
+    key: 'home.hero_images',
+    value: JSON.stringify([
+      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=1920&h=1080&fit=crop',
+      'https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?w=1920&h=1080&fit=crop',
+      'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=1920&h=1080&fit=crop',
+    ]),
+    type: 'images_array',
+    description: '首頁 Hero 輪播圖片（建議 1920x1080）',
+  },
+  // 首頁特色卡片 ×4
+  {
+    key: 'home.feature_card_1_image',
+    value: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=400&h=300&fit=crop',
+    type: 'image',
+    description: '首頁特色卡片 1 — 自然農法',
+  },
+  {
+    key: 'home.feature_card_2_image',
+    value: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=300&fit=crop',
+    type: 'image',
+    description: '首頁特色卡片 2 — 品質認證',
+  },
+  {
+    key: 'home.feature_card_3_image',
+    value: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=400&h=300&fit=crop',
+    type: 'image',
+    description: '首頁特色卡片 3 — 農場體驗',
+  },
+  {
+    key: 'home.feature_card_4_image',
+    value: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=400&h=300&fit=crop',
+    type: 'image',
+    description: '首頁特色卡片 4 — 永續經營',
+  },
+  // 首頁品牌故事
+  {
+    key: 'home.brand_story_image',
+    value: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=800&h=1067&fit=crop',
+    type: 'image',
+    description: '首頁品牌故事區段圖片（建議 3:4 比例）',
+  },
+  // 關於我們
+  {
+    key: 'about.hero_image',
+    value: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=1920&h=800&fit=crop',
+    type: 'image',
+    description: '關於我們頁面 Hero 橫幅（建議 1920x800）',
+  },
+  {
+    key: 'about.story_image_1',
+    value: 'https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?w=800&h=600&fit=crop',
+    type: 'image',
+    description: '關於我們 — 三代傳承故事圖',
+  },
+  {
+    key: 'about.story_image_2',
+    value: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=800&h=600&fit=crop',
+    type: 'image',
+    description: '關於我們 — 自然農法故事圖',
+  },
+  // 最新消息
+  {
+    key: 'news.hero_image',
+    value: 'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w=1920&h=800&fit=crop',
+    type: 'image',
+    description: '最新消息頁面 Hero 橫幅（建議 1920x800）',
+  },
+  // 農場導覽
+  {
+    key: 'farm_tour.hero_background',
+    value: 'https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=1920&h=1080&fit=crop',
+    type: 'image',
+    description: '農場導覽頁面 Hero 背景（建議 1920x1080）',
+  },
+]
+
+// ========================================
 // Seed 主函數
 // ========================================
 
@@ -653,6 +736,18 @@ async function main() {
   }
   console.log(`✅ 行程建立完成 (${schedulesData.length} 筆)\n`)
 
+  // 5. 建立網站設定（使用 upsert，已存在則不覆蓋）
+  console.log('🖼️  建立網站設定資料...')
+  for (const settingData of siteSettingsData) {
+    const setting = await prisma.siteSetting.upsert({
+      where: { key: settingData.key },
+      create: settingData,
+      update: {}, // Already exists — do not overwrite
+    })
+    console.log(`  ✓ ${setting.key}`)
+  }
+  console.log(`✅ 網站設定建立完成 (${siteSettingsData.length} 筆)\n`)
+
   console.log('🎉 所有資料填充完成！')
   console.log(`
   統計：
@@ -661,6 +756,7 @@ async function main() {
   - 農場體驗: ${farmToursData.length} 筆
   - 地點: ${locationsData.length} 筆
   - 行程: ${schedulesData.length} 筆
+  - 網站設定: ${siteSettingsData.length} 筆
   `)
 }
 

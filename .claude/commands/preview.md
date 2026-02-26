@@ -20,72 +20,48 @@ Launch web, API, and admin servers, then open the page in Playwright.
 
 ### 1. Check server status
 
-Check all three servers in parallel:
+Check all three servers **in a single parallel Bash call**:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:5173 --connect-timeout 2
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health --connect-timeout 2
-curl -s -o /dev/null -w "%{http_code}" http://localhost:5174 --connect-timeout 2
+echo "web:$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5173 --connect-timeout 2)" && echo "api:$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/health --connect-timeout 2)" && echo "admin:$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5174 --connect-timeout 2)"
 ```
 
-### 2. Start missing servers
+If all three return 200, skip to Step 3.
 
-**IMPORTANT**: Before starting any server, raise the file descriptor limit:
-```bash
-source ~/.zshrc  # ensures ulimit -n 65536
-```
+### 2. Start missing servers IN PARALLEL
+
+**CRITICAL: Start all missing servers simultaneously using separate `run_in_background` Bash calls in a single message. Do NOT start them sequentially.**
+
+**Before starting**: Run `source ~/.zshrc` once to ensure `ulimit -n 65536`.
 
 **If API server (port 3001) is not running:**
 
-1. Ensure Prisma Client is up to date:
+Check if Prisma Client exists first — only regenerate if missing:
 ```bash
-cd apps/api && npx prisma generate
-```
-
-2. Start API server in background:
-```bash
-source ~/.zshrc && pnpm dev --filter=@haude/api
-```
-
-3. Wait for API to be ready (poll /health):
-```bash
-for i in {1..15}; do
-  curl -s http://localhost:3001/health > /dev/null && break
-  sleep 2
-done
+source ~/.zshrc && if [ ! -d "apps/api/node_modules/.prisma/client" ]; then cd apps/api && npx prisma generate && cd ../..; fi && pnpm dev --filter=@haude/api
 ```
 
 **If Web server (port 5173) is not running:**
-
-1. Start web dev server in background:
 ```bash
 source ~/.zshrc && pnpm dev --filter=@haude/web
 ```
 
-2. Wait for web server to be ready:
-```bash
-for i in {1..15}; do
-  curl -s http://localhost:5173 > /dev/null && break
-  sleep 2
-done
-```
-
 **If Admin server (port 5174) is not running:**
-
-1. Start admin dev server in background:
 ```bash
 source ~/.zshrc && pnpm dev --filter=@haude/admin
 ```
 
-2. Wait for admin server to be ready:
+**Then wait for ALL servers concurrently** in a single poll loop (1-second intervals):
 ```bash
-for i in {1..15}; do
-  curl -s http://localhost:5174 > /dev/null && break
-  sleep 2
+for i in {1..30}; do
+  web=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5173 --connect-timeout 1 2>/dev/null)
+  api=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/health --connect-timeout 1 2>/dev/null)
+  admin=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5174 --connect-timeout 1 2>/dev/null)
+  echo "[$i] web=$web api=$api admin=$admin"
+  [ "$web" = "200" ] && [ "$api" = "200" ] && [ "$admin" = "200" ] && echo "All ready!" && break
+  sleep 1
 done
 ```
-
-**If multiple servers are not running**, start them in parallel (separate background commands).
 
 ### 3. Open in Playwright
 

@@ -22,10 +22,15 @@ import {
 } from '@/lib/motion'
 import { useElementScroll } from '@/hooks/useElementScroll'
 
-const BRAND_STORY_IMAGE =
+const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1556881286-fc6915169721?w=800&h=1067&fit=crop'
 
-export function BrandStorySection() {
+interface BrandStorySectionProps {
+  imageUrl?: string
+}
+
+export function BrandStorySection({ imageUrl }: BrandStorySectionProps) {
+  const brandStoryImage = imageUrl || DEFAULT_IMAGE
   const sectionRef = useRef<HTMLElement>(null)
   const { scrollYProgress } = useElementScroll(sectionRef)
 
@@ -91,7 +96,7 @@ export function BrandStorySection() {
               className="relative aspect-[3/4] rounded-2xl overflow-hidden transform-gpu"
             >
               <Image
-                src={BRAND_STORY_IMAGE}
+                src={brandStoryImage}
                 alt="豪德製茶所梅山茶園"
                 fill
                 className="object-cover"

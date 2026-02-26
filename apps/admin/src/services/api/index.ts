@@ -59,6 +59,10 @@ export type {
   StockAlertSetting,
 } from './notifications.api'
 
+// 網站圖片設定
+export { siteSettingsApi } from './site-settings.api'
+export type { SiteSetting, SiteImageUploadUrlResponse } from './site-settings.api'
+
 // 銷售報表
 export { reportsApi } from './reports.api'
 export type {

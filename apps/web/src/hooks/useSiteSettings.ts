@@ -1,17 +1,16 @@
 /**
  * 網站設定 Hooks
  *
- * 注意：目前後端尚未實作 /site-settings API，
- * 因此暫時停用 API 呼叫，直接使用預設值。
- * 當後端實作後，可移除 SITE_SETTINGS_API_ENABLED 檢查。
+ * 從 /site-settings API 取得 CMS 設定值，
+ * API 不可用時自動 fallback 到前端預設值。
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '@/services/api'
 import type { SiteSetting, SettingKey } from '@/types/siteSettings'
 
-// 暫時停用 site-settings API（後端尚未實作）
-const SITE_SETTINGS_API_ENABLED = false
+// Site settings API enabled (backend implemented)
+const SITE_SETTINGS_API_ENABLED = true
 
 interface UseSiteSettingsReturn {
   settings: Record<string, SiteSetting>
@@ -102,6 +101,7 @@ export function useHomeSettings() {
     'home.feature_card_2_image',
     'home.feature_card_3_image',
     'home.feature_card_4_image',
+    'home.brand_story_image',
     'home.news.seasonal_recommendation.enabled',
     'home.news.seasonal_recommendation.title',
     'home.news.seasonal_recommendation.icon',

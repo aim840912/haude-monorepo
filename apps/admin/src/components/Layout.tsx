@@ -16,6 +16,7 @@ import {
   Tag,
   Share2,
   FileSpreadsheet,
+  ImageIcon,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { NotificationBell } from './notifications'
@@ -32,6 +33,7 @@ const navItems = [
   { path: '/social-posts', label: '社群貼文', icon: Share2 },
   { path: '/users', label: '會員管理', icon: Users },
   { path: '/reports', label: '銷售報表', icon: FileSpreadsheet },
+  { path: '/site-images', label: '網站圖片', icon: ImageIcon },
   { path: '/settings', label: '系統設定', icon: Settings },
 ]
 

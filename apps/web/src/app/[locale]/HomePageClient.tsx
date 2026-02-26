@@ -40,6 +40,7 @@ import { SETTING_KEYS } from '@/types/siteSettings'
 import {
   DEFAULT_HERO_IMAGES,
   DEFAULT_FEATURE_CARD_IMAGES,
+  DEFAULT_BRAND_STORY_IMAGE,
 } from '@/constants/images'
 
 // 圖示映射函數
@@ -92,6 +93,10 @@ export function HomePageClient() {
         ? parsed
         : DEFAULT_HERO_IMAGES.home
     } catch {
+      // Support plain URL string (single image uploaded from admin)
+      if (heroSetting.value?.startsWith('http')) {
+        return [heroSetting.value]
+      }
       return DEFAULT_HERO_IMAGES.home
     }
   })()
@@ -107,6 +112,10 @@ export function HomePageClient() {
     settings[SETTING_KEYS.HOME_FEATURE_CARD_4_IMAGE]?.value ||
       DEFAULT_FEATURE_CARD_IMAGES[3],
   ]
+
+  // 解析品牌故事圖片
+  const brandStoryImage =
+    settings[SETTING_KEYS.HOME_BRAND_STORY_IMAGE]?.value || DEFAULT_BRAND_STORY_IMAGE
 
   // 最新消息卡片資料
   const newsCards = {
@@ -205,7 +214,7 @@ export function HomePageClient() {
       />
 
       {/* 品牌故事區域 */}
-      <BrandStorySection />
+      <BrandStorySection imageUrl={brandStoryImage} />
 
       {/* 客戶評價區域 */}
       <TestimonialsSection />
