@@ -25,18 +25,27 @@ interface ImageGroup {
 }
 
 const IMAGE_GROUPS: ImageGroup[] = [
+  // ── 首頁 — 主視覺輪播 ──
   {
-    id: 'home',
-    title: { zh: '首頁', en: 'Homepage' },
-    description: { zh: '主視覺輪播、特色卡片、品牌故事', en: 'Hero carousel, feature cards, brand story' },
+    id: 'home-hero',
+    title: { zh: '首頁 — 主視覺輪播', en: 'Homepage — Hero Carousel' },
+    description: { zh: '首頁頂部全幅輪播大圖', en: 'Full-width hero carousel at the top' },
     settings: [
       {
         key: 'home.hero_images',
         label: { zh: '主視覺輪播圖片', en: 'Hero Carousel Images' },
-        description: { zh: '首頁主視覺輪播（最多 3 張）', en: 'Main homepage hero carousel (up to 3)' },
+        description: { zh: '首頁主視覺輪播（最多 3 張）', en: 'Homepage hero carousel (up to 3)' },
         dimensions: '1920 x 1080 px',
         maxImages: 3,
       },
+    ],
+  },
+  // ── 首頁 — 特色卡片 ──
+  {
+    id: 'home-features',
+    title: { zh: '首頁 — 特色卡片', en: 'Homepage — Feature Cards' },
+    description: { zh: '四大品牌特色介紹圖片', en: 'Four brand feature card images' },
+    settings: [
       {
         key: 'home.feature_card_1_image',
         label: { zh: '特色卡片 1 — 自然農法', en: 'Feature Card 1 — Natural Farming' },
@@ -57,6 +66,14 @@ const IMAGE_GROUPS: ImageGroup[] = [
         label: { zh: '特色卡片 4 — 永續經營', en: 'Feature Card 4 — Sustainability' },
         dimensions: '400 x 300 px',
       },
+    ],
+  },
+  // ── 首頁 — 品牌故事 ──
+  {
+    id: 'home-brand',
+    title: { zh: '首頁 — 品牌故事', en: 'Homepage — Brand Story' },
+    description: { zh: '品牌故事區域圖片', en: 'Brand story section image' },
+    settings: [
       {
         key: 'home.brand_story_image',
         label: { zh: '品牌故事圖片', en: 'Brand Story Image' },
@@ -65,6 +82,7 @@ const IMAGE_GROUPS: ImageGroup[] = [
       },
     ],
   },
+  // ── 關於我們 ──
   {
     id: 'about',
     title: { zh: '關於我們', en: 'About Us' },
@@ -90,6 +108,7 @@ const IMAGE_GROUPS: ImageGroup[] = [
       },
     ],
   },
+  // ── 最新消息 ──
   {
     id: 'news',
     title: { zh: '最新消息', en: 'Latest News' },
@@ -99,6 +118,20 @@ const IMAGE_GROUPS: ImageGroup[] = [
         key: 'news.hero_image',
         label: { zh: '主視覺橫幅', en: 'Hero Banner' },
         description: { zh: '最新消息頁面主視覺背景', en: 'News page hero background' },
+        dimensions: '1920 x 800 px',
+      },
+    ],
+  },
+  // ── 觀光果園 ──
+  {
+    id: 'farm-tours',
+    title: { zh: '觀光果園', en: 'Farm Tours' },
+    description: { zh: '觀光果園頁面主視覺背景', en: 'Farm tours page hero background' },
+    settings: [
+      {
+        key: 'farm_tour.hero_background',
+        label: { zh: '主視覺背景', en: 'Hero Background' },
+        description: { zh: '觀光果園頁面頂部背景圖', en: 'Farm tours page hero background' },
         dimensions: '1920 x 800 px',
       },
     ],
@@ -131,7 +164,7 @@ export function SiteImagesPage() {
   const [error, setError] = useState<string | null>(null)
   const [locale, setLocale] = useState<Locale>('zh')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(IMAGE_GROUPS.map((g) => g.id)) // All expanded by default
+    new Set(['home-hero']) // Only first group expanded by default
   )
 
   const t = PAGE_TEXT[locale]
@@ -285,7 +318,7 @@ export function SiteImagesPage() {
             {/* Accordion body */}
             {isExpanded && (
               <div className="px-6 pb-6 border-t border-gray-100">
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
                   {group.settings.map((config) =>
                     config.maxImages && config.maxImages > 1 ? (
                       <MultiImageUploader

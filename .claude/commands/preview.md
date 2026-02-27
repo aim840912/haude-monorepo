@@ -32,23 +32,23 @@ If all three return 200, skip to Step 3.
 
 **CRITICAL: Start all missing servers simultaneously using separate `run_in_background` Bash calls in a single message. Do NOT start them sequentially.**
 
-**Before starting**: Run `source ~/.zshrc` once to ensure `ulimit -n 65536`.
+**Before starting**: Set `ulimit -n 65536` if supported (prevents EMFILE errors on macOS/Linux).
 
 **If API server (port 3001) is not running:**
 
 Check if Prisma Client exists first — only regenerate if missing:
 ```bash
-source ~/.zshrc && if [ ! -d "apps/api/node_modules/.prisma/client" ]; then cd apps/api && npx prisma generate && cd ../..; fi && pnpm dev --filter=@haude/api
+[ -f ~/.zshrc ] && source ~/.zshrc;if [ ! -d "apps/api/node_modules/.prisma/client" ]; then cd apps/api && npx prisma generate && cd ../..; fi && pnpm dev --filter=@haude/api
 ```
 
 **If Web server (port 5173) is not running:**
 ```bash
-source ~/.zshrc && pnpm dev --filter=@haude/web
+[ -f ~/.zshrc ] && source ~/.zshrc;pnpm dev --filter=@haude/web
 ```
 
 **If Admin server (port 5174) is not running:**
 ```bash
-source ~/.zshrc && pnpm dev --filter=@haude/admin
+[ -f ~/.zshrc ] && source ~/.zshrc;pnpm dev --filter=@haude/admin
 ```
 
 **Then wait for ALL servers concurrently** in a single poll loop (1-second intervals):
@@ -95,5 +95,7 @@ Use `browser_snapshot` to get the page accessibility tree for further interactio
 
 - Do NOT close the browser after preview — let the user inspect and interact
 - Dev servers keep running in background
-- If port is occupied, kill the process first: `kill -9 $(lsof -t -i :PORT)`
+- **Kill servers safely**: Use `pnpm kill:servers` (runs `npx kill-port 5173 3001 5174`) — only kills dev server ports
+- **NEVER use `taskkill /F /IM node.exe`** — it kills ALL node processes including Playwright MCP, other MCP servers, and VS Code extensions
+- If port is occupied, kill specific port: `npx kill-port <PORT>`
 - `source ~/.zshrc` is required to set `ulimit -n 65536` and prevent EMFILE errors

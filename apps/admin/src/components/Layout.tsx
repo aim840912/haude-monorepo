@@ -73,7 +73,7 @@ export function Layout() {
             <X className="w-6 h-6" />
           </button>
         </div>
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 4rem - 4.5rem)' }}>
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path

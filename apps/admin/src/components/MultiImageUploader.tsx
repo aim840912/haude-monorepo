@@ -277,7 +277,7 @@ export function MultiImageUploader({
   const isDisabled = uploadingIndex !== null || deletingIndex !== null || isSaving
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white">
+    <div className="border border-gray-200 rounded-lg p-4 bg-white flex-1 min-w-0">
       {/* Header */}
       <div className="mb-3">
         <h4 className="text-sm font-semibold text-gray-800">{label}</h4>
@@ -293,7 +293,7 @@ export function MultiImageUploader({
       </div>
 
       {/* Image slots */}
-      <div className="space-y-3">
+      <div className="flex gap-3 overflow-x-auto pb-1">
         {imageUrls.map((url, index) => {
           const inputId = `multi-img-${settingKey.replace(/\./g, '-')}-${index}`
           const isThisUploading = uploadingIndex === index
@@ -302,7 +302,7 @@ export function MultiImageUploader({
           return (
             <div
               key={`${url}-${index}`}
-              className="relative rounded-lg overflow-hidden bg-gray-100 group"
+              className="relative rounded-lg overflow-hidden bg-gray-100 group flex-shrink-0 w-48"
             >
               {/* Image preview */}
               <img
@@ -387,7 +387,7 @@ export function MultiImageUploader({
         {canAddMore && (
           <div
             className={`
-              relative border-2 border-dashed rounded-lg p-4 text-center transition-colors
+              relative border-2 border-dashed rounded-lg p-4 text-center transition-colors flex-shrink-0 w-48
               ${isDisabled ? 'border-gray-200 bg-gray-50 cursor-not-allowed' : 'border-gray-300 hover:border-green-400 cursor-pointer'}
             `}
             onDragOver={(e) => e.preventDefault()}

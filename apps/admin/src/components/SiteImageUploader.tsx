@@ -167,7 +167,7 @@ export function SiteImageUploader({
   const inputId = `site-image-${settingKey.replace(/\./g, '-')}`
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white">
+    <div className="border border-gray-200 rounded-lg p-4 bg-white flex-shrink-0 w-80">
       {/* Header */}
       <div className="mb-3">
         <h4 className="text-sm font-semibold text-gray-800">{label}</h4>

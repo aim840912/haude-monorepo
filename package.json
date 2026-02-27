@@ -16,7 +16,9 @@
     "security:audit": "pnpm audit --audit-level=moderate",
     "security:check": "pnpm audit --json > security-report.json || true",
     "test:e2e": "pnpm --filter @haude/web test:e2e",
-    "load-test": "k6 run load-tests/api-load.js"
+    "load-test": "k6 run load-tests/api-load.js",
+    "kill:servers": "npx kill-port 5173 3001 5174",
+    "restart": "npx kill-port 5173 3001 5174 && turbo run dev"
   },
   "devDependencies": {
     "agentation": "^2.2.0",
