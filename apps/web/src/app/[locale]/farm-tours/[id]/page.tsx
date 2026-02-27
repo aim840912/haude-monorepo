@@ -48,7 +48,7 @@ export async function generateMetadata({
       ? `${tour.description.slice(0, 155)}...`
       : tour.description
 
-  const imageUrl = tour.imageUrl || `${SITE_URL}/og-default.jpg`
+  const imageUrl = tour.imageUrl || `${SITE_URL}/opengraph-image`
 
   return {
     title: `${tour.name} | 茶園體驗 | 豪德製茶所`,

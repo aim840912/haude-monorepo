@@ -1,0 +1,16 @@
+{
+  "name": "豪德製茶所 | Haude Tea",
+  "short_name": "豪德茶所",
+  "description": "傳承三代的製茶工藝，堅持手工採摘、精心烘焙，為您呈現台灣高山茶的純粹風味。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2D5016",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -36,7 +36,7 @@ export function ProductSchema({
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
   const imageUrl =
-    product.images[0]?.storageUrl || `${SITE_URL}/placeholder-product.jpg`
+    product.images[0]?.storageUrl || `${SITE_URL}/opengraph-image`
 
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',

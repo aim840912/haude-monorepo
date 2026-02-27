@@ -1,6 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -9,7 +10,10 @@ import { CacheHeadersInterceptor } from './common/interceptors/cache-headers.int
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  // Use Pino as the NestJS logger (all Logger instances automatically use Pino)
+  app.useLogger(app.get(Logger));
 
   // 安全性強化 - Helmet HTTP 安全標頭
   // 提供：X-Content-Type-Options, X-Frame-Options, HSTS, 移除 X-Powered-By 等

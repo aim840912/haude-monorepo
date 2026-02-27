@@ -18,6 +18,7 @@ interface ErrorResponse {
   message: string;
   timestamp: string;
   path: string;
+  requestId?: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: message,
       timestamp: new Date().toISOString(),
       path: request.url,
+      requestId: (request.headers['x-request-id'] as string) || undefined,
     };
 
     // 記錄錯誤 - 5xx 錯誤使用 error 級別，其他使用 warn

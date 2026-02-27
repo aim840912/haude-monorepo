@@ -27,6 +27,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 // ========================================
 // Public Controller — no auth required
@@ -79,6 +80,7 @@ export class AdminSiteSettingsController {
   }
 
   @Put(':key')
+  @AuditLog('UPDATE', 'site-settings', 'key')
   @ApiOperation({ summary: '新增或更新設定值（管理員）' })
   @ApiResponse({ status: 200, description: '設定更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -109,6 +111,7 @@ export class AdminSiteSettingsController {
   }
 
   @Delete('images/:key')
+  @AuditLog('DELETE', 'site-settings', 'key')
   @ApiOperation({ summary: '刪除網站圖片（管理員）' })
   @ApiResponse({ status: 200, description: '圖片刪除成功' })
   @ApiResponse({ status: 401, description: '未認證' })

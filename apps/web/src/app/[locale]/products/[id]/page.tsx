@@ -66,7 +66,7 @@ export async function generateMetadata({
     }
   }
 
-  const imageUrl = product.images[0]?.storageUrl || `${SITE_URL}/og-default.jpg`
+  const imageUrl = product.images[0]?.storageUrl || `${SITE_URL}/opengraph-image`
   const description =
     product.description.length > 155
       ? `${product.description.slice(0, 155)}...`

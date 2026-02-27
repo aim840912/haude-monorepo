@@ -66,7 +66,7 @@ export function EventSchema({ event, validFrom }: EventSchemaProps) {
       availability: 'https://schema.org/InStock',
       validFrom: offerValidFrom,
     },
-    image: event.imageUrl || `${SITE_URL}/og-default.jpg`,
+    image: event.imageUrl || `${SITE_URL}/opengraph-image`,
     maximumAttendeeCapacity: event.maxParticipants,
   }
 

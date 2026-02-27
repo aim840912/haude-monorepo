@@ -32,6 +32,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 // ========================================
 // 使用者訂單 API
@@ -178,6 +179,7 @@ export class AdminOrdersController {
   }
 
   @Patch(':id')
+  @AuditLog('STATUS_CHANGE', 'orders')
   @ApiOperation({ summary: '更新訂單狀態（管理員）' })
   @ApiResponse({ status: 200, description: '訂單更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })

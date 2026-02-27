@@ -45,6 +45,7 @@ model User {
   pointTransactions   PointTransaction[]
   levelHistory        MemberLevelHistory[]
   operatedRefunds     Refund[]             @relation("refundOperator")
+  auditLogs           AuditLog[]           @relation("AuditLogs")
 
   @@index([memberLevel])
   @@map("users")
@@ -747,6 +748,31 @@ model StockAlertSetting {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("stock_alert_settings")
+}
+
+// Audit log for tracking admin operations
+model AuditLog {
+  id         String   @id @default(uuid())
+  operatorId String   @map("operator_id")
+  action     String   // CREATE, UPDATE, DELETE, EXPORT, etc.
+  resource   String   // products, orders, site-settings, etc.
+  resourceId String?  @map("resource_id")
+  summary    String?  // Human-readable summary (e.g. "Updated product price from 100 to 200")
+  metadata   Json?    // Additional context (old/new values, query params, etc.)
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  duration   Int?     // Request duration in ms
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  operator User @relation("AuditLogs", fields: [operatorId], references: [id])
+
+  @@index([operatorId])
+  @@index([resource])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@index([resource, createdAt(sort: Desc)])
+  @@map("audit_logs")
 }
 
 // Site settings for CMS content management

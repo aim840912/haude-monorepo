@@ -37,6 +37,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 @ApiTags('products')
 @Controller('products')
@@ -196,6 +197,7 @@ export class AdminProductsController {
   }
 
   @Post('draft')
+  @AuditLog('CREATE', 'products')
   @ApiOperation({ summary: '建立草稿產品（用於新增時先取得 productId）' })
   @ApiResponse({ status: 201, description: '草稿產品建立成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -228,6 +230,7 @@ export class AdminProductsController {
   }
 
   @Post(':id/images')
+  @AuditLog('UPDATE', 'products')
   @ApiOperation({ summary: '新增產品圖片記錄（上傳完成後呼叫）' })
   @ApiResponse({ status: 201, description: '圖片記錄建立成功' })
   @ApiResponse({ status: 404, description: '產品不存在' })
@@ -251,6 +254,7 @@ export class AdminProductsController {
   }
 
   @Delete(':id/images/:imageId')
+  @AuditLog('DELETE', 'products')
   @ApiOperation({ summary: '刪除產品圖片' })
   @ApiResponse({ status: 200, description: '圖片刪除成功' })
   @ApiResponse({ status: 404, description: '產品或圖片不存在' })

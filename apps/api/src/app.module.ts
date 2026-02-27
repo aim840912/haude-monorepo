@@ -1,9 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerModule } from 'nestjs-pino';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { envValidationSchema } from './config/env.validation';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -38,6 +42,28 @@ import { SiteSettingsModule } from './modules/site-settings/site-settings.module
       validationOptions: {
         abortEarly: false, // 顯示所有驗證錯誤，而非只有第一個
         allowUnknown: true, // 允許額外的環境變數（如 Vercel 注入的系統變數）
+      },
+    }),
+
+    // Structured Logging - JSON in production, pretty print in dev
+    LoggerModule.forRoot({
+      pinoHttp: {
+        // Auto-assign request ID
+        genReqId: (req) =>
+          req.headers['x-request-id']?.toString() ||
+          crypto.randomUUID(),
+        customProps: () => ({
+          context: 'HTTP',
+        }),
+        // Reduce noise: skip health check logs
+        autoLogging: {
+          ignore: (req) => req.url === '/health',
+        },
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
+            : undefined,
+        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
       },
     }),
 
@@ -94,11 +120,20 @@ import { SiteSettingsModule } from './modules/site-settings/site-settings.module
   controllers: [AppController],
   providers: [
     AppService,
-    // 全域速率限制 Guard
+    // Per-user rate limiting (userId for auth, IP for anonymous)
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: UserThrottlerGuard,
+    },
+    // Audit logging for admin operations (only runs on @AuditLog() endpoints)
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditLogInterceptor,
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

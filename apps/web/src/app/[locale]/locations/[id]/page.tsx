@@ -57,7 +57,7 @@ export async function generateMetadata({
       siteName: '豪德製茶所',
       images: [
         {
-          url: location.image || `${SITE_URL}/og-default.jpg`,
+          url: location.image || `${SITE_URL}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: title,
@@ -70,7 +70,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${title} | 豪德製茶所門市據點`,
       description: description,
-      images: [location.image || `${SITE_URL}/og-default.jpg`],
+      images: [location.image || `${SITE_URL}/opengraph-image`],
     },
     alternates: {
       canonical: `${SITE_URL}/locations/${id}`,
