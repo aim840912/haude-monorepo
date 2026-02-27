@@ -4,7 +4,7 @@
  * 提供型別安全的 Product 相關 mock 建立函數
  */
 
-import type { Product, ProductImage } from '@/types/product'
+import type { Product, ProductImage } from '@haude/types'
 
 /**
  * 建立 ProductImage mock

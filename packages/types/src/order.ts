@@ -11,7 +11,7 @@ export type OrderStatus =
   | 'cancelled'
   | 'refunded'
 
-export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS' | 'WEBATM'
+export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS' | 'WEBATM' | 'STORE_CONTACT'
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expired'
 
@@ -61,6 +61,7 @@ export interface Order {
   paymentBankCode?: string
   paymentVaAccount?: string
   paymentExpireDate?: string
+  payment?: OrderPayment | null
   notes?: string
   estimatedDeliveryDate?: string
   actualDeliveryDate?: string
@@ -113,4 +114,40 @@ export interface OrderListResponse {
   total: number
   hasMore: boolean
   nextOffset?: number
+}
+
+// API 回傳的付款資訊（嵌套在 order.payment）
+export interface OrderPayment {
+  id: string
+  status: string
+  paymentType?: string
+  bankCode?: string
+  vaAccount?: string
+  paymentCode?: string
+  expireDate?: string
+  payTime?: string
+}
+
+export interface PaymentLog {
+  id: string
+  orderId?: string
+  tradeNo?: string
+  merchantOrderNo?: string
+  status: string
+  message?: string
+  amount: number
+  paymentType?: string
+  bankCode?: string
+  rawData?: Record<string, unknown>
+  ipAddress?: string
+  createdAt: string
+}
+
+export interface PaymentFormData {
+  paymentUrl: string
+  merchantId: string
+  merchantOrderNo: string
+  tradeInfo: string
+  tradeSha: string
+  version: string
 }

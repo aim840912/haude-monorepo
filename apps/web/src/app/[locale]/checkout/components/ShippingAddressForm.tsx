@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { ShippingAddress } from '@/types/order'
+import type { ShippingAddress } from '@haude/types'
 import type { CheckoutFormErrors } from '../hooks/useCheckoutForm'
 
 // 台灣縣市

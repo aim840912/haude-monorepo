@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { Location, CreateLocationData, UpdateLocationData } from '../hooks/useLocations'
-import { LocationImageManager } from './LocationImageManager'
+import { ImageManager } from './ImageManager'
 import { locationImagesApi, type LocationImage } from '../services/api'
 import logger from '../lib/logger'
 
@@ -456,11 +456,13 @@ export function LocationEditModal({
                   <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                 </div>
               ) : (
-                <LocationImageManager
-                  locationId={location.id}
+                <ImageManager
+                  entityId={location.id}
                   images={images}
+                  imagesApi={locationImagesApi}
                   onImagesChange={handleImagesChange}
                   disabled={isLoading || isCancelling}
+                  label="據點圖片"
                   pendingDeleteIds={pendingDeleteIds}
                   onMarkForDelete={handleMarkForDelete}
                   onRestoreImage={handleRestoreImage}

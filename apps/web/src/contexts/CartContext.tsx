@@ -8,7 +8,7 @@
  */
 
 import { createContext, useContext, useReducer, useEffect, useRef, type ReactNode } from 'react'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 import { useAuthStore } from '@/stores/authStore'
 
 // ==========================================

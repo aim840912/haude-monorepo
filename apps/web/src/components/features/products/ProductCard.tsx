@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { Star, Heart, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 interface ProductCardProps {
   /** 產品資料 */

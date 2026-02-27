@@ -164,7 +164,11 @@ export class EmailService {
       this.logger.log(`${logMessage}已發送至 ${to}`);
       return true;
     } catch (error) {
-      this.logger.error(`發送${logMessage}時發生錯誤: ${error}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `發送${logMessage}時發生錯誤: ${message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       return false;
     }
   }

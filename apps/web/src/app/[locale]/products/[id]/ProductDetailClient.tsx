@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
 import logger from '@/lib/logger'
 import { ReviewSection } from '@/components/features/reviews'
 
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 // 使用 Product 型別（保持一致性）
 export type ProductData = Product

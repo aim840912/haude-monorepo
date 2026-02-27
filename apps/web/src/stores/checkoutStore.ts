@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { PaymentMethod, ShippingAddress, DiscountValidation } from '@/types/order'
+import type { PaymentMethod, ShippingAddress, DiscountValidation } from '@haude/types'
 
 /**
  * 結帳表單持久化 Store

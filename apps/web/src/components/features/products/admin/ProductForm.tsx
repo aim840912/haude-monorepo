@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import type { UploadedImage } from '../ImageUploader/types'
-import type { CreateProductData, UpdateProductData } from '@/types/product'
+import type { CreateProductData, UpdateProductData } from '@haude/types'
 import {
   type ProductFormProps,
   type ProductFormValues,

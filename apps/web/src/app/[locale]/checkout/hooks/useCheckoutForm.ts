@@ -6,7 +6,7 @@ import { useCartStore, useTotalItems, useTotalPrice, type CartItem } from '@/sto
 import { useCheckoutStore } from '@/stores/checkoutStore'
 import { useToast } from '@/components/ui/feedback/toast'
 import { ordersApi } from '@/services/api'
-import type { PaymentMethod, ShippingAddress } from '@/types/order'
+import type { PaymentMethod, ShippingAddress } from '@haude/types'
 import logger from '@/lib/logger'
 
 /**

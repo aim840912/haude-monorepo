@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { Product } from '@haude/types'
 import type { CreateProductData, UpdateProductData } from '../hooks/useProducts'
-import { ProductImageManager } from './ProductImageManager'
+import { ImageManager } from './ImageManager'
 import { productImagesApi, type ProductImage } from '../services/api'
 import logger from '../lib/logger'
 
@@ -80,12 +80,12 @@ export function ProductEditModal({
           id: img.id,
           productId: product.id,
           storageUrl: img.storageUrl,
-          filePath: img.filePath,
+          filePath: img.filePath ?? '',
           altText: img.altText || undefined,
-          displayPosition: img.displayPosition,
-          size: img.size as 'thumbnail' | 'medium' | 'large',
-          createdAt: img.createdAt,
-          updatedAt: img.updatedAt,
+          displayPosition: img.displayPosition ?? 0,
+          size: (img.size ?? 'medium') as 'thumbnail' | 'medium' | 'large',
+          createdAt: img.createdAt ?? '',
+          updatedAt: img.updatedAt ?? '',
         })))
       } else {
         loadImages()
@@ -397,11 +397,13 @@ export function ProductEditModal({
                   <span className="ml-2 text-sm text-gray-500">載入圖片中...</span>
                 </div>
               ) : (
-                <ProductImageManager
-                  productId={product.id}
+                <ImageManager
+                  entityId={product.id}
                   images={images}
+                  imagesApi={productImagesApi}
                   onImagesChange={handleImagesChange}
                   disabled={isLoading || isCancelling}
+                  label="產品圖片"
                   pendingDeleteIds={pendingDeleteIds}
                   onMarkForDelete={handleMarkForDelete}
                   onRestoreImage={handleRestoreImage}

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@/services/api'
 import { isAuthenticated } from '@/stores/authStore'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 import logger from '@/lib/logger'
 
 // Local cart expires after 14 days of inactivity

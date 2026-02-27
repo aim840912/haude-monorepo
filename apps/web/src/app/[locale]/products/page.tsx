@@ -8,7 +8,7 @@ import { FeaturedProductCard } from '@/components/features/products/FeaturedProd
 import { Breadcrumb } from '@/components/ui/navigation'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { useProducts, useCategories } from '@/hooks/useProducts'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 /**
  * Products showcase page — brand-focused layout.

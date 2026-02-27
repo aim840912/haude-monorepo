@@ -1,4 +1,4 @@
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 /**
  * 擴展的產品型別，包含額外的詳細資訊

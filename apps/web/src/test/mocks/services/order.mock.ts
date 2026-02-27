@@ -1,4 +1,4 @@
-import type { Order, OrderItem, ShippingAddress } from '@/types/order'
+import type { Order, OrderItem, ShippingAddress } from '@haude/types'
 
 /**
  * Mock 訂單資料

@@ -5,7 +5,10 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
+
+type TransactionClient = Prisma.TransactionClient;
 
 @Injectable()
 export class MemberPointsService {
@@ -15,8 +18,13 @@ export class MemberPointsService {
    * 檢查並升級會員等級
    * 應在訂單完成後呼叫
    */
-  async checkAndUpgradeLevel(userId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
+  async checkAndUpgradeLevel(
+    userId: string,
+    tx?: TransactionClient,
+  ): Promise<boolean> {
+    const db = tx ?? this.prisma;
+
+    const user = await db.user.findUnique({
       where: { id: userId },
       select: {
         memberLevel: true,
@@ -29,7 +37,7 @@ export class MemberPointsService {
     }
 
     // 取得所有等級設定，按門檻降序排列
-    const configs = await this.prisma.memberLevelConfig.findMany({
+    const configs = await db.memberLevelConfig.findMany({
       orderBy: { minSpent: 'desc' },
     });
 
@@ -43,24 +51,23 @@ export class MemberPointsService {
     }
 
     // 更新等級
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          memberLevel: eligibleConfig.level,
-          levelUpdatedAt: new Date(),
-        },
-      }),
-      this.prisma.memberLevelHistory.create({
-        data: {
-          userId,
-          fromLevel: user.memberLevel,
-          toLevel: eligibleConfig.level,
-          reason: `累積消費達到 NT$${user.totalSpent.toLocaleString()}`,
-          triggeredBy: 'system',
-        },
-      }),
-    ]);
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        memberLevel: eligibleConfig.level,
+        levelUpdatedAt: new Date(),
+      },
+    });
+
+    await db.memberLevelHistory.create({
+      data: {
+        userId,
+        fromLevel: user.memberLevel,
+        toLevel: eligibleConfig.level,
+        reason: `累積消費達到 NT$${user.totalSpent.toLocaleString()}`,
+        triggeredBy: 'system',
+      },
+    });
 
     return true;
   }
@@ -146,21 +153,23 @@ export class MemberPointsService {
     userId: string,
     orderAmount: number,
   ): Promise<{ newTotalSpent: number; upgraded: boolean }> {
-    // 更新累積消費
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        totalSpent: { increment: orderAmount },
-      },
-      select: { totalSpent: true },
+    return this.prisma.$transaction(async (tx) => {
+      // 更新累積消費
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalSpent: { increment: orderAmount },
+        },
+        select: { totalSpent: true },
+      });
+
+      // 檢查升級（同一 transaction 內）
+      const upgraded = await this.checkAndUpgradeLevel(userId, tx);
+
+      return {
+        newTotalSpent: user.totalSpent,
+        upgraded,
+      };
     });
-
-    // 檢查升級
-    const upgraded = await this.checkAndUpgradeLevel(userId);
-
-    return {
-      newTotalSpent: user.totalSpent,
-      upgraded,
-    };
   }
 }

@@ -4,18 +4,19 @@
 
 export interface ProductImage {
   id: string
-  entityId: string
+  entityId?: string
+  productId?: string
   storageUrl: string
-  filePath: string
+  filePath?: string
   altText?: string | null
-  displayPosition: number
-  size: 'thumbnail' | 'medium' | 'large'
+  displayPosition?: number
+  size?: 'thumbnail' | 'medium' | 'large'
   width?: number | null
   height?: number | null
   fileSize?: number | null
-  createdAt: string
-  updatedAt: string
-  module: string
+  createdAt?: string
+  updatedAt?: string
+  module?: string
 }
 
 export interface Product {

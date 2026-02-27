@@ -11,7 +11,7 @@ import type {
   PaymentMethod,
   OrderStatus,
   DiscountValidation,
-} from '@/types/order'
+} from '@haude/types'
 
 /**
  * 建立 ShippingAddress mock

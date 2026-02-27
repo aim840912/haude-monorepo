@@ -4,6 +4,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtTokenService } from './services/jwt-token.service';
+import { PasswordAuthService } from './services/password-auth.service';
+import { GoogleAuthService } from './services/google-auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { UsersModule } from '../users/users.module';
@@ -55,7 +58,14 @@ const googleStrategyProvider = {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, googleStrategyProvider],
+  providers: [
+    JwtTokenService,
+    PasswordAuthService,
+    GoogleAuthService,
+    AuthService,
+    JwtStrategy,
+    googleStrategyProvider,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

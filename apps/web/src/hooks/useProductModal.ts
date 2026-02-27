@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 export interface UseProductModalReturn {
   selectedProduct: Product | null

@@ -14,9 +14,9 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { ProductEditModal } from './ProductEditModal'
 import type { Product } from '@haude/types'
 
-// Mock ProductImageManager 元件
-vi.mock('./ProductImageManager', () => ({
-  ProductImageManager: () => <div data-testid="product-image-manager">產品圖片管理器</div>,
+// Mock ImageManager 元件
+vi.mock('./ImageManager', () => ({
+  ImageManager: () => <div data-testid="product-image-manager">產品圖片管理器</div>,
 }))
 
 // Mock productImagesApi

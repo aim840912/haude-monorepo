@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act } from '@testing-library/react'
 import { useCheckoutStore } from './checkoutStore'
-import type { DiscountValidation } from '@/types/order'
+import type { DiscountValidation } from '@haude/types'
 
 describe('checkoutStore', () => {
   beforeEach(() => {

@@ -202,7 +202,7 @@ describe('AuthController', () => {
   describe('resetPassword', () => {
     const resetPasswordDto = {
       token: 'reset-token-123',
-      password: 'newPassword123',
+      newPassword: 'newPassword123',
     };
 
     it('應呼叫 AuthService.resetPassword', async () => {

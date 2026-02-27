@@ -24,9 +24,6 @@ importers:
       '@haude/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@supabase/supabase-js':
-        specifier: ^2.87.1
-        version: 2.90.1
       axios:
         specifier: ^1.13.2
         version: 1.13.2

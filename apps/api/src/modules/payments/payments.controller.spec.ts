@@ -71,7 +71,7 @@ describe('PaymentsController', () => {
   describe('createPayment', () => {
     const createPaymentDto = {
       orderId: 'order-123',
-      paymentMethod: 'Credit',
+      paymentMethod: 'CREDIT' as const,
     };
     const mockRequest = {
       user: { userId: 'user-1', email: 'test@example.com' },
@@ -96,7 +96,7 @@ describe('PaymentsController', () => {
       expect(mockPaymentsService.createPayment).toHaveBeenCalledWith(
         'order-123',
         'user-1',
-        'Credit',
+        'CREDIT',
       );
     });
   });

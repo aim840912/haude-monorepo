@@ -61,8 +61,8 @@ describe('OrdersController', () => {
   describe('getUserOrders', () => {
     const ordersResult = {
       items: [
-        { id: 'order-1', status: OrderStatus.PENDING, totalAmount: 1500 },
-        { id: 'order-2', status: OrderStatus.PAID, totalAmount: 2500 },
+        { id: 'order-1', status: OrderStatus.pending, totalAmount: 1500 },
+        { id: 'order-2', status: OrderStatus.confirmed, totalAmount: 2500 },
       ],
       total: 2,
     };
@@ -102,19 +102,21 @@ describe('OrdersController', () => {
 
   describe('createOrder', () => {
     const createOrderDto = {
-      items: [{ productId: 'product-1', quantity: 2, variantId: 'variant-1' }],
+      items: [{ productId: 'product-1', quantity: 2 }],
       shippingAddress: {
         name: '測試用戶',
         phone: '0912345678',
-        address: '台北市測試區測試路100號',
+        street: '測試區測試路100號',
+        city: '台北市',
+        postalCode: '100',
       },
-      paymentMethod: 'Credit',
+      paymentMethod: 'CREDIT',
     };
 
     it('應成功建立訂單', async () => {
       const createdOrder = {
         id: 'order-new',
-        status: OrderStatus.PENDING,
+        status: OrderStatus.pending,
         totalAmount: 3000,
         items: createOrderDto.items,
       };
@@ -138,7 +140,7 @@ describe('OrdersController', () => {
     it('應回傳訂單詳情', async () => {
       const orderDetail = {
         id: 'order-1',
-        status: OrderStatus.PAID,
+        status: OrderStatus.confirmed,
         totalAmount: 5000,
         items: [{ productId: 'product-1', quantity: 1, price: 5000 }],
         shippingAddress: { name: '測試用戶', address: '台北市' },
@@ -164,7 +166,7 @@ describe('OrdersController', () => {
     it('應成功取消訂單', async () => {
       const cancelledOrder = {
         id: 'order-1',
-        status: OrderStatus.CANCELLED,
+        status: OrderStatus.cancelled,
         cancelReason: '不想買了',
       };
       mockOrdersService.cancelOrder.mockResolvedValue(cancelledOrder);
@@ -183,7 +185,7 @@ describe('OrdersController', () => {
 
     it('應允許不提供取消原因', async () => {
       mockOrdersService.cancelOrder.mockResolvedValue({
-        status: OrderStatus.CANCELLED,
+        status: OrderStatus.cancelled,
       });
 
       await controller.cancelOrder(mockRequest, 'order-2', {});
@@ -246,8 +248,8 @@ describe('AdminOrdersController', () => {
   describe('getAllOrders', () => {
     const ordersResult = {
       items: [
-        { id: 'order-1', userId: 'user-1', status: OrderStatus.PENDING },
-        { id: 'order-2', userId: 'user-2', status: OrderStatus.SHIPPED },
+        { id: 'order-1', userId: 'user-1', status: OrderStatus.pending },
+        { id: 'order-2', userId: 'user-2', status: OrderStatus.shipped },
       ],
       total: 100,
     };
@@ -281,10 +283,10 @@ describe('AdminOrdersController', () => {
         totalRevenue: 1500000,
         averageOrderValue: 3000,
         statusCounts: {
-          [OrderStatus.PENDING]: 50,
-          [OrderStatus.PAID]: 100,
-          [OrderStatus.SHIPPED]: 200,
-          [OrderStatus.DELIVERED]: 150,
+          [OrderStatus.pending]: 50,
+          [OrderStatus.confirmed]: 100,
+          [OrderStatus.shipped]: 200,
+          [OrderStatus.delivered]: 150,
         },
       };
       mockOrdersService.getOrderStats.mockResolvedValue(stats);
@@ -304,7 +306,7 @@ describe('AdminOrdersController', () => {
     it('應回傳訂單詳情（含使用者資訊）', async () => {
       const orderDetail = {
         id: 'order-1',
-        status: OrderStatus.PAID,
+        status: OrderStatus.confirmed,
         totalAmount: 5000,
         user: { id: 'user-1', email: 'user@example.com', name: '測試用戶' },
         items: [{ productId: 'product-1', quantity: 2, price: 2500 }],
@@ -328,50 +330,50 @@ describe('AdminOrdersController', () => {
     it('應成功更新訂單狀態為已出貨', async () => {
       const updatedOrder = {
         id: 'order-1',
-        status: OrderStatus.SHIPPED,
+        status: OrderStatus.shipped,
         trackingNumber: 'TRACK123456',
       };
       mockOrdersService.updateOrderStatus.mockResolvedValue(updatedOrder);
 
       const result = await controller.updateOrderStatus('order-1', {
-        status: OrderStatus.SHIPPED,
+        status: OrderStatus.shipped,
         trackingNumber: 'TRACK123456',
       });
 
       expect(result).toEqual(updatedOrder);
       expect(mockOrdersService.updateOrderStatus).toHaveBeenCalledWith(
         'order-1',
-        { status: OrderStatus.SHIPPED, trackingNumber: 'TRACK123456' },
+        { status: OrderStatus.shipped, trackingNumber: 'TRACK123456' },
       );
     });
 
     it('應成功更新訂單狀態為已送達', async () => {
       mockOrdersService.updateOrderStatus.mockResolvedValue({
-        status: OrderStatus.DELIVERED,
+        status: OrderStatus.delivered,
       });
 
       await controller.updateOrderStatus('order-2', {
-        status: OrderStatus.DELIVERED,
+        status: OrderStatus.delivered,
       });
 
       expect(mockOrdersService.updateOrderStatus).toHaveBeenCalledWith(
         'order-2',
-        { status: OrderStatus.DELIVERED },
+        { status: OrderStatus.delivered },
       );
     });
 
     it('應成功將訂單標記為已付款', async () => {
       mockOrdersService.updateOrderStatus.mockResolvedValue({
-        status: OrderStatus.PAID,
+        status: OrderStatus.confirmed,
       });
 
       await controller.updateOrderStatus('order-3', {
-        status: OrderStatus.PAID,
+        status: OrderStatus.confirmed,
       });
 
       expect(mockOrdersService.updateOrderStatus).toHaveBeenCalledWith(
         'order-3',
-        { status: OrderStatus.PAID },
+        { status: OrderStatus.confirmed },
       );
     });
   });
@@ -461,10 +463,10 @@ describe('AdminDashboardController', () => {
   describe('getOrderStatusDistribution', () => {
     it('應回傳訂單狀態分布', async () => {
       const distribution = [
-        { status: OrderStatus.PENDING, count: 50, percentage: 10 },
-        { status: OrderStatus.PAID, count: 100, percentage: 20 },
-        { status: OrderStatus.SHIPPED, count: 150, percentage: 30 },
-        { status: OrderStatus.DELIVERED, count: 200, percentage: 40 },
+        { status: OrderStatus.pending, count: 50, percentage: 10 },
+        { status: OrderStatus.confirmed, count: 100, percentage: 20 },
+        { status: OrderStatus.shipped, count: 150, percentage: 30 },
+        { status: OrderStatus.delivered, count: 200, percentage: 40 },
       ];
       mockOrdersService.getOrderStatusDistribution.mockResolvedValue(
         distribution,

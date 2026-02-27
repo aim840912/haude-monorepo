@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ordersApi } from '@/services/api'
-import type { Order, CreateOrderRequest } from '@/types/order'
+import type { Order, CreateOrderRequest } from '@haude/types'
 
 /**
  * 動態載入 Mock 資料（僅開發環境使用）

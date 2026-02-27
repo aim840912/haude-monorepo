@@ -7,7 +7,7 @@ import { useOrders } from '@/hooks/useOrders'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { cn } from '@/lib/utils'
-import type { OrderStatus } from '@/types/order'
+import type { OrderStatus } from '@haude/types'
 
 // 訂單狀態配置
 const statusConfig: Record<OrderStatus, { label: string; color: string; icon: typeof Package }> = {

@@ -2,7 +2,7 @@
 
 import { CreditCard, Building2, Store, Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { PaymentMethod } from '@/types/order'
+import type { PaymentMethod } from '@haude/types'
 
 // 付款方式選項
 const paymentMethods: {

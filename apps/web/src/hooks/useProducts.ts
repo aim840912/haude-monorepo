@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { productsApi } from '@/services/api'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 /**
  * 動態載入 Mock 資料（僅開發環境使用）

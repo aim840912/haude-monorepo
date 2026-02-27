@@ -248,17 +248,19 @@ export class PaymentCallbackService {
     payment: { id: string; orderId: string },
     body: Record<string, string>,
   ): Promise<void> {
-    await this.prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: 'failed',
-        responseData: body as object,
-      },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: 'failed',
+          responseData: body as object,
+        },
+      });
 
-    await this.prisma.order.update({
-      where: { id: payment.orderId },
-      data: { paymentStatus: 'failed' },
+      await tx.order.update({
+        where: { id: payment.orderId },
+        data: { paymentStatus: 'failed' },
+      });
     });
 
     this.logger.warn(`付款失敗: ${body.MerchantTradeNo}, 原因: ${body.RtnMsg}`);

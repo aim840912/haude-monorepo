@@ -6,7 +6,7 @@ import { useProducts, useCategories } from '@/hooks/useProducts'
 import { AdminProductFilter } from './AdminProductFilter'
 import type { AdminFilterState, AdminProductsTableProps } from './types'
 import { DEFAULT_ADMIN_FILTERS } from './types'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 /**
  * 管理員產品表格元件

@@ -22,7 +22,7 @@ import { useToast } from '@/components/ui/feedback/toast'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
 import { PaymentButton, PaymentStatusBadge } from '@/components/features/payment'
 import { cn } from '@/lib/utils'
-import type { OrderStatus, PaymentStatus } from '@/types/order'
+import type { OrderStatus, PaymentStatus } from '@haude/types'
 
 // 訂單狀態配置
 const statusConfig: Record<OrderStatus, { label: string; color: string; icon: typeof Package }> = {

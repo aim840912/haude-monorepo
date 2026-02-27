@@ -1,6 +1,6 @@
 import { ProductCard } from './ProductCard'
 import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 
 interface ProductGridProps {
   /** 產品列表 */

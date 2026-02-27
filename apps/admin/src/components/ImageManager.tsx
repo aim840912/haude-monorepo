@@ -1,40 +1,64 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useId } from 'react'
 import { Upload, X, Loader2, GripVertical, Image as ImageIcon, RotateCcw } from 'lucide-react'
-import { productImagesApi, type ProductImage } from '../services/api'
 import logger from '../lib/logger'
 
-interface ProductImageManagerProps {
-  productId: string
-  images: ProductImage[]
+// Common image shape — all admin image types satisfy this
+export interface ManagedImage {
+  id: string
+  storageUrl: string
+  altText?: string
+}
+
+// API adapter — all *ImagesApi objects satisfy this shape
+export interface ImageApiAdapter {
+  getUploadUrl: (entityId: string, fileName: string) => Promise<{
+    data: { uploadUrl: string; filePath: string; publicUrl: string }
+  }>
+  addImage: (entityId: string, data: {
+    storageUrl: string
+    filePath: string
+    altText: string
+  }) => Promise<{ data: { id: string } }>
+}
+
+interface ImageManagerProps {
+  entityId: string
+  images: ManagedImage[]
+  imagesApi: ImageApiAdapter
   onImagesChange: (newImageIds?: string[]) => void
   disabled?: boolean
-  // 延遲刪除相關
+  /** Alt text fallback label, e.g. '產品圖片', '據點圖片' */
+  label?: string
+  // Deferred delete
   pendingDeleteIds: string[]
   onMarkForDelete: (imageId: string) => void
   onRestoreImage: (imageId: string) => void
 }
 
-export function ProductImageManager({
-  productId,
+export function ImageManager({
+  entityId,
   images,
+  imagesApi,
   onImagesChange,
   disabled = false,
+  label = '圖片',
   pendingDeleteIds,
   onMarkForDelete,
   onRestoreImage,
-}: ProductImageManagerProps) {
+}: ImageManagerProps) {
+  const inputId = useId()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  // 處理檔案上傳
+  // Handle file upload
   const handleUpload = useCallback(
     async (files: FileList | File[]) => {
       const fileArray = Array.from(files)
       if (fileArray.length === 0) return
 
-      // 驗證檔案類型
+      // Validate file types
       const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
       const invalidFiles = fileArray.filter((f) => !validTypes.includes(f.type))
       if (invalidFiles.length > 0) {
@@ -42,7 +66,7 @@ export function ProductImageManager({
         return
       }
 
-      // 驗證檔案大小（最大 5MB）
+      // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024
       const oversizedFiles = fileArray.filter((f) => f.size > maxSize)
       if (oversizedFiles.length > 0) {
@@ -54,46 +78,37 @@ export function ProductImageManager({
       setError(null)
       setUploadProgress(0)
 
-      // 收集本次上傳的圖片 ID
       const uploadedImageIds: string[] = []
 
       try {
         for (let i = 0; i < fileArray.length; i++) {
           const file = fileArray[i]
 
-          // 1. 取得上傳 URL
-          const { data: uploadData } = await productImagesApi.getUploadUrl(
-            productId,
-            file.name
-          )
+          // 1. Get upload URL
+          const { data: uploadData } = await imagesApi.getUploadUrl(entityId, file.name)
 
-          // 2. 直接上傳到 Supabase Storage
+          // 2. Upload to Supabase Storage
           const uploadResponse = await fetch(uploadData.uploadUrl, {
             method: 'PUT',
             body: file,
-            headers: {
-              'Content-Type': file.type,
-            },
+            headers: { 'Content-Type': file.type },
           })
 
           if (!uploadResponse.ok) {
             throw new Error(`上傳失敗: ${uploadResponse.statusText}`)
           }
 
-          // 3. 新增圖片記錄到資料庫
-          const { data: newImage } = await productImagesApi.addImage(productId, {
+          // 3. Add image record to database
+          const { data: newImage } = await imagesApi.addImage(entityId, {
             storageUrl: uploadData.publicUrl,
             filePath: uploadData.filePath,
-            altText: file.name.replace(/\.[^/.]+$/, ''), // 移除副檔名作為 alt
+            altText: file.name.replace(/\.[^/.]+$/, ''),
           })
 
-          // 記錄新上傳的圖片 ID
           uploadedImageIds.push(newImage.id)
-
           setUploadProgress(((i + 1) / fileArray.length) * 100)
         }
 
-        // 通知父元件更新，並傳遞新上傳的圖片 ID
         onImagesChange(uploadedImageIds)
       } catch (err) {
         logger.error('上傳錯誤', { error: err })
@@ -103,11 +118,10 @@ export function ProductImageManager({
         setUploadProgress(0)
       }
     },
-    [productId, onImagesChange]
+    [entityId, imagesApi, onImagesChange]
   )
 
-
-  // 拖放處理
+  // Drag & drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     if (!disabled) setIsDragOver(true)
@@ -126,17 +140,17 @@ export function ProductImageManager({
     }
   }
 
-  // 檔案選擇處理
+  // File select handler
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       handleUpload(e.target.files)
-      e.target.value = '' // 重置，允許重複選擇同一檔案
+      e.target.value = ''
     }
   }
 
   return (
     <div className="space-y-4">
-      {/* 錯誤訊息 */}
+      {/* Error message */}
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center justify-between">
           <span>{error}</span>
@@ -146,7 +160,7 @@ export function ProductImageManager({
         </div>
       )}
 
-      {/* 上傳區域 */}
+      {/* Upload area */}
       <div
         className={`
           relative border-2 border-dashed rounded-lg p-6 text-center transition-colors
@@ -156,10 +170,10 @@ export function ProductImageManager({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => !disabled && document.getElementById('image-upload')?.click()}
+        onClick={() => !disabled && document.getElementById(inputId)?.click()}
       >
         <input
-          id="image-upload"
+          id={inputId}
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif"
           multiple
@@ -192,7 +206,7 @@ export function ProductImageManager({
         )}
       </div>
 
-      {/* 圖片列表 */}
+      {/* Image list */}
       {images.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -220,17 +234,17 @@ export function ProductImageManager({
                 >
                   <img
                     src={image.storageUrl}
-                    alt={image.altText || `產品圖片 ${index + 1}`}
+                    alt={image.altText || `${label} ${index + 1}`}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
-                  {/* 排序標籤 */}
+                  {/* Sort badge */}
                   <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
                     <GripVertical className="w-3 h-3" />
                     {index + 1}
                   </div>
 
-                  {/* 待刪除狀態 UI */}
+                  {/* Pending delete UI */}
                   {isPendingDelete ? (
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 p-2">
                       <p className="text-white text-xs text-center">已標記刪除</p>
@@ -248,7 +262,7 @@ export function ProductImageManager({
                       </button>
                     </div>
                   ) : (
-                    /* 刪除按鈕 */
+                    /* Delete button */
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -267,7 +281,7 @@ export function ProductImageManager({
         </div>
       )}
 
-      {/* 無圖片提示 */}
+      {/* Empty state */}
       {images.length === 0 && !isUploading && (
         <div className="text-center py-4 text-gray-400 text-sm">
           <div className="flex items-center justify-center gap-2">

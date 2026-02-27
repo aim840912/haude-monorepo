@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/feedback/toast'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import type { ExtendedProduct } from './types'
-import type { Product } from '@/types/product'
+import type { Product } from '@haude/types'
 import logger from '@/lib/logger'
 
 interface ProductModalActionsProps {

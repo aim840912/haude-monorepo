@@ -63,6 +63,9 @@ export interface MemberLevelConfig {
 export interface LoginRequest {
   email: string
   password: string
+  identifier?: string
+  inputType?: 'email' | 'phone'
+  rememberMe?: boolean
 }
 
 export interface RegisterRequest {

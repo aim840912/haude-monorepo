@@ -1,4 +1,4 @@
-import type { Product, CreateProductData, UpdateProductData } from '@/types/product'
+import type { Product, CreateProductData, UpdateProductData } from '@haude/types'
 
 /**
  * 產品表單欄位值

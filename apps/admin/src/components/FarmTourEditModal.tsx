@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { FarmTour, CreateFarmTourData, UpdateFarmTourData } from '../hooks/useFarmTours'
-import { FarmTourImageManager } from './FarmTourImageManager'
+import { ImageManager } from './ImageManager'
 import { farmTourImagesApi, type FarmTourImage } from '../services/api'
 import logger from '../lib/logger'
 
@@ -467,11 +467,13 @@ export function FarmTourEditModal({
                   <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                 </div>
               ) : (
-                <FarmTourImageManager
-                  farmTourId={farmTour.id}
+                <ImageManager
+                  entityId={farmTour.id}
                   images={images}
+                  imagesApi={farmTourImagesApi}
                   onImagesChange={handleImagesChange}
                   disabled={isLoading || isCancelling}
+                  label="農場體驗圖片"
                   pendingDeleteIds={pendingDeleteIds}
                   onMarkForDelete={handleMarkForDelete}
                   onRestoreImage={handleRestoreImage}

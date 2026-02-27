@@ -1,44 +1,58 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  UnauthorizedException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
+import { JwtTokenService } from './services/jwt-token.service';
+import { PasswordAuthService } from './services/password-auth.service';
+import { GoogleAuthService } from './services/google-auth.service';
 import {
   createMockPrismaService,
-  createMockEmailService,
-  createMockJwtService,
   createMockUser,
 } from '../../../test/utils/test-helpers';
-
-// Mock bcrypt
-jest.mock('bcrypt', () => ({
-  hash: jest.fn().mockResolvedValue('$2b$10$hashed_password'),
-  compare: jest.fn(),
-}));
 
 describe('AuthService', () => {
   let service: AuthService;
   let mockPrismaService: ReturnType<typeof createMockPrismaService>;
-  let mockEmailService: ReturnType<typeof createMockEmailService>;
-  let mockJwtService: ReturnType<typeof createMockJwtService>;
+
+  // Sub-service mocks
+  const mockJwtTokenService = {
+    generateTokenPair: jest.fn().mockResolvedValue({
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token',
+    }),
+    refreshAccessToken: jest.fn().mockResolvedValue({
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+    }),
+    revokeRefreshToken: jest.fn().mockResolvedValue(undefined),
+    revokeAllUserTokens: jest.fn().mockResolvedValue(undefined),
+    cleanupExpiredTokens: jest.fn().mockResolvedValue(5),
+  };
+
+  const mockPasswordAuthService = {
+    register: jest.fn(),
+    login: jest.fn(),
+    forgotPassword: jest.fn(),
+    resetPassword: jest.fn(),
+    verifyResetToken: jest.fn(),
+    setPassword: jest.fn(),
+  };
+
+  const mockGoogleAuthService = {
+    validateGoogleUser: jest.fn(),
+    googleLogin: jest.fn(),
+  };
 
   beforeEach(async () => {
     mockPrismaService = createMockPrismaService();
-    mockEmailService = createMockEmailService();
-    mockJwtService = createMockJwtService();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: JwtService, useValue: mockJwtService },
-        { provide: EmailService, useValue: mockEmailService },
+        { provide: JwtTokenService, useValue: mockJwtTokenService },
+        { provide: PasswordAuthService, useValue: mockPasswordAuthService },
+        { provide: GoogleAuthService, useValue: mockGoogleAuthService },
       ],
     }).compile();
 
@@ -46,110 +60,194 @@ describe('AuthService', () => {
     jest.clearAllMocks();
   });
 
-  describe('register', () => {
+  // ========================================
+  // Facade delegation tests
+  // ========================================
+
+  describe('register (delegates to PasswordAuthService)', () => {
     const registerDto = {
       email: 'new@example.com',
       password: 'password123',
       name: '新使用者',
     };
 
-    it('應成功註冊新使用者', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.user.create.mockResolvedValue(
-        createMockUser({
-          id: 'new-user-id',
-          email: registerDto.email,
-          name: registerDto.name,
-        }),
-      );
+    it('應委派給 PasswordAuthService.register', async () => {
+      const expected = {
+        user: { id: 'user-1', email: registerDto.email },
+        accessToken: 'token',
+        refreshToken: 'refresh',
+      };
+      mockPasswordAuthService.register.mockResolvedValue(expected);
 
       const result = await service.register(registerDto);
 
-      expect(result.user.email).toBe(registerDto.email);
-      expect(result.accessToken).toBe('mock-jwt-token');
-      expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 10);
-    });
-
-    it('Email 已存在時應拋出 ConflictException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(createMockUser());
-
-      await expect(service.register(registerDto)).rejects.toThrow(
-        ConflictException,
+      expect(mockPasswordAuthService.register).toHaveBeenCalledWith(
+        registerDto,
       );
-    });
-
-    it('應正確加密密碼', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.user.create.mockResolvedValue(createMockUser());
-
-      await service.register(registerDto);
-
-      expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 10);
-      expect(mockPrismaService.user.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            password: '$2b$10$hashed_password',
-          }),
-        }),
-      );
+      expect(result).toBe(expected);
     });
   });
 
-  describe('login', () => {
+  describe('login (delegates to PasswordAuthService)', () => {
     const loginDto = {
       email: 'test@example.com',
       password: 'password123',
     };
 
-    it('應成功登入並回傳 token', async () => {
-      const mockUser = createMockUser();
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    it('應委派給 PasswordAuthService.login', async () => {
+      const expected = {
+        user: { id: 'user-1', email: loginDto.email },
+        accessToken: 'token',
+        refreshToken: 'refresh',
+      };
+      mockPasswordAuthService.login.mockResolvedValue(expected);
 
       const result = await service.login(loginDto);
 
-      expect(result.user.email).toBe(mockUser.email);
-      expect(result.accessToken).toBe('mock-jwt-token');
-    });
-
-    it('使用者不存在時應拋出 UnauthorizedException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('密碼錯誤時應拋出 UnauthorizedException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(createMockUser());
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('Google 登入使用者嘗試密碼登入時應拋出 UnauthorizedException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(
-        createMockUser({ password: null, googleId: 'google-123' }),
-      );
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('帳號被停用時應拋出 UnauthorizedException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(
-        createMockUser({ isActive: false }),
-      );
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      expect(mockPasswordAuthService.login).toHaveBeenCalledWith(loginDto);
+      expect(result).toBe(expected);
     });
   });
+
+  describe('forgotPassword (delegates to PasswordAuthService)', () => {
+    it('應委派給 PasswordAuthService.forgotPassword', async () => {
+      const dto = { email: 'test@example.com' };
+      const expected = { message: '如果該電子郵件已註冊，您將收到重設密碼的連結' };
+      mockPasswordAuthService.forgotPassword.mockResolvedValue(expected);
+
+      const result = await service.forgotPassword(dto);
+
+      expect(mockPasswordAuthService.forgotPassword).toHaveBeenCalledWith(dto);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('resetPassword (delegates to PasswordAuthService)', () => {
+    it('應委派給 PasswordAuthService.resetPassword', async () => {
+      const dto = { token: 'valid-token', newPassword: 'newpassword123' };
+      const expected = { message: '密碼已成功重設' };
+      mockPasswordAuthService.resetPassword.mockResolvedValue(expected);
+
+      const result = await service.resetPassword(dto);
+
+      expect(mockPasswordAuthService.resetPassword).toHaveBeenCalledWith(dto);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('verifyResetToken (delegates to PasswordAuthService)', () => {
+    it('應委派給 PasswordAuthService.verifyResetToken', async () => {
+      const expected = { valid: true };
+      mockPasswordAuthService.verifyResetToken.mockResolvedValue(expected);
+
+      const result = await service.verifyResetToken('valid-token');
+
+      expect(mockPasswordAuthService.verifyResetToken).toHaveBeenCalledWith(
+        'valid-token',
+      );
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('setPassword (delegates to PasswordAuthService)', () => {
+    it('應委派給 PasswordAuthService.setPassword', async () => {
+      const dto = { password: 'newpassword123' };
+      const expected = { message: '密碼設定成功' };
+      mockPasswordAuthService.setPassword.mockResolvedValue(expected);
+
+      const result = await service.setPassword('user-1', dto);
+
+      expect(mockPasswordAuthService.setPassword).toHaveBeenCalledWith(
+        'user-1',
+        dto,
+      );
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('validateGoogleUser (delegates to GoogleAuthService)', () => {
+    it('應委派給 GoogleAuthService.validateGoogleUser', async () => {
+      const profile = {
+        googleId: 'google-123',
+        email: 'google@example.com',
+        name: 'Google User',
+        avatar: 'https://example.com/avatar.jpg',
+      };
+      const expected = createMockUser({ googleId: 'google-123' });
+      mockGoogleAuthService.validateGoogleUser.mockResolvedValue(expected);
+
+      const result = await service.validateGoogleUser(profile);
+
+      expect(mockGoogleAuthService.validateGoogleUser).toHaveBeenCalledWith(
+        profile,
+      );
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('googleLogin (delegates to GoogleAuthService)', () => {
+    it('應委派給 GoogleAuthService.googleLogin', async () => {
+      const user = {
+        id: 'user-1',
+        email: 'google@example.com',
+        name: 'Google User',
+        role: 'USER',
+        isActive: true,
+      };
+      const expected = {
+        user: { id: user.id, email: user.email },
+        accessToken: 'token',
+        refreshToken: 'refresh',
+      };
+      mockGoogleAuthService.googleLogin.mockResolvedValue(expected);
+
+      const result = await service.googleLogin(user);
+
+      expect(mockGoogleAuthService.googleLogin).toHaveBeenCalledWith(user);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('Token management (delegates to JwtTokenService)', () => {
+    it('generateTokenPair 應委派給 JwtTokenService', async () => {
+      await service.generateTokenPair('user-1', 'test@example.com');
+      expect(mockJwtTokenService.generateTokenPair).toHaveBeenCalledWith(
+        'user-1',
+        'test@example.com',
+      );
+    });
+
+    it('refreshAccessToken 應委派給 JwtTokenService', async () => {
+      await service.refreshAccessToken('refresh-token');
+      expect(mockJwtTokenService.refreshAccessToken).toHaveBeenCalledWith(
+        'refresh-token',
+      );
+    });
+
+    it('revokeRefreshToken 應委派給 JwtTokenService', async () => {
+      await service.revokeRefreshToken('refresh-token');
+      expect(mockJwtTokenService.revokeRefreshToken).toHaveBeenCalledWith(
+        'refresh-token',
+      );
+    });
+
+    it('revokeAllUserTokens 應委派給 JwtTokenService', async () => {
+      await service.revokeAllUserTokens('user-1');
+      expect(mockJwtTokenService.revokeAllUserTokens).toHaveBeenCalledWith(
+        'user-1',
+      );
+    });
+
+    it('cleanupExpiredTokens 應委派給 JwtTokenService', async () => {
+      const result = await service.cleanupExpiredTokens();
+      expect(mockJwtTokenService.cleanupExpiredTokens).toHaveBeenCalled();
+      expect(result).toBe(5);
+    });
+  });
+
+  // ========================================
+  // Direct methods (not delegated)
+  // ========================================
 
   describe('getMe', () => {
     it('應回傳使用者資訊（不含密碼）', async () => {
@@ -186,266 +284,36 @@ describe('AuthService', () => {
     });
   });
 
-  describe('validateGoogleUser', () => {
-    const googleProfile = {
-      googleId: 'google-123',
-      email: 'google@example.com',
-      name: 'Google User',
-      avatar: 'https://example.com/avatar.jpg',
-    };
+  describe('findFirstAdmin', () => {
+    it('應查詢第一個活躍的管理員', async () => {
+      const admin = createMockUser({ role: 'ADMIN' });
+      mockPrismaService.user.findFirst.mockResolvedValue(admin);
 
-    it('已存在的 Google 用戶應更新頭像', async () => {
-      const existingUser = createMockUser({ googleId: 'google-123' });
-      mockPrismaService.user.findUnique
-        .mockResolvedValueOnce(existingUser) // 透過 googleId 查找
-        .mockResolvedValueOnce(existingUser);
-      mockPrismaService.user.update.mockResolvedValue({
-        ...existingUser,
-        avatar: googleProfile.avatar,
+      const result = await service.findFirstAdmin();
+
+      expect(mockPrismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { role: 'ADMIN', isActive: true },
       });
-
-      const result = await service.validateGoogleUser(googleProfile);
-
-      expect(result.avatar).toBe(googleProfile.avatar);
-    });
-
-    it('新 Google 用戶應建立帳戶', async () => {
-      mockPrismaService.user.findUnique
-        .mockResolvedValueOnce(null) // 透過 googleId 查找
-        .mockResolvedValueOnce(null); // 透過 email 查找
-      mockPrismaService.user.create.mockResolvedValue(
-        createMockUser({
-          googleId: googleProfile.googleId,
-          email: googleProfile.email,
-        }),
-      );
-
-      const result = await service.validateGoogleUser(googleProfile);
-
-      expect(mockPrismaService.user.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            email: googleProfile.email,
-            googleId: googleProfile.googleId,
-          }),
-        }),
-      );
-      expect(result.googleId).toBe(googleProfile.googleId);
-    });
-
-    it('已有帳號的使用者透過 Google 登入應連結帳號', async () => {
-      const existingUser = createMockUser({ googleId: null });
-      mockPrismaService.user.findUnique
-        .mockResolvedValueOnce(null) // 透過 googleId 查找（不存在）
-        .mockResolvedValueOnce(existingUser); // 透過 email 查找
-      mockPrismaService.user.update.mockResolvedValue({
-        ...existingUser,
-        googleId: googleProfile.googleId,
-      });
-
-      const result = await service.validateGoogleUser(googleProfile);
-
-      expect(mockPrismaService.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            googleId: googleProfile.googleId,
-          }),
-        }),
-      );
-      expect(result.googleId).toBe(googleProfile.googleId);
+      expect(result).toBe(admin);
     });
   });
 
-  describe('googleLogin', () => {
-    it('應成功登入並回傳 token pair', async () => {
-      const user = {
-        id: 'user-1',
-        email: 'google@example.com',
-        name: 'Google User',
-        role: 'USER',
-        isActive: true,
-      };
+  describe('createDevAdmin', () => {
+    it('應建立開發用管理員帳號', async () => {
+      const admin = createMockUser({ role: 'ADMIN' });
+      mockPrismaService.user.create.mockResolvedValue(admin);
 
-      const result = await service.googleLogin(user);
+      const result = await service.createDevAdmin('admin@test.com', 'Admin');
 
-      expect(result.accessToken).toBe('mock-jwt-token');
-      expect(result.refreshToken).toBeDefined();
-      expect(result.user.email).toBe(user.email);
-    });
-
-    it('帳號被停用時應拋出 UnauthorizedException', async () => {
-      const user = {
-        id: 'user-1',
-        email: 'google@example.com',
-        name: 'Google User',
-        role: 'USER',
-        isActive: false,
-      };
-
-      await expect(service.googleLogin(user)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-  });
-
-  describe('forgotPassword', () => {
-    it('應發送重設密碼郵件', async () => {
-      const mockUser = createMockUser();
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockPrismaService.passwordResetToken.deleteMany.mockResolvedValue({
-        count: 0,
+      expect(mockPrismaService.user.create).toHaveBeenCalledWith({
+        data: {
+          email: 'admin@test.com',
+          name: 'Admin',
+          role: 'ADMIN',
+          isActive: true,
+        },
       });
-      mockPrismaService.passwordResetToken.create.mockResolvedValue({
-        id: 'token-1',
-        token: 'reset-token',
-      });
-
-      const result = await service.forgotPassword({ email: mockUser.email });
-
-      expect(result.message).toContain('如果該電子郵件已註冊');
-      expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalled();
-    });
-
-    it('使用者不存在時應回傳相同訊息（安全考量）', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-
-      const result = await service.forgotPassword({
-        email: 'nonexistent@example.com',
-      });
-
-      expect(result.message).toContain('如果該電子郵件已註冊');
-      expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
-    });
-
-    it('Google 用戶（無密碼）應回傳相同訊息', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(
-        createMockUser({ password: null, googleId: 'google-123' }),
-      );
-
-      const result = await service.forgotPassword({
-        email: 'google@example.com',
-      });
-
-      expect(result.message).toContain('如果該電子郵件已註冊');
-      expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('resetPassword', () => {
-    const resetDto = {
-      token: 'valid-token',
-      newPassword: 'newpassword123',
-    };
-
-    it('應成功重設密碼', async () => {
-      const mockToken = {
-        id: 'token-1',
-        token: 'valid-token',
-        userId: 'user-1',
-        expiresAt: new Date(Date.now() + 3600000), // 1小時後過期
-        usedAt: null,
-        user: createMockUser(),
-      };
-      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue(
-        mockToken,
-      );
-      mockPrismaService.$transaction.mockResolvedValue([{}, {}]);
-
-      const result = await service.resetPassword(resetDto);
-
-      expect(result.message).toContain('密碼已成功重設');
-    });
-
-    it('Token 不存在時應拋出 BadRequestException', async () => {
-      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue(null);
-
-      await expect(service.resetPassword(resetDto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('Token 已過期時應拋出 BadRequestException', async () => {
-      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue({
-        id: 'token-1',
-        expiresAt: new Date(Date.now() - 3600000), // 1小時前過期
-        usedAt: null,
-        user: createMockUser(),
-      });
-
-      await expect(service.resetPassword(resetDto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('Token 已使用時應拋出 BadRequestException', async () => {
-      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue({
-        id: 'token-1',
-        expiresAt: new Date(Date.now() + 3600000),
-        usedAt: new Date(), // 已使用
-        user: createMockUser(),
-      });
-
-      await expect(service.resetPassword(resetDto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-  });
-
-  describe('verifyResetToken', () => {
-    it('有效 Token 應回傳 valid: true', async () => {
-      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue({
-        id: 'token-1',
-        expiresAt: new Date(Date.now() + 3600000),
-        usedAt: null,
-      });
-
-      const result = await service.verifyResetToken('valid-token');
-
-      expect(result.valid).toBe(true);
-    });
-
-    it('無效 Token 應拋出 BadRequestException', async () => {
-      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue(null);
-
-      await expect(service.verifyResetToken('invalid-token')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-  });
-
-  describe('setPassword', () => {
-    it('Google 用戶應成功設定密碼', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(
-        createMockUser({ password: null, googleId: 'google-123' }),
-      );
-      mockPrismaService.user.update.mockResolvedValue(createMockUser());
-
-      const result = await service.setPassword('user-1', {
-        password: 'newpassword123',
-      });
-
-      expect(result.message).toContain('密碼設定成功');
-      expect(bcrypt.hash).toHaveBeenCalled();
-    });
-
-    it('非 Google 用戶應拋出 BadRequestException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(
-        createMockUser({ googleId: null }),
-      );
-
-      await expect(
-        service.setPassword('user-1', { password: 'newpassword123' }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('已有密碼的用戶應拋出 BadRequestException', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(
-        createMockUser({ googleId: 'google-123', password: 'existing-hash' }),
-      );
-
-      await expect(
-        service.setPassword('user-1', { password: 'newpassword123' }),
-      ).rejects.toThrow(BadRequestException);
+      expect(result).toBe(admin);
     });
   });
 });

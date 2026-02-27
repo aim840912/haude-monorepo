@@ -181,7 +181,7 @@ describe('MembersController', () => {
     it('應回傳所有等級設定', async () => {
       const configs = [
         {
-          level: MemberLevel.REGULAR,
+          level: MemberLevel.NORMAL,
           name: '一般會員',
           minSpent: 0,
           pointsMultiplier: 1,
@@ -465,21 +465,21 @@ describe('AdminMembersController', () => {
     it('應成功調整會員等級', async () => {
       const adjustResult = {
         id: 'user-1',
-        level: MemberLevel.PLATINUM,
+        level: MemberLevel.GOLD,
         message: '等級已調整',
       };
       mockMembersService.adjustMemberLevel.mockResolvedValue(adjustResult);
 
       const result = await controller.adjustLevel(
         'user-1',
-        { level: MemberLevel.PLATINUM, reason: 'VIP 客戶' },
+        { level: MemberLevel.GOLD, reason: 'VIP 客戶' },
         mockAdminRequest,
       );
 
       expect(result).toEqual(adjustResult);
       expect(mockMembersService.adjustMemberLevel).toHaveBeenCalledWith(
         'user-1',
-        MemberLevel.PLATINUM,
+        MemberLevel.GOLD,
         'admin-1',
         'VIP 客戶',
       );

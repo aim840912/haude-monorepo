@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import type { Order } from '@/types/order'
+import type { Order } from '@haude/types'
 
 // Mock API
 vi.mock('@/services/api', () => ({
