@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ImageIcon, Loader2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import { siteSettingsApi, type SiteSetting } from '../services/api/site-settings.api'
 import { SiteImageUploader } from '../components/SiteImageUploader'
+import { MultiImageUploader } from '../components/MultiImageUploader'
 import logger from '../lib/logger'
 
 export type Locale = 'zh' | 'en'
@@ -12,6 +13,8 @@ interface ImageSettingConfig {
   label: Record<Locale, string>
   description?: Record<Locale, string>
   dimensions?: string
+  /** When > 1, uses MultiImageUploader instead of SiteImageUploader */
+  maxImages?: number
 }
 
 interface ImageGroup {
@@ -29,9 +32,10 @@ const IMAGE_GROUPS: ImageGroup[] = [
     settings: [
       {
         key: 'home.hero_images',
-        label: { zh: '主視覺輪播圖片', en: 'Hero Carousel Image' },
-        description: { zh: '首頁主視覺輪播', en: 'Main homepage hero carousel' },
+        label: { zh: '主視覺輪播圖片', en: 'Hero Carousel Images' },
+        description: { zh: '首頁主視覺輪播（最多 3 張）', en: 'Main homepage hero carousel (up to 3)' },
         dimensions: '1920 x 1080 px',
+        maxImages: 3,
       },
       {
         key: 'home.feature_card_1_image',
@@ -282,19 +286,33 @@ export function SiteImagesPage() {
             {isExpanded && (
               <div className="px-6 pb-6 border-t border-gray-100">
                 <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-                  {group.settings.map((config) => (
-                    <SiteImageUploader
-                      key={config.key}
-                      settingKey={config.key}
-                      currentUrl={settings[config.key]?.value || ''}
-                      label={config.label[locale]}
-                      description={config.description?.[locale]}
-                      dimensions={config.dimensions}
-                      locale={locale}
-                      onImageUpdated={(newUrl) => handleImageUpdated(config.key, newUrl)}
-                      onImageDeleted={() => handleImageDeleted(config.key)}
-                    />
-                  ))}
+                  {group.settings.map((config) =>
+                    config.maxImages && config.maxImages > 1 ? (
+                      <MultiImageUploader
+                        key={config.key}
+                        settingKey={config.key}
+                        currentValue={settings[config.key]?.value || ''}
+                        label={config.label[locale]}
+                        description={config.description?.[locale]}
+                        dimensions={config.dimensions}
+                        maxImages={config.maxImages}
+                        locale={locale}
+                        onImagesUpdated={(newValue) => handleImageUpdated(config.key, newValue)}
+                      />
+                    ) : (
+                      <SiteImageUploader
+                        key={config.key}
+                        settingKey={config.key}
+                        currentUrl={settings[config.key]?.value || ''}
+                        label={config.label[locale]}
+                        description={config.description?.[locale]}
+                        dimensions={config.dimensions}
+                        locale={locale}
+                        onImageUpdated={(newUrl) => handleImageUpdated(config.key, newUrl)}
+                        onImageDeleted={() => handleImageDeleted(config.key)}
+                      />
+                    )
+                  )}
                 </div>
               </div>
             )}

@@ -79,14 +79,11 @@ export class SiteSettingsService {
 
   /**
    * Get signed upload URL for site images.
-   * Automatically cleans up old file when replacing.
+   * Multi-image mode: cleanup is managed by the frontend (per-image delete).
    * Path format: {key-as-path}/{uuid}.{ext}
    * e.g. home/hero_images/abc123.jpg
    */
   async getImageUploadUrl(key: string, fileName: string) {
-    // Clean up old file before generating new upload URL
-    await this.cleanupOldImage(key);
-
     // Convert dot-separated key to path: home.hero_images -> home/hero_images
     const keyPath = key.replace(/\./g, '/');
     const ext = fileName.split('.').pop() || 'jpg';
@@ -142,7 +139,8 @@ export class SiteSettingsService {
   // ========================================
 
   /**
-   * Extract storage file path from a Supabase public URL and delete it.
+   * Extract storage file path(s) from a Supabase public URL and delete.
+   * Handles both single URL strings and JSON array of URLs.
    * URL format: https://<ref>.supabase.co/storage/v1/object/public/site-images/<path>
    */
   private async cleanupOldImage(key: string) {
@@ -150,15 +148,37 @@ export class SiteSettingsService {
       const existing = await this.findByKey(key);
       if (!existing?.value) return;
 
-      const filePath = this.extractFilePathFromUrl(existing.value);
-      if (!filePath) return;
+      const urls = this.parseImageUrls(existing.value);
 
-      await this.deleteImage(filePath);
-      this.logger.log(`Cleaned up old image for key "${key}": ${filePath}`);
+      for (const url of urls) {
+        const filePath = this.extractFilePathFromUrl(url);
+        if (filePath) {
+          await this.deleteImage(filePath);
+          this.logger.log(`Cleaned up old image for key "${key}": ${filePath}`);
+        }
+      }
     } catch (error) {
       // Non-blocking — old file cleanup failure should not break upload
       this.logger.warn(`Failed to cleanup old image for key "${key}"`, error);
     }
+  }
+
+  /**
+   * Parse setting value as an array of image URLs.
+   * Handles both JSON array format and single URL string.
+   */
+  private parseImageUrls(value: string): string[] {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (url: unknown) => typeof url === 'string' && (url as string).length > 0,
+        );
+      }
+    } catch {
+      // Not JSON — treat as single URL
+    }
+    return value ? [value] : [];
   }
 
   /**

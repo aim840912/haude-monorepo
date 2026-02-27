@@ -43,4 +43,10 @@ export const siteSettingsApi = {
     api.delete<{ deleted: boolean; key: string }>(
       `/admin/site-settings/images/${encodeURIComponent(key)}`
     ),
+
+  // Delete a single image file from Storage (does not touch DB setting)
+  deleteImageFile: (filePath: string) =>
+    api.delete<void>('/admin/site-settings/images/file', {
+      data: { filePath },
+    }),
 }

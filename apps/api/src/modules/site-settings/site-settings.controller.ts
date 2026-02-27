@@ -18,7 +18,11 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { SiteSettingsService } from './site-settings.service';
-import { UpsertSiteSettingDto, GetSiteImageUploadUrlDto } from './dto';
+import {
+  UpsertSiteSettingDto,
+  GetSiteImageUploadUrlDto,
+  DeleteImageFileDto,
+} from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -93,6 +97,15 @@ export class AdminSiteSettingsController {
   @ApiResponse({ status: 403, description: '權限不足' })
   getImageUploadUrl(@Body() dto: GetSiteImageUploadUrlDto) {
     return this.siteSettingsService.getImageUploadUrl(dto.key, dto.fileName);
+  }
+
+  @Delete('images/file')
+  @ApiOperation({ summary: '刪除單張 Storage 圖片檔案（管理員）' })
+  @ApiResponse({ status: 200, description: '檔案刪除成功' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  deleteImageFile(@Body() dto: DeleteImageFileDto) {
+    return this.siteSettingsService.deleteImage(dto.filePath);
   }
 
   @Delete('images/:key')
