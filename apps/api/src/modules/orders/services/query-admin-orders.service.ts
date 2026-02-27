@@ -59,10 +59,30 @@ export class QueryAdminOrdersService {
 
   /**
    * 取得所有訂單（管理員）
+   * @param filters 可選日期篩選，用於匯出等場景
    */
-  async getAllOrders(limit = 20, offset = 0) {
+  async getAllOrders(
+    limit = 20,
+    offset = 0,
+    filters?: { startDate?: string; endDate?: string },
+  ) {
+    // Build date filter for createdAt
+    const where: { createdAt?: { gte?: Date; lte?: Date } } = {};
+    if (filters?.startDate || filters?.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) {
+        where.createdAt.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        where.createdAt.lte = endDate;
+      }
+    }
+
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
+        where,
         include: {
           items: true,
           user: {
@@ -73,7 +93,7 @@ export class QueryAdminOrdersService {
         take: limit,
         skip: offset,
       }),
-      this.prisma.order.count(),
+      this.prisma.order.count({ where }),
     ]);
 
     return {

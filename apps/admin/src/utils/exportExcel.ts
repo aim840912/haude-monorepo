@@ -130,3 +130,141 @@ export function exportSalesReport(data: ExportData): void {
 
   downloadCsv(fullContent, filename)
 }
+
+// ==================== Order Export ====================
+
+/**
+ * Exportable order shape — matches API response from getAllOrders.
+ * Uses optional fields to safely handle varying API payloads.
+ */
+interface ExportableOrder {
+  orderNumber: string
+  createdAt: string
+  userName?: string
+  userEmail?: string
+  items: {
+    productName: string
+    quantity: number
+    subtotal: number
+  }[]
+  subtotalAmount?: number
+  shippingFee?: number
+  discountAmount?: number
+  totalAmount: number
+  status: string
+  paymentStatus?: string
+  shippingAddress?: Record<string, string> | string | null
+  notes?: string
+  note?: string
+}
+
+/**
+ * 匯出訂單資料為 CSV
+ * 一訂單一行，商品明細合併為一欄（方便會計對帳）
+ */
+export function exportOrdersCsv(
+  orders: ExportableOrder[],
+  dateRange?: { start: string; end: string },
+): void {
+  const headers = [
+    '訂單編號',
+    '建立日期',
+    '客戶名稱',
+    '客戶 Email',
+    '商品明細',
+    '商品數量',
+    '小計',
+    '運費',
+    '折扣',
+    '總金額',
+    '訂單狀態',
+    '付款狀態',
+    '收件人',
+    '配送地址',
+    '備註',
+  ]
+
+  const orderStatusLabels: Record<string, string> = {
+    pending: '待處理',
+    confirmed: '已確認',
+    processing: '處理中',
+    shipped: '已出貨',
+    delivered: '已送達',
+    cancelled: '已取消',
+    refunded: '已退款',
+  }
+
+  const paymentLabels: Record<string, string> = {
+    pending: '待付款',
+    paid: '已付款',
+    failed: '付款失敗',
+    refunded: '已退款',
+    expired: '已過期',
+  }
+
+  const rows: (string | number)[][] = orders.map((order) => {
+    // Combine items: "高山烏龍茶 x2, 東方美人 x1"
+    const itemDetail = order.items
+      .map((item) => `${item.productName} x${item.quantity}`)
+      .join(', ')
+
+    const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
+
+    // Parse shipping address (could be JSON object or string)
+    let recipientName = ''
+    let addressStr = ''
+    if (order.shippingAddress) {
+      if (typeof order.shippingAddress === 'string') {
+        try {
+          const parsed = JSON.parse(order.shippingAddress)
+          recipientName = parsed.name || ''
+          addressStr = [parsed.postalCode, parsed.city, parsed.street]
+            .filter(Boolean)
+            .join(' ')
+        } catch {
+          addressStr = order.shippingAddress
+        }
+      } else if (typeof order.shippingAddress === 'object') {
+        recipientName = order.shippingAddress.name || ''
+        addressStr = [
+          order.shippingAddress.postalCode,
+          order.shippingAddress.city,
+          order.shippingAddress.street,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      }
+    }
+
+    const subtotal =
+      order.subtotalAmount ?? order.items.reduce((sum, item) => sum + item.subtotal, 0)
+
+    return [
+      order.orderNumber,
+      new Date(order.createdAt).toLocaleDateString('zh-TW'),
+      order.userName || '',
+      order.userEmail || '',
+      itemDetail,
+      totalQuantity,
+      subtotal,
+      order.shippingFee ?? 0,
+      order.discountAmount ?? 0,
+      order.totalAmount,
+      orderStatusLabels[order.status] || order.status,
+      order.paymentStatus
+        ? paymentLabels[order.paymentStatus] || order.paymentStatus
+        : '',
+      recipientName,
+      addressStr,
+      order.notes || order.note || '',
+    ]
+  })
+
+  const csv = arrayToCsv(headers, rows)
+
+  const dateSuffix = dateRange
+    ? `_${dateRange.start}_${dateRange.end}`
+    : `_${new Date().toISOString().slice(0, 10)}`
+
+  downloadCsv(csv, `訂單匯出${dateSuffix}.csv`)
+}

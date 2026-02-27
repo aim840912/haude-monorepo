@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Search, Eye, RefreshCw, Edit, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Eye, RefreshCw, Edit, Loader2, ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import { useOrders, Order, PaymentStatus } from '../hooks/useOrders'
 import { OrderStatusModal } from '../components/OrderStatusModal'
 import { OrderDetailModal, OrderDetail } from '../components/OrderDetailModal'
 import { ordersApi } from '../services/api'
+import { exportOrdersCsv } from '../utils/exportExcel'
 import type { OrderStatus } from '@haude/types'
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -47,6 +48,9 @@ export function OrdersPage() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [viewingOrder, setViewingOrder] = useState<OrderDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [exportStartDate, setExportStartDate] = useState('')
+  const [exportEndDate, setExportEndDate] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
   const {
     orders,
     isLoading,
@@ -71,6 +75,28 @@ export function OrdersPage() {
       setViewingOrder(null)
     } finally {
       setDetailLoading(false)
+    }
+  }
+
+  // 匯出訂單 CSV
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const filters =
+        exportStartDate || exportEndDate
+          ? { startDate: exportStartDate || undefined, endDate: exportEndDate || undefined }
+          : undefined
+      const { data } = await ordersApi.getForExport(filters)
+      exportOrdersCsv(
+        data.orders || [],
+        exportStartDate && exportEndDate
+          ? { start: exportStartDate, end: exportEndDate }
+          : undefined,
+      )
+    } catch {
+      // Silent fail — CSV download simply won't trigger
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -118,7 +144,7 @@ export function OrdersPage() {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search & Export */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -129,6 +155,36 @@ export function OrdersPage() {
             placeholder="搜尋訂單編號、客戶名稱或 Email..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
+        </div>
+        {/* Export toolbar */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+          <input
+            type="date"
+            value={exportStartDate}
+            onChange={(e) => setExportStartDate(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            aria-label="匯出起始日期"
+          />
+          <span className="text-gray-400 text-sm">至</span>
+          <input
+            type="date"
+            value={exportEndDate}
+            onChange={(e) => setExportEndDate(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            aria-label="匯出結束日期"
+          />
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            匯出 CSV
+          </button>
         </div>
       </div>
 

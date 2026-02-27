@@ -143,14 +143,19 @@ export class AdminOrdersController {
   @ApiOperation({ summary: '取得所有訂單（管理員）' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
   @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: '起始日期 (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: '結束日期 (YYYY-MM-DD)' })
   @ApiResponse({ status: 200, description: '成功取得所有訂單' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   getAllOrders(
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
-    return this.ordersService.getAllOrders(limit, offset);
+    const filters = startDate || endDate ? { startDate, endDate } : undefined;
+    return this.ordersService.getAllOrders(limit, offset, filters);
   }
 
   @Get('stats')

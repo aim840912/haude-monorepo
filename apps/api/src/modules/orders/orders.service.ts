@@ -74,8 +74,12 @@ export class OrdersService {
   /**
    * 取得所有訂單（管理員）
    */
-  getAllOrders(limit = 20, offset = 0) {
-    return this.queryAdminOrdersService.getAllOrders(limit, offset);
+  getAllOrders(
+    limit = 20,
+    offset = 0,
+    filters?: { startDate?: string; endDate?: string },
+  ) {
+    return this.queryAdminOrdersService.getAllOrders(limit, offset, filters);
   }
 
   // ========================================

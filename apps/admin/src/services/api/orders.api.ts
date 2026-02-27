@@ -2,9 +2,23 @@ import { api } from './client'
 
 // ==================== Orders API (Admin) ====================
 
+export interface OrderExportFilters {
+  startDate?: string
+  endDate?: string
+}
+
 export const ordersApi = {
-  getAll: (limit = 20, offset = 0) =>
-    api.get(`/admin/orders?limit=${limit}&offset=${offset}`),
+  getAll: (limit = 20, offset = 0, filters?: OrderExportFilters) => {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    })
+    if (filters?.startDate) params.set('startDate', filters.startDate)
+    if (filters?.endDate) params.set('endDate', filters.endDate)
+    return api.get(`/admin/orders?${params.toString()}`)
+  },
+  getForExport: (filters?: OrderExportFilters) =>
+    ordersApi.getAll(10000, 0, filters),
   getStats: () => api.get('/admin/orders/stats'),
   getById: (id: string) => api.get(`/admin/orders/${id}`),
   updateStatus: (id: string, status: string) =>
