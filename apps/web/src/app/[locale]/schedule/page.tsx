@@ -21,9 +21,8 @@ export default function SchedulePage() {
     setSelectedEvents(events)
   }
 
-  const handleEventClick = (event: ScheduleItem) => {
-    // 可以導航到活動詳情或顯示 Modal
-    console.log('Event clicked:', event)
+  const handleEventClick = (_event: ScheduleItem) => {
+    // TODO: 導航到活動詳情或顯示 Modal
   }
 
   return (

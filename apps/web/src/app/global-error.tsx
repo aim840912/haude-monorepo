@@ -86,6 +86,7 @@ export default function GlobalError({
               >
                 重新整理
               </button>
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- global-error has no Next.js Router context */}
               <a
                 href="/"
                 style={{

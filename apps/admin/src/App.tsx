@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
@@ -14,7 +15,10 @@ import { UsersPage } from './pages/UsersPage'
 import { UserDetailPage } from './pages/UserDetailPage'
 import { SiteImagesPage } from './pages/SiteImagesPage'
 import { SettingsPage } from './pages/SettingsPage'
-import { ReportsPage } from './pages/ReportsPage'
+// Lazy-load ReportsPage to defer recharts (~504KB) until /reports is visited
+const ReportsPage = lazy(() =>
+  import('./pages/ReportsPage').then((m) => ({ default: m.ReportsPage })),
+)
 import { SystemPage } from './pages/SystemPage'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -53,7 +57,7 @@ function App() {
                 <Route path="/social-posts" element={<SocialPostsPage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/:id" element={<UserDetailPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/reports" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-500">載入報表中...</div></div>}><ReportsPage /></Suspense>} />
                 <Route path="/site-images" element={<SiteImagesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/system" element={<SystemPage />} />
