@@ -151,14 +151,24 @@ export function useNotifications(
     refresh()
   }, [refresh])
 
-  // 自動輪詢
+  // 自動輪詢（含 Page Visibility 守衛：tab hidden 時停止輪詢，恢復時重啟）
   useEffect(() => {
-    if (autoPolling) {
-      startPolling()
+    if (!autoPolling) return
+
+    startPolling()
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        stopPolling()
+      } else {
+        startPolling()
+      }
     }
+    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
       stopPolling()
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [autoPolling, startPolling, stopPolling])
 

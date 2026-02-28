@@ -42,7 +42,7 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         href={result.url}
         className={cn(
           'block p-6 bg-white rounded-lg border border-gray-200',
-          'hover:border-green-300 hover:shadow-md transition-all duration-200'
+          'hover:border-green-300 hover:shadow-md transition-[border-color,box-shadow] duration-200'
         )}
       >
         <div className="flex gap-4">

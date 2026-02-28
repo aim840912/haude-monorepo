@@ -54,7 +54,7 @@ export function HeroSection({
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <button
               onClick={onActivityClick}
-              className="bg-white/90 backdrop-blur-sm text-green-900 border-2 border-white/50 px-8 py-4 rounded-full hover:bg-white/95 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
+              className="bg-white/90 backdrop-blur-sm text-green-900 border-2 border-white/50 px-8 py-4 rounded-full hover:bg-white/95 transition-[background-color,box-shadow] duration-300 font-medium shadow-lg hover:shadow-xl"
             >
               季節體驗活動
             </button>

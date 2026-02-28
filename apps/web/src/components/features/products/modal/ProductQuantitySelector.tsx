@@ -48,7 +48,7 @@ export const ProductQuantitySelector = React.memo<ProductQuantitySelectorProps>(
             onClick={decrementQuantity}
             disabled={quantity <= 1}
             className={cn(
-              'w-10 h-10 flex items-center justify-center rounded-l-xl transition-all duration-200',
+              'w-10 h-10 flex items-center justify-center rounded-l-xl transition-[background-color,color,transform] duration-200',
               'hover:bg-gray-50 active:scale-95',
               quantity <= 1
                 ? 'text-gray-400 cursor-not-allowed'
@@ -78,7 +78,7 @@ export const ProductQuantitySelector = React.memo<ProductQuantitySelectorProps>(
             }}
             className={cn(
               'w-16 h-10 text-center border-x border-gray-200 bg-transparent',
-              'font-bold text-lg transition-all duration-200 outline-none',
+              'font-bold text-lg transition-[background-color,color,transform] duration-200 outline-none',
               'focus:bg-blue-50 focus:text-blue-600',
               '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
               isChanging ? 'scale-110 text-blue-600' : 'text-gray-900'
@@ -90,7 +90,7 @@ export const ProductQuantitySelector = React.memo<ProductQuantitySelectorProps>(
             onClick={incrementQuantity}
             disabled={quantity >= max}
             className={cn(
-              'w-10 h-10 flex items-center justify-center rounded-r-xl transition-all duration-200',
+              'w-10 h-10 flex items-center justify-center rounded-r-xl transition-[background-color,color,transform] duration-200',
               'hover:bg-gray-50 active:scale-95',
               quantity >= max
                 ? 'text-gray-400 cursor-not-allowed'

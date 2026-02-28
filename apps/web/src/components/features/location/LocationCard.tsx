@@ -18,7 +18,7 @@ export function LocationCard({ location, className, onClick }: LocationCardProps
     <div
       className={cn(
         'bg-white rounded-xl overflow-hidden shadow-lg border border-gray-200',
-        'transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
+        'transition-[box-shadow,transform] duration-300 hover:shadow-xl hover:-translate-y-1',
         onClick && 'cursor-pointer',
         className
       )}

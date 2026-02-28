@@ -53,7 +53,7 @@ export function ReviewStats({
               <StarRating rating={1} maxRating={1} size="sm" />
               <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-yellow-400 rounded-full transition-all duration-300"
+                  className="h-full bg-yellow-400 rounded-full transition-[width] duration-300"
                   style={{ width: `${barWidth}%` }}
                 />
               </div>

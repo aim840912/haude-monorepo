@@ -1,31 +1,31 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+// 高頻首屏頁面 - 靜態 import
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { ProductsPage } from './pages/ProductsPage'
-import { FarmToursPage } from './pages/FarmToursPage'
-import { SchedulesPage } from './pages/SchedulesPage'
-import { LocationsPage } from './pages/LocationsPage'
 import { OrdersPage } from './pages/OrdersPage'
-import { PaymentsPage } from './pages/PaymentsPage'
-import { DiscountsPage } from './pages/DiscountsPage'
-import { SocialPostsPage } from './pages/SocialPostsPage'
 import { UsersPage } from './pages/UsersPage'
-import { UserDetailPage } from './pages/UserDetailPage'
-import { SiteImagesPage } from './pages/SiteImagesPage'
 import { SettingsPage } from './pages/SettingsPage'
-// Lazy-load ReportsPage to defer recharts (~504KB) until /reports is visited
-const ReportsPage = lazy(() =>
-  import('./pages/ReportsPage').then((m) => ({ default: m.ReportsPage })),
-)
-import { SystemPage } from './pages/SystemPage'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ErrorBoundary } from './components/errors'
 import { ToastProvider } from './components/ui/Toast'
 import { SystemStatusProvider } from './components/system/SystemStatusProvider'
+import { PageLoader } from './components/PageLoader'
 import { Agentation } from 'agentation'
+// 低頻頁面 - lazy import（減少 initial bundle，將 recharts 等大型依賴延遲載入）
+const FarmToursPage = lazy(() => import('./pages/FarmToursPage').then((m) => ({ default: m.FarmToursPage })))
+const SchedulesPage = lazy(() => import('./pages/SchedulesPage').then((m) => ({ default: m.SchedulesPage })))
+const LocationsPage = lazy(() => import('./pages/LocationsPage').then((m) => ({ default: m.LocationsPage })))
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then((m) => ({ default: m.PaymentsPage })))
+const DiscountsPage = lazy(() => import('./pages/DiscountsPage').then((m) => ({ default: m.DiscountsPage })))
+const SocialPostsPage = lazy(() => import('./pages/SocialPostsPage').then((m) => ({ default: m.SocialPostsPage })))
+const UserDetailPage = lazy(() => import('./pages/UserDetailPage').then((m) => ({ default: m.UserDetailPage })))
+const SiteImagesPage = lazy(() => import('./pages/SiteImagesPage').then((m) => ({ default: m.SiteImagesPage })))
+const SystemPage = lazy(() => import('./pages/SystemPage').then((m) => ({ default: m.SystemPage })))
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then((m) => ({ default: m.ReportsPage })))
 
 function App() {
   return (
@@ -48,19 +48,20 @@ function App() {
               >
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/products" element={<ProductsPage />} />
-                <Route path="/farm-tours" element={<FarmToursPage />} />
-                <Route path="/schedules" element={<SchedulesPage />} />
-                <Route path="/locations" element={<LocationsPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/payments" element={<PaymentsPage />} />
-                <Route path="/discounts" element={<DiscountsPage />} />
-                <Route path="/social-posts" element={<SocialPostsPage />} />
                 <Route path="/users" element={<UsersPage />} />
-                <Route path="/users/:id" element={<UserDetailPage />} />
-                <Route path="/reports" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-500">載入報表中...</div></div>}><ReportsPage /></Suspense>} />
-                <Route path="/site-images" element={<SiteImagesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/system" element={<SystemPage />} />
+                {/* 低頻頁面 - lazy loaded */}
+                <Route path="/farm-tours" element={<Suspense fallback={<PageLoader />}><FarmToursPage /></Suspense>} />
+                <Route path="/schedules" element={<Suspense fallback={<PageLoader />}><SchedulesPage /></Suspense>} />
+                <Route path="/locations" element={<Suspense fallback={<PageLoader />}><LocationsPage /></Suspense>} />
+                <Route path="/payments" element={<Suspense fallback={<PageLoader />}><PaymentsPage /></Suspense>} />
+                <Route path="/discounts" element={<Suspense fallback={<PageLoader />}><DiscountsPage /></Suspense>} />
+                <Route path="/social-posts" element={<Suspense fallback={<PageLoader />}><SocialPostsPage /></Suspense>} />
+                <Route path="/users/:id" element={<Suspense fallback={<PageLoader />}><UserDetailPage /></Suspense>} />
+                <Route path="/reports" element={<Suspense fallback={<PageLoader />}><ReportsPage /></Suspense>} />
+                <Route path="/site-images" element={<Suspense fallback={<PageLoader />}><SiteImagesPage /></Suspense>} />
+                <Route path="/system" element={<Suspense fallback={<PageLoader />}><SystemPage /></Suspense>} />
               </Route>
 
               {/* 其他路由重導向 */}

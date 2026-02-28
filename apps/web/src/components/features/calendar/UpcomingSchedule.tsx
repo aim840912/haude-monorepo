@@ -71,7 +71,7 @@ export function UpcomingSchedule({ limit = 5, className, onItemClick }: Upcoming
             onClick={() => onItemClick?.(item)}
             className={cn(
               'flex gap-4 p-4 bg-white rounded-lg border border-gray-200',
-              'hover:border-green-300 hover:shadow-sm transition-all',
+              'hover:border-green-300 hover:shadow-sm transition-[border-color,box-shadow]',
               onItemClick && 'cursor-pointer'
             )}
           >

@@ -88,7 +88,7 @@ export const useModalAnimation = (
   // 背景遮罩樣式
   const backdropClasses = `
     fixed inset-0 z-50 flex items-center justify-center p-4
-    transition-all duration-300 ease-out
+    transition-[opacity,backdrop-filter] duration-300 ease-out
     ${
       isVisible
         ? 'bg-black/60 backdrop-blur-sm opacity-100'
@@ -101,7 +101,7 @@ export const useModalAnimation = (
   // Modal 內容樣式
   const contentClasses = `
     relative w-full max-w-4xl max-h-[95vh]
-    transition-all duration-300 ease-out
+    transition-[opacity,transform] duration-300 ease-out
     ${isVisible ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'}
   `
     .trim()

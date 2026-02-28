@@ -120,7 +120,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
               type="button"
               onClick={handleToggleInterest}
               className={cn(
-                'flex-1 px-4 py-2 rounded-lg transition-all duration-200',
+                'flex-1 px-4 py-2 rounded-lg transition-[box-shadow,background-color,border-color,color] duration-200',
                 'flex items-center justify-center gap-2',
                 'shadow-md hover:shadow-lg',
                 isInterested
@@ -139,7 +139,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
               onClick={handleShare}
               className={cn(
                 'px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg',
-                'text-gray-700 hover:text-blue-600 transition-all duration-200',
+                'text-gray-700 hover:text-blue-600 transition-[color,box-shadow] duration-200',
                 'shadow-md hover:shadow-lg flex items-center gap-2'
               )}
               aria-label="分享產品"

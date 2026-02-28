@@ -64,7 +64,7 @@ export function ProductCard({
         'cursor-pointer overflow-hidden rounded-xl',
         'shadow-lg hover:shadow-xl',
         'border border-card-border',
-        'transition-all duration-300 ease-out',
+        'transition-[box-shadow,transform] duration-300 ease-out',
         'hover:-translate-y-2 hover:scale-[1.01]',
         'w-full',
         'tea-card'
@@ -98,7 +98,7 @@ export function ProductCard({
           className={cn(
             'absolute top-4 right-4 z-20 w-10 h-10',
             'flex items-center justify-center rounded-full',
-            'transition-all duration-300',
+            'transition-colors duration-300',
             isInterested
               ? 'bg-red-500 text-white'
               : 'bg-white/80 text-gray-600 hover:bg-red-100 hover:text-red-500'

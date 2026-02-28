@@ -32,12 +32,31 @@ export function useSystemStatus() {
     setLoading()
     fetchStatus()
 
-    intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL)
-
-    return () => {
+    const start = () => {
+      intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL)
+    }
+    const stop = () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
+        intervalRef.current = null
       }
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        stop()
+      } else {
+        fetchStatus()
+        start()
+      }
+    }
+
+    start()
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [fetchStatus, setLoading])
 

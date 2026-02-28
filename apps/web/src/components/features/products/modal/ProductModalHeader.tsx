@@ -39,7 +39,7 @@ interface ProductPriceDisplayProps {
  */
 export const ProductPriceDisplay = React.memo<ProductPriceDisplayProps>(({ product }) => {
   return (
-    <div className="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200 transition-all duration-300 hover:shadow-md">
+    <div className="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200 transition-[box-shadow] duration-300 hover:shadow-md">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-baseline gap-2">

@@ -120,7 +120,7 @@ export function ImageCarousel({
                 'absolute left-0 top-0 w-[20%] h-full',
                 'flex items-center justify-center',
                 'bg-transparent hover:bg-black/10',
-                'transition-all duration-200',
+                'transition-colors duration-200',
                 'focus:outline-none',
                 '[&>div]:opacity-0 [&:hover>div]:opacity-100'
               )}
@@ -144,7 +144,7 @@ export function ImageCarousel({
                 'absolute right-0 top-0 w-[20%] h-full',
                 'flex items-center justify-center',
                 'bg-transparent hover:bg-black/10',
-                'transition-all duration-200',
+                'transition-colors duration-200',
                 'focus:outline-none',
                 '[&>div]:opacity-0 [&:hover>div]:opacity-100'
               )}
@@ -174,7 +174,7 @@ export function ImageCarousel({
                 key={index}
                 onClick={() => goToIndex(index)}
                 className={cn(
-                  'w-2.5 h-2.5 rounded-full transition-all duration-200',
+                  'w-2.5 h-2.5 rounded-full transition-[transform,background-color] duration-200',
                   currentIndex === index
                     ? 'bg-white scale-110'
                     : 'bg-white/50 hover:bg-white/70'
@@ -208,7 +208,7 @@ export function ImageCarousel({
                 onClick={() => goToIndex(index)}
                 className={cn(
                   'relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden',
-                  'transition-all duration-200 ease-out',
+                  'transition-[transform,opacity] duration-200 ease-out',
                   'focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2',
                   currentIndex === index
                     ? 'scale-110 opacity-100 shadow-lg ring-2 ring-green-500'

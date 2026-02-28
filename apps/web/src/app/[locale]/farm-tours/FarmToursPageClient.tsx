@@ -63,7 +63,7 @@ export function FarmToursPageClient({
   }
 
   const tabButtonClass = (tab: TabType) =>
-    `flex-1 py-4 px-6 rounded-lg font-medium transition-all ${
+    `flex-1 py-4 px-6 rounded-lg font-medium transition-colors ${
       activeTab === tab
         ? 'bg-green-900 text-white'
         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'

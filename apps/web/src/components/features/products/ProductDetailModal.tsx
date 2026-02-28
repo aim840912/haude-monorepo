@@ -130,7 +130,7 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                           onClick={() => handleImageChange(index)}
                           className={cn(
                             'relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden',
-                            'transition-all duration-200 hover:scale-105',
+                            'transition-transform duration-200 hover:scale-105',
                             'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400',
                             currentImageIndex === index
                               ? 'ring-2 ring-gray-400 shadow-md'
@@ -165,7 +165,7 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                     'flex items-center justify-center',
                     'shadow-lg hover:shadow-xl',
                     'text-gray-400 hover:text-red-500',
-                    'transition-all duration-300 ease-out',
+                    'transition-[box-shadow,transform] duration-300 ease-out',
                     'hover:scale-110 hover:rotate-90',
                     'focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2'
                   )}

@@ -130,8 +130,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    'Noto Sans TC',
-    'Inter',
+    var(--font-noto-sans-tc, 'Noto Sans TC'),
+    var(--font-inter, 'Inter'),
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
@@ -171,25 +171,25 @@ body {
 
 /* Typography utilities */
 .font-display {
-  font-family: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+  font-family: var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 
 .font-heading {
-  font-family: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+  font-family: var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 
 .font-body {
-  font-family: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+  font-family: var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.6;
 }
 
 .font-serif-display {
-  font-family: 'Noto Serif TC', Georgia, serif;
+  font-family: var(--font-noto-serif-tc, 'Noto Serif TC'), Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.02em;
 }

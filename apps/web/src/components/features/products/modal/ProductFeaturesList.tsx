@@ -27,7 +27,7 @@ export const ProductFeaturesList = React.memo<ProductFeaturesListProps>(({ featu
               'bg-gray-100 text-gray-700',
               'px-3 py-1.5 rounded-full text-xs md:text-sm font-medium',
               'shadow-sm hover:shadow-md',
-              'transition-all duration-300 hover:scale-105 hover:-translate-y-0.5',
+              'transition-[box-shadow,transform,border-color] duration-300 hover:scale-105 hover:-translate-y-0.5',
               'border border-gray-200 hover:border-gray-300'
             )}
           >

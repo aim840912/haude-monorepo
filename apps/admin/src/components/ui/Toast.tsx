@@ -149,7 +149,7 @@ const ToastProgressBar = memo(function ToastProgressBar({ progress }: { progress
   return (
     <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
       <div
-        className="bg-green-600 h-1.5 rounded-full transition-all duration-300 ease-out"
+        className="bg-green-600 h-1.5 rounded-full transition-[width] duration-300 ease-out"
         style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
       />
     </div>
@@ -190,7 +190,7 @@ const ToastItem = memo(function ToastItem({
   onRemove: (id: string) => void
 }) {
   const baseStyles =
-    'flex flex-col p-4 rounded-lg shadow-lg max-w-sm w-full transition-all duration-300 transform'
+    'flex flex-col p-4 rounded-lg shadow-lg max-w-sm w-full transition-[opacity,transform] duration-300 transform'
 
   return (
     <div className={cn(baseStyles, TOAST_STYLES[toast.type])}>

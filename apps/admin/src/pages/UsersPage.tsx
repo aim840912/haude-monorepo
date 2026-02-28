@@ -127,7 +127,7 @@ export function UsersPage() {
             <button
               key={level}
               onClick={() => setLevelFilter(isSelected ? '' : level)}
-              className={`bg-white rounded-xl shadow-sm p-4 text-left transition-all ${
+              className={`bg-white rounded-xl shadow-sm p-4 text-left transition-[box-shadow,outline] ${
                 isSelected ? `ring-2 ring-green-500 ${config.borderColor}` : 'hover:shadow-md'
               }`}
             >

@@ -123,13 +123,13 @@ export function HeroSection({ images, currentSlide, onSlideChange }: HeroSection
         >
           <Link
             href="/products"
-            className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-4 rounded-full text-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
+            className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-4 rounded-full text-lg font-medium transition-[background-color,box-shadow,transform] duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
           >
             探索產品
           </Link>
           <Link
             href="/about"
-            className="inline-block bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-8 py-4 rounded-full text-lg font-medium transition-all duration-300 border border-white/50"
+            className="inline-block bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-8 py-4 rounded-full text-lg font-medium transition-colors duration-300 border border-white/50"
           >
             了解更多
           </Link>
@@ -159,7 +159,7 @@ export function HeroSection({ images, currentSlide, onSlideChange }: HeroSection
               aria-label={`切換到第 ${index + 1} 張圖片`}
             >
               <div
-                className="absolute inset-y-0 left-0 bg-[#d35400] transition-all duration-100"
+                className="absolute inset-y-0 left-0 bg-[#d35400] transition-[width] duration-100"
                 style={{
                   width: currentSlide === index ? `${progress}%` : '0%',
                 }}

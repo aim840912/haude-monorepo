@@ -130,7 +130,7 @@ export function UploadArea({
             </div>
             <div className="w-32 bg-gray-200 rounded-full h-2 mt-2 mx-auto">
               <div
-                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                className="bg-green-600 h-2 rounded-full transition-[width] duration-300"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>

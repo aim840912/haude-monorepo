@@ -63,7 +63,7 @@ export function WeekdaySelector({ value, onChange, className = '' }: WeekdaySele
   // 按鈕樣式
   const getButtonClass = (day: string) => {
     const baseClass =
-      'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
+      'px-4 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
 
     if (isSelected(day)) {
       return cn(

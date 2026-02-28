@@ -188,7 +188,7 @@ export function ImageManager({
             <p className="text-sm text-gray-600">上傳中... {Math.round(uploadProgress)}%</p>
             <div className="w-48 mx-auto bg-gray-200 rounded-full h-2">
               <div
-                className="bg-green-500 h-2 rounded-full transition-all"
+                className="bg-green-500 h-2 rounded-full transition-[width]"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>

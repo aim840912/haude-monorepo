@@ -42,7 +42,7 @@ export function FarmTourCard({ tour, className, onClick }: FarmTourCardProps) {
 
   const cardClassName = cn(
     'group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl',
-    'border border-gray-200 transition-all duration-300',
+    'border border-gray-200 transition-[box-shadow,transform] duration-300',
     'hover:-translate-y-1 cursor-pointer',
     className
   )

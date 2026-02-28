@@ -1,6 +1,27 @@
+import { Noto_Sans_TC, Inter, Noto_Serif_TC } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const notoSansTC = Noto_Sans_TC({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-sans-tc',
+  display: 'swap',
+})
+
+const notoSerifTC = Noto_Serif_TC({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-noto-serif-tc',
+  display: 'swap',
+})
 import { ToastProvider } from '@/components/ui/feedback/toast'
 import { Header } from '@/components/layouts/common/Header'
 import { Footer } from '@/components/layouts/common/Footer'
@@ -32,7 +53,7 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} ${notoSansTC.variable} ${notoSerifTC.variable}`} suppressHydrationWarning>
       <body>
         <WebVitals />
         <NextIntlClientProvider messages={messages}>

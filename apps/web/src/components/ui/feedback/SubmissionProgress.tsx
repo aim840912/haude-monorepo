@@ -124,7 +124,7 @@ export function SubmissionProgress({
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className={cn(
-                'h-2 rounded-full transition-all duration-500 ease-out',
+                'h-2 rounded-full transition-[width] duration-500 ease-out',
                 statusDisplay.progressColor
               )}
               style={{ width: `${displayProgress}%` }}

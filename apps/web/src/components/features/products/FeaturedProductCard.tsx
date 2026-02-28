@@ -44,7 +44,7 @@ export function FeaturedProductCard({
         'group relative bg-card-bg overflow-hidden rounded-2xl',
         'shadow-lg hover:shadow-xl',
         'border border-card-border',
-        'transition-all duration-300',
+        'transition-[box-shadow,transform] duration-300',
         'cursor-pointer',
         'tea-card'
       )}
@@ -134,7 +134,7 @@ export function FeaturedProductCard({
 
           {/* CTA button */}
           <div>
-            <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-tea text-white rounded-full text-sm font-medium group-hover:gap-3 transition-all duration-300">
+            <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-tea text-white rounded-full text-sm font-medium group-hover:gap-3 transition-[gap] duration-300">
               查看詳情
               <ArrowRight className="w-4 h-4" />
             </span>

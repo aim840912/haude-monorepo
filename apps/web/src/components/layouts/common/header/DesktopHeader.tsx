@@ -85,7 +85,7 @@ export function DesktopHeader() {
                     {t(item.labelKey)}
                   </span>
                   <div
-                    className={`absolute bottom-0 left-0 h-0.5 bg-green-600 transition-all duration-300 ${
+                    className={`absolute bottom-0 left-0 h-0.5 bg-green-600 transition-[width] duration-300 ${
                       isActive(item.href) ? 'w-full' : 'w-0 group-hover:w-full'
                     }`}
                   ></div>

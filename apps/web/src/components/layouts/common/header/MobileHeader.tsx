@@ -81,7 +81,7 @@ export function MobileHeader({
           {/* 購物車按鈕 - 所有用戶皆可見 */}
           <Link
             href="/cart"
-            className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-all duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
+            className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
             title={t('cart')}
           >
             <ShoppingCart className="w-5 h-5" />
@@ -99,7 +99,7 @@ export function MobileHeader({
               href="https://haude-admin.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-all duration-200 rounded-md min-h-[44px] px-2"
+              className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-colors duration-200 rounded-md min-h-[44px] px-2"
               title={t('admin')}
             >
               <ExternalLink className="w-5 h-5" />
@@ -109,7 +109,7 @@ export function MobileHeader({
           {/* 漢堡選單按鈕 - Mobile */}
           <button
             ref={mobileMenuButtonRef}
-            className="flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-all duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
+            className="flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
             title="導航選單"
             onClick={handleMobileMenuToggle}
           >
@@ -124,7 +124,7 @@ export function MobileHeader({
 
       {/* 手機版導航選單 - 絕對定位下拉 */}
       <div
-        className={`absolute left-0 right-0 top-full bg-white shadow-lg border-b border-gray-200 transition-all duration-300 ease-in-out z-50 ${
+        className={`absolute left-0 right-0 top-full bg-white shadow-lg border-b border-gray-200 transition-[opacity,visibility] duration-300 ease-in-out z-50 ${
           isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         }`}
       >

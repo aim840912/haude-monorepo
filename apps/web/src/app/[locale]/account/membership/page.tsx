@@ -196,7 +196,7 @@ export default function MembershipPage() {
                   </div>
                   <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-green-500 rounded-full transition-all duration-500"
+                      className="h-full bg-green-500 rounded-full transition-[width] duration-500"
                       style={{ width: `${upgradeProgress.progressPercent}%` }}
                     />
                   </div>
