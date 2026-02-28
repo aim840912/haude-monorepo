@@ -101,6 +101,7 @@ const paymentMethodLabels: Record<string, string> = {
   VACC: 'ATM 轉帳',
   CVS: '超商付款',
   WEBATM: '網路 ATM',
+  STORE_CONTACT: '電話確認訂單',
 }
 
 function formatDate(dateString: string): string {

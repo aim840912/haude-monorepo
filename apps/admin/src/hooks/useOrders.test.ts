@@ -206,11 +206,11 @@ describe('Admin 訂單 Hooks', () => {
 
       let success = false
       await act(async () => {
-        success = await result.current.updateOrderStatus('order-1', 'shipped')
+        success = await result.current.updateOrderStatus('order-1', { status: 'shipped' })
       })
 
       expect(success).toBe(true)
-      expect(ordersApi.updateStatus).toHaveBeenCalledWith('order-1', 'shipped')
+      expect(ordersApi.updateStatus).toHaveBeenCalledWith('order-1', { status: 'shipped' })
     })
 
     it('API 失敗應該設定錯誤', async () => {

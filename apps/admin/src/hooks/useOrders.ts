@@ -43,7 +43,7 @@ interface UseOrdersReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
-  updateOrderStatus: (id: string, status: OrderStatus) => Promise<boolean>
+  updateOrderStatus: (id: string, data: { status?: OrderStatus; paymentStatus?: PaymentStatus }) => Promise<boolean>
   isUpdating: boolean
   // 分頁相關
   pagination: Pagination
@@ -100,10 +100,13 @@ export function useOrders(): UseOrdersReturn {
     }
   }, [pagination.limit, pagination.offset])
 
-  const updateOrderStatus = useCallback(async (id: string, status: OrderStatus): Promise<boolean> => {
+  const updateOrderStatus = useCallback(async (
+    id: string,
+    data: { status?: OrderStatus; paymentStatus?: PaymentStatus }
+  ): Promise<boolean> => {
     setIsUpdating(true)
     try {
-      await ordersApi.updateStatus(id, status)
+      await ordersApi.updateStatus(id, data)
       await fetchOrders(pagination.limit, pagination.offset)
       return true
     } catch (err) {

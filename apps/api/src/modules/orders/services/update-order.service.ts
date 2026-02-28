@@ -42,6 +42,7 @@ export class UpdateOrderService {
     if (dto.status) updateData.status = dto.status;
     if (dto.trackingNumber) updateData.trackingNumber = dto.trackingNumber;
     if (dto.notes) updateData.notes = dto.notes;
+    if (dto.paymentStatus) updateData.paymentStatus = dto.paymentStatus;
 
     const updatedOrder = await this.prisma.order.update({
       where: { id: orderId },

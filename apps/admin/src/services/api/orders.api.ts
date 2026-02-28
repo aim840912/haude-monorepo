@@ -21,8 +21,8 @@ export const ordersApi = {
     ordersApi.getAll(10000, 0, filters),
   getStats: () => api.get('/admin/orders/stats'),
   getById: (id: string) => api.get(`/admin/orders/${id}`),
-  updateStatus: (id: string, status: string) =>
-    api.patch(`/admin/orders/${id}`, { status }),
+  updateStatus: (id: string, data: { status?: string; paymentStatus?: string }) =>
+    api.patch(`/admin/orders/${id}`, data),
 }
 
 // ==================== Dashboard API (Admin) ====================
