@@ -4,16 +4,17 @@
  * 首頁客戶端元件
  *
  * 處理所有客戶端互動邏輯：
- * - 視差滾動效果（Hero）
  * - 輪播狀態（Hero）
  * - 翻轉卡片狀態（Features）
  * - 滾動進度指示器
  *
- * 各 section 使用 Framer Motion whileInView 自管理入場動畫，
- * 不再需要集中式 IntersectionObserver。
+ * 視差滾動效果已移至 HeroSection 內部，
+ * 使用 framer-motion useScroll/useTransform（不觸發 React re-render）。
+ * 各 section 使用 Framer Motion whileInView 自管理入場動畫。
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import {
   Sprout,
@@ -25,16 +26,39 @@ import {
   Users,
   Sparkles,
 } from 'lucide-react'
-import {
-  HeroSection,
-  FeaturesSection,
-  NewsSection,
-  BrandStorySection,
-  TestimonialsSection,
-  CTASection,
-  TeaCeremonySection,
-} from '@/components/features/home'
+
+// Above-fold: static imports (included in initial bundle)
+import { HeroSection } from '@/components/features/home/HeroSection'
+import { FeaturesSection } from '@/components/features/home/FeaturesSection'
 import { ProductsSection } from '@/components/features/products/section/ProductsSection'
+
+// Below-fold: dynamic imports (split into separate chunks)
+const TeaCeremonySection = dynamic(() =>
+  import('@/components/features/home/TeaCeremonySection').then((m) => ({
+    default: m.TeaCeremonySection,
+  }))
+)
+const BrandStorySection = dynamic(() =>
+  import('@/components/features/home/BrandStorySection').then((m) => ({
+    default: m.BrandStorySection,
+  }))
+)
+const TestimonialsSection = dynamic(() =>
+  import('@/components/features/home/TestimonialsSection').then((m) => ({
+    default: m.TestimonialsSection,
+  }))
+)
+const NewsSection = dynamic(() =>
+  import('@/components/features/home/NewsSection').then((m) => ({
+    default: m.NewsSection,
+  }))
+)
+const CTASection = dynamic(() =>
+  import('@/components/features/home/CTASection').then((m) => ({
+    default: m.CTASection,
+  }))
+)
+
 import { useHomeSettings } from '@/hooks/useSiteSettings'
 import { SETTING_KEYS } from '@/types/siteSettings'
 import {
@@ -63,8 +87,7 @@ const getIcon = (iconName: string) => {
 }
 
 export function HomePageClient() {
-  // 狀態 — 僅保留 Hero 視差、輪播、翻轉卡片所需
-  const [scrollY, setScrollY] = useState(0)
+  // 狀態 — 輪播、翻轉卡片所需（視差已移至 HeroSection）
   const [currentSlide, setCurrentSlide] = useState(0)
   const [activeFeature, setActiveFeature] = useState(-1)
   const [mounted, setMounted] = useState(false)
@@ -80,8 +103,8 @@ export function HomePageClient() {
   // 載入首頁設定
   const { settings, loading: settingsLoading } = useHomeSettings()
 
-  // 解析 Hero 圖片
-  const heroImages = (() => {
+  // 解析 Hero 圖片 — memo 避免每次 render 重新 parse JSON
+  const heroImages = useMemo(() => {
     if (settingsLoading) return DEFAULT_HERO_IMAGES.home
 
     const heroSetting = settings[SETTING_KEYS.HOME_HERO_IMAGES]
@@ -99,83 +122,80 @@ export function HomePageClient() {
       }
       return DEFAULT_HERO_IMAGES.home
     }
-  })()
+  }, [settingsLoading, settings])
 
   // 解析特色卡片圖片
-  const featureCardImages = [
-    settings[SETTING_KEYS.HOME_FEATURE_CARD_1_IMAGE]?.value ||
-      DEFAULT_FEATURE_CARD_IMAGES[0],
-    settings[SETTING_KEYS.HOME_FEATURE_CARD_2_IMAGE]?.value ||
-      DEFAULT_FEATURE_CARD_IMAGES[1],
-    settings[SETTING_KEYS.HOME_FEATURE_CARD_3_IMAGE]?.value ||
-      DEFAULT_FEATURE_CARD_IMAGES[2],
-    settings[SETTING_KEYS.HOME_FEATURE_CARD_4_IMAGE]?.value ||
-      DEFAULT_FEATURE_CARD_IMAGES[3],
-  ]
+  const featureCardImages = useMemo(
+    () => [
+      settings[SETTING_KEYS.HOME_FEATURE_CARD_1_IMAGE]?.value ||
+        DEFAULT_FEATURE_CARD_IMAGES[0],
+      settings[SETTING_KEYS.HOME_FEATURE_CARD_2_IMAGE]?.value ||
+        DEFAULT_FEATURE_CARD_IMAGES[1],
+      settings[SETTING_KEYS.HOME_FEATURE_CARD_3_IMAGE]?.value ||
+        DEFAULT_FEATURE_CARD_IMAGES[2],
+      settings[SETTING_KEYS.HOME_FEATURE_CARD_4_IMAGE]?.value ||
+        DEFAULT_FEATURE_CARD_IMAGES[3],
+    ],
+    [settings]
+  )
 
   // 解析品牌故事圖片
   const brandStoryImage =
     settings[SETTING_KEYS.HOME_BRAND_STORY_IMAGE]?.value || DEFAULT_BRAND_STORY_IMAGE
 
   // 最新消息卡片資料
-  const newsCards = {
-    seasonalRecommendation: {
-      enabled:
-        settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_ENABLED]
-          ?.value === 'true' ||
-        !settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_ENABLED],
-      title:
-        settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_TITLE]?.value ||
-        '當季推薦',
-      icon:
-        settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_ICON]?.value ||
-        'sprout',
-      description:
-        settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_DESCRIPTION]
-          ?.value ||
-        '春季特選紅肉李正在盛產中！果肉飽滿、甜度高，限量供應中',
-      linkUrl:
-        settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_LINK_URL]
-          ?.value || '/products',
-      linkText:
-        settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_LINK_TEXT]
-          ?.value || '查看產品 →',
-    },
-    farmActivity: {
-      enabled:
-        settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_ENABLED]?.value ===
-          'true' ||
-        !settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_ENABLED],
-      title:
-        settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_TITLE]?.value ||
-        '農場活動',
-      icon:
-        settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_ICON]?.value ||
-        'party-popper',
-      description:
-        settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_DESCRIPTION]?.value ||
-        '週末採果體驗活動熱烈報名中！帶孩子來體驗親手採摘的樂趣',
-      linkUrl:
-        settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_LINK_URL]?.value ||
-        '/farm-tours',
-      linkText:
-        settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_LINK_TEXT]?.value ||
-        '立即預約 →',
-    },
-  }
+  const newsCards = useMemo(
+    () => ({
+      seasonalRecommendation: {
+        enabled:
+          settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_ENABLED]
+            ?.value === 'true' ||
+          !settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_ENABLED],
+        title:
+          settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_TITLE]?.value ||
+          '當季推薦',
+        icon:
+          settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_ICON]?.value ||
+          'sprout',
+        description:
+          settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_DESCRIPTION]
+            ?.value ||
+          '春季特選紅肉李正在盛產中！果肉飽滿、甜度高，限量供應中',
+        linkUrl:
+          settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_LINK_URL]
+            ?.value || '/products',
+        linkText:
+          settings[SETTING_KEYS.HOME_NEWS_SEASONAL_RECOMMENDATION_LINK_TEXT]
+            ?.value || '查看產品 →',
+      },
+      farmActivity: {
+        enabled:
+          settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_ENABLED]?.value ===
+            'true' ||
+          !settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_ENABLED],
+        title:
+          settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_TITLE]?.value ||
+          '農場活動',
+        icon:
+          settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_ICON]?.value ||
+          'party-popper',
+        description:
+          settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_DESCRIPTION]?.value ||
+          '週末採果體驗活動熱烈報名中！帶孩子來體驗親手採摘的樂趣',
+        linkUrl:
+          settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_LINK_URL]?.value ||
+          '/farm-tours',
+        linkText:
+          settings[SETTING_KEYS.HOME_NEWS_FARM_ACTIVITY_LINK_TEXT]?.value ||
+          '立即預約 →',
+      },
+    }),
+    [settings]
+  )
 
   // 客戶端掛載標記（避免 SSR hydration mismatch）
   useEffect(() => {
     setMounted(true)
-  }, [])
-
-  // 視差滾動效果（僅 Hero 區需要）
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   return (
@@ -191,7 +211,6 @@ export function HomePageClient() {
       {/* Hero 區域 */}
       <HeroSection
         images={heroImages}
-        scrollY={scrollY}
         currentSlide={currentSlide}
         onSlideChange={setCurrentSlide}
       />

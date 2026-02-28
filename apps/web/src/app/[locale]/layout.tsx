@@ -8,6 +8,9 @@ import { OrganizationSchema } from '@/components/seo'
 import { routing } from '@/i18n/routing'
 import { ErrorBoundary } from '@/components/errors'
 import { SystemStatusProvider, SystemBanner } from '@/components/system'
+import { WebVitals } from '@/components/analytics/WebVitals'
+import { AgentationOverlay } from '@/components/dev/AgentationOverlay'
+import '../globals.css'
 
 // 靜態生成所有語系的頁面
 export function generateStaticParams() {
@@ -29,25 +32,31 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <NextIntlClientProvider messages={messages}>
-      <OrganizationSchema />
-      <ThemeProvider>
-        <SystemStatusProvider>
-          <ErrorBoundary>
-            <ToastProvider>
-              {/* 系統公告欄 - 顯示在頁面頂部 */}
-              <div className="fixed top-0 left-0 right-0 z-50 p-2">
-                <SystemBanner />
-              </div>
-              <Header />
-              <main className="pt-[var(--header-height)]">
-                {children}
-              </main>
-              <Footer />
-            </ToastProvider>
-          </ErrorBoundary>
-        </SystemStatusProvider>
-      </ThemeProvider>
-    </NextIntlClientProvider>
+    <html lang={locale} suppressHydrationWarning>
+      <body>
+        <WebVitals />
+        <NextIntlClientProvider messages={messages}>
+          <OrganizationSchema />
+          <ThemeProvider>
+            <SystemStatusProvider>
+              <ErrorBoundary>
+                <ToastProvider>
+                  {/* 系統公告欄 - 顯示在頁面頂部 */}
+                  <div className="fixed top-0 left-0 right-0 z-50 p-2">
+                    <SystemBanner />
+                  </div>
+                  <Header />
+                  <main className="pt-[var(--header-height)]">
+                    {children}
+                  </main>
+                  <Footer />
+                </ToastProvider>
+              </ErrorBoundary>
+            </SystemStatusProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
+        <AgentationOverlay />
+      </body>
+    </html>
   )
 }

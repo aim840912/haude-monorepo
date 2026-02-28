@@ -61,6 +61,14 @@ const nextConfig: NextConfig = {
   // Disabled locally to avoid Windows symlink EPERM errors.
   output: process.env.VERCEL ? 'standalone' : undefined,
 
+  // Remove X-Powered-By response header
+  poweredByHeader: false,
+
+  // Tree-shake barrel exports — lucide-react has 72 import sites
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+  },
+
   // Reduce file watching scope to prevent EMFILE on macOS
   webpack: (config, { dev }) => {
     if (dev) {
@@ -74,6 +82,8 @@ const nextConfig: NextConfig = {
 
   // 圖片優化設定
   images: {
+    // AVIF is ~20% smaller than WebP; browser chooses the best format
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',

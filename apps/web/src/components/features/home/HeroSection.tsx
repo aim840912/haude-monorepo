@@ -1,46 +1,49 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { easing, spring } from '@/lib/motion'
 
 interface HeroSectionProps {
   images: string[]
-  scrollY: number
   currentSlide: number
   onSlideChange: (index: number) => void
 }
 
 const titleChars = ['豪', '德', '製', '茶']
 
-export function HeroSection({ images, scrollY, currentSlide, onSlideChange }: HeroSectionProps) {
+export function HeroSection({ images, currentSlide, onSlideChange }: HeroSectionProps) {
   const [progress, setProgress] = useState(0)
 
-  // 進度條動畫 - 每 100ms 增加 2%
+  // Scroll-driven parallax — MotionValues don't trigger React re-renders
+  const { scrollY } = useScroll()
+  const bgY = useTransform(scrollY, [0, 500], [0, 150])           // background: 0.3 * 500
+  const contentY = useTransform(scrollY, [0, 500], [0, 100])      // content: 0.2 * 500
+  const contentOpacity = useTransform(scrollY, [0, 600], [1, 0])
+  const arrowOpacity = useTransform(scrollY, [0, 100], [1, 0])
+
+  // Merged: progress timer + auto-advance in one effect
+  // Using a local variable avoids a second reactive useEffect (setState-in-effect anti-pattern)
   useEffect(() => {
+    let p = 0
     const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 100 : prev + 2))
+      p += 2
+      if (p >= 100) {
+        onSlideChange((currentSlide + 1) % images.length)
+        p = 0
+      }
+      setProgress(p)
     }, 100)
-
     return () => clearInterval(interval)
-  }, [])
-
-  // 當進度達到 100% 時切換幻燈片
-  useEffect(() => {
-    if (progress >= 100) {
-      const nextSlide = (currentSlide + 1) % images.length
-      onSlideChange(nextSlide)
-      setProgress(0)
-    }
-  }, [progress, currentSlide, images.length, onSlideChange])
+  }, [currentSlide, images.length, onSlideChange])
 
   return (
     <section className="relative min-h-screen flex flex-col justify-center text-center pt-16 overflow-hidden">
       {/* 背景圖輪播 + Ken Burns */}
       {images.map((image, index) => (
-        <div
+        <motion.div
           key={image}
           className={`absolute inset-0 transition-opacity duration-1000 ${
             currentSlide === index ? 'animate-ken-burns' : ''
@@ -51,7 +54,7 @@ export function HeroSection({ images, scrollY, currentSlide, onSlideChange }: He
             backgroundPosition: 'center',
             backgroundColor: '#3e2723',
             opacity: currentSlide === index ? 1 : 0,
-            transform: `translateY(${scrollY * 0.3}px)`,
+            y: bgY,
           }}
         />
       ))}
@@ -60,11 +63,11 @@ export function HeroSection({ images, scrollY, currentSlide, onSlideChange }: He
       <div className="absolute inset-0 bg-black/40 z-10" />
 
       {/* Hero 內容 - 入場序列動畫 */}
-      <div
+      <motion.div
         className="relative z-20 px-6"
         style={{
-          transform: `translateY(${scrollY * 0.2}px)`,
-          opacity: Math.max(0, 1 - scrollY / 600),
+          y: contentY,
+          opacity: contentOpacity,
         }}
       >
         {/* 品牌副標 - 最先淡入 */}
@@ -131,13 +134,11 @@ export function HeroSection({ images, scrollY, currentSlide, onSlideChange }: He
             了解更多
           </Link>
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* 滾動提示箭頭 */}
+      {/* 滾動提示箭頭 — MotionValue 驅動，不觸發 React re-render */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: scrollY > 100 ? 0 : 1 }}
-        transition={{ duration: 0.3 }}
+        style={{ opacity: arrowOpacity }}
         className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20"
       >
         <ChevronDown className="w-8 h-8 text-white/70 animate-scroll-bounce" />

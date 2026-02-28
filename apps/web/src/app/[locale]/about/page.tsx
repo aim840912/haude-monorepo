@@ -8,8 +8,6 @@
 import type { Metadata } from 'next'
 import { AboutPageClient } from './AboutPageClient'
 
-export const revalidate = 3600
-
 export const metadata: Metadata = {
   title: '關於我們 | 豪德製茶所',
   description:

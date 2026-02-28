@@ -1,7 +1,4 @@
 import type { Metadata } from 'next'
-import { WebVitals } from '@/components/analytics/WebVitals'
-import { AgentationOverlay } from '@/components/dev/AgentationOverlay'
-import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
@@ -58,18 +55,17 @@ export const metadata: Metadata = {
   },
 }
 
+/**
+ * Root layout — required by Next.js App Router.
+ *
+ * <html> and <body> are rendered by [locale]/layout.tsx so we can set
+ * the correct lang attribute from the URL segment.
+ * This wrapper just passes children through.
+ */
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html suppressHydrationWarning>
-      <body>
-        <WebVitals />
-        {children}
-        <AgentationOverlay />
-      </body>
-    </html>
-  )
+  return <>{children}</>
 }

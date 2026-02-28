@@ -8,6 +8,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
  *
  * Next.js 會自動在 /sitemap.xml 提供此 sitemap
  * 包含所有靜態頁面和動態內容（產品、地點、農場體驗）
+ *
+ * 三個 API 請求並行發出，避免 waterfall（串行）延遲。
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 靜態頁面
@@ -44,14 +46,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
+  // 並行發出三個請求，任一失敗不影響其他（allSettled vs all）
+  const [productsResult, farmToursResult, locationsResult] = await Promise.allSettled([
+    fetch(`${API_URL}/products`, { next: { revalidate: 3600 } }),
+    fetch(`${API_URL}/farm-tours`, { next: { revalidate: 3600 } }),
+    fetch(`${API_URL}/locations`, { next: { revalidate: 3600 } }),
+  ])
+
   // 動態獲取產品列表
   let productPages: MetadataRoute.Sitemap = []
-  try {
-    const res = await fetch(`${API_URL}/products`, {
-      next: { revalidate: 3600 }, // 1 小時快取
-    })
-    if (res.ok) {
-      const products = await res.json()
+  if (productsResult.status === 'fulfilled' && productsResult.value.ok) {
+    try {
+      const products = await productsResult.value.json()
       productPages = products
         .filter((product: { isActive?: boolean }) => product.isActive !== false)
         .map((product: { id: string; updatedAt?: string }) => ({
@@ -60,19 +66,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'weekly' as const,
           priority: 0.8,
         }))
+    } catch {
+      // JSON parse failure — continue without product pages
     }
-  } catch {
-    // API 失敗時繼續，不阻擋 sitemap 生成
   }
 
   // 動態獲取農場體驗列表
   let farmTourPages: MetadataRoute.Sitemap = []
-  try {
-    const res = await fetch(`${API_URL}/farm-tours`, {
-      next: { revalidate: 3600 },
-    })
-    if (res.ok) {
-      const tours = await res.json()
+  if (farmToursResult.status === 'fulfilled' && farmToursResult.value.ok) {
+    try {
+      const tours = await farmToursResult.value.json()
       farmTourPages = tours
         .filter((tour: { isActive?: boolean }) => tour.isActive !== false)
         .map((tour: { id: string; updatedAt?: string }) => ({
@@ -81,19 +84,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'weekly' as const,
           priority: 0.7,
         }))
+    } catch {
+      // JSON parse failure — continue without farm tour pages
     }
-  } catch {
-    // API 失敗時繼續
   }
 
   // 動態獲取據點列表
   let locationPages: MetadataRoute.Sitemap = []
-  try {
-    const res = await fetch(`${API_URL}/locations`, {
-      next: { revalidate: 3600 },
-    })
-    if (res.ok) {
-      const locations = await res.json()
+  if (locationsResult.status === 'fulfilled' && locationsResult.value.ok) {
+    try {
+      const locations = await locationsResult.value.json()
       locationPages = locations
         .filter((loc: { isActive?: boolean }) => loc.isActive !== false)
         .map((loc: { id: string; updatedAt?: string }) => ({
@@ -102,9 +102,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'monthly' as const,
           priority: 0.6,
         }))
+    } catch {
+      // JSON parse failure — continue without location pages
     }
-  } catch {
-    // API 失敗時繼續
   }
 
   return [...staticPages, ...productPages, ...farmTourPages, ...locationPages]
