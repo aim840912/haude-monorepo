@@ -25,7 +25,11 @@ export class UpdateOrderStatusDto {
   @IsString()
   notes?: string;
 
-  @ApiPropertyOptional({ description: '付款狀態', enum: PaymentStatus, example: 'paid' })
+  @ApiPropertyOptional({
+    description: '付款狀態',
+    enum: PaymentStatus,
+    example: 'paid',
+  })
   @IsOptional()
   @IsEnum(PaymentStatus)
   paymentStatus?: PaymentStatus;

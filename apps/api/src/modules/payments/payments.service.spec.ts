@@ -6,6 +6,7 @@ import {
   PaymentCallbackService,
   PaymentQueryService,
   PaymentAdminService,
+  PaymentRefundService,
 } from './services';
 import { PaymentStatus } from '@prisma/client';
 
@@ -23,6 +24,7 @@ describe('PaymentsService (Facade)', () => {
   let callbackService: jest.Mocked<PaymentCallbackService>;
   let queryService: jest.Mocked<PaymentQueryService>;
   let adminService: jest.Mocked<PaymentAdminService>;
+  let refundService: jest.Mocked<PaymentRefundService>;
 
   // Mock PaymentConfigService
   const mockConfigService = {
@@ -58,6 +60,13 @@ describe('PaymentsService (Facade)', () => {
     getPaymentStats: jest.fn(),
   };
 
+  // Mock PaymentRefundService
+  const mockRefundService = {
+    processRefund: jest.fn(),
+    confirmManualRefund: jest.fn(),
+    getRefundsByPayment: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -82,6 +91,10 @@ describe('PaymentsService (Facade)', () => {
           provide: PaymentAdminService,
           useValue: mockAdminService,
         },
+        {
+          provide: PaymentRefundService,
+          useValue: mockRefundService,
+        },
       ],
     }).compile();
 
@@ -91,6 +104,7 @@ describe('PaymentsService (Facade)', () => {
     callbackService = module.get(PaymentCallbackService);
     queryService = module.get(PaymentQueryService);
     adminService = module.get(PaymentAdminService);
+    refundService = module.get(PaymentRefundService);
 
     jest.clearAllMocks();
   });
@@ -106,6 +120,7 @@ describe('PaymentsService (Facade)', () => {
       expect(callbackService).toBeDefined();
       expect(queryService).toBeDefined();
       expect(adminService).toBeDefined();
+      expect(refundService).toBeDefined();
     });
   });
 

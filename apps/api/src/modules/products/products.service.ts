@@ -232,10 +232,7 @@ export class ProductsService {
       }
     } catch (error) {
       // Storage cleanup failure should not block product deletion
-      console.warn(
-        `Failed to cleanup storage files for product ${id}:`,
-        error,
-      );
+      console.warn(`Failed to cleanup storage files for product ${id}:`, error);
     }
 
     try {

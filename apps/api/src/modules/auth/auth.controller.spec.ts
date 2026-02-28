@@ -286,10 +286,11 @@ describe('AuthController', () => {
       isActive: true,
     };
 
-    it('應處理 Web 登入回調（預設）', () => {
-      mockAuthService.googleLogin.mockReturnValue({
+    it('應處理 Web 登入回調（預設）', async () => {
+      mockAuthService.googleLogin.mockResolvedValue({
         user: mockUser,
         accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
       });
       mockConfigService.get.mockReturnValue('http://localhost:5173');
 
@@ -297,18 +298,19 @@ describe('AuthController', () => {
         user: { ...mockUser, oauthState: undefined },
       } as any;
 
-      controller.googleAuthCallback(req, mockResponse);
+      await controller.googleAuthCallback(req, mockResponse);
 
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         expect.stringContaining('http://localhost:5173/auth/callback'),
       );
     });
 
-    it('應處理 Admin 登入回調（ADMIN 角色）', () => {
+    it('應處理 Admin 登入回調（ADMIN 角色）', async () => {
       const adminUser = { ...mockUser, role: 'ADMIN' };
-      mockAuthService.googleLogin.mockReturnValue({
+      mockAuthService.googleLogin.mockResolvedValue({
         user: adminUser,
         accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
       });
       mockConfigService.get.mockReturnValue('http://localhost:5174');
 
@@ -316,17 +318,18 @@ describe('AuthController', () => {
         user: { ...adminUser, oauthState: 'admin' },
       } as any;
 
-      controller.googleAuthCallback(req, mockResponse);
+      await controller.googleAuthCallback(req, mockResponse);
 
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         expect.stringContaining('http://localhost:5174/auth/callback'),
       );
     });
 
-    it('非 ADMIN 嘗試 Admin 登入應重導向到錯誤頁', () => {
-      mockAuthService.googleLogin.mockReturnValue({
+    it('非 ADMIN 嘗試 Admin 登入應重導向到錯誤頁', async () => {
+      mockAuthService.googleLogin.mockResolvedValue({
         user: mockUser, // role: USER
         accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
       });
       mockConfigService.get.mockReturnValue('http://localhost:5174');
 
@@ -334,7 +337,7 @@ describe('AuthController', () => {
         user: { ...mockUser, oauthState: 'admin' },
       } as any;
 
-      controller.googleAuthCallback(req, mockResponse);
+      await controller.googleAuthCallback(req, mockResponse);
 
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('access_token', {
         path: '/',

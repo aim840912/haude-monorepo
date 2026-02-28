@@ -44,7 +44,13 @@ export class PasswordAuthService {
 
     const user = await this.prisma.user.create({
       data: { email, password: hashedPassword, name },
-      select: { id: true, email: true, name: true, role: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+      },
     });
 
     const { accessToken, refreshToken } =
@@ -155,7 +161,9 @@ export class PasswordAuthService {
 
     // Same message regardless of user existence (security)
     if (!user || !user.password) {
-      this.logger.log(`忘記密碼請求 - ${!user ? '找不到用戶' : 'Google 用戶'}: ${email}`);
+      this.logger.log(
+        `忘記密碼請求 - ${!user ? '找不到用戶' : 'Google 用戶'}: ${email}`,
+      );
       return { message: '如果該電子郵件已註冊，您將收到重設密碼的連結' };
     }
 
@@ -240,7 +248,9 @@ export class PasswordAuthService {
     if (!user.googleId)
       throw new BadRequestException('此功能僅供 Google 登入用戶使用');
     if (user.password)
-      throw new BadRequestException('您已設定過密碼，如需修改請使用修改密碼功能');
+      throw new BadRequestException(
+        '您已設定過密碼，如需修改請使用修改密碼功能',
+      );
 
     const hashedPassword = await bcrypt.hash(password, 10);
 

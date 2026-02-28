@@ -169,10 +169,10 @@ export class SiteSettingsService {
    */
   private parseImageUrls(value: string): string[] {
     try {
-      const parsed = JSON.parse(value);
+      const parsed: unknown = JSON.parse(value);
       if (Array.isArray(parsed)) {
         return parsed.filter(
-          (url: unknown) => typeof url === 'string' && (url as string).length > 0,
+          (url): url is string => typeof url === 'string' && url.length > 0,
         );
       }
     } catch {

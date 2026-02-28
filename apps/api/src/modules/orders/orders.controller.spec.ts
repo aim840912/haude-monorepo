@@ -260,7 +260,11 @@ describe('AdminOrdersController', () => {
       const result = await controller.getAllOrders(20, 0);
 
       expect(result).toEqual(ordersResult);
-      expect(mockOrdersService.getAllOrders).toHaveBeenCalledWith(20, 0);
+      expect(mockOrdersService.getAllOrders).toHaveBeenCalledWith(
+        20,
+        0,
+        undefined,
+      );
     });
 
     it('應支援自訂分頁參數', async () => {
@@ -268,7 +272,11 @@ describe('AdminOrdersController', () => {
 
       await controller.getAllOrders(100, 200);
 
-      expect(mockOrdersService.getAllOrders).toHaveBeenCalledWith(100, 200);
+      expect(mockOrdersService.getAllOrders).toHaveBeenCalledWith(
+        100,
+        200,
+        undefined,
+      );
     });
   });
 

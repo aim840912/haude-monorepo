@@ -50,8 +50,7 @@ import { SiteSettingsModule } from './modules/site-settings/site-settings.module
       pinoHttp: {
         // Auto-assign request ID
         genReqId: (req) =>
-          req.headers['x-request-id']?.toString() ||
-          crypto.randomUUID(),
+          req.headers['x-request-id']?.toString() || crypto.randomUUID(),
         customProps: () => ({
           context: 'HTTP',
         }),
@@ -61,7 +60,10 @@ import { SiteSettingsModule } from './modules/site-settings/site-settings.module
         },
         transport:
           process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
+            ? {
+                target: 'pino-pretty',
+                options: { colorize: true, singleLine: true },
+              }
             : undefined,
         level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
       },

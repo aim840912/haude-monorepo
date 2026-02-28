@@ -112,7 +112,9 @@ describe('AuthService', () => {
   describe('forgotPassword (delegates to PasswordAuthService)', () => {
     it('應委派給 PasswordAuthService.forgotPassword', async () => {
       const dto = { email: 'test@example.com' };
-      const expected = { message: '如果該電子郵件已註冊，您將收到重設密碼的連結' };
+      const expected = {
+        message: '如果該電子郵件已註冊，您將收到重設密碼的連結',
+      };
       mockPasswordAuthService.forgotPassword.mockResolvedValue(expected);
 
       const result = await service.forgotPassword(dto);

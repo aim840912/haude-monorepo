@@ -9,6 +9,7 @@ import {
   CreateOrderService,
   CancelOrderService,
   UpdateOrderService,
+  OrderExpiryService,
 } from './services';
 import {
   createMockOrder,
@@ -33,6 +34,7 @@ describe('OrdersService (Facade)', () => {
   let mockCreateOrderService: jest.Mocked<CreateOrderService>;
   let mockCancelOrderService: jest.Mocked<CancelOrderService>;
   let mockUpdateOrderService: jest.Mocked<UpdateOrderService>;
+  let mockOrderExpiryService: jest.Mocked<OrderExpiryService>;
 
   beforeEach(async () => {
     // 建立 mock 專責服務
@@ -68,6 +70,10 @@ describe('OrdersService (Facade)', () => {
       updateOrderStatus: jest.fn(),
     } as unknown as jest.Mocked<UpdateOrderService>;
 
+    mockOrderExpiryService = {
+      handleExpiredOrders: jest.fn(),
+    } as unknown as jest.Mocked<OrderExpiryService>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
@@ -87,6 +93,7 @@ describe('OrdersService (Facade)', () => {
         { provide: CreateOrderService, useValue: mockCreateOrderService },
         { provide: CancelOrderService, useValue: mockCancelOrderService },
         { provide: UpdateOrderService, useValue: mockUpdateOrderService },
+        { provide: OrderExpiryService, useValue: mockOrderExpiryService },
       ],
     }).compile();
 
@@ -196,6 +203,7 @@ describe('OrdersService (Facade)', () => {
       expect(mockQueryAdminOrdersService.getAllOrders).toHaveBeenCalledWith(
         20,
         0,
+        undefined,
       );
       expect(result).toEqual(mockResult);
     });

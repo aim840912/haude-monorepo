@@ -85,10 +85,7 @@ export class AdminSiteSettingsController {
   @ApiResponse({ status: 200, description: '設定更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
-  upsert(
-    @Param('key') key: string,
-    @Body() dto: UpsertSiteSettingDto,
-  ) {
+  upsert(@Param('key') key: string, @Body() dto: UpsertSiteSettingDto) {
     return this.siteSettingsService.upsert(key, dto);
   }
 

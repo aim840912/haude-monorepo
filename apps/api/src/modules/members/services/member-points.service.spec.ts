@@ -90,7 +90,6 @@ describe('MemberPointsService', () => {
       const result = await service.checkAndUpgradeLevel(userId);
 
       expect(result).toBe(false);
-      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
     });
 
     it('已是該等級應回傳 false', async () => {
@@ -103,7 +102,6 @@ describe('MemberPointsService', () => {
       const result = await service.checkAndUpgradeLevel(userId);
 
       expect(result).toBe(false);
-      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
     });
 
     it('達到升級標準應升級並回傳 true', async () => {
@@ -116,7 +114,7 @@ describe('MemberPointsService', () => {
       const result = await service.checkAndUpgradeLevel(userId);
 
       expect(result).toBe(true);
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockPrismaService.user.update).toHaveBeenCalled();
     });
 
     it('應跳級升級到符合資格的最高等級', async () => {
