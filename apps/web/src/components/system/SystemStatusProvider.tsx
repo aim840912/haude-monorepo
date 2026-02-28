@@ -19,7 +19,7 @@ interface SystemStatusProviderProps {
  */
 export function SystemStatusProvider({ children }: SystemStatusProviderProps) {
   const { refresh } = useSystemStatus()
-  const { status, maintenance } = useSystemStore()
+  const { maintenance } = useSystemStore()
   const user = useAuthStore((state) => state.user)
 
   // 檢查是否處於維護模式

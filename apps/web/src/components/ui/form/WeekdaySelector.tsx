@@ -1,7 +1,7 @@
 
 
 import { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 
 interface WeekdaySelectorProps {
   /** 已選擇的星期陣列，例如：["週一", "週三"] */

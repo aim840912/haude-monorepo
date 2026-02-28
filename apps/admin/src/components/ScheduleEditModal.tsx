@@ -45,6 +45,7 @@ export function ScheduleEditModal({
   useEffect(() => {
     if (isEditMode && schedule) {
       // 編輯模式：載入現有行程資料
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         title: schedule.title || '',
         location: schedule.location || '',

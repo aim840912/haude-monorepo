@@ -60,6 +60,7 @@ export function OrderStatusModal({
 
   useEffect(() => {
     if (order) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedStatus(order.status)
       setSelectedPaymentStatus(order.paymentStatus ?? 'pending')
       setError(null)

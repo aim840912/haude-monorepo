@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 import { LoadingSkeleton, ProductCardSkeleton, ListItemSkeleton } from './LoadingSkeleton'
 import { LoadingSpinner } from './LoadingSpinner'
 

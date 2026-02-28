@@ -128,7 +128,7 @@ export function SiteImageUploader({
         setIsUploading(false)
       }
     },
-    [settingKey, onImageUpdated]
+    [settingKey, onImageUpdated, ut]
   )
 
   const handleDelete = useCallback(async () => {
@@ -147,7 +147,7 @@ export function SiteImageUploader({
     } finally {
       setIsDeleting(false)
     }
-  }, [settingKey, onImageDeleted])
+  }, [settingKey, onImageDeleted, ut])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

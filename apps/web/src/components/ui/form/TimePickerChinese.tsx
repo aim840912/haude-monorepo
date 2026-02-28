@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 
 interface TimePickerChineseProps {
   value: string // HH:mm 格式 (24小時制)

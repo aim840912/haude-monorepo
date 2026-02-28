@@ -69,6 +69,7 @@ function SteamLines() {
   return (
     <div className="relative flex justify-center h-24 md:h-32">
       {layers.map((layer, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           key={i}
           src="/images/smoke.svg"

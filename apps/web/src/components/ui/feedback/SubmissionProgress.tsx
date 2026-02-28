@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle, AlertTriangle, RotateCw } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 
 export interface SubmissionStatus {
   isSubmitting: boolean

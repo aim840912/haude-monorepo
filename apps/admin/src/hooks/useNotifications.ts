@@ -147,6 +147,7 @@ export function useNotifications(
 
   // 初始化載入
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh()
   }, [refresh])
 

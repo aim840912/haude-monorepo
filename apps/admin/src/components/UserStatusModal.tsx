@@ -32,6 +32,7 @@ export function UserStatusModal({
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         isActive: user.isActive,
         role: user.role,

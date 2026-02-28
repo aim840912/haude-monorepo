@@ -15,7 +15,7 @@
  */
 
 import React, { createContext, useState, useCallback, useContext, memo } from 'react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 
 // ============================================================================
 // Types

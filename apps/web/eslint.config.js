@@ -19,6 +19,11 @@ const eslintConfig = [
       // These rules don't exist in Next.js ESLint config
       'react-refresh/only-export-components': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      // Allow underscore-prefixed vars/args to be unused
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 ]

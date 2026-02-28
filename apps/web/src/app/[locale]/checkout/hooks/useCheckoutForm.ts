@@ -61,7 +61,6 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
     setShippingAddress: saveAddress,
     setPaymentMethod: savePaymentMethod,
     discountCode,
-    discountInfo,
     clearDiscount,
   } = useCheckoutStore()
 
