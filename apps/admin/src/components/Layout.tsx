@@ -17,24 +17,60 @@ import {
   Share2,
   FileSpreadsheet,
   ImageIcon,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { NotificationBell } from './notifications'
 
-const navItems = [
-  { path: '/', label: '儀表板', icon: LayoutDashboard },
-  { path: '/products', label: '產品管理', icon: Package },
-  { path: '/farm-tours', label: '觀光果園', icon: TreeDeciduous },
-  { path: '/schedules', label: '擺攤行程', icon: CalendarDays },
-  { path: '/locations', label: '門市管理', icon: MapPin },
-  { path: '/orders', label: '訂單管理', icon: ShoppingCart },
-  { path: '/payments', label: '付款監控', icon: CreditCard },
-  { path: '/discounts', label: '折扣碼管理', icon: Tag },
-  { path: '/social-posts', label: '社群貼文', icon: Share2 },
-  { path: '/users', label: '會員管理', icon: Users },
-  { path: '/reports', label: '銷售報表', icon: FileSpreadsheet },
-  { path: '/site-images', label: '網站圖片', icon: ImageIcon },
-  { path: '/settings', label: '系統設定', icon: Settings },
+interface NavItem {
+  path: string
+  label: string
+  icon: LucideIcon
+}
+
+interface NavGroup {
+  label?: string
+  items: NavItem[]
+}
+
+const navGroups: NavGroup[] = [
+  {
+    items: [
+      { path: '/', label: '儀表板', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: '商品與服務',
+    items: [
+      { path: '/products', label: '產品管理', icon: Package },
+      { path: '/farm-tours', label: '觀光果園', icon: TreeDeciduous },
+      { path: '/schedules', label: '擺攤行程', icon: CalendarDays },
+      { path: '/locations', label: '門市管理', icon: MapPin },
+    ],
+  },
+  {
+    label: '訂單與金流',
+    items: [
+      { path: '/orders', label: '訂單管理', icon: ShoppingCart },
+      { path: '/payments', label: '付款監控', icon: CreditCard },
+      { path: '/discounts', label: '折扣碼管理', icon: Tag },
+    ],
+  },
+  {
+    label: '內容與行銷',
+    items: [
+      { path: '/social-posts', label: '社群貼文', icon: Share2 },
+      { path: '/site-images', label: '網站圖片', icon: ImageIcon },
+    ],
+  },
+  {
+    label: '系統管理',
+    items: [
+      { path: '/users', label: '會員管理', icon: Users },
+      { path: '/reports', label: '銷售報表', icon: FileSpreadsheet },
+      { path: '/settings', label: '系統設定', icon: Settings },
+    ],
+  },
 ]
 
 export function Layout() {
@@ -73,26 +109,37 @@ export function Layout() {
             <X className="w-6 h-6" />
           </button>
         </div>
-        <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 4rem - 4.5rem)' }}>
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </Link>
-            )
-          })}
+        <nav className="p-4 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]" style={{ maxHeight: 'calc(100vh - 4rem - 4.5rem)' }}>
+          {navGroups.map((group, groupIndex) => (
+            <div key={groupIndex}>
+              {group.label && (
+                <p className="px-4 mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon
+                  const isActive = location.pathname === item.path
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-green-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
           <button

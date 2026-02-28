@@ -318,7 +318,7 @@ export function ProductEditModal({
               </label>
               <input
                 type="number"
-                value={formData.price}
+                value={formData.price || ''}
                 onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 min="0"
@@ -331,7 +331,7 @@ export function ProductEditModal({
               </label>
               <input
                 type="number"
-                value={formData.stock}
+                value={formData.stock || ''}
                 onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 min="0"

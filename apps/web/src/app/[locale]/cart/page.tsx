@@ -149,7 +149,13 @@ export default function CartPage() {
                     <span className="w-8 text-center text-gray-900">{item.quantity}</span>
                     <button
                       onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
-                      className="p-1 rounded border border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600"
+                      disabled={item.quantity >= item.maxQuantity}
+                      className={cn(
+                        'p-1 rounded border',
+                        item.quantity >= item.maxQuantity
+                          ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600'
+                      )}
                     >
                       <Plus className="w-4 h-4" />
                     </button>
