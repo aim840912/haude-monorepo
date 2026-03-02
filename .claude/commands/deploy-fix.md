@@ -2,7 +2,7 @@
 
 按以下順序檢查並修復 Vercel 部署失敗：
 
-1. **Git email**：確認 `git config user.email` 不是 `tien@mochibits.com`
+1. **Git email**：確認 `git config user.email` 匹配 GitHub 帳號 email
 2. **Types 預建置**：執行 `pnpm --filter @haude/types build`
 3. **環境變數**：確認 `NEXT_PUBLIC_*` 在 Vercel Dashboard 設定（非只在 .env.local）
 4. **建置測試**：執行 `pnpm build --filter=@haude/web`

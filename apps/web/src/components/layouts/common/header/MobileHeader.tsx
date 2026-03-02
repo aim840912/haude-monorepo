@@ -96,7 +96,7 @@ export function MobileHeader({
           {/* 管理後台連結 - 僅 ADMIN 可見 */}
           {user?.role === 'ADMIN' && (
             <a
-              href="https://haude-admin.vercel.app"
+              href={process.env.NEXT_PUBLIC_ADMIN_URL ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-colors duration-200 rounded-md min-h-[44px] px-2"

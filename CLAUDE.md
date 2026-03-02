@@ -356,7 +356,7 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 
 | 錯誤 | 正確做法 |
 |------|----------|
-| 使用已刪除的 git email (`tien@mochibits.com`) 提交 | 提交前確認 `git config user.email` 匹配 GitHub 帳號 email |
+| 使用已刪除的舊 git email 提交 | 提交前確認 `git config user.email` 匹配 GitHub 帳號 email |
 
 ### Monorepo 架構（本專案特定）
 

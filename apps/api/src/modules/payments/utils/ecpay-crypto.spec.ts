@@ -5,9 +5,9 @@ import {
 } from './ecpay-crypto';
 
 describe('ECPayCrypto', () => {
-  // 綠界測試環境的 HashKey/HashIV
-  const TEST_HASH_KEY = '5294y06JbISpM5x9';
-  const TEST_HASH_IV = 'v77hoKGq4kWxNNIS';
+  // 測試用 HashKey/HashIV（請至 ECPay 官方取得真實測試憑證）
+  const TEST_HASH_KEY = 'TestHashKey12345';
+  const TEST_HASH_IV = 'TestHashIV123456';
 
   let crypto: ECPayCrypto;
 

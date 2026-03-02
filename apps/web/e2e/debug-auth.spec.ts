@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-const PROD_URL = 'https://haude-web.vercel.app'
-const API_URL = 'https://haude-api.onrender.com'
+const PROD_URL = process.env.PLAYWRIGHT_PROD_URL ?? 'http://localhost:5173'
+const API_URL = process.env.PLAYWRIGHT_API_URL ?? 'http://localhost:3001'
 
 test('Debug: Google OAuth cookie flow', async ({ page, context }) => {
   // Capture all API requests/responses

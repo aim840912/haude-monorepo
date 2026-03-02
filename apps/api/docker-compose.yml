@@ -1,5 +1,9 @@
 version: '3.8'
 
+# ⚠️  WARNING: This file is for LOCAL DEVELOPMENT ONLY.
+# Default credentials (POSTGRES_PASSWORD, JWT_SECRET) must be changed
+# via environment variables before any production deployment.
+
 services:
   # PostgreSQL database (for local development)
   postgres:
@@ -7,7 +11,7 @@ services:
     container_name: haude-v2-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: postgres  # ⚠️ Change in production
       POSTGRES_DB: haude_v2
     ports:
       - "5432:5432"
@@ -27,7 +31,7 @@ services:
       - "3001:3001"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/haude_v2?schema=public
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}  # ⚠️ Set JWT_SECRET env var in production
       - JWT_EXPIRES_IN=7d
       - PORT=3001
       - FRONTEND_URL=http://localhost:5173

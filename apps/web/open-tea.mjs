@@ -21,7 +21,7 @@ if (sectionTop > 0) {
 }
 
 await page.waitForTimeout(1000);
-await page.screenshot({ path: '/Users/tienchihcheng/haude-monorepo/screenshots/2026-02-20/tea-spacing-verify.png' });
+await page.screenshot({ path: './screenshots/2026-02-20/tea-spacing-verify.png' });
 console.log('Screenshot saved. Browser stays open for inspection.');
 
 // Keep browser open for user

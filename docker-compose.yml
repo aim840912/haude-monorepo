@@ -12,13 +12,16 @@
 services:
   # ----------------------------------------------------------------------------
   # PostgreSQL 資料庫
+  # ⚠️  WARNING: Default credentials below are for LOCAL DEVELOPMENT ONLY.
+  #    NEVER use these in production. Change POSTGRES_PASSWORD and JWT_SECRET
+  #    via environment variables before any production deployment.
   # ----------------------------------------------------------------------------
   postgres:
     image: postgres:15-alpine
     container_name: haude-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: postgres  # ⚠️ Change in production
       POSTGRES_DB: haude_v2
     ports:
       - "5432:5432"

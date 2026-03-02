@@ -2,7 +2,7 @@
 
 ## 概述
 
-將 Next.js 專案 `/home/aim840912/projects/haude` 的前端內容完整移植到 React + Vite 專案 `/home/aim840912/projects/haude-v2-frontend`。
+將 Next.js 專案 `haude` 的前端內容完整移植到 React + Vite 專案 `haude-v2-frontend`。
 
 **來源**：haude (Next.js 15 + App Router) - 1,200+ 檔案
 **目標**：haude-v2-frontend (React 19 + Vite 7) - 基礎架構已建立

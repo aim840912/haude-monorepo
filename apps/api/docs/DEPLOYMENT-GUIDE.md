@@ -175,7 +175,7 @@ git push origin main
 
 | 欄位 | 值 |
 |------|-----|
-| Name | `haude-v2-backend` |
+| Name | `your-service-name` |
 | Region | `Singapore` |
 | Branch | `main` |
 | Runtime | `Node` |
@@ -204,11 +204,11 @@ git push origin main
 ### 步驟 7：測試
 
 部署完成後，你會得到一個網址如：
-`https://haude-v2-backend.onrender.com`
+`https://your-service-name.onrender.com`
 
 測試健康檢查：
 ```bash
-curl https://haude-v2-backend.onrender.com/health
+curl https://your-service-name.onrender.com/health
 ```
 
 ---
@@ -241,7 +241,7 @@ npm install -g @railway/cli
 railway login
 
 # 在專案目錄初始化
-cd haude-v2-backend
+cd your-service-name
 railway init
 
 # 加入 PostgreSQL
@@ -429,7 +429,7 @@ aws configure
 # 輸入 Access Key ID、Secret Access Key、Region
 
 # 3. 初始化 Elastic Beanstalk
-cd haude-v2-backend
+cd your-service-name
 eb init
 
 # 4. 建立環境並部署

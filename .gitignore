@@ -34,6 +34,14 @@ out/
 .env.production
 .env.test.local
 .env.production.local
+# Glob patterns to ensure ALL nested .env files are ignored (redundant but explicit)
+**/.env
+**/.env.local
+**/.env.development
+**/.env.development.local
+**/.env.production
+**/.env.test.local
+**/.env.production.local
 # Keep example files
 !.env.example
 !.env.*.example
