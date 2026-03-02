@@ -35,10 +35,10 @@ A production-grade tea e-commerce platform built with Next.js 15, NestJS 11, and
 
 <table>
 <tr>
-<td align="center"><strong>613</strong><br/>TypeScript Files</td>
-<td align="center"><strong>19</strong><br/>API Modules</td>
-<td align="center"><strong>27</strong><br/>Prisma Models</td>
-<td align="center"><strong>16</strong><br/>Admin Pages</td>
+<td align="center"><strong>628</strong><br/>TypeScript Files</td>
+<td align="center"><strong>20</strong><br/>API Modules</td>
+<td align="center"><strong>29</strong><br/>Prisma Models</td>
+<td align="center"><strong>17</strong><br/>Admin Pages</td>
 </tr>
 </table>
 
@@ -122,7 +122,7 @@ flowchart TD
     Admin --> API
 
     subgraph Backend
-        API["<b>API Server</b><br/>NestJS 11 · Port 3001<br/>19 Modules · Prisma ORM (27 models)"]
+        API["<b>API Server</b><br/>NestJS 11 · Port 3001<br/>20 Modules · Prisma ORM (29 models)"]
     end
 
     API --> DB["PostgreSQL<br/>Database"]
@@ -265,14 +265,14 @@ haude-monorepo/
 │   │
 │   ├── admin/               # @haude/admin - Admin dashboard (Vite)
 │   │   ├── src/
-│   │   │   ├── pages/       # Admin pages (16)
+│   │   │   ├── pages/       # Admin pages (17)
 │   │   │   ├── components/  # Admin components
 │   │   │   └── services/    # API services
 │   │   └── package.json
 │   │
 │   └── api/                 # @haude/api - Backend API (NestJS 11)
 │       ├── src/
-│       │   ├── modules/     # Feature modules (19)
+│       │   ├── modules/     # Feature modules (20)
 │       │   └── prisma/      # Prisma service
 │       ├── prisma/
 │       │   └── schema.prisma
@@ -401,43 +401,29 @@ pnpm dev
 <details>
 <summary><strong>Environment Variables</strong></summary>
 
-### apps/api/.env
+Copy the example files and fill in your values:
 
-```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/haude"
-
-# JWT
-JWT_SECRET="your-jwt-secret"
-JWT_EXPIRES_IN="7d"
-
-# Server
-PORT=3001
-FRONTEND_URL="http://localhost:5173"
-
-# ECPay
-ECPAY_MERCHANT_ID="your-merchant-id"
-ECPAY_HASH_KEY="your-hash-key"
-ECPAY_HASH_IV="your-hash-iv"
-
-# Supabase (Storage)
-SUPABASE_URL="your-supabase-url"
-SUPABASE_KEY="your-supabase-key"
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.development
 ```
 
-### apps/web/.env.local
+### Key Variables
 
-```env
-# Base URL only (version is managed in lib/api-url.ts)
-NEXT_PUBLIC_API_BASE_URL="http://localhost:3001"
-```
+| App | Variable | Description |
+|-----|----------|-------------|
+| API | `DATABASE_URL` | PostgreSQL connection string |
+| API | `JWT_SECRET` | Secret key for JWT signing |
+| API | `ECPAY_MERCHANT_ID` | ECPay merchant ID |
+| API | `ECPAY_HASH_KEY` | ECPay hash key |
+| API | `ECPAY_HASH_IV` | ECPay hash IV |
+| API | `SUPABASE_URL` | Supabase project URL |
+| API | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
+| Web | `NEXT_PUBLIC_API_BASE_URL` | API server base URL |
+| Admin | `VITE_API_BASE_URL` | API server base URL |
 
-### apps/admin/.env.development
-
-```env
-# Base URL only (version is managed in client.ts)
-VITE_API_BASE_URL="http://localhost:3001"
-```
+> See each app's `.env.example` for the complete list of required variables.
 
 </details>
 

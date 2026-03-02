@@ -1,6 +1,14 @@
 {
-  "name": "haude-v2",
+  "name": "haude-monorepo",
   "version": "1.0.0",
+  "description": "Full-stack tea e-commerce platform built with Next.js 15, NestJS 11, and PostgreSQL",
+  "author": "Tien-Chih Cheng",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aim840912/haude-monorepo.git"
+  },
+  "homepage": "https://haude-web.vercel.app",
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
