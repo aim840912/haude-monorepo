@@ -4,7 +4,7 @@
   "description": "Haude Tea Shop Backend API",
   "author": "",
   "private": true,
-  "license": "MIT",
+  "license": "CC-BY-NC-4.0",
   "scripts": {
     "postinstall": "[ -z \"$DATABASE_URL\" ] || prisma generate",
     "dev": "nest start --watch",

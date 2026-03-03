@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Full-stack tea e-commerce platform built with Next.js 15, NestJS 11, and PostgreSQL",
   "author": "Tien-Chih Cheng",
-  "license": "MIT",
+  "license": "CC-BY-NC-4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/aim840912/haude-monorepo.git"
