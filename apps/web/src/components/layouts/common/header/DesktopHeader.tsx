@@ -115,10 +115,10 @@ export function DesktopHeader() {
             )}
           </Link>
 
-          {/* 管理後台連結 - 僅 ADMIN 可見 */}
-          {user?.role === 'ADMIN' && (
+          {/* 管理後台連結 - 僅 ADMIN 可見，URL 未設定時隱藏避免 href="#" */}
+          {user?.role === 'ADMIN' && process.env.NEXT_PUBLIC_ADMIN_URL && (
             <a
-              href={process.env.NEXT_PUBLIC_ADMIN_URL ?? '#'}
+              href={process.env.NEXT_PUBLIC_ADMIN_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-3 h-10 text-[#5d4037] hover:text-green-600 hover:bg-gray-100 transition-colors duration-200 rounded-md"
