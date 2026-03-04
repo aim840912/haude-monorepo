@@ -5,7 +5,6 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  MinLength,
 } from 'class-validator';
 
 export class UpdateUserDto {
@@ -18,12 +17,6 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEmail()
   email?: string;
-
-  @ApiPropertyOptional({ example: 'newpassword123' })
-  @IsOptional()
-  @IsString()
-  @MinLength(6)
-  password?: string;
 
   @ApiPropertyOptional({
     example: 'USER',
