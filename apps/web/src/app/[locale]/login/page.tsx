@@ -16,7 +16,10 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const from = searchParams.get('from') || '/'
+  const rawFrom = searchParams.get('from') || '/'
+  // Validate redirect target is a relative path to prevent open redirect attacks.
+  // Rejects absolute URLs (https://evil.com) and protocol-relative URLs (//evil.com).
+  const from = rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

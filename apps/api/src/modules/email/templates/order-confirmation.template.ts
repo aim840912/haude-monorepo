@@ -9,6 +9,7 @@ import {
   BRAND_COLORS,
   formatCurrency,
   getInfoCard,
+  escapeHtml,
 } from './email-base.template';
 import type { OrderEmailData } from '../types';
 import { getPaymentMethodText } from '../types';
@@ -25,7 +26,7 @@ export function getOrderConfirmationTemplate(
   data: OrderConfirmationTemplateData,
 ): string {
   const { order, userName } = data;
-  const name = userName || '顧客';
+  const name = escapeHtml(userName || '顧客');
   const paymentMethodText = getPaymentMethodText(order.paymentMethod);
 
   // 建立商品明細 HTML
@@ -33,7 +34,7 @@ export function getOrderConfirmationTemplate(
     .map(
       (item) => `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid ${BRAND_COLORS.border};">${item.name}</td>
+          <td style="padding: 12px; border-bottom: 1px solid ${BRAND_COLORS.border};">${escapeHtml(item.name)}</td>
           <td style="padding: 12px; border-bottom: 1px solid ${BRAND_COLORS.border}; text-align: center;">${item.quantity}</td>
           <td style="padding: 12px; border-bottom: 1px solid ${BRAND_COLORS.border}; text-align: right;">${formatCurrency(item.unitPrice)}</td>
           <td style="padding: 12px; border-bottom: 1px solid ${BRAND_COLORS.border}; text-align: right;">${formatCurrency(item.subtotal)}</td>
@@ -103,9 +104,9 @@ export function getOrderConfirmationTemplate(
       <!-- Shipping Address -->
       ${getInfoCard(`
         <h3 style="margin: 0 0 15px; color: ${BRAND_COLORS.text}; font-size: 16px;">收件資訊</h3>
-        <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>收件人：</strong>${order.shippingAddress.name}</p>
-        <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>電話：</strong>${order.shippingAddress.phone}</p>
-        <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>地址：</strong>${order.shippingAddress.address}</p>
+        <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>收件人：</strong>${escapeHtml(order.shippingAddress.name)}</p>
+        <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>電話：</strong>${escapeHtml(order.shippingAddress.phone)}</p>
+        <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>地址：</strong>${escapeHtml(order.shippingAddress.address)}</p>
         <p style="margin: 5px 0; color: ${BRAND_COLORS.textMuted};"><strong>付款方式：</strong>${paymentMethodText}</p>
       `)}
 

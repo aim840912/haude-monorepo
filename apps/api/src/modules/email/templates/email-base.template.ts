@@ -4,6 +4,19 @@
  * 提供統一的郵件基礎結構和樣式
  */
 
+/**
+ * Escape HTML special characters in user-controlled strings to prevent HTML injection.
+ * Must be applied to all user-supplied data inserted into email templates.
+ */
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export interface EmailBaseOptions {
   content: string;
   title?: string;

@@ -4,7 +4,7 @@
  * 密碼重設郵件模板
  */
 
-import { wrapInEmailTemplate, BRAND_COLORS } from './email-base.template';
+import { wrapInEmailTemplate, BRAND_COLORS, escapeHtml } from './email-base.template';
 
 export interface PasswordResetTemplateData {
   resetUrl: string;
@@ -18,7 +18,7 @@ export function getPasswordResetTemplate(
   data: PasswordResetTemplateData,
 ): string {
   const { resetUrl, userName } = data;
-  const name = userName || '用戶';
+  const name = escapeHtml(userName || '用戶');
 
   const content = `
     <div style="color: ${BRAND_COLORS.text};">
