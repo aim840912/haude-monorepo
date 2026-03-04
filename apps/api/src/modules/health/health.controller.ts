@@ -25,8 +25,11 @@ export class HealthController {
     } catch (error) {
       health.status = 'degraded';
       health.database = 'disconnected';
-      health.databaseError =
-        error instanceof Error ? error.message : 'Unknown error';
+      // Log error server-side only — never expose DB details to clients
+      console.error(
+        'Health check DB error:',
+        error instanceof Error ? error.message : error,
+      );
     }
 
     return health;

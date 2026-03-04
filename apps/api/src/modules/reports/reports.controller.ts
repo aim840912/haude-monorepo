@@ -1,6 +1,9 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 import { ReportsService } from './reports.service';
 import {
   ReportFiltersDto,
@@ -10,7 +13,8 @@ import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 @ApiTags('admin/reports')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.STAFF, Role.ADMIN)
 @Controller('admin/reports')
 @NoCache()
 export class ReportsController {
