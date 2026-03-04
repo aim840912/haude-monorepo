@@ -223,6 +223,9 @@ export class PasswordAuthService {
       }),
     ]);
 
+    // Revoke all existing sessions so stolen tokens can't be reused after password reset
+    await this.jwtTokenService.revokeAllUserTokens(resetToken.userId);
+
     this.logger.log(`密碼已重設: ${resetToken.user.email}`);
     return { message: '密碼已成功重設，請使用新密碼登入' };
   }

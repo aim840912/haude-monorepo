@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { setCsrfToken } from '../services/api'
+import { api, setCsrfToken } from '../services/api'
 import logger from '../lib/logger'
 
 /**
@@ -36,21 +36,22 @@ export function AuthCallbackPage() {
           throw new Error('缺少認證資訊')
         }
 
-        // Parse user info
-        const user = JSON.parse(decodeURIComponent(userJson))
-
-        // Double-check ADMIN role (belt-and-suspenders)
-        if (user.role !== 'ADMIN') {
-          throw new Error('您沒有管理員權限')
-        }
-
-        // Save to authStore (tokens already in httpOnly cookies)
-        setAuth(user)
-
-        // Store CSRF Token (needed for CSRF protection)
+        // Store CSRF Token before API call (not required for GET, but ready for later)
         if (csrfTokenValue) {
           setCsrfToken(csrfTokenValue)
         }
+
+        // Verify session is actually valid: httpOnly cookie must be accepted by server.
+        // This prevents spoofing via crafted /auth/callback#user={fake} URLs.
+        const { data: verifiedUser } = await api.get('/auth/me')
+
+        // Authoritative role check against server-verified data (not the URL fragment)
+        if (verifiedUser.role !== 'ADMIN') {
+          throw new Error('您沒有管理員權限')
+        }
+
+        // Save server-verified user to authStore
+        setAuth(verifiedUser)
 
         // Navigate to home
         navigate('/')

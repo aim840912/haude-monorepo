@@ -121,8 +121,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // 3. 處理未知錯誤
-    const message =
-      exception instanceof Error ? exception.message : '伺服器發生未預期的錯誤';
+    // In production, hide internal details (Prisma errors, file paths, etc.) from clients.
+    // The full message is already logged above via this.logger.error().
+    const isProd = process.env.NODE_ENV === 'production';
+    const message = isProd
+      ? '伺服器發生未預期的錯誤'
+      : exception instanceof Error
+        ? exception.message
+        : '伺服器發生未預期的錯誤';
 
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,

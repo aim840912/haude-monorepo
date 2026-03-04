@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
+import { api } from '@/services/api'
 import logger from '@/lib/logger'
 
 /**
@@ -31,11 +32,14 @@ export default function AuthCallbackPage() {
           throw new Error('缺少認證資訊')
         }
 
-        // Parse user info
+        // Parse user info from URL fragment (unverified — set temporarily so cookies work)
         const user = JSON.parse(decodeURIComponent(userJson))
-
-        // Save to authStore (tokens already in httpOnly cookies)
         setAuth(user, csrfToken ?? undefined)
+
+        // Verify session is actually valid: httpOnly cookie must be accepted by server.
+        // This prevents spoofing via crafted /auth/callback#user={fake} URLs.
+        const { data: verifiedUser } = await api.get('/auth/me')
+        setAuth(verifiedUser, csrfToken ?? undefined)
 
         // Merge local cart to backend (if any)
         try {
