@@ -31,6 +31,7 @@ import { ErrorBoundary } from '@/components/errors'
 import { SystemStatusProvider, SystemBanner } from '@/components/system'
 import { WebVitals } from '@/components/analytics/WebVitals'
 import { AgentationOverlay } from '@/components/dev/AgentationOverlay'
+import { AISupportWidget } from '@/components/integrations'
 import '../globals.css'
 
 // 靜態生成所有語系的頁面
@@ -71,6 +72,7 @@ export default async function LocaleLayout({
                     {children}
                   </main>
                   <Footer />
+                  <AISupportWidget />
                 </ToastProvider>
               </ErrorBoundary>
             </SystemStatusProvider>
