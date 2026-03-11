@@ -1,0 +1,21 @@
+# .gitleaksignore
+# Verified false positives — all are public test credentials or documentation examples.
+# Reviewed: 2026-03-12
+
+# ECPay official public sandbox HashKey (5294y06JbISpM5x9)
+# Published by ECPay in their developer docs; only works against ECPay staging env.
+86e5a56fc7db27512d3ce7b267afb7b3a051ae04:apps/api/src/modules/payments/utils/ecpay-crypto.spec.ts:generic-api-key:9
+86e5a56fc7db27512d3ce7b267afb7b3a051ae04:apps/api/src/modules/payments/payments.service.spec.ts:generic-api-key:14
+8579cf9d2e7f6c67fa9f0b6761f6a848c60353de:apps/api/.env.example:generic-api-key:26
+
+# NewebPay sample HashKey in historical .env.example (pwFHCqoQZGmho4w6)
+# Example placeholder; replaced with 'your-hash-key' in subsequent commit.
+7dd5a0c87e576e66983e1a1b9f1dc7f719a2b645:apps/api/.env.example:generic-api-key:25
+
+# NestJS boilerplate README badge URL token (abc123def456)
+# File deleted in later commits; value was part of Coveralls badge template.
+7dd5a0c87e576e66983e1a1b9f1dc7f719a2b645:apps/api/README.md:generic-api-key:5
+
+# Documentation counter-example in DEPLOYMENT-ESSENTIALS.md (sk-secret-key-12345)
+# This is a "what NOT to do" example in a security guide, not a real key.
+7dd5a0c87e576e66983e1a1b9f1dc7f719a2b645:apps/api/docs/DEPLOYMENT-ESSENTIALS.md:generic-api-key:619
