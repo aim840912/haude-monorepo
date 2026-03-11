@@ -372,6 +372,20 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 | 直接 `pnpm dev` 不處理 EMFILE | 用 `[ -f ~/.zshrc ] && source ~/.zshrc` 條件式設定 `ulimit`（跨平台相容） |
 | 只啟動 web 不啟動 API | 本專案前後端耦合，預覽必須同時啟動 web(:5173) + API(:3001) |
 
+### E2E 測試（本專案特定）
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| `page.goto()` hard navigation 導致 ProtectedRoute 重導到 `/login` | Zustand persist hydration 競態：`useEffect` 在 localStorage hydration 前觸發。解法：先用 UI 表單登入（soft navigate），再點 navbar 連結導覽，保持 React tree 不卸載 |
+| 以 `addCookies()` / `page.evaluate()` / `addInitScript()` 注入認證狀態 | 全部失效（Zustand 預設 state 覆蓋）。唯一可靠方案：透過登入表單 → client-side navigation |
+| Playwright 懶載入圖片截圖空白 | 先 `scrollTo(0, document.body.scrollHeight)` 觸發載入，再回頂部截圖 |
+
+### Next.js 設定（本專案特定）
+
+| 錯誤 | 正確做法 |
+|------|----------|
+| Google OAuth 頭像觸發 Error Boundary（非圖片破碎） | `next.config.ts` 的 `remotePatterns` 必須加入 `lh3.googleusercontent.com`（commit `e30014c`） |
+
 ---
 
 ## 相關文件
