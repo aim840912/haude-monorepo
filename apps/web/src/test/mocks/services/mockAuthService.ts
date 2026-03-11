@@ -7,16 +7,16 @@ import type { User } from '@/stores/authStore'
 const MOCK_USERS: (User & { password: string })[] = [
   {
     id: '1',
-    email: 'demo@haude.com',
-    password: 'demo123',
+    email: 'user@test.local',
+    password: 'mock-password',
     name: '測試用戶',
     role: 'USER',
     createdAt: '2024-01-01T00:00:00Z',
   },
   {
     id: '2',
-    email: 'admin@haude.com',
-    password: 'admin123',
+    email: 'admin@test.local',
+    password: 'mock-password',
     name: '管理員',
     role: 'ADMIN',
     createdAt: '2024-01-01T00:00:00Z',

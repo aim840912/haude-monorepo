@@ -25,7 +25,6 @@ test.describe('認證流程', () => {
   test('空白表單應顯示驗證錯誤', async ({ page }) => {
     await page.goto('/zh-TW/login')
 
-    // 清空預填的開發環境資料（如果有）
     const emailInput = page.getByLabel('電子郵件')
     const passwordInput = page.getByLabel('密碼')
 
@@ -63,9 +62,9 @@ test.describe('認證流程', () => {
 
     await page.goto('/zh-TW/login')
 
-    // 使用開發環境測試帳號
-    await page.getByLabel('電子郵件').fill('demo@haude.com')
-    await page.getByLabel('密碼').fill('demo123')
+    // 使用明確假帳號（此測試有容錯邏輯，credentials 不需真實可用）
+    await page.getByLabel('電子郵件').fill('test@example.com')
+    await page.getByLabel('密碼').fill('TestPassword123!')
 
     // 點擊登入按鈕
     await page.getByRole('button', { name: /登入/i }).click()
