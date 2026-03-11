@@ -43,15 +43,16 @@ export function AuthCallbackPage() {
 
         // Verify session is actually valid: httpOnly cookie must be accepted by server.
         // This prevents spoofing via crafted /auth/callback#user={fake} URLs.
-        const { data: verifiedUser } = await api.get('/auth/me')
+        const { data } = await api.get('/auth/me')
 
+        // API returns { user: { id, email, name, role, ... } } — must unwrap .user
         // Authoritative role check against server-verified data (not the URL fragment)
-        if (verifiedUser.role !== 'ADMIN') {
+        if (data.user.role !== 'ADMIN') {
           throw new Error('您沒有管理員權限')
         }
 
         // Save server-verified user to authStore
-        setAuth(verifiedUser)
+        setAuth(data.user)
 
         // Navigate to home
         navigate('/')
