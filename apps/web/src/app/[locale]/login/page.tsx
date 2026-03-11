@@ -8,9 +8,8 @@ import { API_URL } from '@/lib/api-url'
 import { Mail, Lock, LogIn } from 'lucide-react'
 
 function LoginForm() {
-  const isDev = process.env.NODE_ENV === 'development'
-  const [email, setEmail] = useState(isDev ? 'demo@haude.com' : '')
-  const [password, setPassword] = useState(isDev ? 'demo123' : '')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const { login, isLoading, error } = useAuth()
   const router = useRouter()
@@ -25,16 +24,6 @@ function LoginForm() {
     e.preventDefault()
     try {
       await login(email, password, rememberMe)
-      router.push(from)
-    } catch {
-      // Error is handled by useAuth hook
-    }
-  }
-
-  // 開發環境快速登入
-  const handleQuickLogin = async (quickEmail: string, quickPassword: string) => {
-    try {
-      await login(quickEmail, quickPassword, false)
       router.push(from)
     } catch {
       // Error is handled by useAuth hook
@@ -181,30 +170,6 @@ function LoginForm() {
             </a>
           </form>
 
-          {/* 開發環境快速登入按鈕 */}
-          {isDev && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-500 text-center mb-3">開發環境快速登入</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('demo@haude.com', 'demo123')}
-                  disabled={isLoading}
-                  className="flex-1 py-2 px-3 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  一般用戶
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('admin@haude.com', 'admin123')}
-                  disabled={isLoading}
-                  className="flex-1 py-2 px-3 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  管理員
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         <p className="mt-4 text-center text-sm text-text-tertiary">

@@ -157,7 +157,7 @@ temp/
 # ================================
 # Local analysis & docs (not for git)
 # ================================
-PROJECT_ANALYSIS.md
+PROJECT-ANALYSIS.md
 docs/*
 !docs/screenshots/
 TESTpic/
