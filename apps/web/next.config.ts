@@ -101,6 +101,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.supabase.in', // Supabase Storage (備用域名)
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // Google OAuth 頭像
+      },
     ],
     // 允許 SVG 圖片（placehold.co 返回 SVG 格式）
     dangerouslyAllowSVG: true,
