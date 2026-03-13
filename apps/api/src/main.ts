@@ -1,6 +1,5 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -63,7 +62,7 @@ async function bootstrap() {
 
   // API 版本控制 - 全域前綴 /api/v1
   app.setGlobalPrefix('api/v1', {
-    exclude: ['health'], // 健康檢查保持根路徑
+    exclude: ['health', 'health/ready'], // 健康檢查保持根路徑
   });
 
   // Global validation pipe
@@ -86,7 +85,9 @@ async function bootstrap() {
   app.useGlobalInterceptors(new CacheHeadersInterceptor(reflector));
 
   // Swagger API documentation - 僅在 development 環境啟用
+  // 動態 import 避免在 production bundle 載入 @nestjs/swagger
   if (process.env.NODE_ENV === 'development') {
+    const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
     const config = new DocumentBuilder()
       .setTitle('Haude V2 API')
       .setDescription('The Haude V2 API documentation')

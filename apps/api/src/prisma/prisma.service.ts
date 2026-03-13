@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-  OnModuleDestroy,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
@@ -18,7 +13,7 @@ interface QueryEvent {
 @Injectable()
 export class PrismaService
   extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
+  implements OnModuleDestroy
 {
   private readonly logger = new Logger(PrismaService.name);
   private readonly SLOW_QUERY_THRESHOLD = 100; // 100ms
@@ -50,11 +45,8 @@ export class PrismaService
     this.$on('error' as never, (e: { message: string }) => {
       this.logger.error(`Prisma Error: ${e.message}`);
     });
-  }
 
-  async onModuleInit() {
-    await this.$connect();
-    this.logger.log('Prisma connected to database');
+    this.logger.log('Prisma service created (lazy connect mode)');
   }
 
   async onModuleDestroy() {
