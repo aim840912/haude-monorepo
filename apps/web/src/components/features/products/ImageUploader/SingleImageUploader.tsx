@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react'
-import Image from 'next/image'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { Upload, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'

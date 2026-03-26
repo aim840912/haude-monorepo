@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Crown, Award, Star } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'

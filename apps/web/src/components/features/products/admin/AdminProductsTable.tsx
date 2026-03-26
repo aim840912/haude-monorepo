@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import Image from 'next/image'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { Pencil, Trash2, ToggleLeft, ToggleRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'

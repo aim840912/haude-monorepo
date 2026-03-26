@@ -305,8 +305,8 @@ describe('ProductEditModal', () => {
       })
 
       const textboxes = screen.getAllByRole('textbox')
-      fireEvent.change(textboxes[2], { target: { value: '這是產品描述' } })
-      expect(textboxes[2]).toHaveValue('這是產品描述')
+      fireEvent.change(textboxes[1], { target: { value: '這是產品描述' } })
+      expect(textboxes[1]).toHaveValue('這是產品描述')
     })
   })
 

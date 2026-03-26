@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import Image from 'next/image'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { X, GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'

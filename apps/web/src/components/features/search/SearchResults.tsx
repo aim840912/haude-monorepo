@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { Search, SlidersHorizontal, Loader2, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'

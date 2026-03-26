@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { SafeImage } from '@/components/ui/SafeImage'
 import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight } from 'lucide-react'
 import { useOrders } from '@/hooks/useOrders'
