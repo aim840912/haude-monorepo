@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Search, Edit, Trash2, RefreshCw } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
 import { ProductEditModal } from '../components/ProductEditModal'
 import { ConfirmDialog } from '../components/ConfirmDialog'
-import { getProductImageUrl } from '../config/placeholder.config'
+import { getProductImageUrl, getProductPlaceholder } from '../config/placeholder.config'
 import type { Product } from '@haude/types'
 
 export function ProductsPage() {
@@ -23,6 +23,12 @@ export function ProductsPage() {
       setEditingProduct(draftProduct)
     }
   }
+
+  // 從已載入的產品中提取唯一分類（含草稿/下架，過濾空值後排序）
+  const categories = useMemo(() => {
+    const unique = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[]
+    return unique.sort()
+  }, [products])
 
   // 過濾產品
   const filteredProducts = products.filter((product) =>
@@ -138,6 +144,11 @@ export function ProductsPage() {
                       src={imageUrl}
                       alt={product.name}
                       className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement
+                        const fallback = getProductPlaceholder(product.category)
+                        if (img.src !== fallback) img.src = fallback
+                      }}
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -212,6 +223,7 @@ export function ProductsPage() {
           }}
           onUpdate={updateProduct}
           onDelete={deleteProduct}
+          categories={categories}
         />
       )}
 
