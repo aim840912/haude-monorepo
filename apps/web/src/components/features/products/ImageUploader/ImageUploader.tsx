@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { X, GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UploadArea } from './UploadArea'
@@ -132,7 +133,7 @@ export function ImageUploader({
                 key={image.id}
                 className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
               >
-                <Image
+                <SafeImage
                   src={image.preview || image.storageUrl || image.url || ''}
                   alt={image.alt || `圖片 ${index + 1}`}
                   fill

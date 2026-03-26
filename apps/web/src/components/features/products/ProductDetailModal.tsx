@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
@@ -139,7 +140,7 @@ export const ProductDetailModal = React.memo<ProductDetailModalProps>(
                           aria-label={`切換到圖片 ${index + 1}，共 ${images.length} 張`}
                           aria-pressed={currentImageIndex === index}
                         >
-                          <Image
+                          <SafeImage
                             src={image.storageUrl}
                             alt={`預覽 ${index + 1}`}
                             fill

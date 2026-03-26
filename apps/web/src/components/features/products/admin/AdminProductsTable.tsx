@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { Pencil, Trash2, ToggleLeft, ToggleRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useProducts, useCategories } from '@/hooks/useProducts'
@@ -169,7 +170,7 @@ export function AdminProductsTable({
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative">
                           {product.images[0] ? (
-                            <Image
+                            <SafeImage
                               src={product.images[0].storageUrl}
                               alt={product.name}
                               fill

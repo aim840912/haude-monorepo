@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { Upload, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SingleImageUploaderProps } from './types'
@@ -99,7 +100,7 @@ export function SingleImageUploader({
       {preview ? (
         // 有圖片時顯示預覽
         <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
-          <Image src={preview} alt="預覽" fill className="object-cover" sizes="100vw" />
+          <SafeImage src={preview} alt="預覽" fill className="object-cover" sizes="100vw" />
 
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">

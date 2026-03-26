@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -101,7 +102,7 @@ export function ImageCarousel({
     >
       {/* 主圖容器 */}
       <div className="aspect-square bg-white rounded-xl overflow-hidden shadow-lg relative">
-        <Image
+        <SafeImage
           src={images[currentIndex]}
           alt={`${productName}${hasMultipleImages ? ` - ${currentIndex + 1}` : ''}`}
           fill
@@ -216,7 +217,7 @@ export function ImageCarousel({
                 )}
                 aria-label={`檢視第 ${index + 1} 張圖片`}
               >
-                <Image
+                <SafeImage
                   src={image}
                   alt={`${productName} 縮圖 ${index + 1}`}
                   fill

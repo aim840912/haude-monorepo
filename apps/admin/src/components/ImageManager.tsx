@@ -1,6 +1,7 @@
 import { useState, useCallback, useId } from 'react'
 import { Upload, X, Loader2, GripVertical, Image as ImageIcon, RotateCcw } from 'lucide-react'
 import logger from '../lib/logger'
+import { getProductPlaceholder } from '../config/placeholder.config'
 
 // Common image shape — all admin image types satisfy this
 export interface ManagedImage {
@@ -237,6 +238,11 @@ export function ImageManager({
                     alt={image.altText || `${label} ${index + 1}`}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement
+                      const fallback = getProductPlaceholder()
+                      if (img.src !== fallback) img.src = fallback
+                    }}
                   />
                   {/* Sort badge */}
                   <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center gap-1">

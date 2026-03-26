@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { Search, SlidersHorizontal, Loader2, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSearch } from '@/hooks/useSearch'
@@ -49,7 +50,7 @@ export function SearchResults({ query, className }: SearchResultsProps) {
           {/* 圖片 */}
           {result.image && (
             <div className="relative flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
-              <Image
+              <SafeImage
                 src={result.image}
                 alt={result.title}
                 fill
