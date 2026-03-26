@@ -10,6 +10,7 @@ export interface CreateProductData {
   category?: string
   stock?: number
   isActive?: boolean
+  priceUnit?: string
 }
 
 export interface UpdateProductData {
@@ -20,6 +21,7 @@ export interface UpdateProductData {
   stock?: number
   isActive?: boolean
   isDraft?: boolean
+  priceUnit?: string
 }
 
 interface UseProductsReturn {
@@ -83,6 +85,7 @@ export function useProducts(): UseProductsReturn {
         price: data.price,
         category: data.category,
         inventory: data.stock,
+        priceUnit: data.priceUnit || undefined,
       })
       await fetchProducts() // 重新取得列表
       return true

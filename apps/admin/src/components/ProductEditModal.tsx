@@ -5,6 +5,7 @@ import type { CreateProductData, UpdateProductData } from '../hooks/useProducts'
 import { ImageManager } from './ImageManager'
 import { productImagesApi, type ProductImage } from '../services/api'
 import logger from '../lib/logger'
+import { Combobox } from './ui/Combobox'
 
 interface ProductEditModalProps {
   product: Product | null  // null = 新增模式，isDraft=true = 草稿模式
@@ -14,6 +15,7 @@ interface ProductEditModalProps {
   onCreate?: (data: CreateProductData) => Promise<boolean>
   onUpdate?: (id: string, data: UpdateProductData) => Promise<boolean>
   onDelete?: (id: string) => Promise<{ success: boolean; error?: string }>
+  categories?: string[]
 }
 
 export function ProductEditModal({
@@ -24,6 +26,7 @@ export function ProductEditModal({
   onCreate,
   onUpdate,
   onDelete,
+  categories = [],
 }: ProductEditModalProps) {
   const isEditMode = product !== null
   const isDraftMode = product?.isDraft === true
@@ -35,6 +38,7 @@ export function ProductEditModal({
     price: 0,
     stock: 0,
     isActive: true,
+    priceUnit: '',
   })
   const [error, setError] = useState<string | null>(null)
   const [images, setImages] = useState<ProductImage[]>([])
@@ -70,6 +74,7 @@ export function ProductEditModal({
         price: product.price || 0,
         stock: product.stock ?? 0,
         isActive: product.isActive ?? true,
+        priceUnit: product.priceUnit || '',
       })
       setError(null)
       setNewlyUploadedIds([])
@@ -99,6 +104,7 @@ export function ProductEditModal({
         price: 0,
         stock: 0,
         isActive: true,
+        priceUnit: '',
       })
       setError(null)
       setImages([])
@@ -220,6 +226,7 @@ export function ProductEditModal({
         price: formData.price,
         stock: formData.stock,
         isActive: formData.isActive,
+        priceUnit: formData.priceUnit || undefined,
         // 草稿模式：提交時設置 isDraft: false
         ...(isDraftMode && { isDraft: false }),
       })
@@ -232,6 +239,7 @@ export function ProductEditModal({
         category: formData.category.trim(),
         stock: formData.stock,
         isActive: formData.isActive,
+        priceUnit: formData.priceUnit || undefined,
       })
     }
 
@@ -301,17 +309,17 @@ export function ProductEditModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               分類
             </label>
-            <input
-              type="text"
+            <Combobox
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              onChange={(value) => setFormData({ ...formData, category: value })}
+              options={categories}
+              placeholder="選擇或輸入分類"
               disabled={isLoading}
             />
           </div>
 
-          {/* 價格與庫存 */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 價格、單位與庫存 */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 價格 (NT$) <span className="text-red-500">*</span>
@@ -324,6 +332,24 @@ export function ProductEditModal({
                 min="0"
                 disabled={isLoading}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                單位
+              </label>
+              <select
+                value={formData.priceUnit}
+                onChange={(e) => setFormData({ ...formData, priceUnit: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                disabled={isLoading}
+              >
+                <option value="">無</option>
+                <option value="斤">斤</option>
+                <option value="盒">盒</option>
+                <option value="罐">罐</option>
+                <option value="包">包</option>
+                <option value="瓶">瓶</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

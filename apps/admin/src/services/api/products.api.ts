@@ -13,6 +13,7 @@ export const productsApi = {
     price: number
     category?: string
     inventory?: number
+    priceUnit?: string
   }) => api.post('/admin/products', data),
   update: (
     id: string,
@@ -24,6 +25,7 @@ export const productsApi = {
       stock?: number
       isActive?: boolean
       isDraft?: boolean
+      priceUnit?: string
     }
   ) => api.put(`/products/${id}`, data),
   delete: (id: string) => api.delete(`/products/${id}`),
