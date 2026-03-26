@@ -286,36 +286,4 @@ describe('AuthService', () => {
     });
   });
 
-  describe('findFirstAdmin', () => {
-    it('應查詢第一個活躍的管理員', async () => {
-      const admin = createMockUser({ role: 'ADMIN' });
-      mockPrismaService.user.findFirst.mockResolvedValue(admin);
-
-      const result = await service.findFirstAdmin();
-
-      expect(mockPrismaService.user.findFirst).toHaveBeenCalledWith({
-        where: { role: 'ADMIN', isActive: true },
-      });
-      expect(result).toBe(admin);
-    });
-  });
-
-  describe('createDevAdmin', () => {
-    it('應建立開發用管理員帳號', async () => {
-      const admin = createMockUser({ role: 'ADMIN' });
-      mockPrismaService.user.create.mockResolvedValue(admin);
-
-      const result = await service.createDevAdmin('admin@test.com', 'Admin');
-
-      expect(mockPrismaService.user.create).toHaveBeenCalledWith({
-        data: {
-          email: 'admin@test.com',
-          name: 'Admin',
-          role: 'ADMIN',
-          isActive: true,
-        },
-      });
-      expect(result).toBe(admin);
-    });
-  });
 });
