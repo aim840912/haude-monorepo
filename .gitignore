@@ -153,6 +153,8 @@ temp/
 .claude-mem/
 .claude/plugins/
 .claude/settings.local.json
+.claude/preview.config.md
+.claude/test.config.md
 
 # ================================
 # Local analysis & docs (not for git)
