@@ -49,8 +49,8 @@ export default function AuthCallbackPage() {
           logger.warn('購物車合併失敗')
         }
 
-        // Navigate to home
-        router.push('/')
+        // Navigate to home — replace to keep /auth/callback out of history
+        router.replace('/')
       } catch (err) {
         logger.error('Google 登入處理失敗', { error: err })
         setError(err instanceof Error ? err.message : '登入失敗')

@@ -24,7 +24,7 @@ export default function SecurityPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=/account/security')
+      router.replace('/login?redirect=/account/security')
       return
     }
 

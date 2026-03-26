@@ -11,7 +11,7 @@ export function LoginPage() {
   // 如果已登入且是管理員，導向首頁
   useEffect(() => {
     if (isHydrated && isAuthenticated && isAdmin) {
-      navigate('/')
+      navigate('/', { replace: true })
     }
   }, [isHydrated, isAuthenticated, isAdmin, navigate])
 

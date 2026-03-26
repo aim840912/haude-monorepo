@@ -94,7 +94,7 @@ export default function PointsHistoryPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=/account/membership/points')
+      router.replace('/login?redirect=/account/membership/points')
     }
   }, [isAuthenticated, router])
 

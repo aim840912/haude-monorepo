@@ -123,15 +123,24 @@ export class AuthService {
 
   // === Dev helpers ===
 
-  async findFirstAdmin() {
-    return this.prisma.user.findFirst({
-      where: { role: 'ADMIN', isActive: true },
-    });
-  }
-
-  async createDevAdmin(email: string, name: string) {
+  async findOrCreateDevUser(role: 'USER' | 'VIP' | 'STAFF' | 'ADMIN') {
+    const emailMap = {
+      USER: 'dev-user@haude.tw',
+      VIP: 'dev-vip@haude.tw',
+      STAFF: 'dev-staff@haude.tw',
+      ADMIN: 'dev-admin@haude.tw',
+    };
+    const nameMap = {
+      USER: 'Dev User',
+      VIP: 'Dev VIP',
+      STAFF: 'Dev Staff',
+      ADMIN: 'Dev Admin',
+    };
+    const email = emailMap[role];
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) return existing;
     return this.prisma.user.create({
-      data: { email, name, role: 'ADMIN', isActive: true },
+      data: { email, name: nameMap[role], role, isActive: true },
     });
   }
 }

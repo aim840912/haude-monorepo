@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight } from 'lucide-react'
 import { useOrders } from '@/hooks/useOrders'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -113,7 +114,7 @@ function OrdersContent() {
                         <div key={item.id} className="flex items-center gap-4">
                           {item.productImage ? (
                             <div className="relative w-16 h-16 flex-shrink-0">
-                              <Image
+                              <SafeImage
                                 src={item.productImage}
                                 alt={item.productName}
                                 fill

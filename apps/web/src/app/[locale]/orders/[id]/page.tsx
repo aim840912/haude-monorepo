@@ -2,6 +2,7 @@
 
 import { use, useState } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -267,7 +268,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
               >
                 {item.productImage ? (
                   <div className="w-20 h-20 rounded-lg overflow-hidden relative flex-shrink-0">
-                    <Image
+                    <SafeImage
                       src={item.productImage}
                       alt={item.productName}
                       fill

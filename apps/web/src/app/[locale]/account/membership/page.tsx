@@ -57,7 +57,7 @@ export default function MembershipPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=/account/membership')
+      router.replace('/login?redirect=/account/membership')
     }
   }, [isAuthenticated, router])
 

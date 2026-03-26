@@ -100,7 +100,7 @@ export function useApiError() {
             if (shouldShowToast) {
               toast.warning('登入已過期', '請重新登入以繼續操作')
             }
-            router.push('/login')
+            router.replace('/login')
             handled = true
             break
 
@@ -109,7 +109,7 @@ export function useApiError() {
             if (shouldShowToast) {
               toast.error('帳號已停用', '請聯繫客服了解詳情')
             }
-            router.push('/login')
+            router.replace('/login')
             handled = true
             break
 

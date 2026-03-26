@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,7 +11,7 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const { login, isLoading, error } = useAuth()
+  const { login, isLoading, error, isAuthenticated } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -20,11 +20,18 @@ function LoginForm() {
   // Rejects absolute URLs (https://evil.com) and protocol-relative URLs (//evil.com).
   const from = rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/'
 
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace(from)
+    }
+  }, [isLoading, isAuthenticated, router, from])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       await login(email, password, rememberMe)
-      router.push(from)
+      router.replace(from)
     } catch {
       // Error is handled by useAuth hook
     }
@@ -168,6 +175,31 @@ function LoginForm() {
               </svg>
               <span className="text-gray-700 font-medium">使用 Google 登入</span>
             </a>
+
+            {/* Dev Login — development only */}
+            {process.env.NODE_ENV === 'development' && (
+              <>
+                <div className="relative mt-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-dashed border-orange-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white px-2 text-orange-400 font-mono">DEV ONLY</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {(['USER', 'VIP', 'STAFF', 'ADMIN'] as const).map((role) => (
+                    <a
+                      key={role}
+                      href={`${API_URL}/auth/dev-login?role=${role}&target=web`}
+                      className="flex items-center justify-center px-3 py-2 border border-dashed border-orange-300 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors text-orange-700 font-medium text-sm"
+                    >
+                      {role}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
           </form>
 
         </div>

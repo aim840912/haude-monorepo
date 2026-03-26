@@ -174,7 +174,7 @@ export function useApiError() {
             if (onNotify) {
               onNotify('warning', '登入已過期', '請重新登入以繼續操作')
             }
-            navigate('/login')
+            navigate('/login', { replace: true })
             requiresAuth = true
             break
 
@@ -183,7 +183,7 @@ export function useApiError() {
             if (onNotify) {
               onNotify('error', '帳號已停用', '請聯繫系統管理員')
             }
-            navigate('/login')
+            navigate('/login', { replace: true })
             requiresAuth = true
             break
 

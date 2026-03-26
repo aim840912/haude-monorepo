@@ -271,55 +271,53 @@ export class AuthController {
 
   @Get('dev-login')
   @ApiExcludeEndpoint()
-  async devLogin(@Res() res: Response) {
+  async devLogin(
+    @Query('role') role: string = 'ADMIN',
+    @Query('target') target: string = 'admin',
+    @Res() res: Response,
+  ) {
     // Production safety gate — hard 404
     if (this.isProd) {
       throw new NotFoundException();
     }
 
-    this.logger.warn('Dev login triggered — bypassing Google OAuth');
+    const validRoles = ['USER', 'VIP', 'STAFF', 'ADMIN'] as const;
+    type ValidRole = (typeof validRoles)[number];
+    const safeRole: ValidRole = validRoles.includes(role as ValidRole)
+      ? (role as ValidRole)
+      : 'ADMIN';
 
+    this.logger.warn(
+      `Dev login triggered — role=${safeRole}, target=${target}`,
+    );
+
+    const webUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
     const adminUrl =
       this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';
+    const callbackBase = target === 'web' ? webUrl : adminUrl;
 
     try {
-      // 1. Find any existing ADMIN user
-      const devEmail = 'dev@haude.tw';
-      let admin = await this.usersService.findByEmail(devEmail);
+      const devUser = await this.authService.findOrCreateDevUser(safeRole);
 
-      if (!admin || admin.role !== 'ADMIN') {
-        // Try to find any ADMIN user in the database
-        const existingAdmin = await this.authService.findFirstAdmin();
-
-        if (existingAdmin) {
-          admin = existingAdmin;
-        } else {
-          // No admin exists — create a dev admin
-          admin = await this.authService.createDevAdmin(devEmail, 'Dev Admin');
-          this.logger.warn(`Created dev admin: ${devEmail}`);
-        }
-      }
-
-      // 2. Generate token pair + set cookies
       const { accessToken, refreshToken } =
-        await this.authService.generateTokenPair(admin.id, admin.email);
+        await this.authService.generateTokenPair(devUser.id, devUser.email);
       this.setAuthCookies(res, accessToken, refreshToken);
 
-      // 3. Redirect to admin callback (same flow as Google OAuth)
       const user = {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role,
+        id: devUser.id,
+        email: devUser.email,
+        name: devUser.name,
+        role: devUser.role,
       };
 
       res.redirect(
-        `${adminUrl}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}`,
+        `${callbackBase}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}`,
       );
     } catch (error) {
       this.logger.error('Dev login failed', error);
       res.redirect(
-        `${adminUrl}/auth/callback#error=${encodeURIComponent('Dev login failed: ' + (error as Error).message)}`,
+        `${callbackBase}/auth/callback#error=${encodeURIComponent('Dev login failed: ' + (error as Error).message)}`,
       );
     }
   }

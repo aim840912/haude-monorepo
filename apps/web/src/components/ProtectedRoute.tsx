@@ -22,7 +22,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (isHydrated && !isAuthenticated) {
       // Redirect to login page with return url
-      router.push(`/login?from=${encodeURIComponent(pathname)}`)
+      router.replace(`/login?from=${encodeURIComponent(pathname)}`)
     }
   }, [isAuthenticated, isHydrated, pathname, router])
 

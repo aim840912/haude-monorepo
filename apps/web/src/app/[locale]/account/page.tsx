@@ -13,13 +13,13 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=/account')
+      router.replace('/login?redirect=/account')
     }
   }, [isAuthenticated, router])
 
   const handleLogout = () => {
     logout()
-    router.push('/')
+    router.replace('/')
   }
 
   if (!isAuthenticated || !user) {

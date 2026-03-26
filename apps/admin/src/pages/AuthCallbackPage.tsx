@@ -54,8 +54,8 @@ export function AuthCallbackPage() {
         // Save server-verified user to authStore
         setAuth(data.user)
 
-        // Navigate to home
-        navigate('/')
+        // Navigate to home — replace to keep /auth/callback out of history
+        navigate('/', { replace: true })
       } catch (err) {
         logger.error('Google 登入處理失敗', { error: err })
         setError(err instanceof Error ? err.message : '登入失敗')
