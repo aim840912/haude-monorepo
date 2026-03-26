@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { ShoppingBag, Loader2, Tag, X, Check, Gift, Crown, Award, Star, Truck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { discountsApi } from '@/services/api'
@@ -117,7 +118,7 @@ export function OrderSummary({
           <div key={item.id} className="flex gap-3">
             <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
               {item.image ? (
-                <Image
+                <SafeImage
                   src={item.image}
                   alt={item.name}
                   fill

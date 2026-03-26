@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Crown, Award, Star } from 'lucide-react'
 import { useCartStore, useTotalItems, useTotalPrice } from '@/stores/cartStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -111,7 +112,7 @@ export default function CartPage() {
                 {/* 商品圖片 */}
                 <div className="relative w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                   {item.image ? (
-                    <Image
+                    <SafeImage
                       src={item.image}
                       alt={item.name}
                       fill

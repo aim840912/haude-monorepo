@@ -171,7 +171,7 @@ export function useCheckoutForm(): UseCheckoutFormReturn {
         clearDiscount()
 
         // 跳轉到訂單詳情頁（可進行付款）
-        router.push(`/orders/${data.id}`)
+        router.replace(`/orders/${data.id}`)
       } catch (error) {
         logger.error('建立訂單失敗', { error })
         showError('建立訂單失敗', '請稍後再試')

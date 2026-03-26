@@ -139,6 +139,17 @@ export const useCartStore = create<CartState>()(
             const { data } = await api.delete(`/cart/items/${productId}`)
             set({ items: mapApiCartToItems(data), isLoading: false })
           } catch (error) {
+            // 404 means item doesn't exist in backend (local/backend desync)
+            // Still remove it locally so the user can proceed
+            const axiosError = error as { response?: { status?: number } }
+            if (axiosError?.response?.status === 404) {
+              set(state => ({
+                items: state.items.filter(item => item.productId !== productId),
+                isLoading: false,
+                lastUpdatedAt: Date.now(),
+              }))
+              return
+            }
             logger.error('移除商品失敗', { error })
             set({ isLoading: false })
             throw error
@@ -165,6 +176,17 @@ export const useCartStore = create<CartState>()(
             const { data } = await api.put(`/cart/items/${productId}`, { quantity })
             set({ items: mapApiCartToItems(data), isLoading: false })
           } catch (error) {
+            // 404 means item doesn't exist in backend (local/backend desync)
+            // Remove phantom item from local state
+            const axiosError = error as { response?: { status?: number } }
+            if (axiosError?.response?.status === 404) {
+              set(state => ({
+                items: state.items.filter(item => item.productId !== productId),
+                isLoading: false,
+                lastUpdatedAt: Date.now(),
+              }))
+              return
+            }
             logger.error('更新數量失敗', { error })
             set({ isLoading: false })
             throw error
