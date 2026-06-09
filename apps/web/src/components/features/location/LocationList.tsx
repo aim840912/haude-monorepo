@@ -29,7 +29,7 @@ export function LocationList({ className, onLocationClick }: LocationListProps) 
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={refetch}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          className="px-4 py-2 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32]"
         >
           重試
         </button>
@@ -48,7 +48,7 @@ export function LocationList({ className, onLocationClick }: LocationListProps) 
   return (
     <div className={className}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {locations.map(location => (
+        {locations.map((location) => (
           <LocationCard
             key={location.id}
             location={location}

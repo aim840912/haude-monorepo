@@ -46,11 +46,7 @@ function PaymentResultContent() {
         </div>
 
         {/* 標題 */}
-        <h1
-          className={`text-2xl font-bold mb-2 ${
-            isSuccess ? 'text-green-900' : 'text-red-900'
-          }`}
-        >
+        <h1 className={`text-2xl font-bold mb-2 ${isSuccess ? 'text-green-900' : 'text-red-900'}`}>
           {isSuccess ? '付款成功' : '付款失敗'}
         </h1>
 
@@ -82,7 +78,7 @@ function PaymentResultContent() {
           {orderId && (
             <Link
               href={`/orders/${orderId}`}
-              className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
             >
               <Package className="w-5 h-5" />
               <span>查看訂單詳情</span>
@@ -109,9 +105,7 @@ function PaymentResultContent() {
         {/* 失敗時顯示重試提示 */}
         {!isSuccess && orderId && (
           <div className="mt-6 pt-6 border-t">
-            <p className="text-sm text-gray-500 mb-3">
-              如需重新付款，請前往訂單詳情頁
-            </p>
+            <p className="text-sm text-gray-500 mb-3">如需重新付款，請前往訂單詳情頁</p>
             <Link
               href={`/orders/${orderId}`}
               className="text-green-600 hover:text-green-700 font-medium"
@@ -133,11 +127,13 @@ function PaymentResultContent() {
  */
 export default function PaymentResultPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <LoadingSpinner size="lg" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
       <PaymentResultContent />
     </Suspense>
   )

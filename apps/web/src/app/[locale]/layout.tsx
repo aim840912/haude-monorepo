@@ -24,6 +24,7 @@ const notoSerifTC = Noto_Serif_TC({
 })
 import { ToastProvider } from '@/components/ui/feedback/toast'
 import { Header } from '@/components/layouts/common/Header'
+import { MainShell } from '@/components/layouts/common/MainShell'
 import { Footer } from '@/components/layouts/common/Footer'
 import { OrganizationSchema } from '@/components/seo'
 import { routing } from '@/i18n/routing'
@@ -54,7 +55,11 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} className={`${inter.variable} ${notoSansTC.variable} ${notoSerifTC.variable}`} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${inter.variable} ${notoSansTC.variable} ${notoSerifTC.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <WebVitals />
         <NextIntlClientProvider messages={messages}>
@@ -68,9 +73,7 @@ export default async function LocaleLayout({
                     <SystemBanner />
                   </div>
                   <Header />
-                  <main className="pt-[var(--header-height)]">
-                    {children}
-                  </main>
+                  <MainShell>{children}</MainShell>
                   <Footer />
                   <AISupportWidget />
                 </ToastProvider>

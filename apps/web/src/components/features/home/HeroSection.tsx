@@ -1,10 +1,25 @@
 'use client'
 
+/**
+ * 首頁 Hero — 方向 A「沉穩茶褐」
+ *
+ * 與原版差異：
+ * - 主標改為價值主張（襯線、左對齊），品牌名退回導覽列
+ * - eyebrow 改為「梅山 1,200M · 自然農法」＋金色細線
+ * - 遮罩由純黑 40% 改為方向性暖色漸層（左深右淺＋底部漸層）
+ * - CTA 主按鈕用品牌金 #d4af37（取代 off-brand 橘 #d35400）
+ * - 第一屏底部新增信任列
+ * - 進度條顏色橘 → 金
+ *
+ * 保留：背景輪播 + Ken Burns、scrollY 視差、進度條、左右箭頭
+ * Props 與原版相同，可直接替換。
+ */
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { easing, spring } from '@/lib/motion'
+import { easing } from '@/lib/motion'
 
 interface HeroSectionProps {
   images: string[]
@@ -12,20 +27,18 @@ interface HeroSectionProps {
   onSlideChange: (index: number) => void
 }
 
-const titleChars = ['豪', '德', '製', '茶']
+const TRUST = ['自然農法栽培', '產地直送', '海拔 1,200M', '百年製茶工藝']
 
 export function HeroSection({ images, currentSlide, onSlideChange }: HeroSectionProps) {
   const [progress, setProgress] = useState(0)
 
   // Scroll-driven parallax — MotionValues don't trigger React re-renders
   const { scrollY } = useScroll()
-  const bgY = useTransform(scrollY, [0, 500], [0, 150])           // background: 0.3 * 500
-  const contentY = useTransform(scrollY, [0, 500], [0, 100])      // content: 0.2 * 500
+  const bgY = useTransform(scrollY, [0, 500], [0, 150])
+  const contentY = useTransform(scrollY, [0, 500], [0, 100])
   const contentOpacity = useTransform(scrollY, [0, 600], [1, 0])
   const arrowOpacity = useTransform(scrollY, [0, 100], [1, 0])
 
-  // Merged: progress timer + auto-advance in one effect
-  // Using a local variable avoids a second reactive useEffect (setState-in-effect anti-pattern)
   useEffect(() => {
     let p = 0
     const interval = setInterval(() => {
@@ -40,7 +53,7 @@ export function HeroSection({ images, currentSlide, onSlideChange }: HeroSection
   }, [currentSlide, images.length, onSlideChange])
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center text-center pt-16 overflow-hidden">
+    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-16">
       {/* 背景圖輪播 + Ken Burns */}
       {images.map((image, index) => (
         <motion.div
@@ -59,84 +72,95 @@ export function HeroSection({ images, currentSlide, onSlideChange }: HeroSection
         />
       ))}
 
-      {/* 遮罩確保文字可讀性 */}
-      <div className="absolute inset-0 bg-black/40 z-10" />
-
-      {/* Hero 內容 - 入場序列動畫 */}
-      <motion.div
-        className="relative z-20 px-6"
+      {/* 方向性暖色遮罩 — 左深右淺，確保左側文字可讀 + 底部加深 */}
+      <div
+        className="absolute inset-0 z-10"
         style={{
-          y: contentY,
-          opacity: contentOpacity,
+          background:
+            'linear-gradient(90deg, rgba(30,15,10,0.78) 0%, rgba(30,15,10,0.45) 42%, rgba(30,15,10,0.05) 100%), linear-gradient(0deg, rgba(20,10,6,0.6) 0%, rgba(20,10,6,0) 38%)',
         }}
+      />
+
+      {/* Hero 內容 — 左對齊 */}
+      <motion.div
+        className="relative z-20 w-full max-w-7xl mx-auto px-6 md:px-12"
+        style={{ y: contentY, opacity: contentOpacity }}
       >
-        {/* 品牌副標 - 最先淡入 */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease: easing.easeOut }}
-          className="text-sm md:text-base text-white/80 mb-4 tracking-[0.3em] uppercase"
-        >
-          高山茶專賣店
-        </motion.p>
+        <div className="max-w-2xl">
+          {/* eyebrow + 金色細線 */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: easing.easeOut }}
+            className="flex items-center gap-3 mb-6"
+          >
+            <span className="block w-10 h-px bg-[#d4af37]" />
+            <span className="text-sm tracking-[0.26em] uppercase text-[#d4af37]">
+              梅山 1,200M · 自然農法
+            </span>
+          </motion.div>
 
-        {/* 主標題 - 逐字 3D 揭示 */}
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-white mb-6 drop-shadow-lg flex justify-center" style={{ perspective: '800px' }}>
-          {titleChars.map((char, i) => (
-            <motion.span
-              key={i}
-              initial={{ opacity: 0, y: 50, rotateX: 90 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{
-                delay: 0.9 + i * 0.15,
-                duration: 0.6,
-                ease: easing.easeOut,
-              }}
-              className="inline-block"
-              style={{ transformOrigin: 'bottom center' }}
+          {/* 主標 — 價值主張 */}
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4, ease: easing.easeOut }}
+            className="font-serif text-white text-4xl md:text-6xl lg:text-7xl leading-[1.18] tracking-wide drop-shadow-lg"
+          >
+            簡單一杯茶，
+            <br />
+            不簡單的百年傳承
+          </motion.h1>
+
+          {/* 副標 */}
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: easing.easeOut }}
+            className="mt-6 text-lg md:text-xl text-white/85 leading-relaxed max-w-xl drop-shadow-md"
+          >
+            座落梅山群峰之間，以自然農法呈現四季最美的高山茶滋味。
+          </motion.p>
+
+          {/* CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.95, ease: easing.easeOut }}
+            className="mt-10 flex flex-col sm:flex-row gap-4"
+          >
+            <Link
+              href="/products"
+              className="inline-flex items-center justify-center bg-[#d4af37] hover:bg-[#c5a028] text-[#3a2a08] font-semibold px-8 py-4 rounded-sm text-lg transition-[background-color,box-shadow,transform] duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
-              {char}
-            </motion.span>
-          ))}
-        </h1>
+              選購高山茶
+            </Link>
+            <Link
+              href="/farm-tours"
+              className="inline-flex items-center justify-center border border-white/55 hover:border-white text-white px-8 py-4 rounded-sm text-lg font-medium transition-colors duration-300"
+            >
+              預約茶園體驗
+            </Link>
+          </motion.div>
 
-        {/* Slogan - 主標完成後淡入 */}
-        <motion.p
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 2.0, ease: easing.easeOut }}
-          className="text-lg md:text-2xl text-white/95 mb-10 max-w-3xl mx-auto drop-shadow-md leading-relaxed"
-        >
-          簡單一杯茶，不簡單的百年傳承
-          <br />
-          <span className="text-base md:text-lg text-white/80">
-            座落梅山群峰，以自然農法呈現四季最美的農產滋味
-          </span>
-        </motion.p>
-
-        {/* CTA 按鈕 - 縮放彈入 */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ ...spring.bounce, delay: 2.4 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
-          <Link
-            href="/products"
-            className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-4 rounded-full text-lg font-medium transition-[background-color,box-shadow,transform] duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
+          {/* 信任列 */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+            className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/80"
           >
-            探索產品
-          </Link>
-          <Link
-            href="/about"
-            className="inline-block bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-8 py-4 rounded-full text-lg font-medium transition-colors duration-300 border border-white/50"
-          >
-            了解更多
-          </Link>
-        </motion.div>
+            {TRUST.map((t, i) => (
+              <span key={t} className="flex items-center gap-6">
+                {i > 0 && <span className="hidden sm:block w-px h-3 bg-white/30 -ml-3" />}
+                {t}
+              </span>
+            ))}
+          </motion.div>
+        </div>
       </motion.div>
 
-      {/* 滾動提示箭頭 — MotionValue 驅動，不觸發 React re-render */}
+      {/* 滾動提示箭頭 */}
       <motion.div
         style={{ opacity: arrowOpacity }}
         className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20"
@@ -146,7 +170,6 @@ export function HeroSection({ images, currentSlide, onSlideChange }: HeroSection
 
       {/* 輪播控制區 - 底部進度條 */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
-        {/* 進度條 */}
         <div className="flex">
           {images.map((_, index) => (
             <button
@@ -159,16 +182,13 @@ export function HeroSection({ images, currentSlide, onSlideChange }: HeroSection
               aria-label={`切換到第 ${index + 1} 張圖片`}
             >
               <div
-                className="absolute inset-y-0 left-0 bg-[#d35400] transition-[width] duration-100"
-                style={{
-                  width: currentSlide === index ? `${progress}%` : '0%',
-                }}
+                className="absolute inset-y-0 left-0 bg-[#d4af37] transition-[width] duration-100"
+                style={{ width: currentSlide === index ? `${progress}%` : '0%' }}
               />
             </button>
           ))}
         </div>
 
-        {/* 左右箭頭導航 */}
         <div className="absolute bottom-8 right-8 flex gap-2">
           <button
             onClick={() => {

@@ -17,7 +17,7 @@ import { DEFAULT_NEWS_HERO_IMAGE } from '@/constants/images'
 // Category color mapping
 const categoryColors: Record<string, { bg: string; text: string }> = {
   harvest: { bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
-  product: { bg: 'bg-[#fff3e0]', text: 'text-[#d35400]' },
+  product: { bg: 'bg-[#fff3e0]', text: 'text-[#d4af37]' },
   event: { bg: 'bg-[#efebe9]', text: 'text-[#5d4037]' },
   market: { bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
 }
@@ -32,8 +32,7 @@ const newsItems = [
     title: '春茶採收正式啟動',
     summary:
       '梅山海拔千尺茶園迎來今年春茶季，經過冬季休眠，茶芽飽滿翠綠。預計三月中旬開放限量預購，敬請期待。',
-    image:
-      'https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?w=600&h=400&fit=crop',
   },
   {
     id: 2,
@@ -41,10 +40,8 @@ const newsItems = [
     categoryKey: 'product',
     categoryLabel: '新品上市',
     title: '蜜香紅茶限定禮盒上架',
-    summary:
-      '嚴選小綠葉蟬咬過的茶菁，以獨特蜜香工法製成。搭配手工竹編禮盒，送禮自用兩相宜。',
-    image:
-      'https://images.unsplash.com/photo-1558160074-4d93e8e073a1?w=600&h=400&fit=crop',
+    summary: '嚴選小綠葉蟬咬過的茶菁，以獨特蜜香工法製成。搭配手工竹編禮盒，送禮自用兩相宜。',
+    image: 'https://images.unsplash.com/photo-1558160074-4d93e8e073a1?w=600&h=400&fit=crop',
   },
   {
     id: 3,
@@ -54,8 +51,7 @@ const newsItems = [
     title: '親子採茶體驗日開放報名',
     summary:
       '三月份特別企劃！帶著孩子走進茶園，親手採摘春茶、體驗手揉茶葉，認識茶從產地到茶杯的完整旅程。',
-    image:
-      'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=600&h=400&fit=crop',
   },
   {
     id: 4,
@@ -65,8 +61,7 @@ const newsItems = [
     title: '三月份擺攤行程公告',
     summary:
       '三月我們將在嘉義文化夜市、台中審計新村、台北希望廣場與大家見面。現場提供免費試飲，歡迎來找我們聊茶。',
-    image:
-      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&h=400&fit=crop',
   },
   {
     id: 5,
@@ -76,8 +71,7 @@ const newsItems = [
     title: '冬片茶完售感謝',
     summary:
       '今年冬片茶在上架三天內全數售罄，感謝各位茶友的支持。我們已開始準備春茶，品質更勝以往，請拭目以待。',
-    image:
-      'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w=600&h=400&fit=crop',
   },
   {
     id: 6,
@@ -87,8 +81,7 @@ const newsItems = [
     title: '製茶師體驗工作坊回顧',
     summary:
       '上月舉辦的手工製茶體驗大獲好評！學員在製茶師傅指導下完成萎凋、揉捻、烘焙全程，帶走自己親手做的茶。',
-    image:
-      'https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=600&h=400&fit=crop',
   },
 ]
 
@@ -97,8 +90,7 @@ export function NewsPageClient() {
 
   // CMS hero image with fallback to default
   const { settings } = useSiteSettings([SETTING_KEYS.NEWS_HERO_IMAGE])
-  const heroImage =
-    settings[SETTING_KEYS.NEWS_HERO_IMAGE]?.value || DEFAULT_NEWS_HERO_IMAGE
+  const heroImage = settings[SETTING_KEYS.NEWS_HERO_IMAGE]?.value || DEFAULT_NEWS_HERO_IMAGE
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(

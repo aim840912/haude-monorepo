@@ -11,17 +11,44 @@ import { cn } from '@/lib/utils'
 import type { MemberLevel } from '@haude/types'
 
 // 會員折扣本地配置（與後端 MemberLevelConfig 同步）
-const MEMBER_DISCOUNT_CONFIG: Record<MemberLevel, {
-  discountPercent: number
-  displayName: string
-  freeShipping: boolean
-  icon: typeof Crown
-  color: string
-}> = {
-  NORMAL: { discountPercent: 0, displayName: '普通會員', freeShipping: false, icon: Star, color: 'text-gray-500' },
-  BRONZE: { discountPercent: 5, displayName: '銅卡會員', freeShipping: false, icon: Award, color: 'text-amber-600' },
-  SILVER: { discountPercent: 10, displayName: '銀卡會員', freeShipping: false, icon: Award, color: 'text-slate-500' },
-  GOLD: { discountPercent: 15, displayName: '金卡會員', freeShipping: true, icon: Crown, color: 'text-yellow-600' },
+const MEMBER_DISCOUNT_CONFIG: Record<
+  MemberLevel,
+  {
+    discountPercent: number
+    displayName: string
+    freeShipping: boolean
+    icon: typeof Crown
+    color: string
+  }
+> = {
+  NORMAL: {
+    discountPercent: 0,
+    displayName: '普通會員',
+    freeShipping: false,
+    icon: Star,
+    color: 'text-gray-500',
+  },
+  BRONZE: {
+    discountPercent: 5,
+    displayName: '銅卡會員',
+    freeShipping: false,
+    icon: Award,
+    color: 'text-amber-600',
+  },
+  SILVER: {
+    discountPercent: 10,
+    displayName: '銀卡會員',
+    freeShipping: false,
+    icon: Award,
+    color: 'text-slate-500',
+  },
+  GOLD: {
+    discountPercent: 15,
+    displayName: '金卡會員',
+    freeShipping: true,
+    icon: Crown,
+    color: 'text-yellow-600',
+  },
 }
 
 /**
@@ -67,7 +94,7 @@ export default function CartPage() {
   // 取得會員等級與折扣資訊
   const memberLevel = (user?.memberLevel || 'NORMAL') as MemberLevel
   const memberConfig = MEMBER_DISCOUNT_CONFIG[memberLevel]
-  const memberDiscount = Math.floor(totalPrice * memberConfig.discountPercent / 100)
+  const memberDiscount = Math.floor((totalPrice * memberConfig.discountPercent) / 100)
   const hasMemberDiscount = isAuthenticated && memberConfig.discountPercent > 0
   const hasFreeShipping = isAuthenticated && memberConfig.freeShipping
   const MemberIcon = memberConfig.icon
@@ -84,7 +111,7 @@ export default function CartPage() {
             <p className="text-gray-500 mb-8">快去挑選喜歡的商品吧！</p>
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
             >
               瀏覽產品
               <ArrowRight className="w-4 h-4" />
@@ -103,7 +130,7 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* 購物車項目列表 */}
           <div className="lg:col-span-2 space-y-4">
-            {items.map(item => (
+            {items.map((item) => (
               <div
                 key={item.id}
                 className="flex gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200"
@@ -128,9 +155,7 @@ export default function CartPage() {
                 {/* 商品資訊 */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    NT$ {item.price.toLocaleString()}
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">NT$ {item.price.toLocaleString()}</p>
 
                   {/* 數量控制 */}
                   <div className="flex items-center gap-2 mt-3">
@@ -196,10 +221,12 @@ export default function CartPage() {
               <div className="space-y-3 text-sm">
                 {/* 會員等級標籤 */}
                 {isAuthenticated && (
-                  <div className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg',
-                    memberConfig.discountPercent > 0 ? 'bg-green-50' : 'bg-gray-50'
-                  )}>
+                  <div
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-lg',
+                      memberConfig.discountPercent > 0 ? 'bg-green-50' : 'bg-gray-50'
+                    )}
+                  >
                     <MemberIcon className={cn('w-4 h-4', memberConfig.color)} />
                     <span className={cn('text-sm font-medium', memberConfig.color)}>
                       {memberConfig.displayName}
@@ -244,15 +271,15 @@ export default function CartPage() {
                   <div className="text-xs text-gray-500 text-center pt-2">
                     <Link href="/login" className="text-green-600 hover:underline">
                       登入
-                    </Link>
-                    {' '}後可享會員專屬折扣
+                    </Link>{' '}
+                    後可享會員專屬折扣
                   </div>
                 )}
               </div>
 
               <Link
                 href="/checkout"
-                className="block w-full mt-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-center"
+                className="block w-full mt-6 py-3 bg-[#1b5e20] text-white rounded-lg font-medium hover:bg-[#2e7d32] transition-colors text-center"
               >
                 前往結帳
               </Link>

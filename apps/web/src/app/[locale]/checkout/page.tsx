@@ -5,11 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useCheckoutForm } from './hooks'
-import {
-  ShippingAddressForm,
-  PaymentMethodSelector,
-  OrderSummary,
-} from './components'
+import { ShippingAddressForm, PaymentMethodSelector, OrderSummary } from './components'
 
 /**
  * 結帳頁面
@@ -62,7 +58,7 @@ function CheckoutContent() {
         <p className="text-gray-500 mb-6">請先將商品加入購物車</p>
         <Link
           href="/products"
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="px-6 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
         >
           瀏覽產品
         </Link>
@@ -103,10 +99,7 @@ function CheckoutContent() {
               />
 
               {/* 付款方式 */}
-              <PaymentMethodSelector
-                value={paymentMethod}
-                onChange={handlePaymentMethodChange}
-              />
+              <PaymentMethodSelector value={paymentMethod} onChange={handlePaymentMethodChange} />
 
               {/* 訂單備註 */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

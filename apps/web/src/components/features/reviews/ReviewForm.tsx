@@ -79,9 +79,7 @@ export function ReviewForm({
             if (errors.rating) setErrors({ ...errors, rating: undefined })
           }}
         />
-        {errors.rating && (
-          <p className="text-sm text-red-500 mt-1">{errors.rating}</p>
-        )}
+        {errors.rating && <p className="text-sm text-red-500 mt-1">{errors.rating}</p>}
       </div>
 
       {/* 標題 */}
@@ -103,9 +101,7 @@ export function ReviewForm({
           )}
           disabled={isSubmitting}
         />
-        {errors.title && (
-          <p className="text-sm text-red-500 mt-1">{errors.title}</p>
-        )}
+        {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
       </div>
 
       {/* 內容 */}
@@ -128,11 +124,7 @@ export function ReviewForm({
           disabled={isSubmitting}
         />
         <div className="flex justify-between mt-1">
-          {errors.content ? (
-            <p className="text-sm text-red-500">{errors.content}</p>
-          ) : (
-            <span />
-          )}
+          {errors.content ? <p className="text-sm text-red-500">{errors.content}</p> : <span />}
           <span className="text-xs text-gray-400">{content.length} / 1000</span>
         </div>
       </div>
@@ -153,8 +145,8 @@ export function ReviewForm({
           type="submit"
           disabled={isSubmitting}
           className={cn(
-            'px-6 py-2 bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2',
-            isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
+            'px-6 py-2 bg-[#1b5e20] text-white rounded-lg font-medium transition-colors flex items-center gap-2',
+            isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#2e7d32]'
           )}
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

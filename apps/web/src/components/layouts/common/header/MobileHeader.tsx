@@ -1,5 +1,14 @@
 'use client'
 
+/**
+ * 行動版 Header — 方向 A（支援 Hero 上透明）
+ *
+ * 新增 transparent prop：Hero 頂端時品牌名與工具列圖示轉白色 / 半透明 hover；
+ * 下拉選單面板仍維持白底以確保可讀。其餘邏輯與原版相同。
+ *
+ * 直接覆蓋 components/layouts/common/header/MobileHeader.tsx
+ */
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ShoppingCart, LogOut, User, Menu, X, Package, ExternalLink } from 'lucide-react'
@@ -8,7 +17,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { useTotalItems } from '@/stores/cartStore'
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 
-// 導航項目配置（使用翻譯鍵）
 const navItemsConfig = [
   { href: '/', labelKey: 'explore' },
   { href: '/farm-tours', labelKey: 'farmTours' },
@@ -18,13 +26,13 @@ const navItemsConfig = [
   { href: '/news', labelKey: 'news' },
 ] as const
 
-// 用戶選單配置
 const userMenuConfig = [
   { href: '/account', labelKey: 'myAccount', icon: User },
   { href: '/orders', labelKey: 'myOrders', icon: Package },
 ] as const
 
 interface MobileHeaderProps {
+  transparent?: boolean
   isMobileMenuOpen: boolean
   mobileMenuRef: React.RefObject<HTMLDivElement | null>
   mobileMenuButtonRef: React.RefObject<HTMLButtonElement | null>
@@ -32,11 +40,8 @@ interface MobileHeaderProps {
   handleMenuItemClick: () => void
 }
 
-/**
- * 行動版 Header
- * 簡化版本：使用 Zustand authStore，移除複雜依賴
- */
 export function MobileHeader({
+  transparent = false,
   isMobileMenuOpen,
   mobileMenuRef,
   mobileMenuButtonRef,
@@ -49,9 +54,7 @@ export function MobileHeader({
   const totalItems = useTotalItems()
 
   const isActive = (path: string) => {
-    if (path === '/') {
-      return pathname === '/'
-    }
+    if (path === '/') return pathname === '/'
     return pathname.startsWith(path)
   }
 
@@ -60,14 +63,28 @@ export function MobileHeader({
     handleMenuItemClick()
   }
 
+  const iconBtn = transparent
+    ? 'text-white/90 hover:text-[#f3d77a] hover:bg-white/10'
+    : 'text-[#5d4037] hover:text-[#d4af37] hover:bg-[#faf3e0] dark:hover:bg-[#3e2723]'
+
   return (
     <div className="lg:hidden">
       <div className="flex items-center justify-between">
-        {/* Brand - 左側固定 */}
+        {/* Brand */}
         <Link href="/" className="flex items-center flex-shrink-0">
           <div>
-            <div className="font-display text-green-900 tracking-tight text-xl">豪德製茶所</div>
-            <div className="text-green-700/70 font-inter font-medium tracking-wider text-[8px]">
+            <div
+              className={`font-serif tracking-[0.06em] text-xl ${
+                transparent ? 'text-white' : 'text-[#3e2723] dark:text-[#d7ccc8]'
+              }`}
+            >
+              豪德製茶所
+            </div>
+            <div
+              className={`font-medium tracking-[0.22em] text-[8px] ${
+                transparent ? 'text-white/70' : 'text-[#5d4037]/70 dark:text-[#bcaaa4]/70'
+              }`}
+            >
               HAUDE TEA
             </div>
           </div>
@@ -75,88 +92,78 @@ export function MobileHeader({
 
         {/* 右側:工具按鈕組 */}
         <div className="flex items-center flex-shrink-0 space-x-1">
-          {/* 語系切換 */}
-          <LanguageSwitcher />
+          <div className={transparent ? 'text-white [&_button]:text-white/90' : ''}>
+            <LanguageSwitcher />
+          </div>
 
-          {/* 購物車按鈕 - 所有用戶皆可見 */}
           <Link
             href="/cart"
-            className="relative flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
+            className={`relative flex items-center transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2 ${iconBtn}`}
             title={t('cart')}
           >
             <ShoppingCart className="w-5 h-5" />
-            {/* 購物車數量 Badge */}
             {totalItems > 0 && (
-              <span className="absolute top-0 right-0 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
+              <span className="absolute top-0 right-0 min-w-[18px] h-[18px] flex items-center justify-center bg-[#8b0000] text-white text-xs font-bold rounded-full px-1">
                 {totalItems > 99 ? '99+' : totalItems}
               </span>
             )}
           </Link>
 
-          {/* 管理後台連結 - 僅 ADMIN 可見，URL 未設定時隱藏避免 href="#" */}
           {user?.role === 'ADMIN' && process.env.NEXT_PUBLIC_ADMIN_URL && (
             <a
               href={process.env.NEXT_PUBLIC_ADMIN_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-green-800 hover:text-green-900 hover:bg-green-50/50 transition-colors duration-200 rounded-md min-h-[44px] px-2"
+              className={`flex items-center gap-1 transition-colors duration-200 rounded-md min-h-[44px] px-2 ${iconBtn}`}
               title={t('admin')}
             >
               <ExternalLink className="w-5 h-5" />
             </a>
           )}
 
-          {/* 漢堡選單按鈕 - Mobile */}
           <button
             ref={mobileMenuButtonRef}
-            className="flex items-center text-gray-700 hover:text-green-900 hover:bg-green-50 transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2"
+            className={`flex items-center transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2 ${iconBtn}`}
             title="導航選單"
             onClick={handleMobileMenuToggle}
           >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* 手機版導航選單 - 絕對定位下拉 */}
+      {/* 手機版導航選單（面板維持白底） */}
       <div
-        className={`absolute left-0 right-0 top-full bg-white shadow-lg border-b border-gray-200 transition-[opacity,visibility] duration-300 ease-in-out z-50 ${
+        className={`absolute left-0 right-0 top-full bg-white dark:bg-[#2d1f1a] shadow-lg border-b border-[#e7ded3] dark:border-[#5d4037] transition-[opacity,visibility] duration-300 ease-in-out z-50 ${
           isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         }`}
       >
         <div className="py-4 max-w-7xl mx-auto px-4" ref={mobileMenuRef}>
           <div className="space-y-2">
-            {navItemsConfig.map(item => (
+            {navItemsConfig.map((item) => (
               <div key={item.href} className="group">
                 <Link
                   href={item.href}
                   className={`block px-4 py-3 transition-colors duration-200 rounded-lg mx-2 ${
                     isActive(item.href)
-                      ? 'text-green-900 bg-green-50 font-semibold'
-                      : 'text-gray-700 hover:text-green-900 hover:bg-green-50'
+                      ? 'text-[#d4af37] bg-[#faf3e0] dark:bg-[#3e2723] font-semibold'
+                      : 'text-[#5d4037] dark:text-[#bcaaa4] hover:text-[#d4af37] hover:bg-[#faf8f5] dark:hover:bg-[#3e2723]'
                   }`}
                   onClick={handleMenuItemClick}
                 >
-                  <span className="font-sans font-medium text-base">{t(item.labelKey)}</span>
+                  <span className="font-medium text-base">{t(item.labelKey)}</span>
                 </Link>
               </div>
             ))}
 
-            {/* 分隔線 */}
-            <div className="border-t border-gray-100 my-2 mx-4"></div>
+            <div className="border-t border-[#e7ded3] dark:border-[#5d4037] my-2 mx-4"></div>
 
-            {/* 登入/登出區域 */}
             {isAuthenticated ? (
               <>
-                <div className="px-4 py-2 text-sm text-gray-500">
+                <div className="px-4 py-2 text-sm text-[#695a52] dark:text-[#a69187]">
                   {user?.name}
                 </div>
-                {/* 用戶選單項目 */}
-                {userMenuConfig.map(item => {
+                {userMenuConfig.map((item) => {
                   const Icon = item.icon
                   return (
                     <Link
@@ -165,31 +172,31 @@ export function MobileHeader({
                       onClick={handleMenuItemClick}
                       className={`flex items-center gap-2 px-4 py-3 transition-colors duration-200 rounded-lg mx-2 ${
                         isActive(item.href)
-                          ? 'text-green-900 bg-green-50 font-semibold'
-                          : 'text-gray-700 hover:text-green-900 hover:bg-green-50'
+                          ? 'text-[#d4af37] bg-[#faf3e0] dark:bg-[#3e2723] font-semibold'
+                          : 'text-[#5d4037] dark:text-[#bcaaa4] hover:text-[#d4af37] hover:bg-[#faf8f5] dark:hover:bg-[#3e2723]'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
-                      <span className="font-sans font-medium text-base">{t(item.labelKey)}</span>
+                      <span className="font-medium text-base">{t(item.labelKey)}</span>
                     </Link>
                   )
                 })}
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg mx-2"
+                  className="flex items-center gap-2 w-full px-4 py-3 text-[#8b0000] hover:bg-[#fbeaea] dark:hover:bg-[#3e2723] transition-colors duration-200 rounded-lg mx-2"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span className="font-sans font-medium text-base">{t('logout')}</span>
+                  <span className="font-medium text-base">{t('logout')}</span>
                 </button>
               </>
             ) : (
               <Link
                 href={`/login?from=${pathname}`}
-                className="flex items-center gap-2 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 rounded-lg mx-2"
+                className="flex items-center gap-2 px-4 py-3 text-[#3e2723] dark:text-[#d7ccc8] hover:text-[#d4af37] hover:bg-[#faf3e0] dark:hover:bg-[#3e2723] transition-colors duration-200 rounded-lg mx-2"
                 onClick={handleMenuItemClick}
               >
                 <User className="w-5 h-5" />
-                <span className="font-sans font-medium text-base">{t('login')}</span>
+                <span className="font-medium text-base">{t('login')}</span>
               </Link>
             )}
           </div>

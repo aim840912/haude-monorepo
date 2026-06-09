@@ -84,7 +84,11 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
             {/* 圖片 */}
             <div className="aspect-video bg-gray-200 rounded-xl overflow-hidden relative">
               <Image
-                src={location.images?.[0]?.storageUrl || location.image || PLACEHOLDER_IMAGES.location(location.id)}
+                src={
+                  location.images?.[0]?.storageUrl ||
+                  location.image ||
+                  PLACEHOLDER_IMAGES.location(location.id)
+                }
                 alt={location.images?.[0]?.altText || location.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 66vw"
@@ -102,9 +106,7 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
                 )}
               </div>
               <h1 className="text-3xl font-bold text-gray-900">{location.name}</h1>
-              {location.title && (
-                <p className="text-lg text-gray-600 mt-1">{location.title}</p>
-              )}
+              {location.title && <p className="text-lg text-gray-600 mt-1">{location.title}</p>}
             </div>
 
             {/* 地址與導航 */}
@@ -124,7 +126,7 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
                 >
                   <Navigation className="w-4 h-4" />
                   開啟 Google Maps 導航
@@ -257,7 +259,7 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-6 w-full flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="mt-6 w-full flex items-center justify-center gap-2 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
               >
                 <Navigation className="w-5 h-5" />
                 導航至此地點

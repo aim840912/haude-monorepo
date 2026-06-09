@@ -22,17 +22,15 @@ import {
 } from 'lucide-react'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { SETTING_KEYS } from '@/types/siteSettings'
-import {
-  DEFAULT_ABOUT_HERO_IMAGE,
-  DEFAULT_ABOUT_STORY_IMAGES,
-} from '@/constants/images'
+import { DEFAULT_ABOUT_HERO_IMAGE, DEFAULT_ABOUT_STORY_IMAGES } from '@/constants/images'
 
 // 核心價值資料（擴展自 FeatureCards）
 const coreValues = [
   {
     Icon: Sprout,
     title: '自然農法',
-    description: '堅持不使用化學農藥與肥料，讓茶樹在最自然的環境生長。以友善土地的方式耕作，保留茶葉最原始的風味與營養。',
+    description:
+      '堅持不使用化學農藥與肥料，讓茶樹在最自然的環境生長。以友善土地的方式耕作，保留茶葉最原始的風味與營養。',
     stat: '15+ 年有機認證',
     iconColor: 'text-[#2e7d32]',
     bgColor: 'bg-[#e8f5e9]',
@@ -41,16 +39,18 @@ const coreValues = [
   {
     Icon: ShieldCheck,
     title: '品質認證',
-    description: '從採摘到包裝，每一道工序都經過嚴格的品質檢驗。產地直送，確保每一片茶葉都符合最高標準。',
+    description:
+      '從採摘到包裝，每一道工序都經過嚴格的品質檢驗。產地直送，確保每一片茶葉都符合最高標準。',
     stat: '100% 產地直送',
-    iconColor: 'text-[#d35400]',
+    iconColor: 'text-[#d4af37]',
     bgColor: 'bg-[#fff3e0]',
-    darkBgColor: 'dark:bg-[#d35400]/20',
+    darkBgColor: 'dark:bg-[#d4af37]/20',
   },
   {
     Icon: Users,
     title: '農場體驗',
-    description: '親手採茶、製茶體驗，感受從茶園到茶杯的完整旅程。四季皆有不同的茶園風光與活動安排。',
+    description:
+      '親手採茶、製茶體驗，感受從茶園到茶杯的完整旅程。四季皆有不同的茶園風光與活動安排。',
     stat: '年接待 2000+ 人',
     iconColor: 'text-[#5d4037]',
     bgColor: 'bg-[#efebe9]',
@@ -59,7 +59,8 @@ const coreValues = [
   {
     Icon: Recycle,
     title: '永續經營',
-    description: '友善環境的種植方式，維護梅山生態多樣性。從土壤養護到水資源管理，實踐對土地的永續承諾。',
+    description:
+      '友善環境的種植方式，維護梅山生態多樣性。從土壤養護到水資源管理，實踐對土地的永續承諾。',
     stat: '零化學殘留',
     iconColor: 'text-[#2e7d32]',
     bgColor: 'bg-[#e8f5e9]',
@@ -77,8 +78,7 @@ export function AboutPageClient() {
     SETTING_KEYS.ABOUT_STORY_IMAGE_2,
   ])
 
-  const heroImage =
-    settings[SETTING_KEYS.ABOUT_HERO_IMAGE]?.value || DEFAULT_ABOUT_HERO_IMAGE
+  const heroImage = settings[SETTING_KEYS.ABOUT_HERO_IMAGE]?.value || DEFAULT_ABOUT_HERO_IMAGE
   const storyImage1 =
     settings[SETTING_KEYS.ABOUT_STORY_IMAGE_1]?.value || DEFAULT_ABOUT_STORY_IMAGES[0]
   const storyImage2 =
@@ -161,8 +161,7 @@ export function AboutPageClient() {
                 </p>
                 <p>
                   梅山得天獨厚的地理環境——終年雲霧繚繞、日夜溫差大、土壤肥沃，
-                  造就了獨特的高山茶風味。我們珍惜這片土地的饋贈，
-                  用最虔誠的態度對待每一棵茶樹。
+                  造就了獨特的高山茶風味。我們珍惜這片土地的饋贈， 用最虔誠的態度對待每一棵茶樹。
                 </p>
               </div>
             </div>
@@ -256,10 +255,7 @@ export function AboutPageClient() {
                   <div
                     className={`w-14 h-14 ${value.bgColor} ${value.darkBgColor} rounded-xl flex items-center justify-center shrink-0`}
                   >
-                    <value.Icon
-                      className={`w-7 h-7 ${value.iconColor}`}
-                      strokeWidth={1.5}
-                    />
+                    <value.Icon className={`w-7 h-7 ${value.iconColor}`} strokeWidth={1.5} />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-[#3e2723] dark:text-[#d7ccc8] mb-2">
@@ -282,9 +278,7 @@ export function AboutPageClient() {
       {/* ===== 4. CTA ===== */}
       <section className="py-20 md:py-28 px-6 bg-[#3e2723] text-white">
         <div className="max-w-4xl mx-auto text-center animate-on-scroll">
-          <h2 className="text-3xl md:text-4xl font-serif text-white mb-6">
-            品嚐梅山的味道
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-serif text-white mb-6">品嚐梅山的味道</h2>
           <p className="text-white/70 text-lg mb-10 max-w-2xl mx-auto leading-relaxed">
             從三代傳承的茶園到您的茶杯，每一口都是自然與匠心的結晶。
             探索我們的茶品，或親自來梅山感受茶園的美好。

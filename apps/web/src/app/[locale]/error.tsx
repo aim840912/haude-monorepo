@@ -30,9 +30,7 @@ export default function Error({
           <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          發生錯誤
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">發生錯誤</h2>
 
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           很抱歉，頁面載入時發生問題。請嘗試重新整理或返回首頁。
@@ -43,18 +41,14 @@ export default function Error({
             <p className="text-sm font-mono text-red-600 dark:text-red-400 break-all">
               {error.message}
             </p>
-            {error.digest && (
-              <p className="mt-1 text-xs text-gray-500">
-                Digest: {error.digest}
-              </p>
-            )}
+            {error.digest && <p className="mt-1 text-xs text-gray-500">Digest: {error.digest}</p>}
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={reset}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             重試

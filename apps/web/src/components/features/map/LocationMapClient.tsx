@@ -54,13 +54,7 @@ function MapBounds({ locations }: { locations: Location[] }) {
 }
 
 // 地圖中心控制元件
-function MapCenter({
-  center,
-  zoom,
-}: {
-  center: [number, number] | null
-  zoom?: number
-}) {
+function MapCenter({ center, zoom }: { center: [number, number] | null; zoom?: number }) {
   const map = useMap()
 
   useEffect(() => {
@@ -103,15 +97,13 @@ export function LocationMapClient({
   // 計算初始中心
   const initialCenter =
     center ||
-    (locations.length > 0 && locations[0].coordinates?.lat && locations[0].coordinates?.lng
+    ((locations.length > 0 && locations[0].coordinates?.lat && locations[0].coordinates?.lng
       ? [locations[0].coordinates.lat, locations[0].coordinates.lng]
-      : defaultCenter) as [number, number]
+      : defaultCenter) as [number, number])
 
   if (!isMounted) {
     return (
-      <div
-        className={`bg-gray-100 animate-pulse flex items-center justify-center ${className}`}
-      >
+      <div className={`bg-gray-100 animate-pulse flex items-center justify-center ${className}`}>
         <div className="text-gray-400">載入地圖中...</div>
       </div>
     )
@@ -150,9 +142,7 @@ export function LocationMapClient({
             {showPopups && (
               <Popup className="location-popup">
                 <div className="min-w-[200px]">
-                  <h3 className="font-bold text-lg text-gray-900 mb-2">
-                    {location.name}
-                  </h3>
+                  <h3 className="font-bold text-lg text-gray-900 mb-2">{location.name}</h3>
 
                   {location.address && (
                     <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
@@ -164,10 +154,7 @@ export function LocationMapClient({
                   {location.phone && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                       <Phone className="w-4 h-4 flex-shrink-0" />
-                      <a
-                        href={`tel:${location.phone}`}
-                        className="hover:text-green-600"
-                      >
+                      <a href={`tel:${location.phone}`} className="hover:text-green-600">
                         {location.phone}
                       </a>
                     </div>
@@ -185,8 +172,8 @@ export function LocationMapClient({
                       href={`https://www.google.com/maps/dir/?api=1&destination=${location.coordinates.lat},${location.coordinates.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white
-                        text-sm rounded-lg hover:bg-green-700 transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-[#1b5e20] text-white
+                        text-sm rounded-lg hover:bg-[#2e7d32] transition-colors"
                     >
                       <Navigation className="w-3.5 h-3.5" />
                       導航

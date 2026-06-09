@@ -64,7 +64,7 @@ export default function SecurityPage() {
       await api.post('/auth/set-password', { password })
       setIsSuccess(true)
       // 更新本地狀態
-      setUserInfo((prev) => prev ? { ...prev, hasPassword: true } : null)
+      setUserInfo((prev) => (prev ? { ...prev, hasPassword: true } : null))
     } catch (err) {
       const message = err instanceof Error ? err.message : '設定密碼失敗，請稍後再試'
       setError(message)
@@ -156,7 +156,10 @@ export default function SecurityPage() {
                 )}
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     新密碼
                   </label>
                   <div className="relative">
@@ -177,7 +180,10 @@ export default function SecurityPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     確認密碼
                   </label>
                   <div className="relative">
@@ -203,9 +209,11 @@ export default function SecurityPage() {
                   </div>
                   {/* 即時驗證提示 */}
                   {confirmPassword !== '' && (
-                    <div className={`mt-1 flex items-center gap-1 text-sm ${
-                      password === confirmPassword ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <div
+                      className={`mt-1 flex items-center gap-1 text-sm ${
+                        password === confirmPassword ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
                       {password === confirmPassword ? (
                         <>
                           <Check className="w-4 h-4" />
@@ -223,8 +231,10 @@ export default function SecurityPage() {
 
                 <button
                   type="submit"
-                  disabled={isLoading || !password || !confirmPassword || password !== confirmPassword}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    isLoading || !password || !confirmPassword || password !== confirmPassword
+                  }
+                  className="w-full bg-[#1b5e20] hover:bg-[#2e7d32] text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-2">

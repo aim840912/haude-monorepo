@@ -166,7 +166,7 @@ export const ProductModalActions = React.memo<ProductModalActionsProps>(
                 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500',
                 isOutOfStock || isRequestingQuote || !isAuthenticated
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                  : 'bg-[#1b5e20] hover:bg-[#2e7d32] text-white cursor-pointer'
               )}
             >
               {isOutOfStock ? (

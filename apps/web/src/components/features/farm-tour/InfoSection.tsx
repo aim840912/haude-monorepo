@@ -114,7 +114,7 @@ export function InfoSection({ visitInfo, visitNotes }: InfoSectionProps) {
         <div className="mt-8 text-center">
           <a
             href="tel:05-2561843"
-            className="inline-block bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors font-semibold"
+            className="inline-block bg-[#1b5e20] text-white px-8 py-3 rounded-lg hover:bg-[#2e7d32] transition-colors font-semibold"
           >
             電話詢問
           </a>

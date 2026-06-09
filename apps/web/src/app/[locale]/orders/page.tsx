@@ -72,7 +72,7 @@ function OrdersContent() {
             <p className="text-gray-600 mb-6">快去選購喜歡的商品吧！</p>
             <Link
               href="/products"
-              className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="inline-block px-6 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
             >
               瀏覽產品
             </Link>
@@ -127,7 +127,9 @@ function OrdersContent() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 truncate">{item.productName}</h4>
+                            <h4 className="font-medium text-gray-900 truncate">
+                              {item.productName}
+                            </h4>
                             <p className="text-sm text-gray-500">
                               NT$ {item.unitPrice.toLocaleString()} x {item.quantity}
                             </p>

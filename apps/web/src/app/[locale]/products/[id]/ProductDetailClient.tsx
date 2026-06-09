@@ -2,15 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  ArrowLeft,
-  Share2,
-  ShoppingCart,
-  Truck,
-  Shield,
-  RefreshCw,
-  Loader2,
-} from 'lucide-react'
+import { ArrowLeft, Share2, ShoppingCart, Truck, Shield, RefreshCw, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useCartStore } from '@/stores/cartStore'
 import { isAuthenticated } from '@/stores/authStore'
@@ -54,10 +46,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   // 計算折扣
   const discountPercent =
     product.originalPrice && product.originalPrice > product.price
-      ? Math.round(
-          ((product.originalPrice - product.price) / product.originalPrice) *
-            100
-        )
+      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
       : 0
 
   const handleShare = async () => {
@@ -185,9 +174,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
             {/* 描述 */}
             <div className="prose prose-gray max-w-none">
-              <p className="text-gray-600 leading-relaxed">
-                {product.description}
-              </p>
+              <p className="text-gray-600 leading-relaxed">{product.description}</p>
             </div>
 
             {/* 數量選擇 */}
@@ -224,7 +211,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   addedToCart
                     ? 'bg-green-700 text-white'
                     : stock > 0 && !isAddingToCart
-                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      ? 'bg-[#1b5e20] text-white hover:bg-[#2e7d32]'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 )}
               >

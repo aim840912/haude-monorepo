@@ -11,7 +11,7 @@ export function FloatingCTA() {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
       <a
         href="tel:05-2561843"
-        className="bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-2xl transition-transform hover:scale-110 flex items-center justify-center group"
+        className="bg-[#1b5e20] hover:bg-[#2e7d32] text-white rounded-full p-4 shadow-2xl transition-transform hover:scale-110 flex items-center justify-center group"
         title="電話詢問"
       >
         <Phone className="w-6 h-6" />

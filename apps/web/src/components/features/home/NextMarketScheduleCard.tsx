@@ -1,6 +1,14 @@
+'use client'
+
 /**
- * 下次市集行程卡片
- * 顯示最近一次即將到來的市集擺攤資訊
+ * 下次市集行程卡片 — 方向 A
+ *
+ * 與原版差異：
+ * - 由置中白卡改為深茶褐主面板（左對齊），日期用金色襯線放大，作為「最新消息」區的主角
+ * - 全面移除 off-brand 橘 #d35400 → 品牌金 #d4af37
+ * - 圓角收斂、移除厚陰影
+ *
+ * 介面 / 資料邏輯與原版完全相同，可直接替換。
  */
 
 import { useMemo } from 'react'
@@ -9,97 +17,89 @@ import { CalendarDays, Gift } from 'lucide-react'
 import { useUpcomingSchedule } from '@/hooks/useSchedule'
 import { formatDate } from '@/utils/formatters'
 
+const PANEL = 'h-full bg-[#3e2723] text-[#f5efe8] rounded-lg p-10 flex flex-col justify-center'
+
 export function NextMarketScheduleCard() {
   const { schedules, isLoading, error } = useUpcomingSchedule()
 
-  // 計算下次行程
   const nextSchedule = useMemo(() => {
     if (!schedules || schedules.length === 0) return null
-
-    const now = new Date()
-    const today = now.toISOString().split('T')[0]
-
-    // 篩選今日之後的 upcoming 行程
-    const upcomingSchedules = schedules.filter((item) => {
-      return item.status === 'upcoming' && item.date >= today
+    const today = new Date().toISOString().split('T')[0]
+    const upcoming = schedules.filter((item) => item.status === 'upcoming' && item.date >= today)
+    const sorted = upcoming.sort((a, b) => {
+      const ta = new Date(`${a.date}T${a.time}`).getTime()
+      const tb = new Date(`${b.date}T${b.time}`).getTime()
+      return ta - tb
     })
-
-    // 按日期時間排序
-    const sorted = upcomingSchedules.sort((a, b) => {
-      const dateTimeA = new Date(`${a.date}T${a.time}`)
-      const dateTimeB = new Date(`${b.date}T${b.time}`)
-      return dateTimeA.getTime() - dateTimeB.getTime()
-    })
-
     return sorted[0] || null
   }, [schedules])
 
-  // Loading 狀態
+  // Loading
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-lg dark:bg-[#2d1f1a]">
-        <div className="flex justify-center mb-4">
-          <CalendarDays className="w-12 h-12 text-[#d35400] animate-pulse" strokeWidth={2} />
-        </div>
-        <h3 className="text-2xl font-bold text-[#3e2723] dark:text-[#d7ccc8] mb-4">下次市集</h3>
+      <div className={PANEL}>
+        <p className="text-xs tracking-[0.3em] uppercase text-[#d4af37] mb-5">
+          下次市集 · Next Market
+        </p>
         <div className="animate-pulse space-y-3">
-          <div className="h-8 bg-gray-200 dark:bg-[#5d4037] rounded mx-auto w-48"></div>
-          <div className="h-6 bg-gray-200 dark:bg-[#5d4037] rounded mx-auto w-40"></div>
+          <div className="h-10 bg-white/10 rounded w-56" />
+          <div className="h-5 bg-white/10 rounded w-40" />
         </div>
       </div>
     )
   }
 
-  // Error 或無資料狀態
+  // Error / 無資料
   if (error || !nextSchedule) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-lg dark:bg-[#2d1f1a]">
-        <div className="flex justify-center mb-4">
-          <CalendarDays className="w-12 h-12 text-gray-400" strokeWidth={2} />
-        </div>
-        <h3 className="text-2xl font-bold text-[#3e2723] dark:text-[#d7ccc8] mb-4">下次市集</h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
-          {error ? '無法載入行程' : '目前沒有即將到來的市集'}
+      <div className={PANEL}>
+        <p className="text-xs tracking-[0.3em] uppercase text-[#d4af37] mb-5">
+          下次市集 · Next Market
         </p>
+        <div className="flex items-center gap-3 mb-4 text-[#f5efe8]/85">
+          <CalendarDays className="w-7 h-7 text-[#d4af37]" strokeWidth={1.6} />
+          <span className="text-lg">{error ? '無法載入行程' : '目前沒有即將到來的市集'}</span>
+        </div>
         <Link
           href="/schedule"
-          className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-3 rounded-full font-semibold transition-colors"
+          className="self-start text-[#d4af37] border-b border-[#d4af37]/50 pb-0.5 hover:text-[#ffd54f] transition-colors"
         >
-          查看完整行程
+          查看完整擺攤行程 &rarr;
         </Link>
       </div>
     )
   }
 
-  // 格式化顯示
+  // 正常
   const scheduleDate = new Date(nextSchedule.date)
   const weekday = scheduleDate.toLocaleDateString('zh-TW', { weekday: 'short' })
   const dateStr = formatDate(nextSchedule.date, 'short')
 
   return (
-    <div className="bg-white rounded-2xl p-8 text-center shadow-lg hover:shadow-xl transition-shadow duration-300 dark:bg-[#2d1f1a]">
-      <div className="flex justify-center mb-4">
-        <CalendarDays className="w-12 h-12 text-[#d35400]" strokeWidth={2} />
+    <div className={PANEL}>
+      <div className="flex items-center gap-2 mb-5">
+        <CalendarDays className="w-5 h-5 text-[#d4af37]" strokeWidth={1.6} />
+        <p className="text-xs tracking-[0.3em] uppercase text-[#d4af37]">下次市集 · Next Market</p>
       </div>
-      <h3 className="text-2xl font-bold text-[#3e2723] dark:text-[#d7ccc8] mb-4">下次市集</h3>
-      <div className="text-3xl font-bold text-[#d35400] mb-2">
+
+      <div className="font-serif text-4xl md:text-5xl font-bold text-[#fdf6ec] leading-tight mb-2">
         {weekday} {nextSchedule.time}
       </div>
-      <p className="text-gray-700 dark:text-gray-300 mb-2">{nextSchedule.location}</p>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">{dateStr}</p>
+      <p className="text-lg text-[#f5efe8]/85 mb-1">{nextSchedule.location}</p>
+      <p className="text-sm text-[#f5efe8]/55 mb-7">{dateStr}</p>
 
       {nextSchedule.specialOffer && (
-        <div className="bg-[#fff8f0] dark:bg-[#3e2723] rounded-lg p-3 mb-6 flex items-center justify-center gap-2">
-          <Gift className="w-4 h-4 text-[#d35400]" strokeWidth={2} />
-          <p className="text-sm font-medium text-[#d35400]">{nextSchedule.specialOffer}</p>
+        <div className="inline-flex items-center gap-2 self-start border border-[#d4af37]/45 text-[#d4af37] text-sm px-3.5 py-2 rounded-sm mb-7">
+          <Gift className="w-4 h-4" strokeWidth={1.8} />
+          <span>{nextSchedule.specialOffer}</span>
         </div>
       )}
 
       <Link
         href="/schedule"
-        className="inline-block bg-[#d35400] hover:bg-[#e67e22] text-white px-8 py-3 rounded-full font-semibold transition-colors"
+        className="self-start text-[#d4af37] border-b border-[#d4af37]/50 pb-0.5 hover:text-[#ffd54f] transition-colors"
       >
-        查看完整行程
+        查看完整擺攤行程 &rarr;
       </Link>
     </div>
   )

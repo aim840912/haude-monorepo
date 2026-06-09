@@ -11,18 +11,49 @@ import type { CartItem } from '@/stores/cartStore'
 import type { MemberLevel } from '@haude/types'
 
 // 會員等級本地配置（與後端同步）
-const MEMBER_CONFIG: Record<MemberLevel, {
-  discountPercent: number
-  displayName: string
-  freeShipping: boolean
-  pointMultiplier: number
-  icon: typeof Crown
-  color: string
-}> = {
-  NORMAL: { discountPercent: 0, displayName: '普通會員', freeShipping: false, pointMultiplier: 1, icon: Star, color: 'text-gray-500' },
-  BRONZE: { discountPercent: 5, displayName: '銅卡會員', freeShipping: false, pointMultiplier: 1, icon: Award, color: 'text-amber-600' },
-  SILVER: { discountPercent: 10, displayName: '銀卡會員', freeShipping: false, pointMultiplier: 1.5, icon: Award, color: 'text-slate-500' },
-  GOLD: { discountPercent: 15, displayName: '金卡會員', freeShipping: true, pointMultiplier: 2, icon: Crown, color: 'text-yellow-600' },
+const MEMBER_CONFIG: Record<
+  MemberLevel,
+  {
+    discountPercent: number
+    displayName: string
+    freeShipping: boolean
+    pointMultiplier: number
+    icon: typeof Crown
+    color: string
+  }
+> = {
+  NORMAL: {
+    discountPercent: 0,
+    displayName: '普通會員',
+    freeShipping: false,
+    pointMultiplier: 1,
+    icon: Star,
+    color: 'text-gray-500',
+  },
+  BRONZE: {
+    discountPercent: 5,
+    displayName: '銅卡會員',
+    freeShipping: false,
+    pointMultiplier: 1,
+    icon: Award,
+    color: 'text-amber-600',
+  },
+  SILVER: {
+    discountPercent: 10,
+    displayName: '銀卡會員',
+    freeShipping: false,
+    pointMultiplier: 1.5,
+    icon: Award,
+    color: 'text-slate-500',
+  },
+  GOLD: {
+    discountPercent: 15,
+    displayName: '金卡會員',
+    freeShipping: true,
+    pointMultiplier: 2,
+    icon: Crown,
+    color: 'text-yellow-600',
+  },
 }
 
 interface OrderSummaryProps {
@@ -35,12 +66,7 @@ interface OrderSummaryProps {
 /**
  * 訂單摘要元件（含折扣碼功能）
  */
-export function OrderSummary({
-  items,
-  totalItems,
-  totalPrice,
-  isSubmitting,
-}: OrderSummaryProps) {
+export function OrderSummary({ items, totalItems, totalPrice, isSubmitting }: OrderSummaryProps) {
   const {
     discountCode,
     discountInfo,
@@ -58,7 +84,7 @@ export function OrderSummary({
   // 會員等級與折扣計算
   const memberLevel = (user?.memberLevel || 'NORMAL') as MemberLevel
   const memberConfig = MEMBER_CONFIG[memberLevel]
-  const memberDiscount = Math.floor(totalPrice * memberConfig.discountPercent / 100)
+  const memberDiscount = Math.floor((totalPrice * memberConfig.discountPercent) / 100)
   const hasFreeShipping = isAuthenticated && memberConfig.freeShipping
   const MemberIcon = memberConfig.icon
 
@@ -113,7 +139,7 @@ export function OrderSummary({
 
       {/* 商品列表 */}
       <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
-        {items.map(item => (
+        {items.map((item) => (
           <div key={item.id} className="flex gap-3">
             <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
               {item.image ? (
@@ -178,9 +204,7 @@ export function OrderSummary({
               placeholder="輸入折扣碼"
               className={cn(
                 'flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2',
-                error
-                  ? 'border-red-300 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-green-500'
+                error ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'
               )}
               disabled={isValidatingDiscount}
             />
@@ -195,27 +219,23 @@ export function OrderSummary({
                   : 'bg-gray-800 text-white hover:bg-gray-900'
               )}
             >
-              {isValidatingDiscount ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                '套用'
-              )}
+              {isValidatingDiscount ? <Loader2 className="w-4 h-4 animate-spin" /> : '套用'}
             </button>
           </div>
         )}
 
-        {error && (
-          <p className="text-xs text-red-500 mt-1">{error}</p>
-        )}
+        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       </div>
 
       {/* 會員等級標籤 */}
       {isAuthenticated && (
         <div className="border-t pt-4 mb-4">
-          <div className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-lg',
-            memberConfig.discountPercent > 0 ? 'bg-green-50' : 'bg-gray-50'
-          )}>
+          <div
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-lg',
+              memberConfig.discountPercent > 0 ? 'bg-green-50' : 'bg-gray-50'
+            )}
+          >
             <MemberIcon className={cn('w-4 h-4', memberConfig.color)} />
             <span className={cn('text-sm font-medium', memberConfig.color)}>
               {memberConfig.displayName}
@@ -270,7 +290,8 @@ export function OrderSummary({
           </div>
           <div className="flex-1">
             <p className="text-sm text-purple-900 font-medium">
-              完成訂單可獲得 <span className="text-purple-600">{earnedPoints.toLocaleString()}</span> 積分
+              完成訂單可獲得{' '}
+              <span className="text-purple-600">{earnedPoints.toLocaleString()}</span> 積分
             </p>
             {memberConfig.pointMultiplier > 1 && (
               <p className="text-xs text-purple-600">
@@ -289,7 +310,7 @@ export function OrderSummary({
           'w-full mt-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2',
           isSubmitting
             ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-            : 'bg-green-600 text-white hover:bg-green-700'
+            : 'bg-[#1b5e20] text-white hover:bg-[#2e7d32]'
         )}
       >
         {isSubmitting ? (

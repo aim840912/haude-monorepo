@@ -68,13 +68,13 @@ export default function SocialPage() {
     }
   }
 
-  const filteredPosts = posts.filter(post => {
+  const filteredPosts = posts.filter((post) => {
     if (filter === 'all') return true
     return post.platform === filter
   })
 
-  const facebookCount = posts.filter(p => p.platform === 'facebook').length
-  const instagramCount = posts.filter(p => p.platform === 'instagram').length
+  const facebookCount = posts.filter((p) => p.platform === 'facebook').length
+  const instagramCount = posts.filter((p) => p.platform === 'instagram').length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -134,7 +134,7 @@ export default function SocialPage() {
             <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={fetchPosts}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="px-4 py-2 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
             >
               重試
             </button>
@@ -145,11 +145,8 @@ export default function SocialPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPosts.map(post => (
-              <div
-                key={post.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden"
-              >
+            {filteredPosts.map((post) => (
+              <div key={post.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
                 {/* 標題區（如有） */}
                 {post.title && (
                   <div className="px-4 py-3 border-b border-gray-100">
@@ -159,9 +156,7 @@ export default function SocialPage() {
                       ) : (
                         <Instagram className="w-4 h-4 text-pink-600" />
                       )}
-                      <span className="text-sm font-medium text-gray-900">
-                        {post.title}
-                      </span>
+                      <span className="text-sm font-medium text-gray-900">{post.title}</span>
                     </div>
                   </div>
                 )}

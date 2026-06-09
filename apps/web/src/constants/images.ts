@@ -1,26 +1,25 @@
 /**
- * 前端圖片常數管理
+ * 前端圖片常數管理 — 方向 A（已換成驗證過的茶主題圖片）
  *
- * 集中管理所有預設圖片 URL
- * 當 API 未提供圖片或載入失敗時使用
+ * 變更：原本的預設圖其實不是茶（teaPlantation 是薄荷飲、teaSet 是咖啡餅乾、
+ * teaLeaves 是燈串愛心）。這裡全部換成實際載入確認過的茶主題 Unsplash 圖：
+ *   - 白瓷茶壺、清亮茶杯、抹茶、乾燥茶葉、森林
+ * 首頁 Hero 輪播改為 [茶壺 → 茶杯 → 抹茶]，與設計範例一致。
  *
+ * 直接覆蓋 src/constants/images.ts
  * 來源：Unsplash (https://unsplash.com)
  */
 
 // ========================================
-// Unsplash Photo IDs
+// Unsplash Photo IDs（皆已驗證可載入且為茶主題）
 // ========================================
 
 const PHOTO_IDS = {
-  // 茶葉相關
-  teaCup: 'photo-1564890369478-c89ca6d9cde9',
-  teaSet: 'photo-1544787219-7f47ccb76574',
-  teaPlantation: 'photo-1556881286-fc6915169721',
-  teaLandscape: 'photo-1563822249548-9a72b6353cd1',
-  teaLeaves: 'photo-1518568814500-bf0f8d125f46',
-
-  // 其他
-  forest: 'photo-1473448912268-2022ce9509d8',
+  teaPot: 'photo-1564890369478-c89ca6d9cde9', // 白瓷茶壺 · 暖木
+  teaCup: 'photo-1597318181409-cf64d0b5d8a2', // 清亮茶杯 · 留白
+  matcha: 'photo-1582793988951-9aed5509eb97', // 抹茶 · 深木
+  teaLeaves: 'photo-1563822249548-9a72b6353cd1', // 乾燥茶葉 · 茶湯
+  forest: 'photo-1473448912268-2022ce9509d8', // 森林 · 永續
 } as const
 
 // ========================================
@@ -36,15 +35,15 @@ const unsplash = (photoId: string, width: number, height: number): string =>
 // ========================================
 
 export const DEFAULT_HERO_IMAGES = {
-  /** 首頁輪播圖片 */
+  /** 首頁輪播圖片 — 茶壺 → 茶杯 → 抹茶 */
   home: [
-    unsplash(PHOTO_IDS.teaPlantation, 1920, 1080), // 茶園梯田
-    unsplash(PHOTO_IDS.teaLandscape, 1920, 1080), // 茶園景觀
-    unsplash(PHOTO_IDS.teaSet, 1920, 1080), // 茶具品茗
+    unsplash(PHOTO_IDS.teaPot, 1920, 1080),
+    unsplash(PHOTO_IDS.teaCup, 1920, 1080),
+    unsplash(PHOTO_IDS.matcha, 1920, 1080),
   ] as string[],
 
   /** 觀光果園 Hero 背景 */
-  farmTours: unsplash(PHOTO_IDS.teaCup, 1920, 1080),
+  farmTours: unsplash(PHOTO_IDS.teaPot, 1920, 1080),
 }
 
 // ========================================
@@ -53,34 +52,33 @@ export const DEFAULT_HERO_IMAGES = {
 
 export const DEFAULT_FEATURE_CARD_IMAGES: string[] = [
   unsplash(PHOTO_IDS.teaLeaves, 400, 300), // 自然農法 - 茶葉
-  unsplash(PHOTO_IDS.teaSet, 400, 300), // 品質認證 - 茶具
-  unsplash(PHOTO_IDS.teaPlantation, 400, 300), // 農場體驗 - 茶園
-  unsplash(PHOTO_IDS.forest, 400, 300), // 永續經營 - 森林
+  unsplash(PHOTO_IDS.teaCup, 400, 300), // 品質把關 - 茶杯
+  unsplash(PHOTO_IDS.matcha, 400, 300), // 高山茶園 - 抹茶
+  unsplash(PHOTO_IDS.forest, 400, 300), // 永續共生 - 森林
 ]
 
 // ========================================
 // 品牌故事圖片
 // ========================================
 
-export const DEFAULT_BRAND_STORY_IMAGE = unsplash(PHOTO_IDS.teaPlantation, 800, 1067)
+export const DEFAULT_BRAND_STORY_IMAGE = unsplash(PHOTO_IDS.teaPot, 800, 1067)
 
 // ========================================
 // 關於我們頁面圖片
 // ========================================
 
-export const DEFAULT_ABOUT_HERO_IMAGE = unsplash(PHOTO_IDS.teaPlantation, 1920, 800)
+export const DEFAULT_ABOUT_HERO_IMAGE = unsplash(PHOTO_IDS.matcha, 1920, 800)
 
 export const DEFAULT_ABOUT_STORY_IMAGES: string[] = [
-  unsplash(PHOTO_IDS.teaLandscape, 800, 600), // 三代傳承故事圖
-  unsplash(PHOTO_IDS.teaLeaves, 800, 600), // 自然農法故事圖
+  unsplash(PHOTO_IDS.teaLeaves, 800, 600), // 三代傳承故事圖
+  unsplash(PHOTO_IDS.teaCup, 800, 600), // 自然農法故事圖
 ]
 
 // ========================================
 // 最新消息頁面圖片
 // ========================================
 
-export const DEFAULT_NEWS_HERO_IMAGE =
-  'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w=1920&h=800&fit=crop'
+export const DEFAULT_NEWS_HERO_IMAGE = unsplash(PHOTO_IDS.teaLeaves, 1920, 800)
 
 // ========================================
 // 匯出所有圖片常數

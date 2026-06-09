@@ -24,9 +24,7 @@ type ViewMode = 'list' | 'map'
 export function LocationsPageClient() {
   const router = useRouter()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-    null
-  )
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const { locations, isLoading } = useLocations()
 
   // GPS 附近搜尋
@@ -65,10 +63,7 @@ export function LocationsPageClient() {
             {userPosition && (
               <p className="text-sm text-gray-500 mt-1">
                 顯示 20 公里內的 {nearbyLocations.length} 個據點
-                <button
-                  onClick={clearLocation}
-                  className="ml-2 text-green-600 hover:underline"
-                >
+                <button onClick={clearLocation} className="ml-2 text-green-600 hover:underline">
                   顯示全部
                 </button>
               </p>
@@ -148,9 +143,7 @@ export function LocationsPageClient() {
                   locations={displayLocations}
                   selectedLocation={selectedLocation}
                   onLocationSelect={handleLocationSelect}
-                  center={
-                    userPosition ? [userPosition.lat, userPosition.lng] : null
-                  }
+                  center={userPosition ? [userPosition.lat, userPosition.lng] : null}
                 />
               )}
             </div>
@@ -160,28 +153,22 @@ export function LocationsPageClient() {
               <div className="border-t border-gray-200 p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-bold text-lg text-gray-900">
-                      {selectedLocation.name}
-                    </h3>
+                    <h3 className="font-bold text-lg text-gray-900">{selectedLocation.name}</h3>
                     {selectedLocation.address && (
-                      <p className="text-gray-600 text-sm mt-1">
-                        {selectedLocation.address}
-                      </p>
+                      <p className="text-gray-600 text-sm mt-1">{selectedLocation.address}</p>
                     )}
                     {'distance' in selectedLocation && (
                       <p className="text-green-600 text-sm mt-1">
                         距離約{' '}
-                        {(
-                          selectedLocation as Location & { distance: number }
-                        ).distance.toFixed(1)}{' '}
+                        {(selectedLocation as Location & { distance: number }).distance.toFixed(1)}{' '}
                         公里
                       </p>
                     )}
                   </div>
                   <button
                     onClick={() => handleLocationClick(selectedLocation.id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg
-                      hover:bg-green-700 transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-[#1b5e20] text-white rounded-lg
+                      hover:bg-[#2e7d32] transition-colors text-sm font-medium"
                   >
                     查看詳情
                   </button>

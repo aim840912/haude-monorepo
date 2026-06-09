@@ -194,7 +194,7 @@ export function SubmissionProgress({
               <button
                 type="button"
                 onClick={() => (window.location.href = '/admin/products')}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-[#1b5e20] border border-transparent rounded-lg hover:bg-[#2e7d32] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 查看產品列表
               </button>
