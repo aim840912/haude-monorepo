@@ -53,16 +53,16 @@ npx prisma db seed       # 執行種子資料
 
 ### 技術棧
 
-| 技術 | 版本 | 用途 |
-|------|------|------|
-| NestJS | 11.0 | 後端框架 |
-| TypeScript | 5.7 | 類型系統 |
-| Prisma | 7.1 | ORM |
-| PostgreSQL | 15 | 資料庫 |
-| Passport | 0.7 | 認證框架 |
-| JWT | 11.0 | Token 認證 |
-| Swagger | 11.2 | API 文檔 |
-| Jest | 30.0 | 測試框架 |
+| 技術       | 版本 | 用途       |
+| ---------- | ---- | ---------- |
+| NestJS     | 11.0 | 後端框架   |
+| TypeScript | 5.7  | 類型系統   |
+| Prisma     | 7.1  | ORM        |
+| PostgreSQL | 15   | 資料庫     |
+| Passport   | 0.7  | 認證框架   |
+| JWT        | 11.0 | Token 認證 |
+| Swagger    | 11.2 | API 文檔   |
+| Jest       | 30.0 | 測試框架   |
 
 ---
 
@@ -119,6 +119,7 @@ test/
 ### 新增模組步驟
 
 1. **建立模組結構**：
+
 ```bash
 nest generate module modules/your-module
 nest generate controller modules/your-module
@@ -126,27 +127,29 @@ nest generate service modules/your-module
 ```
 
 2. **建立 DTO**：
+
 ```typescript
 // dto/create-item.dto.ts
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator'
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateItemDto {
   @IsString()
   @IsNotEmpty()
-  name: string
+  name: string;
 
   @IsString()
   @IsOptional()
-  description?: string
+  description?: string;
 }
 ```
 
 3. **建立 Service**：
+
 ```typescript
 // item.service.ts
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '@/prisma/prisma.service'
-import { CreateItemDto } from './dto/create-item.dto'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateItemDto } from './dto/create-item.dto';
 
 @Injectable()
 export class ItemService {
@@ -155,28 +158,29 @@ export class ItemService {
   async create(createItemDto: CreateItemDto) {
     return this.prisma.item.create({
       data: createItemDto,
-    })
+    });
   }
 
   async findAll() {
-    return this.prisma.item.findMany()
+    return this.prisma.item.findMany();
   }
 
   async findOne(id: string) {
     return this.prisma.item.findUnique({
       where: { id },
-    })
+    });
   }
 }
 ```
 
 4. **建立 Controller**：
+
 ```typescript
 // item.controller.ts
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common'
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
-import { ItemService } from './item.service'
-import { CreateItemDto } from './dto/create-item.dto'
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { ItemService } from './item.service';
+import { CreateItemDto } from './dto/create-item.dto';
 
 @Controller('items')
 export class ItemController {
@@ -185,17 +189,17 @@ export class ItemController {
   @Post()
   @UseGuards(JwtAuthGuard)
   create(@Body() createItemDto: CreateItemDto) {
-    return this.itemService.create(createItemDto)
+    return this.itemService.create(createItemDto);
   }
 
   @Get()
   findAll() {
-    return this.itemService.findAll()
+    return this.itemService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.itemService.findOne(id)
+    return this.itemService.findOne(id);
   }
 }
 ```
@@ -212,23 +216,23 @@ import {
   MinLength,
   IsOptional,
   IsEnum,
-} from 'class-validator'
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail()
-  email: string
+  email: string;
 
   @IsString()
   @MinLength(8)
-  password: string
+  password: string;
 
   @IsString()
   @IsNotEmpty()
-  name: string
+  name: string;
 
   @IsEnum(['USER', 'ADMIN'])
   @IsOptional()
-  role?: 'USER' | 'ADMIN'
+  role?: 'USER' | 'ADMIN';
 }
 ```
 
@@ -246,15 +250,15 @@ export class CreateUserDto {
 ### 使用 Guard 保護端點
 
 ```typescript
-import { Controller, Get, UseGuards, Request } from '@nestjs/common'
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
+import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 @Controller('protected')
 export class ProtectedController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Request() req) {
-    return req.user  // { userId, email, name, role }
+    return req.user; // { userId, email, name, role }
   }
 }
 ```
@@ -319,8 +323,8 @@ enum Role {
 ### Prisma Service 使用
 
 ```typescript
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '@/prisma/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
@@ -329,20 +333,20 @@ export class UsersService {
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
-    })
+    });
   }
 
   async create(data: { email: string; password: string; name: string }) {
     return this.prisma.user.create({
       data,
-    })
+    });
   }
 
   async update(id: string, data: { name?: string; isActive?: boolean }) {
     return this.prisma.user.update({
       where: { id },
       data,
-    })
+    });
   }
 }
 ```
@@ -362,6 +366,58 @@ npx prisma generate
 npx prisma migrate deploy
 ```
 
+#### 遷移撰寫規則（踩過的雷）
+
+1. **不可用重導向產生 migration**
+   `prisma migrate diff ... > migration.sql` 會把指令的 stdout 訊息（如 `Loaded Prisma config from...`）一起寫進 SQL 檔，導致該 migration 在任何新資料庫上必定失敗。產生後務必 `head -3` 確認第一行是 SQL 註解。
+
+2. **Supabase 專屬語法要加存在性判斷**
+   `anon` / `authenticated` 是 Supabase 提供的角色，本機 Docker Postgres 沒有。直接 `REVOKE ... FROM anon` 會在本機噴 `role "anon" does not exist`。寫法參考 `migrations/20260720_revoke_anon_write_privileges/migration.sql`：
+
+   ```sql
+   DO $$
+   BEGIN
+     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+       EXECUTE 'REVOKE ...';
+     END IF;
+   END $$;
+   ```
+
+3. **非互動環境不可用 `migrate dev`**
+   會直接被拒絕（即使加 `--create-only`）。改用 `migrate diff --script` 產生後手動建資料夾，再 `migrate deploy`。
+
+---
+
+## 個資與安全規範
+
+專案即將處理真實客戶資料（姓名、電話、地址、綠界金流），適用個資法。以下為已實作的約束，**修改相關程式時勿破壞**。
+
+### 存取控制模型
+
+資料庫僅由本 API 透過 `DATABASE_URL`（postgres 角色）存取。RLS 對所有表啟用且**刻意不建任何 policy**（deny-all），`anon` / `authenticated` 權限已全數撤銷。授權邏輯**完全在 NestJS 層**（`JwtAuthGuard` + `RolesGuard`）。
+
+⚠️ 若日後要啟用 PostgREST / Supabase JS 直連前端，此模型即失效，必須先設計 policy。
+
+### 金流資料處理
+
+原始 payload **一律經 `maskPaymentPayload()` 遮罩後才落地**（`utils/mask-payment-payload.ts`）：
+
+- 遮罩對象：`requestData`、`responseData`、`rawData` 等稽核用 JSON blob
+- **不遮罩**結構化欄位（`Payment.vaAccount`、`bankCode`、`paymentCode`）——客戶要靠它們繳費
+- 新增任何寫入原始 payload 的程式碼時，必須套用此函式
+
+### 資料保留
+
+`DataRetentionService`（`modules/data-retention/`）每日 03:00 清理：
+
+| 對象               | 預設保留           | 環境變數                     |
+| ------------------ | ------------------ | ---------------------------- |
+| `payment_logs`     | 180 天             | `PAYMENT_LOG_RETENTION_DAYS` |
+| `audit_logs`       | 365 天             | `AUDIT_LOG_RETENTION_DAYS`   |
+| 過期 refresh token | 立即 / 撤銷後 7 天 | —                            |
+
+`Order` / `Payment` **不在清理範圍**（會計憑證，另依商業會計法保存）。
+
 ---
 
 ## 品質標準
@@ -374,20 +430,20 @@ import {
   BadRequestException,
   UnauthorizedException,
   ForbiddenException,
-} from '@nestjs/common'
+} from '@nestjs/common';
 
 @Injectable()
 export class ItemService {
   async findOne(id: string) {
     const item = await this.prisma.item.findUnique({
       where: { id },
-    })
+    });
 
     if (!item) {
-      throw new NotFoundException(`Item ${id} not found`)
+      throw new NotFoundException(`Item ${id} not found`);
     }
 
-    return item
+    return item;
   }
 }
 ```
@@ -395,7 +451,12 @@ export class ItemService {
 ### API 文檔 (Swagger)
 
 ```typescript
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('items')
 @Controller('items')
@@ -404,7 +465,7 @@ export class ItemController {
   @ApiOperation({ summary: '取得所有項目' })
   @ApiResponse({ status: 200, description: '成功' })
   findAll() {
-    return this.itemService.findAll()
+    return this.itemService.findAll();
   }
 
   @Post()
@@ -414,7 +475,7 @@ export class ItemController {
   @ApiResponse({ status: 201, description: '建立成功' })
   @ApiResponse({ status: 401, description: '未認證' })
   create(@Body() createItemDto: CreateItemDto) {
-    return this.itemService.create(createItemDto)
+    return this.itemService.create(createItemDto);
   }
 }
 ```
@@ -445,7 +506,6 @@ export class ItemController {
 - **全域規範**：`~/.claude/CLAUDE.md`
 - **Swagger 文檔**：`http://localhost:3001/api`
 
-
 <claude-mem-context>
 # Recent Activity
 
@@ -453,27 +513,28 @@ export class ItemController {
 
 ### Jan 17, 2026
 
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #2218 | 8:35 PM | 🔵 | Reviewed API application dependencies and configuration | ~440 |
-| #1849 | 6:01 PM | 🔵 | E2E test infrastructure exists but contains only placeholder test file | ~380 |
-| #1838 | 5:58 PM | 🔵 | Complete API source file inventory reveals limited test coverage | ~422 |
-| #1835 | " | 🔵 | API backend package configuration reviewed for improvement planning | ~341 |
-| #1810 | 5:07 PM | ⚖️ | Comprehensive Code Quality Analysis with Prioritized Improvements | ~701 |
-| #1799 | " | 🔵 | NestJS API: Haude Tea Shop Backend with Full Testing Infrastructure | ~573 |
-| #1797 | 5:06 PM | 🔵 | Production Environment Configuration with Taiwan Payment and Email Services | ~631 |
-| #1773 | 5:05 PM | 🔵 | Modern TypeScript Configuration with ES2023 and Decorators | ~431 |
-| #1754 | 5:03 PM | 🔵 | NestJS API with Prisma, Supabase, and Multi-Auth Strategy | ~516 |
-| #1738 | 4:57 PM | 🔵 | API CLAUDE.md Content Analysis Reveals Minimal Duplication | ~560 |
-| #1677 | 4:41 PM | 🔵 | API App CLAUDE.md Documents NestJS Backend Patterns | ~697 |
-| #1668 | 4:40 PM | 🔵 | Complete CLAUDE.md Configuration Audit Performed | ~698 |
-| #1650 | 4:39 PM | 🔵 | API App CLAUDE.md Configuration Structure Analyzed | ~507 |
-| #1634 | 4:35 PM | 🔵 | Image Storage Architecture Investigation and Root Cause Analysis | ~634 |
+| ID    | Time    | T   | Title                                                                       | Read |
+| ----- | ------- | --- | --------------------------------------------------------------------------- | ---- |
+| #2218 | 8:35 PM | 🔵  | Reviewed API application dependencies and configuration                     | ~440 |
+| #1849 | 6:01 PM | 🔵  | E2E test infrastructure exists but contains only placeholder test file      | ~380 |
+| #1838 | 5:58 PM | 🔵  | Complete API source file inventory reveals limited test coverage            | ~422 |
+| #1835 | "       | 🔵  | API backend package configuration reviewed for improvement planning         | ~341 |
+| #1810 | 5:07 PM | ⚖️  | Comprehensive Code Quality Analysis with Prioritized Improvements           | ~701 |
+| #1799 | "       | 🔵  | NestJS API: Haude Tea Shop Backend with Full Testing Infrastructure         | ~573 |
+| #1797 | 5:06 PM | 🔵  | Production Environment Configuration with Taiwan Payment and Email Services | ~631 |
+| #1773 | 5:05 PM | 🔵  | Modern TypeScript Configuration with ES2023 and Decorators                  | ~431 |
+| #1754 | 5:03 PM | 🔵  | NestJS API with Prisma, Supabase, and Multi-Auth Strategy                   | ~516 |
+| #1738 | 4:57 PM | 🔵  | API CLAUDE.md Content Analysis Reveals Minimal Duplication                  | ~560 |
+| #1677 | 4:41 PM | 🔵  | API App CLAUDE.md Documents NestJS Backend Patterns                         | ~697 |
+| #1668 | 4:40 PM | 🔵  | Complete CLAUDE.md Configuration Audit Performed                            | ~698 |
+| #1650 | 4:39 PM | 🔵  | API App CLAUDE.md Configuration Structure Analyzed                          | ~507 |
+| #1634 | 4:35 PM | 🔵  | Image Storage Architecture Investigation and Root Cause Analysis            | ~634 |
 
 ### Jan 18, 2026
 
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #2426 | 1:44 AM | 🔵 | Technical Health Status Analysis Revealing Critical Configuration Gaps | ~817 |
-| #2421 | " | 🔵 | Comprehensive Project Completeness Analysis of Haude E-Commerce Monorepo | ~901 |
+| ID    | Time    | T   | Title                                                                    | Read |
+| ----- | ------- | --- | ------------------------------------------------------------------------ | ---- |
+| #2426 | 1:44 AM | 🔵  | Technical Health Status Analysis Revealing Critical Configuration Gaps   | ~817 |
+| #2421 | "       | 🔵  | Comprehensive Project Completeness Analysis of Haude E-Commerce Monorepo | ~901 |
+
 </claude-mem-context>

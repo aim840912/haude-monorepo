@@ -43,12 +43,20 @@ pnpm type-check
 # 清理
 pnpm clean
 
-# 資料庫（在 apps/api 目錄下）
+# 資料庫：開發前必先啟動本機 DB（Docker Desktop 需執行中）
+docker compose -f docker-compose.dev.yml up -d    # 啟動（port 5433）
+docker compose -f docker-compose.dev.yml down     # 停止，資料保留
+docker compose -f docker-compose.dev.yml down -v  # 停止並清空資料
+
+# 資料庫操作（在 apps/api 目錄下）
 cd apps/api
 npx prisma generate          # 生成 Prisma Client
-npx prisma migrate dev       # 執行遷移
+npx prisma migrate deploy    # 套用遷移（非互動環境不可用 migrate dev）
+npx prisma db seed           # 灌測試資料
 npx prisma studio            # 開啟資料庫管理 UI
 ```
+
+> ⚠️ **開發資料庫是本機 Docker，不是 Supabase**。詳見下方「資料庫環境」。
 
 ---
 
@@ -298,15 +306,37 @@ kill -9 $(lsof -t -i :5174)  # 終止佔用 5174 的進程
 - **永不** 假設服務已停止 - 啟動前必須用 `lsof` 檢查
 - **始終** 使用固定 port - 確保前後端 URL 設定一致
 
+### 資料庫環境（重要）
+
+**開發與生產使用不同資料庫，不可混用。**
+
+| 環境 | 資料庫 | 連線 |
+|------|--------|------|
+| 本機開發 | Docker PostgreSQL 15 | `127.0.0.1:5433` / db `haude_dev` |
+| 生產 | Supabase（Tokyo） | Session pooler，設定於 Render 環境變數 |
+
+**為什麼分離**：兩者原本共用同一個 Supabase 專案，本機跑 `prisma db seed` 或測試刪除會直接砍掉線上真實訂單。茶行即將實際使用，此風險不可接受。
+
+**踩雷提醒**：
+- Port 是 **5433 不是 5432**——5432 已被另一專案的 `taskflow-postgres` 佔用
+- 連線字串用 **`127.0.0.1` 不可用 `localhost`**——Windows 會優先解析成 IPv6 `::1`，而容器只綁 IPv4，會出現 `P1001 Can't reach database server`
+- 生產連線字串備份在 `apps/api/.env.prod-backup.local`（已 gitignore）。要對生產庫操作時：
+  `DATABASE_URL="$(grep '^DATABASE_URL=' .env.prod-backup.local | sed 's/^DATABASE_URL=//' | tr -d '\"')" npx prisma migrate status`
+
 ### 環境變數
 
 **apps/api** (`.env`)：
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/haude_v2"
+# 本機開發（Docker）— 生產值在 Render，勿把生產字串寫進此檔
+DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/haude_dev?schema=public"
 JWT_SECRET=your-super-secret-jwt-key
 JWT_EXPIRES_IN=7d
 PORT=3001
 FRONTEND_URL=http://localhost:5173
+
+# 個資保留期限（未設定則採程式內建預設 180 / 365）
+PAYMENT_LOG_RETENTION_DAYS=180
+AUDIT_LOG_RETENTION_DAYS=365
 ```
 
 **apps/web** (`.env.local`)：
