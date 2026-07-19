@@ -12,6 +12,7 @@ import {
 } from '../utils/ecpay-crypto';
 import type { PaymentMethodType } from '../dto/create-payment.dto';
 import { PaymentConfigService } from './payment-config.service';
+import { maskPaymentPayload } from '../utils/mask-payment-payload';
 
 /**
  * 付款表單資料（前端用於提交到綠界）
@@ -131,7 +132,7 @@ export class CreatePaymentService {
         amount,
         paymentType: paymentMethod,
         status: 'pending',
-        requestData: tradeParams as object,
+        requestData: maskPaymentPayload(tradeParams) as object,
       },
     });
 
@@ -205,7 +206,7 @@ export class CreatePaymentService {
       data: {
         merchantOrderNo: merchantTradeNo,
         paymentType: paymentMethod,
-        requestData: tradeParams as object,
+        requestData: maskPaymentPayload(tradeParams) as object,
       },
     });
 

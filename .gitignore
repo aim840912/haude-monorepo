@@ -42,9 +42,15 @@ out/
 **/.env.production
 **/.env.test.local
 **/.env.production.local
+# Catch-all: the enumerated list above misses ad-hoc names such as
+# `.env.prod-backup`, which would otherwise be committed with real secrets.
+.env*
+**/.env*
 # Keep example files
 !.env.example
 !.env.*.example
+!**/.env.example
+!**/.env.*.example
 
 # ================================
 # Prisma

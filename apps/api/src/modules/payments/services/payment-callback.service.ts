@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentConfigService } from './payment-config.service';
 import { EmailService } from '../../email/email.service';
+import { maskPaymentPayload } from '../utils/mask-payment-payload';
 
 /**
  * 付款回調處理服務
@@ -212,7 +213,7 @@ export class PaymentCallbackService {
           status: 'paid',
           tradeNo: body.TradeNo,
           payTime: body.PaymentDate ? new Date(body.PaymentDate) : new Date(),
-          responseData: body as object,
+          responseData: maskPaymentPayload(body) as object,
         },
       });
 
@@ -253,7 +254,7 @@ export class PaymentCallbackService {
         where: { id: payment.id },
         data: {
           status: 'failed',
-          responseData: body as object,
+          responseData: maskPaymentPayload(body) as object,
         },
       });
 
@@ -283,7 +284,7 @@ export class PaymentCallbackService {
       responseData: object;
     } = {
       tradeNo: body.TradeNo || undefined,
-      responseData: body as object,
+      responseData: maskPaymentPayload(body) as object,
     };
 
     // ATM 取號資訊
@@ -332,7 +333,9 @@ export class PaymentCallbackService {
         paymentId: data.paymentId,
         merchantOrderNo: data.merchantOrderNo,
         logType: data.logType,
-        rawData: data.rawData as object,
+        // 遮罩後才落地：原始回調含虛擬帳號 / 卡號前六後四等資料，
+        // 這些值已存在 Payment 的結構化欄位，稽核日誌不需要第二份完整副本
+        rawData: maskPaymentPayload(data.rawData) as object,
         verified: data.verified,
         ipAddress: data.ipAddress,
         processed: true,

@@ -1,0 +1,40 @@
+# 本機開發用 PostgreSQL
+#
+# 目的：讓開發環境與 Supabase 生產資料庫完全隔離。
+# 在此之前 apps/api/.env 與 Render 指向同一個 Supabase 專案，
+# 本機任何 seed / 測試刪除都會直接改動線上資料。
+#
+# 使用方式：
+#   docker compose -f docker-compose.dev.yml up -d     # 啟動
+#   docker compose -f docker-compose.dev.yml down      # 停止（保留資料）
+#   docker compose -f docker-compose.dev.yml down -v   # 停止並清空資料
+#
+# 對應 apps/api/.env：
+#   DATABASE_URL="postgresql://postgres:postgres@localhost:5433/haude_dev?schema=public"
+#
+# 注意 port 是 5433 不是 5432——5432 已被 taskflow-postgres 佔用。
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: haude-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      # 僅供本機開發，不對外開放，故使用簡單密碼
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: haude_dev
+    ports:
+      # 只綁 127.0.0.1，避免同網段其他機器連入
+      # 主機端用 5433（5432 已被其他專案的 taskflow-postgres 佔用）
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - haude-dev-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d haude_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  haude-dev-pgdata:

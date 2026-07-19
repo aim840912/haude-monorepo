@@ -32,6 +32,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { MembersModule } from './modules/members/members.module';
 import { SystemModule } from './modules/system/system.module';
 import { SiteSettingsModule } from './modules/site-settings/site-settings.module';
+import { DataRetentionModule } from './modules/data-retention/data-retention.module';
 
 @Module({
   imports: [
@@ -118,6 +119,7 @@ import { SiteSettingsModule } from './modules/site-settings/site-settings.module
     MembersModule,
     SystemModule,
     SiteSettingsModule,
+    DataRetentionModule,
   ],
   controllers: [AppController],
   providers: [
