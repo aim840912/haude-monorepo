@@ -63,6 +63,12 @@ const buckets = [
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
     fileSizeLimit: 5 * 1024 * 1024, // 5MB
   },
+  {
+    name: 'site-images',
+    public: true,
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+    fileSizeLimit: 5 * 1024 * 1024, // 5MB
+  },
 ];
 
 async function setupBuckets() {
