@@ -285,5 +285,4 @@ describe('AuthService', () => {
       expect(result.user.hasPassword).toBe(false);
     });
   });
-
 });

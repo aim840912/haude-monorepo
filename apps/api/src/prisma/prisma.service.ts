@@ -11,10 +11,7 @@ interface QueryEvent {
 }
 
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleDestroy
-{
+export class PrismaService extends PrismaClient implements OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
   private readonly SLOW_QUERY_THRESHOLD = 100; // 100ms
 

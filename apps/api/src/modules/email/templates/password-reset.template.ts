@@ -4,7 +4,11 @@
  * 密碼重設郵件模板
  */
 
-import { wrapInEmailTemplate, BRAND_COLORS, escapeHtml } from './email-base.template';
+import {
+  wrapInEmailTemplate,
+  BRAND_COLORS,
+  escapeHtml,
+} from './email-base.template';
 
 export interface PasswordResetTemplateData {
   resetUrl: string;
