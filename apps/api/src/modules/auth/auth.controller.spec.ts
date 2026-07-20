@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
@@ -37,6 +38,8 @@ describe('AuthController', () => {
     googleLogin: jest.fn(),
     revokeAllUserTokens: jest.fn().mockResolvedValue(undefined),
     refreshAccessToken: jest.fn(),
+    findOrCreateDevUser: jest.fn(),
+    generateTokenPair: jest.fn(),
   };
 
   // Mock UsersService
@@ -76,6 +79,101 @@ describe('AuthController', () => {
   describe('初始化', () => {
     it('應成功建立 AuthController', () => {
       expect(controller).toBeDefined();
+    });
+  });
+
+  // ====================================
+  // devLogin（開發後門）
+  // ====================================
+
+  describe('devLogin — 開發後門防護', () => {
+    /**
+     * 必須為每個案例重建 controller。
+     *
+     * AuthController 在 constructor 就把 NODE_ENV 讀進 this.isProd，
+     * 之後再改 ConfigService mock 的回傳值不會有任何效果。
+     */
+    async function createControllerWithEnv(
+      env: Record<string, string | undefined>,
+    ): Promise<AuthController> {
+      const configService = {
+        get: jest.fn((key: string) => env[key]),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [AuthController],
+        providers: [
+          { provide: AuthService, useValue: mockAuthService },
+          { provide: UsersService, useValue: mockUsersService },
+          { provide: ConfigService, useValue: configService },
+        ],
+      }).compile();
+
+      return module.get<AuthController>(AuthController);
+    }
+
+    beforeEach(() => {
+      mockAuthService.findOrCreateDevUser.mockResolvedValue({
+        id: 'dev-user-1',
+        email: 'dev-admin@test.local',
+        name: 'Dev Admin',
+        role: 'ADMIN',
+      });
+      mockAuthService.generateTokenPair.mockResolvedValue({
+        accessToken: 'dev-access-token',
+        refreshToken: 'dev-refresh-token',
+      });
+    });
+
+    it('ENABLE_DEV_LOGIN 未設定時應回 404（fail closed）', async () => {
+      const c = await createControllerWithEnv({ NODE_ENV: 'development' });
+
+      // 漏設環境變數的後果必須是「功能不可用」，而不是「後門大開」
+      await expect(c.devLogin('ADMIN', 'admin', mockResponse)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockAuthService.findOrCreateDevUser).not.toHaveBeenCalled();
+    });
+
+    it('ENABLE_DEV_LOGIN=false 時應回 404', async () => {
+      const c = await createControllerWithEnv({
+        NODE_ENV: 'development',
+        ENABLE_DEV_LOGIN: 'false',
+      });
+
+      await expect(c.devLogin('ADMIN', 'admin', mockResponse)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('production 環境即使 ENABLE_DEV_LOGIN=true 也應回 404', async () => {
+      const c = await createControllerWithEnv({
+        NODE_ENV: 'production',
+        ENABLE_DEV_LOGIN: 'true',
+      });
+
+      // 兩道防線互相獨立：任一不成立就擋
+      await expect(c.devLogin('ADMIN', 'admin', mockResponse)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockAuthService.findOrCreateDevUser).not.toHaveBeenCalled();
+    });
+
+    it('非 production 且 ENABLE_DEV_LOGIN=true 時應正常發出 session', async () => {
+      const c = await createControllerWithEnv({
+        NODE_ENV: 'development',
+        ENABLE_DEV_LOGIN: 'true',
+        FRONTEND_URL: 'http://localhost:5173',
+        ADMIN_URL: 'http://localhost:5174',
+      });
+
+      await c.devLogin('ADMIN', 'admin', mockResponse);
+
+      expect(mockAuthService.findOrCreateDevUser).toHaveBeenCalledWith('ADMIN');
+      expect(mockResponse.cookie).toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        expect.stringContaining('http://localhost:5174/auth/callback'),
+      );
     });
   });
 
