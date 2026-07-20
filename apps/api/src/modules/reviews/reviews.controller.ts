@@ -11,6 +11,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto, ApproveReviewDto } from './dto/update-review.dto';
@@ -167,7 +168,7 @@ export class ReviewsController {
    */
   @Get('admin/reviews')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'STAFF')
+  @Roles(Role.ADMIN, Role.STAFF)
   async getAllReviews(
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
@@ -185,7 +186,7 @@ export class ReviewsController {
    */
   @Patch('admin/reviews/:id/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'STAFF')
+  @Roles(Role.ADMIN, Role.STAFF)
   async approveReview(@Param('id') id: string, @Body() dto: ApproveReviewDto) {
     return this.reviewsService.approve(id, dto.isApproved);
   }
@@ -195,7 +196,7 @@ export class ReviewsController {
    */
   @Delete('admin/reviews/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(Role.ADMIN)
   async adminDeleteReview(
     @Param('id') id: string,
     @Request() req: { user: JwtUser },
