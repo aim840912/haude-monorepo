@@ -8,6 +8,40 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
 
+/**
+ * 建構 Content-Security-Policy
+ *
+ * ⚠️ script-src 刻意保留 'unsafe-inline'，不使用 nonce。原因：
+ * Next.js App Router 以 inline <script>（self.__next_f.push）傳遞 hydration
+ * payload，nonce 必須逐請求產生 → 全站退出 SSG。實測本專案幾乎所有路由都是
+ * ● 預渲染，改用 nonce 會讓它們全部變成 ƒ（request-time render），並使
+ * s-maxage CDN 快取失效，代價過高。
+ *
+ * 因此 script-src 在此僅限制「外部 script 來源」，**無法阻擋 inline 注入**。
+ * 防止 inline 注入的實際防線是輸出端跳脫（見 src/lib/json-ld.ts）。
+ *
+ * 開發環境需放寬 connect-src：API 走 http://localhost:3001，
+ * 且 Next dev 的 HMR 需要 ws:，嚴格的 'self' https: 會直接擋掉兩者。
+ */
+function buildCsp(): string {
+  const isDev = process.env.NODE_ENV === 'development'
+
+  const connectSrc = isDev ? "'self' http://localhost:* ws://localhost:* https:" : "'self' https:"
+
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    `connect-src ${connectSrc}`,
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+  ].join('; ')
+}
+
 // 安全標頭配置
 const securityHeaders = [
   {
@@ -32,7 +66,7 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    value: buildCsp(),
   },
 ]
 

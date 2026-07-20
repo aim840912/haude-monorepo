@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentConfigService } from './payment-config.service';
 import { EmailService } from '@/modules/email/email.service';
+import { maskPaymentPayload } from '../utils/mask-payment-payload';
 import type { RefundTypeInput } from '../dto/refund-payment.dto';
 
 /**
@@ -201,7 +202,7 @@ export class PaymentRefundService {
             where: { id: refund.id },
             data: {
               status: 'completed',
-              ecpayResponse: ecpayResponse,
+              ecpayResponse: maskPaymentPayload(ecpayResponse) as object,
               completedAt: new Date(),
             },
           }),
@@ -242,7 +243,7 @@ export class PaymentRefundService {
           where: { id: refund.id },
           data: {
             status: 'failed',
-            ecpayResponse: ecpayResponse,
+            ecpayResponse: maskPaymentPayload(ecpayResponse) as object,
             failReason: rtnMsg || '綠界退款失敗',
           },
         });

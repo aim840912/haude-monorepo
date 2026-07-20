@@ -52,7 +52,11 @@ function maskTail(value: string, keep = 4): string {
 export function maskPaymentPayload<T>(payload: T): T {
   if (payload === null || payload === undefined) return payload;
   if (Array.isArray(payload)) {
-    return payload.map((item) => maskPaymentPayload(item)) as unknown as T;
+    // 明確標註為 unknown[]：Array.isArray 會把泛型 T narrow 成 any[]，
+    // 導致 .map() 回傳 any（觸發 no-unsafe-return）
+    return (payload as unknown[]).map((item) =>
+      maskPaymentPayload(item),
+    ) as unknown as T;
   }
   if (typeof payload !== 'object') return payload;
 

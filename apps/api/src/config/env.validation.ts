@@ -90,4 +90,13 @@ export const envValidationSchema = Joi.object({
   SLOW_REQUEST_THRESHOLD: Joi.number()
     .default(500)
     .description('慢請求閾值（毫秒）'),
+
+  // === 開發後門（預設關閉，fail-safe）===
+  // dev-login 端點免憑證即可取得 ADMIN session，僅供本機開發使用。
+  // 刻意設計為「未設定 = 關閉」，讓漏設環境變數的後果是「本機不能用」而非「後門大開」。
+  // 切勿在任何雲端環境（含 preview / staging）設為 true。
+  ENABLE_DEV_LOGIN: Joi.string()
+    .valid('true', 'false')
+    .default('false')
+    .description('是否啟用 dev-login 端點（僅限本機開發）'),
 });

@@ -9,6 +9,8 @@
  * @see https://schema.org/Product
  */
 
+import { safeJsonLd } from '@/lib/json-ld'
+
 interface ProductSchemaProps {
   product: {
     id: string
@@ -35,8 +37,7 @@ export function ProductSchema({
 }: ProductSchemaProps) {
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
-  const imageUrl =
-    product.images[0]?.storageUrl || `${SITE_URL}/opengraph-image`
+  const imageUrl = product.images[0]?.storageUrl || `${SITE_URL}/opengraph-image`
 
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -57,9 +58,7 @@ export function ProductSchema({
       price: product.price,
       priceValidUntil, // 從 props 傳入，避免 render 中呼叫不純函數
       availability:
-        product.stock > 0
-          ? 'https://schema.org/InStock'
-          : 'https://schema.org/OutOfStock',
+        product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       seller: {
         '@type': 'Organization',
         name: '豪德製茶所',
@@ -79,9 +78,6 @@ export function ProductSchema({
   }
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
   )
 }

@@ -21,10 +21,11 @@ import {
   ReorderFarmTourImagesDto,
   GetFarmTourUploadUrlDto,
 } from './dto';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 /**
@@ -83,7 +84,7 @@ export class FarmToursController {
  */
 @Controller('admin/farm-tours')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
+@Roles(Role.ADMIN)
 @NoCache()
 export class AdminFarmToursController {
   constructor(private readonly farmToursService: FarmToursService) {}

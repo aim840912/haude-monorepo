@@ -276,8 +276,15 @@ export class AuthController {
     @Query('target') target: string = 'admin',
     @Res() res: Response,
   ) {
-    // Production safety gate — hard 404
-    if (this.isProd) {
+    // Safety gate — hard 404 unless BOTH conditions hold.
+    // NODE_ENV alone is not enough: a preview/staging deploy that forgets to set
+    // it would otherwise expose a credential-free ADMIN login. ENABLE_DEV_LOGIN
+    // defaults to 'false', so a missing env var fails closed.
+    const devLoginEnabled =
+      !this.isProd &&
+      this.configService.get<string>('ENABLE_DEV_LOGIN') === 'true';
+
+    if (!devLoginEnabled) {
       throw new NotFoundException();
     }
 

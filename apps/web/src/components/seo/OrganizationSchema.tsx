@@ -6,6 +6,9 @@
  *
  * @see https://schema.org/Organization
  */
+
+import { safeJsonLd } from '@/lib/json-ld'
+
 export function OrganizationSchema() {
   const schema = {
     '@context': 'https://schema.org',
@@ -14,8 +17,7 @@ export function OrganizationSchema() {
     alternateName: 'Haude Tea',
     url: 'https://haude-tea.com',
     logo: 'https://haude-tea.com/logo.png',
-    description:
-      '傳承三代的製茶工藝，堅持手工採摘、精心烘焙，為您呈現台灣高山茶的純粹風味。',
+    description: '傳承三代的製茶工藝，堅持手工採摘、精心烘焙，為您呈現台灣高山茶的純粹風味。',
     foundingDate: '1980',
     founder: {
       '@type': 'Person',
@@ -40,9 +42,6 @@ export function OrganizationSchema() {
   }
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
   )
 }

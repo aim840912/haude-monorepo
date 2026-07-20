@@ -9,6 +9,8 @@
  * @see https://schema.org/LocalBusiness
  */
 
+import { safeJsonLd } from '@/lib/json-ld'
+
 interface LocalBusinessSchemaProps {
   location: {
     id: string
@@ -70,9 +72,6 @@ export function LocalBusinessSchema({ location }: LocalBusinessSchemaProps) {
   }
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
   )
 }

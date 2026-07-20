@@ -35,15 +35,15 @@ npm run start    # 啟動生產版本
 
 ### 技術棧
 
-| 技術 | 版本 | 用途 |
-|------|------|------|
-| Next.js | 15.5 | 全端框架 (App Router) |
-| React | 19.2 | UI 框架 |
-| TypeScript | 5.9 | 類型系統 |
-| Zustand | 5.0 | 狀態管理 |
-| Tailwind CSS | 4.1 | 樣式框架 |
-| Axios | 1.13 | HTTP 客戶端 |
-| lucide-react | 0.560 | 圖示庫 |
+| 技術         | 版本  | 用途                  |
+| ------------ | ----- | --------------------- |
+| Next.js      | 15.5  | 全端框架 (App Router) |
+| React        | 19.2  | UI 框架               |
+| TypeScript   | 5.9   | 類型系統              |
+| Zustand      | 5.0   | 狀態管理              |
+| Tailwind CSS | 4.1   | 樣式框架              |
+| Axios        | 1.13  | HTTP 客戶端           |
+| lucide-react | 0.560 | 圖示庫                |
 
 ---
 
@@ -143,7 +143,7 @@ Next.js 使用 `process.env.NEXT_PUBLIC_*`：
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 // ❌ 錯誤：Vite 語法
-const API_URL = import.meta.env.VITE_API_URL  // 不支援
+const API_URL = import.meta.env.VITE_API_URL // 不支援
 ```
 
 ### .env 檔案
@@ -153,6 +153,23 @@ const API_URL = import.meta.env.VITE_API_URL  // 不支援
 NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_USE_MOCK=false
 ```
+
+---
+
+## 安全注意事項
+
+### JSON-LD 一律用 `safeJsonLd()`
+
+輸出 JSON-LD 結構化資料時，**必須**使用 `@/lib/json-ld` 的 `safeJsonLd()`，不可直接
+`JSON.stringify()`。後者不跳脫 `<`，含使用者/管理員可編輯欄位（產品名稱、描述）時
+可被 `</script><script>` 跳出標籤造成 stored XSS。
+
+### CSP 不使用 nonce（刻意決定）
+
+`next.config.ts` 的 `script-src` 保留 `'unsafe-inline'`。改用 nonce 會讓全站退出 SSG
+（實測：幾乎所有路由都是 `●` 預渲染，會全部變成 `ƒ`），並使 `s-maxage` CDN 快取失效。
+**因此 CSP 擋不住 inline 注入**——防線是輸出端跳脫，不是 CSP。詳見 `next.config.ts`
+的 `buildCsp()` 註解。
 
 ---
 
@@ -173,7 +190,6 @@ NEXT_PUBLIC_USE_MOCK=false
 - **專案總覽**：`../../CLAUDE.md`
 - **全域規範**：`~/.claude/CLAUDE.md`
 
-
 <claude-mem-context>
 # Recent Activity
 
@@ -181,7 +197,8 @@ NEXT_PUBLIC_USE_MOCK=false
 
 ### Jan 17, 2026
 
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #1625 | 4:35 PM | 🔵 | Web Frontend Environment Configuration Structure | ~387 |
+| ID    | Time    | T   | Title                                            | Read |
+| ----- | ------- | --- | ------------------------------------------------ | ---- |
+| #1625 | 4:35 PM | 🔵  | Web Frontend Environment Configuration Structure | ~387 |
+
 </claude-mem-context>

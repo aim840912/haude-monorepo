@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsBoolean,
   Min,
+  MaxLength,
   IsDateString,
 } from 'class-validator';
 
@@ -13,16 +14,19 @@ export class CreateProductDto {
   @ApiProperty({ description: '產品名稱', example: '有機草莓' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   name: string;
 
   @ApiProperty({ description: '產品描述', example: '新鮮採摘的有機草莓' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(5000)
   description: string;
 
   @ApiProperty({ description: '產品分類', example: '水果' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   category: string;
 
   @ApiProperty({ description: '價格', example: 300 })

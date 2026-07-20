@@ -6,6 +6,8 @@
  * @see https://schema.org/BreadcrumbList
  */
 
+import { safeJsonLd } from '@/lib/json-ld'
+
 interface BreadcrumbItem {
   name: string
   url: string
@@ -30,9 +32,6 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   }
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
   )
 }

@@ -18,9 +18,10 @@ import {
   ReorderLocationImagesDto,
   GetLocationUploadUrlDto,
 } from './dto';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 /**
@@ -52,7 +53,7 @@ export class LocationsController {
  */
 @Controller('admin/locations')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
+@Roles(Role.ADMIN)
 @NoCache()
 export class AdminLocationsController {
   constructor(private readonly locationsService: LocationsService) {}

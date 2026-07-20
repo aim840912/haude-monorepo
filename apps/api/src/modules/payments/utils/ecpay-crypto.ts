@@ -146,7 +146,16 @@ export class ECPayCrypto {
     if (!receivedMac) return false;
 
     const calculatedMac = this.generateCheckMacValue(params);
-    return calculatedMac === receivedMac.toUpperCase();
+
+    // 使用 constant-time 比對，避免時序側信道洩漏正確 MAC 的前綴
+    // timingSafeEqual 要求兩個 Buffer 等長，否則會 throw，故先比長度
+    const expected = Buffer.from(calculatedMac, 'utf8');
+    const received = Buffer.from(receivedMac.toUpperCase(), 'utf8');
+
+    return (
+      expected.length === received.length &&
+      crypto.timingSafeEqual(expected, received)
+    );
   }
 
   /**

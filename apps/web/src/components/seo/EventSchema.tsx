@@ -9,6 +9,8 @@
  * @see https://schema.org/Event
  */
 
+import { safeJsonLd } from '@/lib/json-ld'
+
 interface EventSchemaProps {
   event: {
     id: string
@@ -71,9 +73,6 @@ export function EventSchema({ event, validFrom }: EventSchemaProps) {
   }
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
   )
 }

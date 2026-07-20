@@ -11,9 +11,10 @@ import {
 } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 
 /**
@@ -50,7 +51,7 @@ export class SchedulesController {
  */
 @Controller('admin/schedules')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('STAFF', 'ADMIN')
+@Roles(Role.STAFF, Role.ADMIN)
 @NoCache()
 export class AdminSchedulesController {
   constructor(private readonly schedulesService: SchedulesService) {}

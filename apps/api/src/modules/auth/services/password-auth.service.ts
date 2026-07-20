@@ -98,7 +98,6 @@ export class PasswordAuthService {
 
     if (!isPasswordValid) {
       const newFailedAttempts = user.failedLoginAttempts + 1;
-      const remainingAttempts = this.MAX_LOGIN_ATTEMPTS - newFailedAttempts;
 
       if (newFailedAttempts >= this.MAX_LOGIN_ATTEMPTS) {
         const lockedUntil = new Date(
@@ -119,11 +118,9 @@ export class PasswordAuthService {
           where: { id: user.id },
           data: { failedLoginAttempts: newFailedAttempts },
         });
-        throw new UnauthorizedException(
-          remainingAttempts <= 2
-            ? `密碼錯誤，還剩 ${remainingAttempts} 次嘗試機會`
-            : 'Invalid credentials',
-        );
+        // 訊息必須與「帳號不存在」時完全相同，否則可被用於帳號枚舉
+        // （攻擊者藉由訊息差異判定某 email 是否為真實客戶）
+        throw new UnauthorizedException('Invalid credentials');
       }
     }
 
