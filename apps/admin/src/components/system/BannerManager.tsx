@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, Info, AlertTriangle, AlertCircle, Wrench, ExternalLink } from 'lucide-react'
 import { api } from '@/services/api/client'
 import { useToast } from '@/components/ui/Toast'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { SystemBanner, SystemBannerType, CreateSystemBannerData } from '@haude/types'
 
 const BANNER_TYPES: { value: SystemBannerType; label: string; icon: typeof Info }[] = [
@@ -21,6 +22,10 @@ export function BannerManager() {
   const [banners, setBanners] = useState<SystemBanner[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmClearAll, setConfirmClearAll] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const [formData, setFormData] = useState<CreateSystemBannerData>({
     type: 'info',
     title: '',
@@ -67,27 +72,43 @@ export function BannerManager() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('確定要刪除此公告？')) return
+  const handleDeleteClick = (id: string) => {
+    setConfirmDeleteId(id)
+  }
 
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return
+
+    setIsDeleting(true)
     try {
-      await api.delete(`/admin/system/banners/${id}`)
+      await api.delete(`/admin/system/banners/${confirmDeleteId}`)
       success('公告已刪除')
       fetchBanners()
+      setConfirmDeleteId(null)
     } catch (err) {
       showError('刪除失敗', err instanceof Error ? err.message : '請稍後再試')
+      setConfirmDeleteId(null)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  const handleClearAll = async () => {
-    if (!confirm('確定要清除所有公告？此操作無法復原。')) return
+  const handleClearAllClick = () => {
+    setConfirmClearAll(true)
+  }
 
+  const handleConfirmClearAll = async () => {
+    setIsClearing(true)
     try {
       await api.delete('/admin/system/banners')
       success('所有公告已清除')
       fetchBanners()
+      setConfirmClearAll(false)
     } catch (err) {
       showError('清除失敗', err instanceof Error ? err.message : '請稍後再試')
+      setConfirmClearAll(false)
+    } finally {
+      setIsClearing(false)
     }
   }
 
@@ -102,7 +123,7 @@ export function BannerManager() {
         <div className="flex gap-2">
           {banners.length > 0 && (
             <button
-              onClick={handleClearAll}
+              onClick={handleClearAllClick}
               className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               清除全部
@@ -295,7 +316,7 @@ export function BannerManager() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleDelete(banner.id)}
+                  onClick={() => handleDeleteClick(banner.id)}
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                   title="刪除公告"
                 >
@@ -306,6 +327,32 @@ export function BannerManager() {
           })}
         </div>
       )}
+
+      {/* 單筆刪除確認 */}
+      <ConfirmDialog
+        isOpen={confirmDeleteId !== null}
+        isLoading={isDeleting}
+        title="刪除公告"
+        message="確定要刪除此公告嗎？"
+        confirmText="確認刪除"
+        cancelText="取消"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      {/* 清除全部確認 */}
+      <ConfirmDialog
+        isOpen={confirmClearAll}
+        isLoading={isClearing}
+        title="清除所有公告"
+        message="確定要清除所有公告嗎？此操作無法復原。"
+        confirmText="確認清除"
+        cancelText="取消"
+        variant="danger"
+        onConfirm={handleConfirmClearAll}
+        onCancel={() => setConfirmClearAll(false)}
+      />
     </div>
   )
 }

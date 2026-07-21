@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { X, Loader2, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react'
 import { siteSettingsApi } from '../services/api/site-settings.api'
+import { ConfirmDialog } from './ConfirmDialog'
 import type { Locale } from '../pages/SiteImagesPage'
 import logger from '../lib/logger'
 
@@ -99,6 +100,7 @@ export function MultiImageUploader({
   const [imageUrls, setImageUrls] = useState<string[]>(() => parseImageValue(currentValue))
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null)
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -202,42 +204,47 @@ export function MultiImageUploader({
     [settingKey, imageUrls, saveToDb, t]
   )
 
-  /** Delete an image at a specific index */
-  const handleDelete = useCallback(
-    async (index: number) => {
-      if (!confirm(t.confirmDelete)) return
+  /** Request deletion of an image at a specific index (opens confirm dialog) */
+  const handleDeleteClick = useCallback((index: number) => {
+    setConfirmDeleteIndex(index)
+  }, [])
 
-      setDeletingIndex(index)
-      setError(null)
+  /** Delete the image currently pending confirmation */
+  const handleConfirmDelete = useCallback(async () => {
+    if (confirmDeleteIndex === null) return
+    const index = confirmDeleteIndex
 
-      try {
-        const url = imageUrls[index]
+    setDeletingIndex(index)
+    setError(null)
 
-        // Remove from array
-        const newUrls = imageUrls.filter((_, i) => i !== index)
-        setImageUrls(newUrls)
+    try {
+      const url = imageUrls[index]
 
-        // Save updated array to DB
-        await saveToDb(newUrls)
+      // Remove from array
+      const newUrls = imageUrls.filter((_, i) => i !== index)
+      setImageUrls(newUrls)
 
-        // Delete file from storage (non-blocking)
-        const filePath = extractStoragePath(url)
-        if (filePath) {
-          await siteSettingsApi.deleteImageFile(filePath).catch((err: unknown) => {
-            logger.warn('Failed to delete image file from storage', { error: err })
-          })
-        }
-      } catch (err) {
-        // Revert on save failure
-        setImageUrls(parseImageValue(currentValue))
-        logger.error('Multi-image delete error', { error: err, settingKey, index })
-        setError(err instanceof Error ? err.message : t.deleteFailed)
-      } finally {
-        setDeletingIndex(null)
+      // Save updated array to DB
+      await saveToDb(newUrls)
+
+      // Delete file from storage (non-blocking)
+      const filePath = extractStoragePath(url)
+      if (filePath) {
+        await siteSettingsApi.deleteImageFile(filePath).catch((err: unknown) => {
+          logger.warn('Failed to delete image file from storage', { error: err })
+        })
       }
-    },
-    [imageUrls, currentValue, settingKey, saveToDb, t]
-  )
+      setConfirmDeleteIndex(null)
+    } catch (err) {
+      // Revert on save failure
+      setImageUrls(parseImageValue(currentValue))
+      logger.error('Multi-image delete error', { error: err, settingKey, index })
+      setError(err instanceof Error ? err.message : t.deleteFailed)
+      setConfirmDeleteIndex(null)
+    } finally {
+      setDeletingIndex(null)
+    }
+  }, [confirmDeleteIndex, imageUrls, currentValue, settingKey, saveToDb, t])
 
   /** Swap two images (for reorder) */
   const handleSwap = useCallback(
@@ -343,7 +350,7 @@ export function MultiImageUploader({
 
                 {/* Delete */}
                 <button
-                  onClick={() => handleDelete(index)}
+                  onClick={() => handleDeleteClick(index)}
                   disabled={isDisabled}
                   className="bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded shadow-sm disabled:opacity-50"
                   aria-label={`${t.deleteImage} ${index + 1}`}
@@ -450,6 +457,19 @@ export function MultiImageUploader({
 
       {/* Setting key (for reference) */}
       <p className="mt-2 text-xs text-gray-400 font-mono">{settingKey}</p>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        isOpen={confirmDeleteIndex !== null}
+        isLoading={deletingIndex !== null}
+        title={t.deleteImage}
+        message={t.confirmDelete}
+        confirmText={locale === 'en' ? 'Delete' : '確認刪除'}
+        cancelText={locale === 'en' ? 'Cancel' : '取消'}
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteIndex(null)}
+      />
     </div>
   )
 }

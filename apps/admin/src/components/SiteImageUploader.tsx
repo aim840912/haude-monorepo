@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Upload, X, Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import { siteSettingsApi } from '../services/api/site-settings.api'
+import { ConfirmDialog } from './ConfirmDialog'
 import type { Locale } from '../pages/SiteImagesPage'
 import logger from '../lib/logger'
 
@@ -70,6 +71,7 @@ export function SiteImageUploader({
 }: SiteImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
@@ -131,9 +133,11 @@ export function SiteImageUploader({
     [settingKey, onImageUpdated, ut]
   )
 
-  const handleDelete = useCallback(async () => {
-    if (!confirm(ut.confirmDelete)) return
+  const handleDeleteClick = useCallback(() => {
+    setIsConfirmOpen(true)
+  }, [])
 
+  const handleConfirmDelete = useCallback(async () => {
     setIsDeleting(true)
     setError(null)
 
@@ -141,9 +145,11 @@ export function SiteImageUploader({
       await siteSettingsApi.deleteImage(settingKey)
       setPreviewUrl(null)
       onImageDeleted?.()
+      setIsConfirmOpen(false)
     } catch (err) {
       logger.error('Site image delete error', { error: err, settingKey })
       setError(err instanceof Error ? err.message : ut.deleteFailed)
+      setIsConfirmOpen(false)
     } finally {
       setIsDeleting(false)
     }
@@ -193,7 +199,7 @@ export function SiteImageUploader({
               </div>
             )}
             <button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               disabled={isDeleting || isUploading}
               className="bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
               aria-label={`${ut.deleteImage} ${label}`}
@@ -263,6 +269,19 @@ export function SiteImageUploader({
 
       {/* Setting key (for reference) */}
       <p className="mt-2 text-xs text-gray-400 font-mono">{settingKey}</p>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        isLoading={isDeleting}
+        title={ut.deleteImage}
+        message={ut.confirmDelete}
+        confirmText={locale === 'en' ? 'Delete' : '確認刪除'}
+        cancelText={locale === 'en' ? 'Cancel' : '取消'}
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsConfirmOpen(false)}
+      />
     </div>
   )
 }
