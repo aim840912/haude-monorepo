@@ -22,6 +22,7 @@ export interface UpdateProductData {
   isActive?: boolean
   isDraft?: boolean
   priceUnit?: string
+  isReviewsVisible?: boolean
 }
 
 interface UseProductsReturn {

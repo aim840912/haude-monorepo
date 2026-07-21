@@ -35,6 +35,8 @@ export interface Product {
   availableStock?: number
   isActive: boolean
   isDraft?: boolean
+  /** 顧客評價是否公開顯示（false = 僅 admin 可見） */
+  isReviewsVisible?: boolean
   createdAt: string
   updatedAt: string
   images: ProductImage[]
@@ -52,6 +54,7 @@ export interface CreateProductData {
   saleEndDate?: string
   stock: number
   isActive: boolean
+  isReviewsVisible?: boolean
 }
 
 export interface UpdateProductData {
@@ -67,6 +70,7 @@ export interface UpdateProductData {
   stock?: number
   isActive?: boolean
   isDraft?: boolean
+  isReviewsVisible?: boolean
 }
 
 export interface InventoryStatus {

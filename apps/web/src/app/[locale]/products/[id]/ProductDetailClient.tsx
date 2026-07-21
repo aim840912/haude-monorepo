@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Share2, ShoppingCart, Truck, Shield, RefreshCw, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useCartStore } from '@/stores/cartStore'
-import { isAuthenticated } from '@/stores/authStore'
+import { isAuthenticated, useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/components/ui/feedback/toast'
 import { ImageCarousel } from '@/components/ui/ImageCarousel'
 import { PLACEHOLDER_IMAGES } from '@/config/placeholder.config'
@@ -31,8 +31,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const router = useRouter()
   const { success, error: showError, info } = useToast()
   const { addItem, isLoading: isAddingToCart } = useCartStore()
+  const { user } = useAuthStore()
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
+
+  // 顧客評價區：預設公開；若商品被設為「僅 admin 可見」，一般訪客/會員看不到
+  const canViewReviews = product.isReviewsVisible !== false || user?.role === 'ADMIN'
 
   // 建構圖片 URL 陣列（供 ImageCarousel 使用）
   const imageUrls =
@@ -252,10 +256,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </div>
         </div>
 
-        {/* 評論區 */}
-        <div className="mt-12 pt-8 border-t">
-          <ReviewSection productId={product.id} productName={product.name} />
-        </div>
+        {/* 評論區（若商品設為僅 admin 可見，一般訪客/會員不顯示） */}
+        {canViewReviews && (
+          <div className="mt-12 pt-8 border-t">
+            <ReviewSection productId={product.id} productName={product.name} />
+          </div>
+        )}
       </div>
     </div>
   )

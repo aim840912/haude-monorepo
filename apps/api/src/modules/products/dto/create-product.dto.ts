@@ -73,4 +73,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: '顧客評價是否公開顯示（false = 僅 admin 可見）',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isReviewsVisible?: boolean;
 }

@@ -26,6 +26,7 @@ export const productsApi = {
       isActive?: boolean
       isDraft?: boolean
       priceUnit?: string
+      isReviewsVisible?: boolean
     }
   ) => api.put(`/products/${id}`, data),
   delete: (id: string) => api.delete(`/products/${id}`),

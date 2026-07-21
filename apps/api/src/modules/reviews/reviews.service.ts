@@ -5,8 +5,15 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Role } from '@prisma/client';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+
+const EMPTY_STATS: ReviewStats = {
+  averageRating: 0,
+  totalReviews: 0,
+  ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+};
 
 /**
  * 評論統計
@@ -40,9 +47,28 @@ export class ReviewsService {
       limit?: number;
       offset?: number;
       onlyApproved?: boolean;
+      requesterRole?: Role;
     },
   ) {
-    const { limit = 10, offset = 0, onlyApproved = true } = options || {};
+    const {
+      limit = 10,
+      offset = 0,
+      onlyApproved = true,
+      requesterRole,
+    } = options || {};
+
+    // 若商品被設為「僅 admin 可見」，非 admin 請求者一律回傳空結果
+    // （不查詢評論本身，避免透過此公開端點洩漏評論內容）
+    if (requesterRole !== Role.ADMIN) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
+        select: { isReviewsVisible: true },
+      });
+
+      if (product && !product.isReviewsVisible) {
+        return { reviews: [], total: 0, hasMore: false };
+      }
+    }
 
     const where = {
       productId,
@@ -88,7 +114,10 @@ export class ReviewsService {
   /**
    * 取得產品評分統計
    */
-  async getReviewStats(productId: string): Promise<ReviewStats> {
+  async getReviewStats(
+    productId: string,
+    requesterRole?: Role,
+  ): Promise<ReviewStats> {
     // 確認產品存在
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
@@ -96,6 +125,11 @@ export class ReviewsService {
 
     if (!product) {
       throw new NotFoundException('找不到此產品');
+    }
+
+    // 若商品被設為「僅 admin 可見」，非 admin 請求者回傳空統計
+    if (!product.isReviewsVisible && requesterRole !== Role.ADMIN) {
+      return EMPTY_STATS;
     }
 
     // 取得所有已審核通過的評論

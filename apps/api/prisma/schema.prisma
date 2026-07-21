@@ -13,25 +13,25 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String?  // 可為空，Google 登入用戶不需要密碼
+  password  String? // 可為空，Google 登入用戶不需要密碼
   name      String
   googleId  String?  @unique @map("google_id") // Google OAuth 用戶 ID
-  avatar    String?  // Google 頭像 URL
+  avatar    String? // Google 頭像 URL
   role      Role     @default(USER)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // 帳號安全欄位
-  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")  // 連續登入失敗次數
-  lockedUntil         DateTime? @map("locked_until")                       // 帳號鎖定到期時間
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts") // 連續登入失敗次數
+  lockedUntil         DateTime? @map("locked_until") // 帳號鎖定到期時間
 
   // 會員等級欄位
   memberLevel    MemberLevel @default(NORMAL) @map("member_level")
-  totalSpent     Int         @default(0) @map("total_spent")     // 累積消費（整數，單位：元）
-  currentPoints  Int         @default(0) @map("current_points")  // 當前積分
-  birthday       DateTime?   @db.Date                            // 生日（雙倍積分）
-  levelUpdatedAt DateTime?   @map("level_updated_at")            // 等級更新時間
+  totalSpent     Int         @default(0) @map("total_spent") // 累積消費（整數，單位：元）
+  currentPoints  Int         @default(0) @map("current_points") // 當前積分
+  birthday       DateTime?   @db.Date // 生日（雙倍積分）
+  levelUpdatedAt DateTime?   @map("level_updated_at") // 等級更新時間
 
   // 關聯
   orders              Order[]
@@ -53,12 +53,12 @@ model User {
 
 // Password Reset Token
 model PasswordResetToken {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at") // 使用時間（null 表示未使用）
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   // 關聯
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -86,10 +86,10 @@ model RefreshToken {
 }
 
 enum Role {
-  USER      // 一般會員：下單、報名活動
-  VIP       // VIP 會員：專屬折扣、優先報名
-  STAFF     // 員工：查看訂單、管理行程
-  ADMIN     // 管理員：完整後台權限
+  USER // 一般會員：下單、報名活動
+  VIP // VIP 會員：專屬折扣、優先報名
+  STAFF // 員工：查看訂單、管理行程
+  ADMIN // 管理員：完整後台權限
 }
 
 // ========================================
@@ -97,18 +97,18 @@ enum Role {
 // ========================================
 
 enum MemberLevel {
-  NORMAL    // 普通會員
-  BRONZE    // 銅卡會員
-  SILVER    // 銀卡會員
-  GOLD      // 金卡會員
+  NORMAL // 普通會員
+  BRONZE // 銅卡會員
+  SILVER // 銀卡會員
+  GOLD // 金卡會員
 }
 
 enum PointTransactionType {
-  PURCHASE      // 消費獲得
-  BIRTHDAY      // 生日獎勵
-  REDEMPTION    // 兌換扣除
-  ADJUSTMENT    // 管理員調整
-  EXPIRATION    // 過期扣除
+  PURCHASE // 消費獲得
+  BIRTHDAY // 生日獎勵
+  REDEMPTION // 兌換扣除
+  ADJUSTMENT // 管理員調整
+  EXPIRATION // 過期扣除
 }
 
 // 積分交易紀錄
@@ -116,9 +116,9 @@ model PointTransaction {
   id          String               @id @default(uuid())
   userId      String               @map("user_id")
   type        PointTransactionType
-  points      Int                  // 正數=獲得，負數=扣除
-  balance     Int                  // 交易後餘額
-  description String?              // 交易描述
+  points      Int // 正數=獲得，負數=扣除
+  balance     Int // 交易後餘額
+  description String? // 交易描述
   orderId     String?              @map("order_id") // 關聯訂單
   expiresAt   DateTime?            @map("expires_at") // 過期時間
   createdAt   DateTime             @default(now()) @map("created_at")
@@ -137,9 +137,9 @@ model PointTransaction {
 model MemberLevelConfig {
   id              String      @id @default(uuid())
   level           MemberLevel @unique
-  displayName     String      @map("display_name")      // 顯示名稱
-  minSpent        Int         @map("min_spent")         // 最低累積消費（元）
-  discountPercent Int         @map("discount_percent")  // 折扣百分比 (5 = 95折)
+  displayName     String      @map("display_name") // 顯示名稱
+  minSpent        Int         @map("min_spent") // 最低累積消費（元）
+  discountPercent Int         @map("discount_percent") // 折扣百分比 (5 = 95折)
   freeShipping    Boolean     @default(false) @map("free_shipping")
   pointMultiplier Float       @default(1.0) @map("point_multiplier") // 積分倍率
   createdAt       DateTime    @default(now()) @map("created_at")
@@ -154,7 +154,7 @@ model MemberLevelHistory {
   userId      String      @map("user_id")
   fromLevel   MemberLevel @map("from_level")
   toLevel     MemberLevel @map("to_level")
-  reason      String      // 變更原因
+  reason      String // 變更原因
   triggeredBy String?     @map("triggered_by") // 觸發者（system/admin）
   createdAt   DateTime    @default(now()) @map("created_at")
 
@@ -171,23 +171,23 @@ model MemberLevelHistory {
 // ========================================
 
 enum DiscountType {
-  PERCENTAGE  // 百分比折扣
-  FIXED       // 固定金額折扣
+  PERCENTAGE // 百分比折扣
+  FIXED // 固定金額折扣
 }
 
 model DiscountCode {
   id             String       @id @default(uuid())
-  code           String       @unique                        // 折扣碼（大寫）
-  description    String?                                     // 描述
-  discountType   DiscountType @map("discount_type")          // 折扣類型
-  discountValue  Int          @map("discount_value")         // 折扣值（百分比或固定金額）
-  minOrderAmount Int?         @map("min_order_amount")       // 最低訂單金額
-  maxDiscount    Int?         @map("max_discount")           // 最高折扣金額（百分比折扣用）
-  usageLimit     Int?         @map("usage_limit")            // 總使用次數限制
+  code           String       @unique // 折扣碼（大寫）
+  description    String? // 描述
+  discountType   DiscountType @map("discount_type") // 折扣類型
+  discountValue  Int          @map("discount_value") // 折扣值（百分比或固定金額）
+  minOrderAmount Int?         @map("min_order_amount") // 最低訂單金額
+  maxDiscount    Int?         @map("max_discount") // 最高折扣金額（百分比折扣用）
+  usageLimit     Int?         @map("usage_limit") // 總使用次數限制
   usageCount     Int          @default(0) @map("usage_count") // 已使用次數
   perUserLimit   Int          @default(1) @map("per_user_limit") // 每人使用次數
-  startDate      DateTime?    @map("start_date")             // 開始日期
-  endDate        DateTime?    @map("end_date")               // 結束日期
+  startDate      DateTime?    @map("start_date") // 開始日期
+  endDate        DateTime?    @map("end_date") // 結束日期
   isActive       Boolean      @default(true) @map("is_active")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
@@ -202,8 +202,8 @@ model DiscountUsage {
   id             String   @id @default(uuid())
   discountCodeId String   @map("discount_code_id")
   userId         String   @map("user_id")
-  orderId        String   @unique @map("order_id")  // 一個訂單只能使用一個折扣碼
-  discountAmount Int      @map("discount_amount")   // 實際折扣金額
+  orderId        String   @unique @map("order_id") // 一個訂單只能使用一個折扣碼
+  discountAmount Int      @map("discount_amount") // 實際折扣金額
   createdAt      DateTime @default(now()) @map("created_at")
 
   // 關聯
@@ -224,11 +224,11 @@ model Review {
   id         String   @id @default(uuid())
   productId  String   @map("product_id")
   userId     String   @map("user_id")
-  rating     Int                              // 1-5 星評分
-  title      String                           // 評論標題
-  content    String   @db.Text                // 評論內容
+  rating     Int // 1-5 星評分
+  title      String // 評論標題
+  content    String   @db.Text // 評論內容
   isVerified Boolean  @default(false) @map("is_verified") // 是否為已購買用戶
-  isApproved Boolean  @default(true) @map("is_approved")  // 是否通過審核
+  isApproved Boolean  @default(true) @map("is_approved") // 是否通過審核
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -248,22 +248,23 @@ model Review {
 // ========================================
 
 model Product {
-  id            String    @id @default(uuid())
-  name          String
-  description   String    @db.Text
-  category      String
-  price         Int       // 價格（台幣整數）
-  priceUnit     String?   @map("price_unit") // 價格單位（斤、包、箱等）
-  unitQuantity  Int?      @map("unit_quantity") // 單位數量
-  originalPrice Int?      @map("original_price") // 原價（促銷用）
-  isOnSale      Boolean   @default(false) @map("is_on_sale") // 是否特價中
-  saleEndDate   DateTime? @map("sale_end_date") // 特價結束日期
-  stock         Int       @default(0) // 實際庫存
-  reservedStock Int       @default(0) @map("reserved_stock") // 保留庫存
-  isActive      Boolean   @default(true) @map("is_active") // 是否啟用
-  isDraft       Boolean   @default(false) @map("is_draft") // 是否為草稿
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id               String    @id @default(uuid())
+  name             String
+  description      String    @db.Text
+  category         String
+  price            Int // 價格（台幣整數）
+  priceUnit        String?   @map("price_unit") // 價格單位（斤、包、箱等）
+  unitQuantity     Int?      @map("unit_quantity") // 單位數量
+  originalPrice    Int?      @map("original_price") // 原價（促銷用）
+  isOnSale         Boolean   @default(false) @map("is_on_sale") // 是否特價中
+  saleEndDate      DateTime? @map("sale_end_date") // 特價結束日期
+  stock            Int       @default(0) // 實際庫存
+  reservedStock    Int       @default(0) @map("reserved_stock") // 保留庫存
+  isActive         Boolean   @default(true) @map("is_active") // 是否啟用
+  isDraft          Boolean   @default(false) @map("is_draft") // 是否為草稿
+  isReviewsVisible Boolean   @default(true) @map("is_reviews_visible") // 顧客評價是否公開顯示（false = 僅 admin 可見）
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   // 關聯
   images            ProductImage[]
@@ -357,7 +358,7 @@ model Order {
   orderNumber     String        @unique @map("order_number") // 訂單編號
   userId          String        @map("user_id")
   status          OrderStatus   @default(pending) // 訂單狀態
-  subtotal        Int           // 小計（台幣整數）
+  subtotal        Int // 小計（台幣整數）
   shippingFee     Int           @map("shipping_fee") // 運費
   tax             Int           @default(0) // 稅費
   discountCode    String?       @map("discount_code") // 使用的折扣碼
@@ -394,7 +395,7 @@ model OrderItem {
   quantity     Int // 購買數量
   unitPrice    Int      @map("unit_price") // 快照：下單時單價
   priceUnit    String?  @map("price_unit") // 價格單位
-  subtotal     Int      // 小計
+  subtotal     Int // 小計
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -464,15 +465,15 @@ model PaymentLog {
 // ========================================
 
 enum RefundType {
-  FULL    // 全額退款
+  FULL // 全額退款
   PARTIAL // 部分退款
 }
 
 enum RefundStatus {
-  pending    // 待處理
+  pending // 待處理
   processing // 處理中（已送出 ECPay 請求或待人工處理）
-  completed  // 已完成
-  failed     // 失敗
+  completed // 已完成
+  failed // 失敗
 }
 
 model Refund {
@@ -513,10 +514,10 @@ enum FarmTourStatus {
 }
 
 enum FarmTourType {
-  harvest   // 採摘體驗
-  workshop  // 工作坊
-  tour      // 導覽
-  tasting   // 品嚐會
+  harvest // 採摘體驗
+  workshop // 工作坊
+  tour // 導覽
+  tasting // 品嚐會
 }
 
 model FarmTour {
@@ -526,7 +527,7 @@ model FarmTour {
   date                DateTime       @db.Date
   startTime           String         @map("start_time") // e.g., "09:00"
   endTime             String         @map("end_time") // e.g., "12:00"
-  price               Int            // 價格（台幣整數）
+  price               Int // 價格（台幣整數）
   maxParticipants     Int            @map("max_participants")
   currentParticipants Int            @default(0) @map("current_participants")
   location            String
@@ -690,8 +691,8 @@ enum SocialPlatform {
 model SocialPost {
   id        String         @id @default(uuid())
   platform  SocialPlatform // facebook | instagram
-  url       String         // 貼文 URL
-  title     String?        // 選填標題/描述
+  url       String // 貼文 URL
+  title     String? // 選填標題/描述
   sortOrder Int            @default(0) @map("sort_order") // 排序順序
   isActive  Boolean        @default(true) @map("is_active")
   createdAt DateTime       @default(now()) @map("created_at")
@@ -707,12 +708,12 @@ model SocialPost {
 // ========================================
 
 enum NotificationType {
-  LOW_STOCK        // 庫存預警
-  NEW_ORDER        // 新訂單
-  ORDER_CANCELLED  // 訂單取消
-  PAYMENT_SUCCESS  // 付款成功
-  PAYMENT_FAILED   // 付款失敗
-  SYSTEM           // 系統通知
+  LOW_STOCK // 庫存預警
+  NEW_ORDER // 新訂單
+  ORDER_CANCELLED // 訂單取消
+  PAYMENT_SUCCESS // 付款成功
+  PAYMENT_FAILED // 付款失敗
+  SYSTEM // 系統通知
 }
 
 model Notification {
@@ -720,7 +721,7 @@ model Notification {
   type      NotificationType
   title     String
   message   String           @db.Text
-  data      Json?            // 額外資料（如訂單ID、產品ID等）
+  data      Json? // 額外資料（如訂單ID、產品ID等）
   isRead    Boolean          @default(false) @map("is_read")
   readAt    DateTime?        @map("read_at")
   userId    String?          @map("user_id") // null 表示系統通知（所有管理員可見）
@@ -754,14 +755,14 @@ model StockAlertSetting {
 model AuditLog {
   id         String   @id @default(uuid())
   operatorId String   @map("operator_id")
-  action     String   // CREATE, UPDATE, DELETE, EXPORT, etc.
-  resource   String   // products, orders, site-settings, etc.
+  action     String // CREATE, UPDATE, DELETE, EXPORT, etc.
+  resource   String // products, orders, site-settings, etc.
   resourceId String?  @map("resource_id")
-  summary    String?  // Human-readable summary (e.g. "Updated product price from 100 to 200")
-  metadata   Json?    // Additional context (old/new values, query params, etc.)
+  summary    String? // Human-readable summary (e.g. "Updated product price from 100 to 200")
+  metadata   Json? // Additional context (old/new values, query params, etc.)
   ipAddress  String?  @map("ip_address")
   userAgent  String?  @map("user_agent")
-  duration   Int?     // Request duration in ms
+  duration   Int? // Request duration in ms
   createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations

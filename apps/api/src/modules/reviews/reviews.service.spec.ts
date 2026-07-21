@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReviewsService } from './reviews.service';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Role } from '@prisma/client';
 import {
   NotFoundException,
   BadRequestException,
@@ -370,7 +371,10 @@ describe('ReviewsService', () => {
     });
 
     it('無評論應回傳空統計', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue({ id: productId });
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        id: productId,
+        isReviewsVisible: true,
+      });
       mockPrismaService.review.findMany.mockResolvedValue([]);
 
       const result = await service.getReviewStats(productId);
@@ -387,7 +391,10 @@ describe('ReviewsService', () => {
     });
 
     it('應正確計算平均評分和分布', async () => {
-      mockPrismaService.product.findUnique.mockResolvedValue({ id: productId });
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        id: productId,
+        isReviewsVisible: true,
+      });
       mockPrismaService.review.findMany.mockResolvedValue([
         { rating: 5 },
         { rating: 5 },
@@ -408,6 +415,93 @@ describe('ReviewsService', () => {
         4: 2,
         5: 2,
       });
+    });
+
+    it('商品設為僅 admin 可見時，非 admin 請求應回傳空統計（不查詢評論）', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        id: productId,
+        isReviewsVisible: false,
+      });
+
+      const result = await service.getReviewStats(productId);
+
+      expect(result).toEqual({
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      });
+      expect(mockPrismaService.review.findMany).not.toHaveBeenCalled();
+    });
+
+    it('商品設為僅 admin 可見時，admin 請求應正常取得統計', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        id: productId,
+        isReviewsVisible: false,
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([
+        { rating: 5 },
+        { rating: 3 },
+      ]);
+
+      const result = await service.getReviewStats(productId, Role.ADMIN);
+
+      expect(result.totalReviews).toBe(2);
+      expect(result.averageRating).toBe(4);
+    });
+  });
+
+  describe('getProductReviews', () => {
+    const productId = 'product-123';
+
+    it('商品設為僅 admin 可見時，非 admin 請求應回傳空列表（不查詢評論）', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        isReviewsVisible: false,
+      });
+
+      const result = await service.getProductReviews(productId);
+
+      expect(result).toEqual({ reviews: [], total: 0, hasMore: false });
+      expect(mockPrismaService.review.findMany).not.toHaveBeenCalled();
+    });
+
+    it('商品設為僅 admin 可見時，admin 請求應正常取得評論列表', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        isReviewsVisible: false,
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([
+        {
+          id: 'review-1',
+          productId,
+          userId: 'user-1',
+          user: { id: 'user-1', name: '測試用戶' },
+          rating: 5,
+          title: '很好喝',
+          content: '推薦',
+          isVerified: true,
+          isApproved: true,
+          createdAt: new Date('2026-01-01'),
+        },
+      ]);
+      mockPrismaService.review.count.mockResolvedValue(1);
+
+      const result = await service.getProductReviews(productId, {
+        requesterRole: Role.ADMIN,
+      });
+
+      expect(result.total).toBe(1);
+      expect(result.reviews).toHaveLength(1);
+    });
+
+    it('公開商品（isReviewsVisible 未設定）應照常回傳評論', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        isReviewsVisible: true,
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([]);
+      mockPrismaService.review.count.mockResolvedValue(0);
+
+      const result = await service.getProductReviews(productId);
+
+      expect(result).toEqual({ reviews: [], total: 0, hasMore: false });
     });
   });
 });

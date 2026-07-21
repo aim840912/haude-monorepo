@@ -174,6 +174,7 @@ export class ProductsService {
       saleEndDate: dto.saleEndDate ? new Date(dto.saleEndDate) : null,
       stock: dto.stock,
       isActive: dto.isActive ?? true,
+      isReviewsVisible: dto.isReviewsVisible ?? true,
     };
 
     return this.prisma.product.create({
@@ -205,6 +206,8 @@ export class ProductsService {
     if (dto.stock !== undefined) data.stock = dto.stock;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
     if (dto.isDraft !== undefined) data.isDraft = dto.isDraft;
+    if (dto.isReviewsVisible !== undefined)
+      data.isReviewsVisible = dto.isReviewsVisible;
 
     return this.prisma.product.update({
       where: { id },

@@ -39,6 +39,7 @@ export function ProductEditModal({
     stock: 0,
     isActive: true,
     priceUnit: '',
+    isReviewsVisible: true,
   })
   const [error, setError] = useState<string | null>(null)
   const [images, setImages] = useState<ProductImage[]>([])
@@ -75,6 +76,7 @@ export function ProductEditModal({
         stock: product.stock ?? 0,
         isActive: product.isActive ?? true,
         priceUnit: product.priceUnit || '',
+        isReviewsVisible: product.isReviewsVisible ?? true,
       })
       setError(null)
       setNewlyUploadedIds([])
@@ -105,6 +107,7 @@ export function ProductEditModal({
         stock: 0,
         isActive: true,
         priceUnit: '',
+        isReviewsVisible: true,
       })
       setError(null)
       setImages([])
@@ -227,6 +230,7 @@ export function ProductEditModal({
         stock: formData.stock,
         isActive: formData.isActive,
         priceUnit: formData.priceUnit || undefined,
+        isReviewsVisible: formData.isReviewsVisible,
         // 草稿模式：提交時設置 isDraft: false
         ...(isDraftMode && { isDraft: false }),
       })
@@ -407,6 +411,37 @@ export function ProductEditModal({
                   disabled={isLoading}
                 />
                 <span className="text-sm text-gray-700">下架</span>
+              </label>
+            </div>
+          </div>
+
+          {/* 顧客評價可見性 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              顧客評價
+            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isReviewsVisible"
+                  checked={formData.isReviewsVisible}
+                  onChange={() => setFormData({ ...formData, isReviewsVisible: true })}
+                  className="w-4 h-4 text-green-600 focus:ring-green-500"
+                  disabled={isLoading}
+                />
+                <span className="text-sm text-gray-700">公開顯示</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="isReviewsVisible"
+                  checked={!formData.isReviewsVisible}
+                  onChange={() => setFormData({ ...formData, isReviewsVisible: false })}
+                  className="w-4 h-4 text-green-600 focus:ring-green-500"
+                  disabled={isLoading}
+                />
+                <span className="text-sm text-gray-700">僅 Admin 可見</span>
               </label>
             </div>
           </div>

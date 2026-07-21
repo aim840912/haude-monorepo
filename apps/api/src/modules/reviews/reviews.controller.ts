@@ -16,10 +16,11 @@ import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto, ApproveReviewDto } from './dto/update-review.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@/modules/auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
-import { Cacheable } from '@/common/decorators/cacheable.decorator';
+import { NoCache } from '@/common/decorators/cacheable.decorator';
 
 /**
  * 評論 Controller
@@ -50,16 +51,19 @@ export class ReviewsController {
    * 取得產品評論
    */
   @Get('products/:productId/reviews')
-  @Cacheable(300)
+  @UseGuards(OptionalJwtAuthGuard)
+  @NoCache() // 回應內容依請求者角色而異（isReviewsVisible 檢查），不可共享快取
   async getProductReviews(
     @Param('productId') productId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Request() req?: { user?: JwtUser },
   ) {
     return this.reviewsService.getProductReviews(productId, {
       limit: limit ? parseInt(limit, 10) : 10,
       offset: offset ? parseInt(offset, 10) : 0,
       onlyApproved: true,
+      requesterRole: req?.user?.role,
     });
   }
 
@@ -67,9 +71,13 @@ export class ReviewsController {
    * 取得產品評分統計
    */
   @Get('products/:productId/reviews/stats')
-  @Cacheable(300)
-  async getReviewStats(@Param('productId') productId: string) {
-    return this.reviewsService.getReviewStats(productId);
+  @UseGuards(OptionalJwtAuthGuard)
+  @NoCache() // 回應內容依請求者角色而異（isReviewsVisible 檢查），不可共享快取
+  async getReviewStats(
+    @Param('productId') productId: string,
+    @Request() req?: { user?: JwtUser },
+  ) {
+    return this.reviewsService.getReviewStats(productId, req?.user?.role);
   }
 
   // ========================================

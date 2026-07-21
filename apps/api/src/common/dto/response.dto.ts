@@ -157,6 +157,12 @@ export class ProductResponseDto {
   @ApiProperty({ description: '是否為草稿', example: false })
   isDraft: boolean;
 
+  @ApiProperty({
+    description: '顧客評價是否公開顯示（false = 僅 admin 可見）',
+    example: true,
+  })
+  isReviewsVisible: boolean;
+
   @ApiProperty({ description: '產品圖片', isArray: true })
   images: ProductImageDto[];
 
