@@ -105,14 +105,14 @@ haude-v2/                     # Monorepo 根目錄
 
 ### 技術棧
 
-| 層級 | 技術 | 說明 |
-|------|------|------|
-| **Monorepo** | pnpm + Turborepo | 工作區管理、智慧建置 |
-| **用戶端** | Next.js 15 + React 19 + Tailwind | 電商前端 (App Router) |
-| **管理後台** | React 19 + Vite + Tailwind | 後台管理介面 |
-| **後端** | NestJS 11 + Prisma 7 | REST API |
-| **資料庫** | PostgreSQL 15 | 關聯式資料庫 |
-| **共用型別** | TypeScript + tsup | 型別同步 |
+| 層級 | 技術 | 部署 | 說明 |
+|------|------|------|------|
+| **Monorepo** | pnpm + Turborepo | — | 工作區管理、智慧建置 |
+| **用戶端** | Next.js 15 + React 19 + Tailwind | Vercel | 電商前端 (App Router) |
+| **管理後台** | React 19 + Vite + Tailwind | Vercel | 後台管理介面 |
+| **後端** | NestJS 11 + Prisma 7 | Render（Docker） | REST API |
+| **資料庫** | PostgreSQL 15 | Supabase | 關聯式資料庫 |
+| **共用型別** | TypeScript + tsup | — | 型別同步 |
 
 ---
 
@@ -308,11 +308,11 @@ kill -9 $(lsof -t -i :5174)  # 終止佔用 5174 的進程
 
 ### 生產環境網址
 
-| 服務 | 網址 |
-|------|------|
-| Web 用戶端 | https://haude-web.vercel.app |
-| Admin 後台 | https://haude-admin.vercel.app |
-| API | https://haude-api.onrender.com |
+| 服務 | 網址 | 平台 |
+|------|------|------|
+| Web 用戶端 | https://haude-web.vercel.app | Vercel |
+| Admin 後台 | https://haude-admin.vercel.app | Vercel |
+| API | https://haude-api.onrender.com | Render（Project: haude-tea-shop） |
 
 ### 資料庫環境（重要）
 
