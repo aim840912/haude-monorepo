@@ -306,6 +306,14 @@ kill -9 $(lsof -t -i :5174)  # 終止佔用 5174 的進程
 - **永不** 假設服務已停止 - 啟動前必須用 `lsof` 檢查
 - **始終** 使用固定 port - 確保前後端 URL 設定一致
 
+### 生產環境網址
+
+| 服務 | 網址 |
+|------|------|
+| Web 用戶端 | https://haude-web.vercel.app |
+| Admin 後台 | https://haude-admin.vercel.app |
+| API | https://haude-api.onrender.com |
+
 ### 資料庫環境（重要）
 
 **開發與生產使用不同資料庫，不可混用。**
