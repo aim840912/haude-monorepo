@@ -429,6 +429,28 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 
 ---
 
+## 金流功能開發提醒（待實作，觸發時 Claude 主動提起）
+
+> **狀態**：後端綠界串接程式碼已存在（`apps/api/src/modules/payments/`：`ecpay-crypto`、`create-payment`、`payment-callback`、`payment-refund`），但前端付款方式 `CREDIT`/`VACC`/`CVS` 全部 `enabled: false`（`apps/web/.../checkout/components/PaymentMethodSelector.tsx`），目前唯一可用的是 `STORE_CONTACT`（電話確認）。**線上金流實質尚未啟用**。
+>
+> **金流服務商**：綠界科技 ECPay。
+>
+> **觸發條件**：當使用者要「開放線上刷卡 / 啟用信用卡付款 / 做金流 / 測試付款流程 / 改 payments 模組」時，Claude 應主動提起以下測試要點，不要直接改 `enabled: true` 就當完成。
+
+### 金流測試要點（開發此功能時務必覆蓋）
+
+1. **兩套環境隔離**：綠界有測試環境（Stage）與正式環境，各自的 `MerchantID` / `HashKey` / `HashIV` 不同。先確認 `apps/api/src/config/env.validation.ts` 如何切換，測試一律連 Stage。
+2. **CheckMacValue 驗簽**（純函式，最該先測）：`ecpay-crypto.spec.ts` 要驗「固定輸入 → 簽章等於綠界文件預期值」。驗簽沒做好 = 有人可偽造「已付款」通知。
+3. **Callback / Webhook**：綠界主機要打得到後端 `/payment/callback`。本機開發需 `ngrok http 3001` 把 localhost 暴露到公網，再設為綠界 callback URL。
+4. **冪等性（idempotency）**：綠界可能重送同一筆付款通知，`payment-callback.service` 必須確保同一筆只處理一次（否則庫存扣兩次、發兩封信）。
+5. **情境全覆蓋**：成功 / 授權失敗 / 逾時未付（訂單是否自動取消、釋放庫存）/ 重複通知 / 退款（`payment-refund.service`）。
+6. **測試卡號**：綠界測試環境提供假卡號觸發不同結果——**具體卡號以綠界官方當前文件為準**（可用 context7 查 ECPay SDK 文件，勿憑記憶硬寫）。
+7. **上線順序**：先把能 mock 的邏輯（簽章、狀態機）單元測試測滿 → 再接 Stage + ngrok 測完整 callback → 情境卡號全跑 → 最後才切正式金鑰 + `enabled: true`。
+
+> ⚠️ **schema 若有變更**：記得依專案「Git 與部署」錯誤表，push 前後手動對正式 Supabase 跑 `prisma migrate deploy`（正式環境無自動 migration）。
+
+---
+
 ## 相關文件
 
 - **全域規範**：`~/.claude/CLAUDE.md`
