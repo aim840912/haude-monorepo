@@ -15,9 +15,18 @@ import {
   Minus,
   Settings,
   Clock,
+  ShieldCheck,
+  Briefcase,
+  BadgeCheck,
+  UserRound,
+  CircleCheck,
+  Ban,
 } from 'lucide-react'
 import { useMemberDetail } from '../hooks/useMembers'
-import { membersApi, MemberLevel } from '../services/api'
+import { useUser, type UpdateUserData, type UserRole } from '../hooks/useUsers'
+import { membersApi, usersApi, MemberLevel } from '../services/api'
+import { UserStatusModal } from '../components/UserStatusModal'
+import { useAuthStore } from '../stores/authStore'
 
 // 會員等級設定
 const MEMBER_LEVEL_CONFIG: Record<MemberLevel, {
@@ -71,6 +80,51 @@ const POINT_TYPE_CONFIG = {
   EXPIRATION: { name: '過期扣除', icon: Clock, color: 'text-gray-600', bgColor: 'bg-gray-100' },
 }
 
+// 帳號權限（role）設定 — 與會員等級（memberLevel）是兩套獨立概念
+const USER_ROLE_CONFIG: Record<UserRole, {
+  label: string
+  description: string
+  icon: typeof ShieldCheck
+  bgColor: string
+  textColor: string
+}> = {
+  USER: {
+    label: '一般會員',
+    description: '下單、報名活動',
+    icon: UserRound,
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+  },
+  VIP: {
+    label: 'VIP 會員',
+    description: '專屬折扣、優先報名',
+    icon: BadgeCheck,
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-700',
+  },
+  STAFF: {
+    label: '員工',
+    description: '查看訂單、管理行程',
+    icon: Briefcase,
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
+  },
+  ADMIN: {
+    label: '管理員',
+    description: '完整後台權限',
+    icon: ShieldCheck,
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+  },
+}
+
+// NestJS 的錯誤訊息可能是字串或字串陣列
+function extractApiErrorMessage(err: unknown): string | undefined {
+  const message = (err as { response?: { data?: { message?: string | string[] } } })
+    ?.response?.data?.message
+  return Array.isArray(message) ? message.join('、') : message
+}
+
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -87,6 +141,20 @@ export function UserDetailPage() {
     hasMoreLevelHistory,
     hasMorePointsHistory,
   } = useMemberDetail(id)
+
+  // 帳號權限資料（走 /users/:id，與會員等級 /admin/members/:id 是不同端點）
+  const {
+    user: account,
+    isLoading: isAccountLoading,
+    error: accountError,
+    refetch: refetchAccount,
+  } = useUser(id)
+  const currentAdminId = useAuthStore((state) => state.user?.id)
+  const isSelf = !!currentAdminId && currentAdminId === id
+
+  // 權限 Modal 狀態
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false)
 
   // 調整等級 Modal 狀態
   const [showLevelModal, setShowLevelModal] = useState(false)
@@ -120,6 +188,24 @@ export function UserDetailPage() {
       console.error('調整等級失敗', err)
     } finally {
       setIsAdjustingLevel(false)
+    }
+  }
+
+  // 更新帳號權限 / 狀態
+  const handleUpdateAccount = async (
+    userId: string,
+    data: UpdateUserData
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsUpdatingRole(true)
+    try {
+      await usersApi.update(userId, data)
+      await refetchAccount()
+      return { success: true }
+    } catch (err) {
+      console.error('更新帳號權限失敗', err)
+      return { success: false, error: extractApiErrorMessage(err) }
+    } finally {
+      setIsUpdatingRole(false)
     }
   }
 
@@ -194,7 +280,7 @@ export function UserDetailPage() {
       </div>
 
       {/* Member Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
         {/* 會員等級卡片 */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
@@ -290,6 +376,76 @@ export function UserDetailPage() {
                 生日: {new Date(member.birthday).toLocaleDateString('zh-TW')}
               </p>
             </div>
+          )}
+        </div>
+
+        {/* 帳號權限卡片 */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">帳號權限</h2>
+              <p className="text-xs text-gray-400 mt-0.5">系統權限，與會員等級無關</p>
+            </div>
+            {account && !isSelf && (
+              <button
+                onClick={() => setShowRoleModal(true)}
+                aria-label="編輯帳號權限"
+                title="編輯帳號權限"
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+              >
+                <Edit className="w-4 h-4" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          {isAccountLoading ? (
+            <p className="text-sm text-gray-500">載入中...</p>
+          ) : !account ? (
+            <p className="text-sm text-gray-500">{accountError || '無法載入權限資料'}</p>
+          ) : (
+            <>
+              <div className="flex items-center gap-4">
+                <div className={`p-3 ${USER_ROLE_CONFIG[account.role].bgColor} rounded-xl`}>
+                  {(() => {
+                    const RoleIcon = USER_ROLE_CONFIG[account.role].icon
+                    return (
+                      <RoleIcon
+                        className={`w-8 h-8 ${USER_ROLE_CONFIG[account.role].textColor}`}
+                        aria-hidden="true"
+                      />
+                    )
+                  })()}
+                </div>
+                <div>
+                  <p className={`text-xl font-bold ${USER_ROLE_CONFIG[account.role].textColor}`}>
+                    {USER_ROLE_CONFIG[account.role].label}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {USER_ROLE_CONFIG[account.role].description}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-sm text-gray-500">帳號狀態</span>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${
+                    account.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {account.isActive ? (
+                    <CircleCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                  ) : (
+                    <Ban className="w-3.5 h-3.5" aria-hidden="true" />
+                  )}
+                  {account.isActive ? '啟用中' : '已停用'}
+                </span>
+              </div>
+              {isSelf && (
+                <p className="mt-3 text-xs text-gray-500">
+                  這是你目前登入的帳號，無法修改自己的權限或狀態。
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -510,6 +666,17 @@ export function UserDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 帳號權限 Modal */}
+      {account && (
+        <UserStatusModal
+          user={account}
+          isOpen={showRoleModal}
+          isUpdating={isUpdatingRole}
+          onClose={() => setShowRoleModal(false)}
+          onSave={handleUpdateAccount}
+        />
       )}
     </div>
   )

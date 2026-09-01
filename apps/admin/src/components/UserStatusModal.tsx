@@ -7,7 +7,7 @@ interface UserStatusModalProps {
   isOpen: boolean
   isUpdating: boolean
   onClose: () => void
-  onSave: (id: string, data: UpdateUserData) => Promise<boolean>
+  onSave: (id: string, data: UpdateUserData) => Promise<{ success: boolean; error?: string }>
 }
 
 const roleOptions: { value: UserRole; label: string; description: string }[] = [
@@ -53,15 +53,16 @@ export function UserStatusModal({
       return
     }
 
-    const success = await onSave(user.id, {
+    const result = await onSave(user.id, {
       isActive: formData.isActive,
       role: formData.role,
     })
 
-    if (success) {
+    if (result.success) {
       onClose()
     } else {
-      setError('更新失敗，請稍後再試')
+      // 後端會擋「降低自己的權限」「停用自己的帳號」，訊息要原樣顯示
+      setError(result.error || '更新失敗，請稍後再試')
     }
   }
 
