@@ -28,6 +28,7 @@ import {
 } from '@/common/dto/response.dto';
 import type { Response, Request as ExpressRequest } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -48,11 +49,26 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {
     this.isProd = configService.get('NODE_ENV') === 'production';
   }
 
   // ─── Cookie Helpers ──────────────────────────────────────
+
+  /**
+   * Shared cookie attributes. Set and clear MUST use identical attributes:
+   * a cross-site browser (admin on vercel.app ↔ API on onrender.com) rejects a
+   * Set-Cookie that lacks `Secure` + `SameSite=None`, so a clear that omits them
+   * silently fails and the user stays logged in.
+   */
+  private cookieBase() {
+    return {
+      httpOnly: true,
+      secure: this.isProd,
+      sameSite: this.isProd ? ('none' as const) : ('lax' as const),
+    };
+  }
 
   private setAuthCookies(
     res: Response,
@@ -60,30 +76,27 @@ export class AuthController {
     refreshToken: string,
     rememberMe = false,
   ) {
-    const cookieBase = {
-      httpOnly: true,
-      secure: this.isProd,
-      sameSite: this.isProd ? ('none' as const) : ('lax' as const),
-      path: '/',
-    };
-
     // Access token cookie — 15 min
     res.cookie('access_token', accessToken, {
-      ...cookieBase,
+      ...this.cookieBase(),
+      path: '/',
       maxAge: 15 * 60 * 1000,
     });
 
     // Refresh token cookie — restricted path, 30d or session
     res.cookie('refresh_token', refreshToken, {
-      ...cookieBase,
+      ...this.cookieBase(),
       path: '/api/v1/auth/refresh',
       maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined,
     });
   }
 
   private clearAuthCookies(res: Response) {
-    res.clearCookie('access_token', { path: '/' });
-    res.clearCookie('refresh_token', { path: '/api/v1/auth/refresh' });
+    res.clearCookie('access_token', { ...this.cookieBase(), path: '/' });
+    res.clearCookie('refresh_token', {
+      ...this.cookieBase(),
+      path: '/api/v1/auth/refresh',
+    });
   }
 
   @Post('register')
@@ -169,20 +182,35 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Logout user' })
+  @ApiOperation({
+    summary: 'Logout user',
+    description:
+      'Optional authentication: revokes refresh tokens when a valid access_token cookie is present, and always clears auth cookies.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Logout successful.',
     type: MessageResponseDto,
   })
   async logout(
-    @Request() req: { user: { userId: string } },
+    @Request() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // Revoke all refresh tokens for this user
-    await this.authService.revokeAllUserTokens(req.user.userId);
+    // Deliberately NOT behind JwtAuthGuard: access_token expires after 15 min,
+    // so a guarded logout would 401 for anyone idle for a while — leaving them
+    // unable to log out at all. Revocation is best-effort, cookie clearing is not.
+    const accessToken = req.cookies?.access_token as string | undefined;
+
+    if (accessToken) {
+      try {
+        const payload = await this.jwtService.verifyAsync<{ sub: string }>(
+          accessToken,
+        );
+        await this.authService.revokeAllUserTokens(payload.sub);
+      } catch {
+        // Expired or tampered token — nothing to revoke, still clear cookies below
+      }
+    }
 
     // Clear all auth cookies (access_token, refresh_token)
     this.clearAuthCookies(res);

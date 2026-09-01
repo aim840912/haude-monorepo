@@ -6,7 +6,7 @@ import {
   ErrorCodeMessages,
   isApiErrorResponse,
 } from '@haude/types'
-import { useAuthStore } from '../stores/authStore'
+import { performLogout } from '../services/auth'
 
 /**
  * 錯誤處理配置
@@ -66,7 +66,6 @@ interface ErrorHandlerResult {
  */
 export function useApiError() {
   const navigate = useNavigate()
-  const logout = useAuthStore(state => state.logout)
 
   /**
    * 根據錯誤代碼獲取通知類型
@@ -170,7 +169,9 @@ export function useApiError() {
           case ErrorCode.TOKEN_EXPIRED:
           case ErrorCode.TOKEN_INVALID:
           case ErrorCode.UNAUTHORIZED:
-            logout()
+            // 一併撤銷後端 token 並清 cookie，否則 ProtectedRoute 會用殘留的
+            // cookie 把使用者自動登回去
+            void performLogout()
             if (onNotify) {
               onNotify('warning', '登入已過期', '請重新登入以繼續操作')
             }
@@ -179,7 +180,7 @@ export function useApiError() {
             break
 
           case ErrorCode.ACCOUNT_DISABLED:
-            logout()
+            void performLogout()
             if (onNotify) {
               onNotify('error', '帳號已停用', '請聯繫系統管理員')
             }
@@ -210,7 +211,7 @@ export function useApiError() {
         notificationTitle,
       }
     },
-    [logout, navigate, getNotificationType, getNotificationTitle]
+    [navigate, getNotificationType, getNotificationTitle]
   )
 
   /**

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore, type AdminUser } from '../stores/authStore'
 import { api, setCsrfToken } from '../services/api/client'
+import { performLogout } from '../services/auth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -11,13 +12,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation()
   const { isAuthenticated, isAdmin, isHydrated, setAuth } = useAuthStore()
   const [isCheckingCookie, setIsCheckingCookie] = useState(false)
-  const [cookieChecked, setCookieChecked] = useState(false)
+  const restoreAttempted = useRef(false)
 
   // When Zustand store is empty (e.g. first visit from web app), attempt to
   // restore session via the httpOnly cookie that both apps share at the API origin.
+  //
+  // The ref is locked BEFORE firing, not in .finally(): with a state flag set only
+  // on completion, the flag stayed false for the whole logged-in session, so the
+  // moment `isAuthenticated` flipped true -> false (i.e. on logout) this effect
+  // fired and silently logged the user back in.
   useEffect(() => {
-    if (!isHydrated || isAuthenticated || cookieChecked) return
+    if (!isHydrated || isAuthenticated || restoreAttempted.current) return
 
+    restoreAttempted.current = true
     setIsCheckingCookie(true)
     // Step 1: Refresh tokens first — ensures access_token is fresh and gets CSRF token.
     // /auth/me is an auth endpoint so the Axios interceptor won't auto-retry on 401;
@@ -39,9 +46,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       })
       .finally(() => {
         setIsCheckingCookie(false)
-        setCookieChecked(true)
       })
-  }, [isHydrated, isAuthenticated, cookieChecked, setAuth])
+  }, [isHydrated, isAuthenticated, setAuth])
 
   // 等待 Zustand hydration 或 cookie 驗證完成
   if (!isHydrated || isCheckingCookie) {
@@ -67,8 +73,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
             <p className="text-red-600 mb-4">您沒有管理員權限，無法存取此頁面。</p>
             <button
               onClick={() => {
-                useAuthStore.getState().logout()
-                window.location.href = '/login'
+                void performLogout().then(() => window.location.replace('/login'))
               }}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >

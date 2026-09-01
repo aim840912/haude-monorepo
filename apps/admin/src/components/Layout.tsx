@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Package,
@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
+import { performLogout } from '../services/auth'
 import { NotificationBell } from './notifications'
 
 interface NavItem {
@@ -85,13 +86,17 @@ const navGroups: NavGroup[] = [
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const location = useLocation()
-  const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login', { replace: true })
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    await performLogout()
+    // 用整頁導向而非 navigate()：重載會終止所有 in-flight 請求並重置 api client
+    // 的 module-level 旗標，從根本上避開「登出瞬間觸發 session 復原」的競態。
+    window.location.replace('/login')
   }
 
   return (
@@ -174,10 +179,11 @@ export function Layout() {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+            disabled={isLoggingOut}
+            className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <LogOut className="w-5 h-5" />
-            登出
+            {isLoggingOut ? '登出中…' : '登出'}
           </button>
         </div>
       </aside>

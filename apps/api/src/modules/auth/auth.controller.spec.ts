@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { Response } from 'express';
 
@@ -52,6 +53,11 @@ describe('AuthController', () => {
     get: jest.fn(),
   };
 
+  // Mock JwtService（logout 手動驗證 access_token cookie 時使用）
+  const mockJwtService = {
+    verifyAsync: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -67,6 +73,10 @@ describe('AuthController', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
         },
       ],
     }).compile();
@@ -106,6 +116,7 @@ describe('AuthController', () => {
           { provide: AuthService, useValue: mockAuthService },
           { provide: UsersService, useValue: mockUsersService },
           { provide: ConfigService, useValue: configService },
+          { provide: JwtService, useValue: mockJwtService },
         ],
       }).compile();
 
@@ -254,20 +265,70 @@ describe('AuthController', () => {
   // ========================================
 
   describe('logout', () => {
-    it('應撤銷 refresh tokens、清除所有 auth cookies 並回傳成功訊息', async () => {
-      const mockReq = { user: { userId: 'user-1' } };
+    // 清除 cookie 時必須帶齊與設定時相同的屬性，否則跨站瀏覽器會拒絕該 Set-Cookie
+    const expectedAccessCookieOptions = {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+    };
+    const expectedRefreshCookieOptions = {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/api/v1/auth/refresh',
+    };
+
+    it('access_token 有效時應撤銷 refresh tokens、清除 cookies 並回傳成功訊息', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-1' });
+      const mockReq = { cookies: { access_token: 'valid-token' } } as any;
+
       const result = await controller.logout(mockReq, mockResponse);
 
       expect(result).toEqual({ message: 'Logged out successfully' });
       expect(mockAuthService.revokeAllUserTokens).toHaveBeenCalledWith(
         'user-1',
       );
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('access_token', {
-        path: '/',
-      });
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh_token', {
-        path: '/api/v1/auth/refresh',
-      });
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'access_token',
+        expectedAccessCookieOptions,
+      );
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'refresh_token',
+        expectedRefreshCookieOptions,
+      );
+    });
+
+    it('access_token 已過期時仍應清除 cookies（使用者才登得出去）', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
+      const mockReq = { cookies: { access_token: 'expired-token' } } as any;
+
+      const result = await controller.logout(mockReq, mockResponse);
+
+      expect(result).toEqual({ message: 'Logged out successfully' });
+      expect(mockAuthService.revokeAllUserTokens).not.toHaveBeenCalled();
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'access_token',
+        expectedAccessCookieOptions,
+      );
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'refresh_token',
+        expectedRefreshCookieOptions,
+      );
+    });
+
+    it('完全沒有 access_token cookie 時應直接清除 cookies 而不驗證', async () => {
+      const mockReq = { cookies: {} } as any;
+
+      const result = await controller.logout(mockReq, mockResponse);
+
+      expect(result).toEqual({ message: 'Logged out successfully' });
+      expect(mockJwtService.verifyAsync).not.toHaveBeenCalled();
+      expect(mockAuthService.revokeAllUserTokens).not.toHaveBeenCalled();
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'access_token',
+        expectedAccessCookieOptions,
+      );
     });
   });
 
@@ -438,6 +499,9 @@ describe('AuthController', () => {
       await controller.googleAuthCallback(req, mockResponse);
 
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('access_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
         path: '/',
       });
       expect(mockResponse.redirect).toHaveBeenCalledWith(
