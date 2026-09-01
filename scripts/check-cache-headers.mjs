@@ -32,7 +32,13 @@ const PERSONALIZED = isApi
 const PUBLIC = isApi ? ['/api/v1/products'] : ['/', '/products']
 
 async function head(path) {
-  const res = await fetch(base + path, { redirect: 'manual' })
+  let res
+  try {
+    res = await fetch(base + path, { redirect: 'manual' })
+  } catch (err) {
+    // 網路錯誤不該讓整支腳本噴 stack trace —— 回報成可讀的結果
+    return { error: err.cause?.code ?? err.message }
+  }
   return {
     status: res.status,
     cacheControl: res.headers.get('cache-control'),
@@ -54,7 +60,14 @@ console.log(`\n檢查 ${base}\n${'─'.repeat(72)}`)
 
 console.log('\n[個人化路徑] 不得含 public / s-maxage')
 for (const path of PERSONALIZED) {
-  const { status, cacheControl, vary, edge, prerendered } = await head(path)
+  const { status, cacheControl, vary, edge, prerendered, error } = await head(path)
+
+  if (error) {
+    console.log(`  ? ${path.padEnd(22)} 請求失敗：${error}`)
+    failures.push(`${path}: 請求失敗（${error}）—— 無法驗證`)
+    continue
+  }
+
   const cc = cacheControl ?? ''
   const problems = []
 
@@ -78,7 +91,13 @@ for (const path of PERSONALIZED) {
 
 console.log('\n[公開路徑] 應維持 CDN 快取')
 for (const path of PUBLIC) {
-  const { status, cacheControl, edge } = await head(path)
+  const { status, cacheControl, edge, error } = await head(path)
+
+  if (error) {
+    console.log(`  ? ${path.padEnd(22)} 請求失敗：${error}`)
+    continue
+  }
+
   const cc = cacheControl ?? ''
   const cacheable = /\bpublic\b/.test(cc) && /s-maxage=\d+/.test(cc)
 
