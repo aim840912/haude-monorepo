@@ -41,6 +41,10 @@ async function head(path) {
       res.headers.get('x-vercel-cache') ??
       res.headers.get('cf-cache-status') ??
       res.headers.get('x-cache'),
+    // 建置期預渲染的靜態產物。有這個標記時，邊緣快取命中是安全的 —— 被快取的是
+    // 「所有人共用的靜態骨架」，個資由瀏覽器在 hydration 後才填入。
+    // 危險的是「命中 + 沒有這個標記」：那代表快取了 request-time 產生的回應。
+    prerendered: res.headers.get('x-nextjs-prerender') === '1',
   }
 }
 
@@ -50,17 +54,21 @@ console.log(`\n檢查 ${base}\n${'─'.repeat(72)}`)
 
 console.log('\n[個人化路徑] 不得含 public / s-maxage')
 for (const path of PERSONALIZED) {
-  const { status, cacheControl, vary, edge } = await head(path)
+  const { status, cacheControl, vary, edge, prerendered } = await head(path)
   const cc = cacheControl ?? ''
   const problems = []
 
   if (!cacheControl) problems.push('沒有 Cache-Control（交給中介快取自行決定）')
   if (/\bpublic\b/.test(cc)) problems.push('含 public')
   if (/s-maxage=[1-9]/.test(cc)) problems.push('含 s-maxage')
-  if (edge && /HIT/i.test(edge)) problems.push(`邊緣快取命中：${edge}`)
+  // 邊緣命中只在「非預渲染」時才是問題：預渲染產物人人相同、不含個資
+  if (edge && /HIT/i.test(edge) && !prerendered) {
+    problems.push(`邊緣快取命中且非預渲染產物：${edge}`)
+  }
 
   const mark = problems.length ? '✗' : '✓'
-  console.log(`  ${mark} ${path.padEnd(22)} ${status}  ${cc || '(none)'}`)
+  const note = prerendered ? '  [預渲染骨架]' : ''
+  console.log(`  ${mark} ${path.padEnd(22)} ${status}  ${cc || '(none)'}${note}`)
   if (vary) console.log(`      Vary: ${vary}`)
   if (problems.length) {
     console.log(`      → ${problems.join('；')}`)
