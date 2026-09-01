@@ -35,8 +35,11 @@ async function getReviewStats(
   productId: string
 ): Promise<{ averageRating: number; totalReviews: number } | null> {
   try {
+    // 後端這支端點標了 @NoCache()，因為它「回應依請求者角色而異」。這裡快取 5 分鐘
+    // 仍然安全：server 端 fetch 不會夾帶瀏覽器 cookie，拿到的永遠是匿名視角的統計，
+    // 不含任何個人化內容。若日後這裡改成轉發使用者憑證，必須同時改成 no-store。
     const res = await fetch(`${API_URL}/products/${productId}/reviews/stats`, {
-      next: { revalidate: 300 }, // 5 分鐘快取
+      next: { revalidate: 300 },
     })
 
     if (!res.ok) {
@@ -54,9 +57,7 @@ async function getReviewStats(
  *
  * 為每個產品頁面生成獨立的 title, description, og:image 等
  */
-export async function generateMetadata({
-  params,
-}: ProductDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ProductDetailPageProps): Promise<Metadata> {
   const { id } = await params
   const product = await getProduct(id)
 
@@ -134,14 +135,9 @@ export async function generateStaticParams() {
  * 3. JSON-LD Schema 結構化資料
  * 4. 傳遞資料給 Client Component
  */
-export default async function ProductDetailPage({
-  params,
-}: ProductDetailPageProps) {
+export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = await params
-  const [product, reviewStats] = await Promise.all([
-    getProduct(id),
-    getReviewStats(id),
-  ])
+  const [product, reviewStats] = await Promise.all([getProduct(id), getReviewStats(id)])
 
   if (!product) {
     notFound()

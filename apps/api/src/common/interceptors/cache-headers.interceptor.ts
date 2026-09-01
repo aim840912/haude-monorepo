@@ -78,6 +78,10 @@ export class CacheHeadersInterceptor implements NestInterceptor {
             'Cache-Control',
             `public, max-age=${maxAge}, s-maxage=${sMaxAge}, stale-while-revalidate=${this.STALE_WHILE_REVALIDATE}`,
           );
+          // Vary 是共享快取的最後一道防線：若某個 @Cacheable 端點日後加上
+          // OptionalJwtAuthGuard（回應依登入狀態而異）卻忘了 @NoCache()，
+          // 有 Vary 至少能讓 CDN 依憑證分開存放，而不是把 A 的回應發給 B。
+          response.setHeader('Vary', 'Cookie, Authorization');
         }
       }),
     );

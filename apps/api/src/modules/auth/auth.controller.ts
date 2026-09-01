@@ -91,6 +91,21 @@ export class AuthController {
     });
   }
 
+  /**
+   * 導向前一律標記 no-store。
+   *
+   * 這些 redirect 的 URL fragment 內含使用者資料（#user={...}）。若任何中介快取
+   * 存下這個 302，所有後續訪客都會被導向同一個人的 callback URL，前端會把那個
+   * 陌生人寫進自己的 store —— 也就是「多台電腦看到同一個陌生帳號」。
+   *
+   * CacheHeadersInterceptor 對 headersSent 的回應會短路，所以 redirect 本來
+   * 完全沒有 Cache-Control，必須在這裡明確補上。
+   */
+  private redirectNoStore(res: Response, url: string) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.redirect(url);
+  }
+
   private clearAuthCookies(res: Response) {
     res.clearCookie('access_token', { ...this.cookieBase(), path: '/' });
     res.clearCookie('refresh_token', {
@@ -346,12 +361,14 @@ export class AuthController {
         role: devUser.role,
       };
 
-      res.redirect(
+      this.redirectNoStore(
+        res,
         `${callbackBase}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}`,
       );
     } catch (error) {
       this.logger.error('Dev login failed', error);
-      res.redirect(
+      this.redirectNoStore(
+        res,
         `${callbackBase}/auth/callback#error=${encodeURIComponent('Dev login failed: ' + (error as Error).message)}`,
       );
     }
@@ -410,14 +427,16 @@ export class AuthController {
       if (user.role !== 'ADMIN') {
         // 非管理員，清除所有 auth cookies 並重導向到錯誤頁面
         this.clearAuthCookies(res);
-        res.redirect(
+        this.redirectNoStore(
+          res,
           `${adminUrl}/auth/callback#error=${encodeURIComponent('您沒有管理員權限')}`,
         );
         return;
       }
 
       // Redirect with user info only (tokens are in httpOnly cookies)
-      res.redirect(
+      this.redirectNoStore(
+        res,
         `${adminUrl}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}`,
       );
       return;
@@ -426,7 +445,8 @@ export class AuthController {
     // Web 登入（預設）— tokens in cookies, only user info in URL
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-    res.redirect(
+    this.redirectNoStore(
+      res,
       `${frontendUrl}/auth/callback#user=${encodeURIComponent(JSON.stringify(user))}`,
     );
   }

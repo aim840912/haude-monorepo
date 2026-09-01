@@ -33,9 +33,7 @@ function buildCsp(): string {
   const isDev = process.env.NODE_ENV === 'development'
 
   const connectSrc = isDev ? "'self' http://localhost:* ws://localhost:* https:" : "'self' https:"
-  const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval'"
-    : "'self' 'unsafe-inline'"
+  const scriptSrc = isDev ? "'self' 'unsafe-inline' 'unsafe-eval'" : "'self' 'unsafe-inline'"
 
   return [
     "default-src 'self'",
@@ -98,6 +96,39 @@ const apiNoCacheHeaders = [
     value: 'no-store',
   },
 ]
+
+// 個人化頁面：絕不進共享快取
+//
+// pageCacheHeaders 的 'public' 明確授權 CDN 儲存回應並發給其他人。目前這些頁面
+// 剛好是靜態預渲染、HTML 裡沒有使用者資料，所以還沒出事 —— 但那是「碰巧安全」。
+// 只要有人在這些路由的任一 Server Component 加一行 cookies()，該頁立刻變成
+// request-time render，卻仍帶著 public + s-maxage=60 → 第一個登入者的頁面會被
+// 快取並發給所有後續訪客。
+const privateCacheHeaders = [
+  {
+    key: 'Cache-Control',
+    value: 'private, no-store, max-age=0',
+  },
+  {
+    // 實測（Next.js 15）：這個 Vary 會被框架自己的 RSC Vary 覆蓋，不會出現在
+    // 最終回應中。留著是為了表達意圖、以及萬一改由其他代理層送出時仍正確。
+    // 真正的防線是上面的 no-store —— 它比 Vary 強，代表「根本不要存」。
+    key: 'Vary',
+    value: 'Cookie',
+  },
+]
+
+// 需要排除在共享快取外的路由前綴
+// auth：callback 頁會從 URL fragment 取出使用者資料並寫入 store
+export const PERSONALIZED_PATHS = ['account', 'orders', 'cart', 'checkout', 'auth'] as const
+
+// 同時涵蓋有無 locale 前綴的兩種形式（localePrefix: 'as-needed'）
+const personalizedHeaderRules = PERSONALIZED_PATHS.flatMap((path) => [
+  { source: `/${path}`, headers: privateCacheHeaders },
+  { source: `/${path}/:path*`, headers: privateCacheHeaders },
+  { source: `/:locale/${path}`, headers: privateCacheHeaders },
+  { source: `/:locale/${path}/:path*`, headers: privateCacheHeaders },
+])
 
 const nextConfig: NextConfig = {
   // Standalone output only on Vercel CI (VERCEL=1 is auto-set).
@@ -163,16 +194,17 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
-      // HTML 頁面：快取標頭（排除 API 和靜態檔案）
+      // HTML 頁面：預設可進 CDN 快取
+      // 用 /(.*) 而非 /:locale/:path*：後者至少要兩段，單段路徑（/products、
+      // /locations…）會落在規則外，變成由平台預設行為決定快取 —— 不受程式碼控制。
+      // 個人化路徑由下面的 personalizedHeaderRules 覆蓋掉這條。
       {
-        source: '/:locale/:path*',
+        source: '/(.*)',
         headers: pageCacheHeaders,
       },
-      // 根路徑
-      {
-        source: '/',
-        headers: pageCacheHeaders,
-      },
+      // 個人化頁面：覆蓋上面的 public 快取（同一 key 由後者勝出）
+      // 順序有意義 —— 這組必須排在 pageCacheHeaders 之後
+      ...personalizedHeaderRules,
       // Next.js API 路由：不快取
       {
         source: '/api/:path*',

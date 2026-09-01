@@ -62,6 +62,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    // 錯誤回應也必須擋掉快取：CacheHeadersInterceptor 用 tap()，只在成功路徑
+    // 觸發，所以例外送出的回應本來完全沒有 Cache-Control，等於任由中介快取
+    // 做啟發式快取（可能把某個人的 403/404 內容存下來發給別人）。
+    response.setHeader('Cache-Control', 'no-store');
     response.status(status).json(errorResponse);
   }
 

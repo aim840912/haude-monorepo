@@ -420,6 +420,20 @@ npx prisma migrate deploy
 
 ---
 
+### 快取標頭：預設 fail-closed
+
+`CacheHeadersInterceptor` 對 GET 的預設是 `no-store`，要公開快取必須明確
+`@Cacheable(秒數)`。維護時的三條規則：
+
+1. **在 `@Cacheable` 的 controller 加上任何認證 guard（含 `OptionalJwtAuthGuard`）
+   時，該端點必須補 `@NoCache()`**。回應內容一旦依登入狀態而異，就不能進共享快取。
+2. **自行呼叫 `res.redirect()` / `res.status().json()` 的地方要自己設 `Cache-Control`**。
+   攔截器對 `headersSent` 的回應會短路 —— OAuth redirect 用 `redirectNoStore()`，
+   例外回應由 `HttpExceptionFilter` 統一補 `no-store`。
+3. **回應內含使用者資料 → 永不 `public`**。個人化端點不要加 `@Cacheable`，預設值就是對的。
+
+---
+
 ## 品質標準
 
 ### 錯誤處理

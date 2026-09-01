@@ -25,6 +25,7 @@ describe('AuthController', () => {
     cookie: jest.fn(),
     clearCookie: jest.fn(),
     redirect: jest.fn(),
+    setHeader: jest.fn(),
   } as unknown as Response;
 
   // Mock AuthService
@@ -506,6 +507,26 @@ describe('AuthController', () => {
       });
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         expect.stringContaining('error='),
+      );
+    });
+
+    it('導向前必須標記 no-store（URL fragment 內含使用者資料）', async () => {
+      mockAuthService.googleLogin.mockResolvedValue({
+        user: { ...mockUser, role: 'USER' },
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+      });
+      mockConfigService.get.mockReturnValue('http://localhost:5173');
+
+      const req = { user: { ...mockUser } } as never;
+
+      await controller.googleAuthCallback(req, mockResponse);
+
+      // 這個 302 若被任何中介快取存下，所有後續訪客都會被導向同一個人的
+      // callback URL，前端會把那個陌生人寫進自己的 store
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Cache-Control',
+        'no-store',
       );
     });
   });

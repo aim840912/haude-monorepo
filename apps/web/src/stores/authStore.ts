@@ -1,3 +1,8 @@
+'use client'
+
+// 模組層級的 singleton（axios 實例 / Zustand store）：在 Server Component
+// 匯入會變成同一個 Node 實例上所有並行請求共用，造成跨使用者資料外洩。
+// 'use client' 讓它只能在瀏覽器端運行。
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useCartStore } from './cartStore'

@@ -173,6 +173,29 @@ NEXT_PUBLIC_USE_MOCK=false
 
 ---
 
+### 個人化回應絕不進共享快取
+
+`Cache-Control: public` 是在告訴 CDN「這份回應可以存起來發給其他人」。一旦某個
+含使用者資料的頁面帶著它，第一個訪客的頁面就會被發給所有後續訪客 —— 症狀是
+「多台不同電腦看到同一個陌生人的帳號」。
+
+三條規則：
+
+1. **新增任何個人化路由時，把路由前綴加進 `next.config.ts` 的 `PERSONALIZED_PATHS`**。
+   該常數同時餵給 header 規則與 `src/lib/cache-headers.test.ts`，漏加會被測試抓到
+   （前提是也把路徑補進測試的 `PERSONALIZED` 清單）。
+2. **Server Component 讀 `cookies()` 的頁面，其路由必須在 `PERSONALIZED_PATHS` 內**。
+   目前全站沒有任何 Server Component 讀 cookie，個資都在瀏覽器端渲染；這是現況，
+   不是保證。
+3. **模組層級的 singleton 一律標 `'use client'`**（`services/api.ts`、`stores/*.ts`）。
+   在 Server Component 匯入這些檔案，共用的 axios 實例與 Zustand store 會變成同一個
+   Node 實例上所有並行請求共用 —— 那是跨使用者身分外洩。
+
+部署後用 `node scripts/check-cache-headers.mjs https://haude-web.vercel.app` 驗收。
+這是唯一能抓到「平台 Dashboard 規則覆蓋了程式碼設定」的方法。
+
+---
+
 ## 品質標準
 
 ### 完成定義
