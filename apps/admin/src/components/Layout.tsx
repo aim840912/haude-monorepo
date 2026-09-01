@@ -17,6 +17,8 @@ import {
   Share2,
   FileSpreadsheet,
   ImageIcon,
+  Store,
+  ExternalLink,
   type LucideIcon,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
@@ -26,6 +28,8 @@ interface NavItem {
   path: string
   label: string
   icon: LucideIcon
+  /** 外部連結（另開分頁），非 React Router 路由 */
+  external?: boolean
 }
 
 interface NavGroup {
@@ -33,10 +37,16 @@ interface NavGroup {
   items: NavItem[]
 }
 
+// 前台網站網址：正式環境用 VITE_WEB_URL 指定，未設定時退回各環境預設
+const WEB_URL: string =
+  import.meta.env.VITE_WEB_URL ||
+  (import.meta.env.DEV ? 'http://localhost:5173' : 'https://haude-web.vercel.app')
+
 const navGroups: NavGroup[] = [
   {
     items: [
       { path: '/', label: '儀表板', icon: LayoutDashboard },
+      { path: WEB_URL, label: '前往前台網站', icon: Store, external: true },
     ],
   },
   {
@@ -120,6 +130,26 @@ export function Layout() {
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon
+
+                  // 外部連結走原生 a，React Router 的 Link 不能跨網域
+                  if (item.external) {
+                    return (
+                      <a
+                        key={item.path}
+                        href={item.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-300 hover:bg-gray-800 hover:text-white"
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <Icon className="w-5 h-5" aria-hidden="true" />
+                        <span className="flex-1">{item.label}</span>
+                        <ExternalLink className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                        <span className="sr-only">（在新分頁開啟）</span>
+                      </a>
+                    )
+                  }
+
                   const isActive = location.pathname === item.path
                   return (
                     <Link
