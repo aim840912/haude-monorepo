@@ -49,5 +49,8 @@ if (process.env.NODE_ENV !== 'production') {
   console.log(`[Auth Service] 使用 ${USE_MOCK ? 'Mock' : 'Real'} 模式`)
 }
 
+// 完整登出（撤銷後端 session + 清本地狀態）
+export { performLogout } from './performLogout'
+
 // 重新匯出類型
 export type { AuthServiceInterface, AuthResponse, GetMeResponse } from './types'

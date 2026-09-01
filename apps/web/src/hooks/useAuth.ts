@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  useAuthStore,
-  type User,
-  clearAllAuthStorage,
-} from '@/stores/authStore'
+import { useAuthStore, type User } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
-import { authService } from '@/services/auth'
+import { authService, performLogout } from '@/services/auth'
 
 interface UseAuthReturn {
   user: User | null
@@ -18,7 +14,7 @@ interface UseAuthReturn {
 }
 
 export function useAuth(): UseAuthReturn {
-  const { user, isAuthenticated, setAuth, logout: storeLogout } = useAuthStore()
+  const { user, isAuthenticated, setAuth } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const hasInitializedRef = useRef(false)
@@ -36,13 +32,15 @@ export function useAuth(): UseAuthReturn {
             setAuth(data.user)
           }
         } catch {
-          storeLogout()
+          // Session is dead — revoke server-side too, otherwise the 30-day
+          // refresh_token stays valid and can resurrect the session
+          void performLogout()
         }
       }
       setIsLoading(false)
     }
     checkAuth()
-  }, [isAuthenticated, setAuth, storeLogout])
+  }, [isAuthenticated, setAuth])
 
   const login = async (email: string, password: string, _rememberMe: boolean = false) => {
     setError(null)
@@ -80,10 +78,7 @@ export function useAuth(): UseAuthReturn {
   }
 
   const logout = () => {
-    clearAllAuthStorage() // Clear all storage
-    localStorage.removeItem('cart-storage') // Clear local cart
-    useCartStore.setState({ items: [] }) // Reset cart state
-    storeLogout()
+    void performLogout()
   }
 
   return {

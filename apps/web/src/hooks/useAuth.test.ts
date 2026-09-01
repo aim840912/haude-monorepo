@@ -44,12 +44,13 @@ vi.mock('@/services/auth', () => ({
     register: vi.fn(),
     getMe: vi.fn(),
   },
+  performLogout: vi.fn().mockResolvedValue(undefined),
 }))
 
 import { useAuth } from './useAuth'
-import { useAuthStore, clearAllAuthStorage } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
-import { authService } from '@/services/auth'
+import { authService, performLogout } from '@/services/auth'
 
 // Mock user
 const mockUser = {
@@ -164,7 +165,8 @@ describe('useAuth', () => {
         expect(result.current.isLoading).toBe(false)
       })
 
-      expect(mockStoreLogout).toHaveBeenCalled()
+      // session 已死時必須連後端一起撤銷，否則 30 天的 refresh_token 仍可換回 session
+      expect(performLogout).toHaveBeenCalled()
     })
   })
 
@@ -293,7 +295,7 @@ describe('useAuth', () => {
   // ========================================
 
   describe('登出', () => {
-    it('應該清除所有狀態', async () => {
+    it('應該呼叫 performLogout 撤銷後端 session 並清除本地狀態', async () => {
       const { result } = renderHook(() => useAuth())
 
       await waitFor(() => {
@@ -304,10 +306,8 @@ describe('useAuth', () => {
         result.current.logout()
       })
 
-      expect(clearAllAuthStorage).toHaveBeenCalled()
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith('cart-storage')
-      expect(useCartStore.setState).toHaveBeenCalledWith({ items: [] })
-      expect(mockStoreLogout).toHaveBeenCalled()
+      // 統一走 performLogout：撤銷後端 session + 清 storage + 清購物車
+      expect(performLogout).toHaveBeenCalled()
     })
   })
 })

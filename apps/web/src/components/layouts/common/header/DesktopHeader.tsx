@@ -17,6 +17,7 @@ import { usePathname } from 'next/navigation'
 import { ShoppingCart, LogOut, User, ChevronDown, Package, ExternalLink } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/authStore'
+import { performLogout } from '@/services/auth'
 import { useTotalItems } from '@/stores/cartStore'
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 
@@ -41,7 +42,7 @@ interface DesktopHeaderProps {
 export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
   const pathname = usePathname()
   const t = useTranslations('nav')
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const totalItems = useTotalItems()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -187,7 +188,7 @@ export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
                   <button
                     onClick={() => {
                       setIsUserMenuOpen(false)
-                      logout()
+                      void performLogout()
                     }}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[#8b0000] hover:bg-[#fbeaea] dark:hover:bg-[#3e2723] transition-colors"
                   >

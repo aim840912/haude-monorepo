@@ -5,11 +5,12 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
+import { performLogout } from '@/services/auth'
 import { User, ShoppingBag, Heart, MapPin, Shield, LogOut, ChevronRight, Crown } from 'lucide-react'
 
 export default function AccountPage() {
   const router = useRouter()
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -18,7 +19,7 @@ export default function AccountPage() {
   }, [isAuthenticated, router])
 
   const handleLogout = () => {
-    logout()
+    void performLogout()
     router.replace('/')
   }
 

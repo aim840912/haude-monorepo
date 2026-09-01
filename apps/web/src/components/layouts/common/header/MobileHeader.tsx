@@ -14,6 +14,7 @@ import { usePathname } from 'next/navigation'
 import { ShoppingCart, LogOut, User, Menu, X, Package, ExternalLink } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/authStore'
+import { performLogout } from '@/services/auth'
 import { useTotalItems } from '@/stores/cartStore'
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 
@@ -50,7 +51,7 @@ export function MobileHeader({
 }: MobileHeaderProps) {
   const pathname = usePathname()
   const t = useTranslations('nav')
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const totalItems = useTotalItems()
 
   const isActive = (path: string) => {
@@ -59,7 +60,7 @@ export function MobileHeader({
   }
 
   const handleLogout = () => {
-    logout()
+    void performLogout()
     handleMenuItemClick()
   }
 

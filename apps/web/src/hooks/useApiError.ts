@@ -9,7 +9,7 @@ import {
   isApiErrorResponse,
 } from '@haude/types'
 import { useToast } from '@/components/ui/feedback/toast'
-import { useAuthStore } from '@/stores/authStore'
+import { performLogout } from '@/services/auth'
 
 /**
  * 錯誤處理配置
@@ -61,7 +61,6 @@ interface ErrorHandlerResult {
 export function useApiError() {
   const router = useRouter()
   const toast = useToast()
-  const logout = useAuthStore(state => state.logout)
 
   /**
    * 處理 API 錯誤回應
@@ -96,7 +95,8 @@ export function useApiError() {
           case ErrorCode.TOKEN_EXPIRED:
           case ErrorCode.TOKEN_INVALID:
           case ErrorCode.UNAUTHORIZED:
-            logout()
+            // 一併撤銷後端 session，否則 refresh_token 仍可換回有效 session
+            void performLogout()
             if (shouldShowToast) {
               toast.warning('登入已過期', '請重新登入以繼續操作')
             }
@@ -105,7 +105,7 @@ export function useApiError() {
             break
 
           case ErrorCode.ACCOUNT_DISABLED:
-            logout()
+            void performLogout()
             if (shouldShowToast) {
               toast.error('帳號已停用', '請聯繫客服了解詳情')
             }
@@ -181,7 +181,7 @@ export function useApiError() {
         handled,
       }
     },
-    [logout, router, toast]
+    [router, toast]
   )
 
   /**
