@@ -20,17 +20,26 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
  * 因此 script-src 在此僅限制「外部 script 來源」，**無法阻擋 inline 注入**。
  * 防止 inline 注入的實際防線是輸出端跳脫（見 src/lib/json-ld.ts）。
  *
- * 開發環境需放寬 connect-src：API 走 http://localhost:3001，
- * 且 Next dev 的 HMR 需要 ws:，嚴格的 'self' https: 會直接擋掉兩者。
+ * 開發環境需放寬兩處（正式環境維持嚴格）：
+ * 1. connect-src：API 走 http://localhost:3001，且 Next dev 的 HMR 需要 ws:，
+ *    嚴格的 'self' https: 會直接擋掉兩者。
+ * 2. script-src 的 'unsafe-eval'：Next dev 的 react-refresh runtime 以 eval
+ *    執行程式碼，缺這一項會讓 main-app.js 在載入時就拋 EvalError → 整個
+ *    client bundle 不啟動 → 頁面只剩 SSR 的 HTML，完全沒有互動性
+ *    （症狀：/auth/callback 永遠停在「正在處理登入...」）。
+ *    正式環境的 build 不使用 eval，因此不放寬。
  */
 function buildCsp(): string {
   const isDev = process.env.NODE_ENV === 'development'
 
   const connectSrc = isDev ? "'self' http://localhost:* ws://localhost:* https:" : "'self' https:"
+  const scriptSrc = isDev
+    ? "'self' 'unsafe-inline' 'unsafe-eval'"
+    : "'self' 'unsafe-inline'"
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
