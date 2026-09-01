@@ -133,19 +133,6 @@ export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
             )}
           </Link>
 
-          {user?.role === 'ADMIN' && process.env.NEXT_PUBLIC_ADMIN_URL && (
-            <a
-              href={process.env.NEXT_PUBLIC_ADMIN_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-1 px-3 h-10 transition-colors duration-200 rounded-md ${iconBtn}`}
-              title={t('admin')}
-            >
-              <ExternalLink className="w-5 h-5" />
-              <span className="text-sm font-medium">{t('admin')}</span>
-            </a>
-          )}
-
           {isAuthenticated ? (
             <div className="relative" ref={userMenuRef}>
               <button
@@ -161,6 +148,23 @@ export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
 
               {isUserMenuOpen && (
                 <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-[#2d1f1a] rounded-lg shadow-lg border border-[#e7ded3] dark:border-[#5d4037] py-1 z-50">
+                  {user?.role === 'ADMIN' && process.env.NEXT_PUBLIC_ADMIN_URL && (
+                    <>
+                      {/* 跨網域，必須用原生 a 而非 next/link */}
+                      <a
+                        href={process.env.NEXT_PUBLIC_ADMIN_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#5d4037] dark:text-[#bcaaa4] hover:text-[#d4af37] hover:bg-[#faf8f5] dark:hover:bg-[#3e2723] transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                        <span className="flex-1">{t('admin')}</span>
+                        <span className="sr-only">（在新分頁開啟）</span>
+                      </a>
+                      <div className="border-t border-[#e7ded3] dark:border-[#5d4037] my-1" />
+                    </>
+                  )}
                   {userMenuConfig.map((item) => {
                     const Icon = item.icon
                     return (

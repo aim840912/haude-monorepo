@@ -109,18 +109,6 @@ export function MobileHeader({
             )}
           </Link>
 
-          {user?.role === 'ADMIN' && process.env.NEXT_PUBLIC_ADMIN_URL && (
-            <a
-              href={process.env.NEXT_PUBLIC_ADMIN_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-1 transition-colors duration-200 rounded-md min-h-[44px] px-2 ${iconBtn}`}
-              title={t('admin')}
-            >
-              <ExternalLink className="w-5 h-5" />
-            </a>
-          )}
-
           <button
             ref={mobileMenuButtonRef}
             className={`flex items-center transition-colors duration-200 justify-center rounded-md min-h-[44px] min-w-[44px] p-2 ${iconBtn}`}
@@ -163,6 +151,23 @@ export function MobileHeader({
                 <div className="px-4 py-2 text-sm text-[#695a52] dark:text-[#a69187]">
                   {user?.name}
                 </div>
+                {user?.role === 'ADMIN' && process.env.NEXT_PUBLIC_ADMIN_URL && (
+                  <>
+                    {/* 跨網域，必須用原生 a 而非 next/link */}
+                    <a
+                      href={process.env.NEXT_PUBLIC_ADMIN_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleMenuItemClick}
+                      className="flex items-center gap-2 px-4 py-3 text-[#5d4037] dark:text-[#bcaaa4] hover:text-[#d4af37] hover:bg-[#faf8f5] dark:hover:bg-[#3e2723] transition-colors duration-200 rounded-lg mx-2"
+                    >
+                      <ExternalLink className="w-5 h-5" aria-hidden="true" />
+                      <span className="font-medium text-base">{t('admin')}</span>
+                      <span className="sr-only">（在新分頁開啟）</span>
+                    </a>
+                    <div className="border-t border-[#e7ded3] dark:border-[#5d4037] my-2 mx-4" />
+                  </>
+                )}
                 {userMenuConfig.map((item) => {
                   const Icon = item.icon
                   return (

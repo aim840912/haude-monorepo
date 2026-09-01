@@ -85,6 +85,22 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: AUTH_STORAGE_KEY,
+      version: 1,
+      // v0 的 OAuth callback 把 /auth/me 的 { user } 信封整包存成 user，
+      // 讓 user.role / user.name 變成 undefined。這裡把多包的那層拆回來，
+      // 已受影響的使用者下次載入即自動修復，不需要重新登入。
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as { user?: unknown } | null
+        if (
+          version === 0 &&
+          state?.user &&
+          typeof state.user === 'object' &&
+          'user' in state.user
+        ) {
+          return { ...state, user: (state.user as { user: User }).user }
+        }
+        return state
+      },
     }
   )
 )

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
-import { api } from '@/services/api'
+import { authService } from '@/services/auth'
 import logger from '@/lib/logger'
 
 /**
@@ -38,7 +38,9 @@ export default function AuthCallbackPage() {
 
         // Verify session is actually valid: httpOnly cookie must be accepted by server.
         // This prevents spoofing via crafted /auth/callback#user={fake} URLs.
-        const { data: verifiedUser } = await api.get('/auth/me')
+        // NOTE: /auth/me responds with { user }, so unwrap it — storing the whole
+        // envelope leaves user.role/user.name undefined for every OAuth login.
+        const { user: verifiedUser } = await authService.getMe()
         setAuth(verifiedUser, csrfToken ?? undefined)
 
         // Merge local cart to backend (if any)
