@@ -275,7 +275,8 @@ PUT    /api/v1/cart/items/:productId
 DELETE /api/v1/cart/items/:productId
 
 # 健康檢查（無前綴）
-GET    /health
+GET    /health          # liveness，不查 DB
+GET    /health/ready    # readiness，DB 斷線回 503
 ```
 
 ### Port 管理規範
@@ -313,6 +314,18 @@ kill -9 $(lsof -t -i :5174)  # 終止佔用 5174 的進程
 | Web 用戶端 | https://haude-web.vercel.app | Vercel |
 | Admin 後台 | https://haude-admin.vercel.app | Vercel |
 | API | https://haude-api.onrender.com | Render（Project: haude-tea-shop） |
+
+### 健康檢查分工（改動前必讀）
+
+| 檢查者 | 端點 | 用途 |
+|------|------|------|
+| Render Health Check Path | `/health` | 部署時等新版回 200 才切流量；失敗會重啟服務 |
+| Docker `HEALTHCHECK`（`Dockerfile.api`） | `/health` | 容器層存活檢查 |
+| cron-job.org「Haude API Keep Alive」（每 5 分鐘） | `/health/ready` | Render 不休眠 + Supabase 保持活躍；DB 斷線回 503 → 寄信告警 |
+
+- `/health` = liveness，**不查 DB**；`/health/ready` = readiness，跑 `SELECT 1`，DB 斷線回 **503**。
+- **會觸發重啟的檢查（Render / Docker）不可改成 `/health/ready`**：Supabase 暫停時重啟 API 救不了，只會讓 API 反覆重啟。
+- 在 Render Dashboard 改 Health Check Path 會**立即觸發一次完整重新部署**；填的路徑回不了 200 部署就會卡住。
 
 ### 資料庫環境（重要）
 
