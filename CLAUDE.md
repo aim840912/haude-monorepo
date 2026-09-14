@@ -398,6 +398,8 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 | 改動 `apps/api/prisma/schema.prisma` 後直接 push，以為型別檢查/build/測試都過就代表沒問題 | **正式環境沒有自動 migration 機制**：`haude-api`（Render 免費方案）的 Pre-Deploy Command 被鎖、Dockerfile 也沒有跑 `prisma migrate deploy`。push 後 Render 會自動重新部署新程式碼，但正式 Supabase 資料庫結構不會跟著變，新 Prisma Client 一查詢不存在的欄位就 500（曾實際造成商品頁全站中斷 ~20 分鐘）。**schema 變更 push 前後，必須手動對正式資料庫執行**：`DATABASE_URL="$(grep '^DATABASE_URL=' apps/api/.env.prod-backup.local \| sed 's/^DATABASE_URL=//' \| tr -d '\"')" npx prisma migrate deploy`（在 `apps/api` 目錄下）。`prisma generate`（產生型別）和 `prisma migrate deploy`（真的改資料庫）是兩件互不影響的事，不要混淆。 |
 | Render 服務名稱找不到時，只看 Dashboard 首頁的「Ungrouped Services」表格就下結論 | Render 首頁的服務分兩區：「Projects」分組容器 + 「Ungrouped Services」未分組列表，`haude-api` 實際上被歸在一個叫「My project」的專案分組底下（已改名為 `haude-tea-shop`）。要點進 Project 卡片才看得到裡面的服務，不能只看 Ungrouped 那張表。 |
 | API 部署位置認知：以為跟 web/admin 一樣在 Vercel | `haude-web`／`haude-admin` 在 Vercel，**`haude-api`（NestJS）在 Render**（`haude-api.onrender.com`），因為 NestJS 需要長駐容器，不適合 Vercel 的 serverless functions 模型。不確定時查 Vercel 專案的 `NEXT_PUBLIC_API_BASE_URL` 環境變數最準確。 |
+| 線上全站 500，但 `/health` 回 200，就以為 API 沒事 | `/health` 是 liveness，**刻意不查資料庫**；要看 `/health/ready`。回 **503** + `"database":"disconnected"` → 先查 Supabase 是否被暫停（免費方案閒置 7 天會暫停，Dashboard 顯示 paused；`prisma migrate status` 會報 `tenant/user ... not found`，`db.<ref>.supabase.co` DNS 查不到）。解法：Supabase Dashboard → **Resume project**，約 3 分鐘恢復，Render API 不需重新部署（Prisma 會自動重連）。 |
+| 以為保活排程一直在跑 | cron-job.org 的排程「Haude API Keep Alive」（job `7140895`）每 5 分鐘打 `/health/ready`，同時讓 Render 不休眠、讓 Supabase 保持活躍。**連續失敗會被 cron-job.org 自動停用且不明顯**——2026-03 就是這樣停掉，之後 Supabase 被暫停（2026-09-14 修復）。資料庫故障修好後，**要回 cron-job.org 確認排程仍是啟用狀態**。 |
 
 ### Monorepo 架構（本專案特定）
 
