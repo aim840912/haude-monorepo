@@ -449,6 +449,12 @@ docker-compose down      # Stop services
 
 ---
 
+## History
+
+Haude Tea began as **haode-nextjs** (Aug–Dec 2025), a Next.js 15 + Supabase storefront where customers browsed the catalog and sent inquiries instead of paying online. As the shop moved toward taking real orders, it needed payments, order management and a proper admin back office. In January 2026 the project was rebuilt from scratch as this monorepo — a dedicated NestJS + Prisma API, ECPay integration and a separate Vite admin app — instead of growing those concerns inside Supabase policies and Next.js route handlers. The v1 repository has been retired; this repository is the only maintained version.
+
+---
+
 ## Author
 
 **Tien-Chih Cheng**
