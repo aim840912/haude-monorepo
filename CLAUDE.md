@@ -412,7 +412,7 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 | Render 服務名稱找不到時，只看 Dashboard 首頁的「Ungrouped Services」表格就下結論 | Render 首頁的服務分兩區：「Projects」分組容器 + 「Ungrouped Services」未分組列表，`haude-api` 實際上被歸在一個叫「My project」的專案分組底下（已改名為 `haude-tea-shop`）。要點進 Project 卡片才看得到裡面的服務，不能只看 Ungrouped 那張表。 |
 | API 部署位置認知：以為跟 web/admin 一樣在 Vercel | `haude-web`／`haude-admin` 在 Vercel，**`haude-api`（NestJS）在 Render**（`haude-api.onrender.com`），因為 NestJS 需要長駐容器，不適合 Vercel 的 serverless functions 模型。不確定時查 Vercel 專案的 `NEXT_PUBLIC_API_BASE_URL` 環境變數最準確。 |
 | 線上全站 500，但 `/health` 回 200，就以為 API 沒事 | `/health` 是 liveness，**刻意不查資料庫**；要看 `/health/ready`。回 **503** + `"database":"disconnected"` → 先查 Supabase 是否被暫停（免費方案閒置 7 天會暫停，Dashboard 顯示 paused；`prisma migrate status` 會報 `tenant/user ... not found`，`db.<ref>.supabase.co` DNS 查不到）。解法：Supabase Dashboard → **Resume project**，約 3 分鐘恢復，Render API 不需重新部署（Prisma 會自動重連）。 |
-| 以為保活排程一直在跑 | cron-job.org 的排程「Haude API Keep Alive」（job `7140895`）每 5 分鐘打 `/health/ready`，同時讓 Render 不休眠、讓 Supabase 保持活躍。**連續失敗會被 cron-job.org 自動停用且不明顯**——2026-03 就是這樣停掉，之後 Supabase 被暫停（2026-09-14 修復）。資料庫故障修好後，**要回 cron-job.org 確認排程仍是啟用狀態**。 |
+| 以為保活排程一直在跑 | cron-job.org 的排程「Haude API Keep Alive」（job `7140895`）每 5 分鐘打 `/health/ready`，同時讓 Render 不休眠、讓 Supabase 保持活躍。**連續失敗會被 cron-job.org 自動停用且不明顯**——2026-03 就是這樣停掉，之後 Supabase 被暫停（2026-09-14 修復）。資料庫故障修好後，**要回 cron-job.org 確認排程仍是啟用狀態**。2026-09-26 再發生一次：上游短暫 403/503 約 2 小時後就自己恢復了，排程卻已被停用，而且停用之後不會再寄失敗信。**判斷方法**：排程列表「下次執行」顯示「非使用中」；或 `/health` 冷啟動要 30 秒左右、回應的 `uptime` 只有幾十秒（代表 Render 已經休眠過）。`/health/ready` 只會回 200/503，出現 **403 表示是 Render 邊緣層擋的，不是我們的程式**。排程已開啟「在工作歷史中儲存回應」，失敗時可以到歷史細節看回應內容。 |
 
 ### Monorepo 架構（本專案特定）
 
