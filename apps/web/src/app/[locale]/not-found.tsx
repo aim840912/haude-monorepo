@@ -8,8 +8,8 @@ export default function NotFound() {
         <h1 className="text-9xl font-bold text-green-600">404</h1>
 
         {/* 錯誤訊息 */}
-        <h2 className="mt-4 text-2xl font-semibold text-gray-900">找不到頁面</h2>
-        <p className="mt-2 text-gray-500">抱歉，您要找的頁面不存在或已被移除。</p>
+        <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-foreground">找不到頁面</h2>
+        <p className="mt-2 text-gray-500 dark:text-text-tertiary">抱歉，您要找的頁面不存在或已被移除。</p>
 
         {/* 返回按鈕 */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">

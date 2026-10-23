@@ -71,13 +71,13 @@ export function FeaturesSection({
 
         <motion.h2
           variants={fadeInUp}
-          className="text-4xl md:text-5xl font-serif-display text-center text-[#3e2723] mb-6 tracking-wider"
+          className="text-4xl md:text-5xl font-serif-display text-center text-[#3e2723] mb-6 dark:text-[#d7ccc8] tracking-wider"
         >
           農場特色
         </motion.h2>
         <motion.p
           variants={fadeInUp}
-          className="text-center text-[#5d4037] text-lg mb-16 max-w-2xl mx-auto"
+          className="text-center text-[#5d4037] text-lg dark:text-[#bcaaa4] mb-16 max-w-2xl mx-auto"
         >
           以自然農法為本，結合現代技術與傳統智慧，打造永續經營的生態農場
         </motion.p>

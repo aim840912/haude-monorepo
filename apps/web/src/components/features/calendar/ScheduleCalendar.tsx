@@ -137,7 +137,7 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
             {weekDays.map(day => (
               <div
                 key={day}
-                className="text-center text-sm font-medium text-gray-500 py-2"
+                className="text-center text-sm font-medium text-gray-500 py-2 dark:text-text-tertiary"
               >
                 {day}
               </div>
@@ -182,7 +182,7 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
       )}
 
       {/* 圖例 */}
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-500">
+      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-500 dark:text-text-tertiary">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-green-100" />
           <span>今天</span>
