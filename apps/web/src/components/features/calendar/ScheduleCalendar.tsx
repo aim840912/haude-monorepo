@@ -94,7 +94,7 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
   const days = getDaysInMonth()
 
   return (
-    <div className={cn('bg-white rounded-xl shadow-lg p-6', className)}>
+    <div className={cn('bg-white dark:bg-card-bg rounded-xl shadow-lg p-6', className)}>
       {/* 月份導航 */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -106,12 +106,12 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
         </button>
 
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-foreground">
             {currentMonth.year} 年 {monthNames[currentMonth.month - 1]}
           </h2>
           <button
             onClick={goToToday}
-            className="text-sm text-green-600 hover:underline mt-1"
+            className="text-sm text-green-600 hover:underline dark:text-green-400 mt-1"
           >
             返回今天
           </button>

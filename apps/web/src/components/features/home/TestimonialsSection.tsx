@@ -107,7 +107,7 @@ export function TestimonialsSection() {
                   <p className="font-bold text-[#3e2723] dark:text-[#d7ccc8]">
                     {t.author}
                   </p>
-                  <p className="text-sm text-gray-500">{t.product}</p>
+                  <p className="text-sm text-gray-500 dark:text-text-tertiary">{t.product}</p>
                 </div>
                 {t.verified && (
                   <div className="flex items-center text-green-600 text-xs">

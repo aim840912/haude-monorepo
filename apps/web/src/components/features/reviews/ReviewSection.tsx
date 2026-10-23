@@ -167,7 +167,7 @@ export function ReviewSection({ productId, productName, className }: ReviewSecti
       {/* 標題 */}
       <div className="flex items-center gap-2 mb-6">
         <MessageSquare className="w-6 h-6 text-green-600" />
-        <h2 className="text-xl font-bold text-gray-900">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-foreground">
           顧客評價
           {stats && stats.totalReviews > 0 && (
             <span className="text-sm font-normal text-gray-500 ml-2">
@@ -267,7 +267,7 @@ export function ReviewSection({ productId, productName, className }: ReviewSecti
       {/* 評論列表 */}
       <div className="space-y-6">
         {reviews.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 dark:text-text-tertiary">
             <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>尚無評論</p>
             {eligibility?.canReview && (

@@ -110,7 +110,7 @@ export function SearchResults({ query, className }: SearchResultsProps) {
     return (
       <div className="text-center py-12">
         <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500">請輸入搜尋關鍵字</p>
+        <p className="text-gray-500 dark:text-text-tertiary">請輸入搜尋關鍵字</p>
       </div>
     )
   }

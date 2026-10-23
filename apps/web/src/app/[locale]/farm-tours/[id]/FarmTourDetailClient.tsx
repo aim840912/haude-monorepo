@@ -129,15 +129,15 @@ export function FarmTourDetailClient({ tour }: FarmTourDetailClientProps) {
                 <span className={cn('px-3 py-1 rounded-full text-sm font-medium', statusColors[tour.status])}>
                   {statusLabels[tour.status]}
                 </span>
-                <span className="text-sm text-gray-500">{typeLabels[tour.type]}</span>
+                <span className="text-sm text-gray-500 dark:text-text-tertiary">{typeLabels[tour.type]}</span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">{tour.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{tour.name}</h1>
             </div>
 
             {/* 描述 */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h2 className="text-lg font-medium text-gray-900 mb-4">活動介紹</h2>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+              <p className="text-gray-600 leading-relaxed dark:text-text-secondary whitespace-pre-line">
                 {tour.description}
               </p>
             </div>

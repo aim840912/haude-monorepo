@@ -24,11 +24,11 @@ export const SectionHeader = React.memo<SectionHeaderProps>(({
 }) => {
   return (
     <motion.div variants={fadeInUp} className="text-center mb-16">
-      <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+      <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 dark:text-foreground">
         {title}
       </h2>
-      <p className="text-gray-600 text-lg mb-2">{subtitle}</p>
-      <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+      <p className="text-gray-600 text-lg mb-2 dark:text-text-secondary">{subtitle}</p>
+      <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-text-tertiary">
         <Leaf className="w-4 h-4 text-green-600" />
         <span>{feature}</span>
       </div>

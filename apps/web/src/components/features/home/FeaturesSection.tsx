@@ -35,7 +35,7 @@ export function FeaturesSection({
   const leaf3Y = useTransform(scrollYProgress, [0, 1], [15, -35])
 
   return (
-    <section ref={sectionRef} className="relative py-24 px-6 bg-[#f8f5f0] overflow-hidden">
+    <section ref={sectionRef} className="relative py-24 px-6 bg-[#f8f5f0] dark:bg-[#1a120d] overflow-hidden">
       {/* 裝飾性茶葉圖示 — scroll-linked 視差 */}
       <motion.div style={{ y: leaf1Y, x: leaf1X }} className="absolute top-12 left-[10%] transform-gpu">
         <Leaf className="w-12 h-12 text-[#3e2723]/5" />

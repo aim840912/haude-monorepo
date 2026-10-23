@@ -143,21 +143,21 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             </Link>
 
             {/* 名稱 */}
-            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{product.name}</h1>
 
             {/* 價格區 */}
             <div className="flex items-baseline gap-4">
-              <span className="text-3xl font-bold text-green-900">
+              <span className="text-3xl font-bold text-green-900 dark:text-green-400">
                 NT$ {product.price.toLocaleString()}
                 {product.priceUnit && (
-                  <span className="text-lg font-normal text-gray-600 ml-1">
+                  <span className="text-lg font-normal text-gray-600 ml-1 dark:text-text-secondary">
                     / {product.priceUnit}
                   </span>
                 )}
               </span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <>
-                  <span className="text-xl text-gray-500 line-through">
+                  <span className="text-xl text-gray-500 line-through dark:text-text-tertiary">
                     NT$ {product.originalPrice.toLocaleString()}
                   </span>
                   <span className="text-sm font-bold text-red-600 bg-red-100 px-2 py-1 rounded">
@@ -178,16 +178,16 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
             {/* 描述 */}
             <div className="prose prose-gray max-w-none">
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
+              <p className="text-gray-600 leading-relaxed dark:text-text-secondary">{product.description}</p>
             </div>
 
             {/* 數量選擇 */}
             <div className="flex items-center gap-4">
-              <span className="text-gray-700 font-medium">數量</span>
+              <span className="text-gray-700 font-medium dark:text-foreground">數量</span>
               <div className="flex items-center border border-gray-300 rounded-lg">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-text-secondary dark:hover:bg-white/10 transition-colors"
                   disabled={quantity <= 1}
                 >
                   -
@@ -197,7 +197,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 </span>
                 <button
                   onClick={() => setQuantity(Math.min(stock, quantity + 1))}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-text-secondary dark:hover:bg-white/10 transition-colors"
                   disabled={quantity >= stock}
                 >
                   +
@@ -242,15 +242,15 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             <div className="grid grid-cols-3 gap-4 pt-6 border-t">
               <div className="flex flex-col items-center text-center">
                 <Truck className="w-6 h-6 text-green-600 mb-2" />
-                <span className="text-sm text-gray-600">免運費</span>
+                <span className="text-sm text-gray-600 dark:text-text-secondary">免運費</span>
               </div>
               <div className="flex flex-col items-center text-center">
                 <Shield className="w-6 h-6 text-green-600 mb-2" />
-                <span className="text-sm text-gray-600">品質保證</span>
+                <span className="text-sm text-gray-600 dark:text-text-secondary">品質保證</span>
               </div>
               <div className="flex flex-col items-center text-center">
                 <RefreshCw className="w-6 h-6 text-green-600 mb-2" />
-                <span className="text-sm text-gray-600">7天退換</span>
+                <span className="text-sm text-gray-600 dark:text-text-secondary">7天退換</span>
               </div>
             </div>
           </div>

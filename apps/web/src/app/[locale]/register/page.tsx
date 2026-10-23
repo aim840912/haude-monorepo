@@ -45,10 +45,10 @@ export default function RegisterPage() {
       <div className="max-w-md w-full">
         <div className="card">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">註冊帳號</h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-foreground">註冊帳號</h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-text-secondary">
               已有帳號？{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-500">
+              <Link href="/login" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
                 登入
               </Link>
             </p>
@@ -191,7 +191,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          <Link href="/" className="text-blue-600 hover:text-blue-500">
+          <Link href="/" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
             ← 返回首頁
           </Link>
         </p>

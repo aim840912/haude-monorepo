@@ -59,7 +59,7 @@ export function LocationsPageClient() {
         {/* 標題和控制列 */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">販售據點</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">販售據點</h1>
             {userPosition && (
               <p className="text-sm text-gray-500 mt-1">
                 顯示 20 公里內的 {nearbyLocations.length} 個據點

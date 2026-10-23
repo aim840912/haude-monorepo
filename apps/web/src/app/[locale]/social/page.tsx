@@ -83,8 +83,8 @@ export default function SocialPage() {
 
         {/* 標題區塊 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">社群動態</h1>
-          <p className="text-gray-600">追蹤我們的最新消息與分享</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 dark:text-foreground">社群動態</h1>
+          <p className="text-gray-600 dark:text-text-secondary">追蹤我們的最新消息與分享</p>
         </div>
 
         {/* 篩選按鈕 */}
@@ -127,7 +127,7 @@ export default function SocialPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <RefreshCw className="w-8 h-8 text-green-600 animate-spin mb-4" />
-            <p className="text-gray-600">載入中...</p>
+            <p className="text-gray-600 dark:text-text-secondary">載入中...</p>
           </div>
         ) : error ? (
           <div className="text-center py-16">
@@ -141,7 +141,7 @@ export default function SocialPage() {
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-600">目前沒有社群貼文</p>
+            <p className="text-gray-600 dark:text-text-secondary">目前沒有社群貼文</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

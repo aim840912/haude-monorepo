@@ -107,8 +107,8 @@ export default function CartPage() {
           <Breadcrumb items={[{ label: '購物車' }]} className="mb-8" />
           <div className="text-center">
             <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-medium text-gray-900 mb-2">購物車是空的</h2>
-            <p className="text-gray-500 mb-8">快去挑選喜歡的商品吧！</p>
+            <h2 className="text-xl font-medium text-gray-900 mb-2 dark:text-foreground">購物車是空的</h2>
+            <p className="text-gray-500 mb-8 dark:text-text-tertiary">快去挑選喜歡的商品吧！</p>
             <Link
               href="/products"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"
