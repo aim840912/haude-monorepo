@@ -65,7 +65,7 @@ export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
   // 依透明狀態切換顏色
   const iconBtn = transparent
     ? 'text-white/90 hover:text-[#f3d77a] hover:bg-white/10'
-    : 'text-[#5d4037] hover:text-[#d4af37] hover:bg-[#faf3e0] dark:hover:bg-[#3e2723]'
+    : 'text-[#5d4037] dark:text-[#d7ccc8] hover:text-[#d4af37] hover:bg-[#faf3e0] dark:hover:bg-[#3e2723]'
 
   return (
     <div className="hidden lg:block">

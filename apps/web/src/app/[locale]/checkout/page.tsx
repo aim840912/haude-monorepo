@@ -54,8 +54,8 @@ function CheckoutContent() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-background flex flex-col items-center justify-center p-4">
         <ShoppingBag className="w-16 h-16 text-gray-400 mb-4" />
-        <h2 className="text-xl font-medium text-gray-900 mb-2">購物車是空的</h2>
-        <p className="text-gray-500 mb-6">請先將商品加入購物車</p>
+        <h2 className="text-xl font-medium text-gray-900 mb-2 dark:text-foreground">購物車是空的</h2>
+        <p className="text-gray-500 mb-6 dark:text-text-tertiary">請先將商品加入購物車</p>
         <Link
           href="/products"
           className="px-6 py-3 bg-[#1b5e20] text-white rounded-lg hover:bg-[#2e7d32] transition-colors"

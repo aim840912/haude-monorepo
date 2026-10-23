@@ -182,14 +182,14 @@ export default function PointsHistoryPage() {
         {/* 返回按鈕 */}
         <Link
           href="/account/membership"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 dark:text-text-secondary dark:hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>返回會員中心</span>
         </Link>
 
         {/* 標題 */}
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">積分歷史</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 dark:text-foreground">積分歷史</h1>
 
         {/* 積分餘額卡片 */}
         <div className="bg-purple-600 rounded-2xl p-6 mb-6 text-white">

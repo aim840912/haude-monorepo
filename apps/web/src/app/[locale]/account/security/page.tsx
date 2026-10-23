@@ -87,7 +87,7 @@ export default function SecurityPage() {
         {/* 返回連結 */}
         <Link
           href="/account"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 dark:text-text-secondary dark:hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
           返回帳號設定

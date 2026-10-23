@@ -314,7 +314,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
                 <span>NT$ {order.tax.toLocaleString()}</span>
               </div>
             )}
-            <div className="flex justify-between text-lg font-bold pt-2 border-t">
+            <div className="flex justify-between text-lg font-bold pt-2 border-t dark:text-gray-900">
               <span>總計</span>
               <span className="text-green-900">
                 NT$ {order.totalAmount.toLocaleString()}

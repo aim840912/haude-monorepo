@@ -107,14 +107,14 @@ export default function MembershipPage() {
         {/* 返回按鈕 */}
         <Link
           href="/account"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 dark:text-text-secondary dark:hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>返回帳戶</span>
         </Link>
 
         {/* 標題 */}
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">會員等級</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 dark:text-foreground">會員等級</h1>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
