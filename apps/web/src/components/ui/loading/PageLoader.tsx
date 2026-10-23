@@ -66,7 +66,7 @@ export function PageLoader({
             <div className="mb-6">
               <LoadingSpinner size="xl" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">{message}</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{message}</h2>
             {showProgress && (
               <div className="w-64 bg-gray-200 rounded-full h-2 mb-4">
                 <div className="bg-green-600 h-2 rounded-full animate-pulse w-1/2" />

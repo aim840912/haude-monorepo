@@ -62,7 +62,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
                 <span
                   className={cn(
                     'flex items-center',
-                    isLast ? 'text-gray-900 font-medium' : ''
+                    isLast ? 'text-foreground font-medium' : ''
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >
