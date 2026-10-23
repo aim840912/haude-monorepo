@@ -163,7 +163,7 @@ export function FarmToursPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-1 text-gray-500">
                       <Calendar className="w-4 h-4" />
-                      <span>{tour.date}</span>
+                      <span>{tour.date.slice(0, 10)}</span>
                     </div>
                     <div className="text-sm text-gray-400">
                       {tour.startTime} - {tour.endTime}
