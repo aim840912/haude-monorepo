@@ -137,7 +137,7 @@ export function FarmTourDetailClient({ tour }: FarmTourDetailClientProps) {
             {/* 描述 */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h2 className="text-lg font-medium text-gray-900 mb-4">活動介紹</h2>
-              <p className="text-gray-600 leading-relaxed dark:text-text-secondary whitespace-pre-line">
+              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
                 {tour.description}
               </p>
             </div>
