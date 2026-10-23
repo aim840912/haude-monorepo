@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { performLogout } from '@/services/auth'
 import { useTotalItems } from '@/stores/cartStore'
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 
 const navItemsConfig = [
   { href: '/', labelKey: 'explore' },
@@ -96,6 +97,8 @@ export function MobileHeader({
           <div className={transparent ? 'text-white [&_button]:text-white/90' : ''}>
             <LanguageSwitcher />
           </div>
+
+          <ThemeToggle className={`min-h-[44px] min-w-[44px] p-2 ${iconBtn}`} />
 
           <Link
             href="/cart"

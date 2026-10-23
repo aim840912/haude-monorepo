@@ -20,6 +20,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { performLogout } from '@/services/auth'
 import { useTotalItems } from '@/stores/cartStore'
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 
 const navItemsConfig = [
   { href: '/', labelKey: 'explore' },
@@ -120,6 +121,8 @@ export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
           <div className={transparent ? 'text-white [&_button]:text-white/90' : ''}>
             <LanguageSwitcher />
           </div>
+
+          <ThemeToggle className={`w-10 h-10 ${iconBtn}`} />
 
           <Link
             href="/cart"

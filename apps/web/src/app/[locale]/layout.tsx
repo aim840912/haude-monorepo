@@ -60,6 +60,19 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${notoSansTC.variable} ${notoSerifTC.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/*
+          Apply the saved theme before first paint. ThemeProvider only adds .dark in an effect,
+          so without this dark-mode users see a light flash on every full page load.
+          Mirrors ThemeContext.resolveTheme: only 'dark' is dark ('system' resolves to light).
+          Inline scripts are allowed by the CSP (script-src keeps 'unsafe-inline', see next.config.ts).
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('haude-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         <WebVitals />
         <NextIntlClientProvider messages={messages}>
