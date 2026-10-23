@@ -37,7 +37,7 @@ export function LocationCard({ location, className, onClick }: LocationCardProps
         {/* 主要地點標籤 */}
         {location.isMain && (
           <div className="absolute top-3 left-3">
-            <span className="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
+            <span className="px-3 py-1 bg-green-700 text-white text-xs font-medium rounded-full">
               總部
             </span>
           </div>

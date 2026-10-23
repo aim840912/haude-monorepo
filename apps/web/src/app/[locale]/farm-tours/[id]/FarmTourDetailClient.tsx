@@ -209,7 +209,7 @@ export function FarmTourDetailClient({ tour }: FarmTourDetailClientProps) {
                 className={cn(
                   'w-full py-3 rounded-lg font-medium transition-colors',
                   tour.status === 'upcoming' && !bookingSuccess
-                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    ? 'bg-green-700 text-white hover:bg-green-800'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 )}
               >

@@ -44,7 +44,7 @@ export function FAQSection({ faqs }: FAQSectionProps) {
                     <Icon className="w-5 h-5 text-green-600 dark:text-green-400" />
                     {faq.question}
                   </span>
-                  <span className="text-green-600 dark:text-green-400 group-open:rotate-180 transition-transform">
+                  <span className="text-green-700 dark:text-green-400 group-open:rotate-180 transition-transform">
                     ▼
                   </span>
                 </summary>

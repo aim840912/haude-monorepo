@@ -75,7 +75,7 @@ export function Footer() {
 
       {/* 底部列 */}
       <div className="border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 py-4 text-center text-xs text-gray-500">
+        <div className="max-w-7xl mx-auto px-6 py-4 text-center text-xs text-gray-400">
           &copy; {new Date().getFullYear()} 豪德製茶所. All rights reserved.
         </div>
       </div>

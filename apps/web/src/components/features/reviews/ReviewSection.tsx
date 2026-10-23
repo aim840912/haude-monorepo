@@ -194,7 +194,7 @@ export function ReviewSection({ productId, productName, className }: ReviewSecti
           <p className="text-gray-600">
             <Link
               href={`/login?from=${encodeURIComponent(pathname + '#reviews')}`}
-              className="text-green-600 hover:underline font-medium"
+              className="text-green-700 hover:underline font-medium"
             >
               登入
             </Link>

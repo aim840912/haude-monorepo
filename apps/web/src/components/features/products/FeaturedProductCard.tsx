@@ -78,7 +78,7 @@ export function FeaturedProductCard({
 
           {/* Discount badge */}
           {discountPercent > 0 && (
-            <div className="absolute top-4 left-4 z-10 inline-flex items-center bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+            <div className="absolute top-4 left-4 z-10 inline-flex items-center bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
               <Star className="w-3 h-3 mr-1 fill-current flex-shrink-0" />
               <span>特價 -{discountPercent}%</span>
             </div>

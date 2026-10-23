@@ -97,7 +97,7 @@ export function LocationsPageClient() {
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors
                   ${
                     viewMode === 'list'
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-green-700 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
               >
@@ -109,7 +109,7 @@ export function LocationsPageClient() {
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors
                   ${
                     viewMode === 'map'
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-green-700 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
               >

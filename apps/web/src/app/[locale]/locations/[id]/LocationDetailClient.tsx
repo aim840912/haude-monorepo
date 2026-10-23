@@ -100,7 +100,7 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 {location.isMain && (
-                  <span className="px-3 py-1 bg-green-500 text-white text-sm font-medium rounded-full">
+                  <span className="px-3 py-1 bg-green-700 text-white text-sm font-medium rounded-full">
                     總部
                   </span>
                 )}
@@ -197,7 +197,7 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
                         {location.features.map((feature, index) => (
                           <span
                             key={index}
-                            className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
+                            className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full"
                           >
                             {feature}
                           </span>

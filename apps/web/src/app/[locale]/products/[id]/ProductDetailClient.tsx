@@ -137,7 +137,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             {/* 類別 */}
             <Link
               href={`/products?category=${product.category}`}
-              className="inline-block text-sm text-green-600 hover:text-green-700 uppercase tracking-wider"
+              className="inline-block text-sm text-green-700 hover:text-green-800 dark:text-green-600 dark:hover:text-green-700 uppercase tracking-wider"
             >
               {product.category}
             </Link>
@@ -160,7 +160,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   <span className="text-xl text-gray-500 line-through dark:text-text-tertiary">
                     NT$ {product.originalPrice.toLocaleString()}
                   </span>
-                  <span className="text-sm font-bold text-red-600 bg-red-100 px-2 py-1 rounded">
+                  <span className="text-sm font-bold text-red-700 bg-red-100 px-2 py-1 rounded">
                     -{discountPercent}%
                   </span>
                 </>
@@ -170,7 +170,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             {/* 庫存 */}
             <div className="text-sm">
               {stock > 0 ? (
-                <span className="text-green-600">庫存充足 ({stock})</span>
+                <span className="text-green-700 dark:text-green-600">庫存充足 ({stock})</span>
               ) : (
                 <span className="text-red-500">缺貨中</span>
               )}

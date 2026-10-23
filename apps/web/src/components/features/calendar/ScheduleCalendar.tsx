@@ -111,7 +111,7 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
           </h2>
           <button
             onClick={goToToday}
-            className="text-sm text-green-600 hover:underline dark:text-green-400 mt-1"
+            className="text-sm text-green-700 hover:underline dark:text-green-400 mt-1"
           >
             返回今天
           </button>
@@ -160,7 +160,7 @@ export function ScheduleCalendar({ className, onDateClick }: ScheduleCalendarPro
                   day.events.length > 0 && day.isCurrentMonth && 'bg-green-50'
                 )}
               >
-                <span className={cn(day.isToday && 'text-green-700')}>
+                <span className={cn(day.isToday && 'text-green-800')}>
                   {day.day}
                 </span>
 

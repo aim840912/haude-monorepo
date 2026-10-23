@@ -69,8 +69,8 @@
   --input-text: #2d1f1a; /* 深褐 */
 
   /* 按鈕 */
-  --button-bg: #16a34a; /* green-600 */
-  --button-bg-hover: #15803d; /* green-700 */
+  --button-bg: #15803d; /* green-700: white text 5.02:1 (green-600 was 3.30) */
+  --button-bg-hover: #166534; /* green-800 */
   --button-text: #ffffff;
 
   /* 狀態顏色 */

@@ -93,7 +93,7 @@ export default function SocialPage() {
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'all'
-                ? 'bg-green-600 text-white'
+                ? 'bg-green-700 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
             }`}
           >

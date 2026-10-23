@@ -27,7 +27,7 @@ export function FarmTourCard({ tour, className, onClick }: FarmTourCardProps) {
   }
 
   const statusColors: Record<FarmTour['status'], string> = {
-    upcoming: 'bg-green-100 text-green-700',
+    upcoming: 'bg-green-100 text-green-800',
     ongoing: 'bg-blue-100 text-blue-700',
     completed: 'bg-gray-100 text-gray-700',
     cancelled: 'bg-red-100 text-red-700',
@@ -117,7 +117,7 @@ export function FarmTourCard({ tour, className, onClick }: FarmTourCardProps) {
               'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               isFull
                 ? 'bg-gray-100 text-gray-400'
-                : 'bg-green-100 text-green-700 group-hover:bg-green-600 group-hover:text-white'
+                : 'bg-green-100 text-green-800 group-hover:bg-green-700 group-hover:text-white'
             )}
           >
             {isFull ? '已額滿' : '立即報名'}

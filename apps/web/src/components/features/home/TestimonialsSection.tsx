@@ -110,7 +110,7 @@ export function TestimonialsSection() {
                   <p className="text-sm text-gray-500 dark:text-text-tertiary">{t.product}</p>
                 </div>
                 {t.verified && (
-                  <div className="flex items-center text-green-600 text-xs">
+                  <div className="flex items-center text-green-700 dark:text-green-600 text-xs">
                     <BadgeCheck className="w-4 h-4 mr-1" />
                     已驗證購買
                   </div>
