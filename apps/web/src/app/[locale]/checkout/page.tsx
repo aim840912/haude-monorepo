@@ -52,7 +52,7 @@ function CheckoutContent() {
   // 購物車為空
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-background flex flex-col items-center justify-center p-4">
         <ShoppingBag className="w-16 h-16 text-gray-400 mb-4" />
         <h2 className="text-xl font-medium text-gray-900 mb-2">購物車是空的</h2>
         <p className="text-gray-500 mb-6">請先將商品加入購物車</p>
@@ -67,7 +67,7 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* 頂部導航 */}
       <div className="bg-white border-b sticky top-[var(--header-height)] z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

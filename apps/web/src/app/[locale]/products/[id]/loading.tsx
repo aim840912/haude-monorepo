@@ -6,7 +6,7 @@
  */
 export default function ProductDetailLoading() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* 頂部導航骨架 */}
       <div className="bg-white border-b sticky top-[var(--header-height)] z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

@@ -75,7 +75,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
   // 錯誤狀態
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-background">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <h3 className="text-lg font-medium text-red-800 mb-2">載入失敗</h3>
@@ -121,7 +121,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* 頁面標題 */}
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
