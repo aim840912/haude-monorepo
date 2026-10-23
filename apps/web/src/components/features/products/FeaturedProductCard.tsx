@@ -134,7 +134,7 @@ export function FeaturedProductCard({
 
           {/* CTA button */}
           <div>
-            <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-tea text-white rounded-full text-sm font-medium group-hover:gap-3 transition-[gap] duration-300">
+            <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-tea text-background rounded-full text-sm font-medium group-hover:gap-3 transition-[gap] duration-300">
               查看詳情
               <ArrowRight className="w-4 h-4" />
             </span>

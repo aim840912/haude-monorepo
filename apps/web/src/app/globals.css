@@ -3,6 +3,28 @@
 /* 啟用 class-based 深色模式 (Tailwind v4 語法) */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Tailwind v4 only generates utilities for --color-* tokens registered in @theme.
+ * A plain :root variable used as a utility (bg-primary-tea, text-text-secondary, …) compiles
+ * to nothing — no build or lint error. When adding a variable meant for utilities, register it here.
+ * `inline` keeps the var() reference so the .dark overrides apply.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary-tea: var(--primary-tea);
+  --color-primary-tea-hover: var(--primary-tea-hover);
+  --color-primary-tea-light: var(--primary-tea-light);
+  --color-primary-tea-bg: var(--primary-tea-bg);
+  --color-primary-green: var(--primary-green);
+  --color-accent-red: var(--accent-red);
+  --color-card-bg: var(--card-bg);
+  --color-card-bg-secondary: var(--card-bg-secondary);
+  --color-card-border: var(--card-border);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+}
+
 /* ===== Light Mode Variables ===== */
 :root {
   /* 基礎色彩 - 傳統茶藝風格 */
@@ -171,19 +193,22 @@ body {
 
 /* Typography utilities */
 .font-display {
-  font-family: var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
+  font-family:
+    var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 
 .font-heading {
-  font-family: var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
+  font-family:
+    var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 
 .font-body {
-  font-family: var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
+  font-family:
+    var(--font-noto-sans-tc, 'Noto Sans TC'), var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.6;
 }
@@ -1103,7 +1128,9 @@ body {
     border: 1px solid var(--input-border);
     border-radius: 0.5rem;
     color: var(--input-text);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
 
   .input:focus {
