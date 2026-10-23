@@ -196,6 +196,20 @@ NEXT_PUBLIC_USE_MOCK=false
 
 ---
 
+## 深色模式（2026-10-23 補完並加回切換按鈕）
+
+- **只補 `dark:` 變體，不改淺色外觀**：例如 `bg-gray-50 dark:bg-background`、`text-gray-600 dark:text-text-secondary`。
+  直接把 `bg-gray-50` 換成 token 會讓淺色模式也變色（冷灰 → 暖米）。
+- **要不要補 `dark:` 文字色，看祖先的底色，不是看自己的 class**：同一串 `text-gray-600 leading-relaxed`
+  在商品頁落在頁面底色上（要補），在果園頁包在 `bg-white` 卡片裡（深色模式仍是白底，補了反而變白底淺字）。
+  不要用 grep 找同樣的 class 一起改，只改實際量到有問題的元素。
+- `:root` 新增要當 utility 用的顏色變數，必須同時註冊進 `globals.css` 的 `@theme inline`，否則 class 編譯成空的且不報錯。
+- 驗收方式：Playwright 設 `localStorage.haude-theme`，對每頁所有文字元素算與最近不透明祖先底色的對比，
+  **每頁插一個已知不合格的對照元素**，並與淺色模式的結果相減（兩種模式都失敗的是淺色既有問題，不屬深色範圍）。
+  已知誤報：半透明底（如 `bg-white/90` 的 hover 提示）會被跳過、改拿外層底色計算。
+
+---
+
 ## 品質標準
 
 ### 完成定義
