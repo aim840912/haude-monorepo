@@ -35,7 +35,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
   return (
     <nav
       aria-label="麵包屑導航"
-      className={cn('flex items-center text-sm text-gray-600', className)}
+      className={cn('flex items-center text-sm text-text-secondary', className)}
     >
       <ol className="flex items-center space-x-1">
         {allItems.map((item, index) => {
@@ -46,7 +46,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
             <li key={index} className="flex items-center">
               {/* 分隔符 */}
               {index > 0 && (
-                <ChevronRight className="w-4 h-4 mx-1 text-gray-400 flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 mx-1 text-text-tertiary flex-shrink-0" />
               )}
 
               {/* 連結或純文字 */}
