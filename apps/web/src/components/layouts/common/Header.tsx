@@ -16,6 +16,7 @@ import { usePathname } from 'next/navigation'
 import { DesktopHeader } from './header/DesktopHeader'
 import { MobileHeader } from './header/MobileHeader'
 import { useHeaderState } from './header/useHeaderState'
+import { isHeroPath } from '@/lib/hero-path'
 
 export function Header() {
   const {
@@ -36,11 +37,8 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // 判斷是否為滿版 Hero 頁面（首頁、觀光果園）— 相容 locale 前綴（/、/en、/zh-TW）
-  const isHeroPage =
-    pathname === '/' ||
-    /^\/[a-z]{2}(-[A-Z]{2})?\/?$/.test(pathname) ||
-    pathname.includes('/farm-tours')
+  // 滿版 Hero 頁面（首頁、觀光果園列表）— 判斷規則見 lib/hero-path.ts
+  const isHeroPage = isHeroPath(pathname)
 
   const transparent = isHeroPage && !scrolled && !isMobileMenuOpen
 

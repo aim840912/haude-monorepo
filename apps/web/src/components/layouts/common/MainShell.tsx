@@ -19,14 +19,10 @@
  */
 
 import { usePathname } from 'next/navigation'
+import { isHeroPath } from '@/lib/hero-path'
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  const isHeroPage =
-    pathname === '/' ||
-    /^\/[a-z]{2}(-[A-Z]{2})?\/?$/.test(pathname) ||
-    pathname.includes('/farm-tours')
-
-  return <main className={isHeroPage ? '' : 'pt-[var(--header-height)]'}>{children}</main>
+  return <main className={isHeroPath(pathname) ? '' : 'pt-[var(--header-height)]'}>{children}</main>
 }
