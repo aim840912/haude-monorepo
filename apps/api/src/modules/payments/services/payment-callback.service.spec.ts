@@ -36,6 +36,7 @@ describe('PaymentCallbackService', () => {
     payment: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     order: {
       findUnique: jest.fn(),
@@ -77,6 +78,7 @@ describe('PaymentCallbackService', () => {
     service = module.get<PaymentCallbackService>(PaymentCallbackService);
 
     jest.clearAllMocks();
+    mockPrismaService.payment.updateMany.mockResolvedValue({ count: 1 });
   });
 
   describe('初始化', () => {
@@ -178,12 +180,53 @@ describe('PaymentCallbackService', () => {
       const result = await service.handleNotify(failBody, '127.0.0.1');
 
       expect(result).toBe(true);
-      expect(mockPrismaService.payment.update).toHaveBeenCalledWith({
-        where: { id: 'payment-1' },
+      expect(mockPrismaService.payment.updateMany).toHaveBeenCalledWith({
+        where: { id: 'payment-1', status: { not: 'paid' } },
         data: expect.objectContaining({
           status: 'failed',
         }),
       });
+    });
+
+    it('並行通知已先標記 paid 時，不再更新訂單也不寄信（冪等由資料庫保證）', async () => {
+      mockCrypto.verifyCheckMacValue.mockReturnValue(true);
+      // Both retries read status=pending before either transaction commits
+      mockPrismaService.payment.findUnique.mockResolvedValue({
+        id: 'payment-1',
+        status: 'pending',
+        orderId: 'order-1',
+        paymentType: 'Credit',
+        order: { orderNumber: 'ORD-001' },
+      });
+      mockPrismaService.payment.updateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.handleNotify(validBody, '127.0.0.1');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(result).toBe(true);
+      expect(mockPrismaService.payment.updateMany).toHaveBeenCalledWith({
+        where: { id: 'payment-1', status: { not: 'paid' } },
+        data: expect.objectContaining({ status: 'paid' }),
+      });
+      expect(mockPrismaService.order.update).not.toHaveBeenCalled();
+      expect(mockEmailService.sendPaymentSuccessEmail).not.toHaveBeenCalled();
+    });
+
+    it('失敗通知不會把已 paid 的付款降級', async () => {
+      mockCrypto.verifyCheckMacValue.mockReturnValue(true);
+      mockPrismaService.payment.findUnique.mockResolvedValue({
+        id: 'payment-1',
+        status: 'pending',
+        orderId: 'order-1',
+        paymentType: 'Credit',
+        order: null,
+      });
+      mockPrismaService.payment.updateMany.mockResolvedValue({ count: 0 });
+
+      const failBody = { ...validBody, RtnCode: '0', RtnMsg: '交易失敗' };
+      await service.handleNotify(failBody, '127.0.0.1');
+
+      expect(mockPrismaService.order.update).not.toHaveBeenCalled();
     });
 
     it('付款成功應更新 Payment 和 Order 狀態', async () => {

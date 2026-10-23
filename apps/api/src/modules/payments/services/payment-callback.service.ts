@@ -205,10 +205,12 @@ export class PaymentCallbackService {
     },
     body: Record<string, string>,
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      // 更新 Payment
-      await tx.payment.update({
-        where: { id: payment.id },
+    const applied = await this.prisma.$transaction(async (tx) => {
+      // Conditional update: the status check in handleNotify runs outside this
+      // transaction, so two near-simultaneous ECPay retries can both pass it.
+      // The WHERE clause makes the database the idempotency guard — only one wins.
+      const { count } = await tx.payment.updateMany({
+        where: { id: payment.id, status: { not: 'paid' } },
         data: {
           status: 'paid',
           tradeNo: body.TradeNo,
@@ -216,6 +218,7 @@ export class PaymentCallbackService {
           responseData: maskPaymentPayload(body) as object,
         },
       });
+      if (count === 0) return false;
 
       // 更新 Order
       await tx.order.update({
@@ -226,7 +229,13 @@ export class PaymentCallbackService {
           status: 'confirmed',
         },
       });
+      return true;
     });
+
+    if (!applied) {
+      this.logger.log(`付款已由並行通知處理: ${body.MerchantTradeNo}`);
+      return;
+    }
 
     this.logger.log(
       `付款成功: ${body.MerchantTradeNo}, 綠界交易號: ${body.TradeNo}`,
@@ -250,13 +259,15 @@ export class PaymentCallbackService {
     body: Record<string, string>,
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      await tx.payment.update({
-        where: { id: payment.id },
+      // Never downgrade a payment a concurrent success notification already marked paid.
+      const { count } = await tx.payment.updateMany({
+        where: { id: payment.id, status: { not: 'paid' } },
         data: {
           status: 'failed',
           responseData: maskPaymentPayload(body) as object,
         },
       });
+      if (count === 0) return;
 
       await tx.order.update({
         where: { id: payment.orderId },
