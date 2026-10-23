@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ProductDetailClient, type ProductData } from './ProductDetailClient'
 import { ProductSchema, BreadcrumbSchema } from '@/components/seo'
 import { API_URL } from '@/lib/api-url'
+import { fetchDetail } from '@/lib/fetch-detail'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface ProductDetailPageProps {
@@ -12,20 +13,8 @@ interface ProductDetailPageProps {
 /**
  * 從 API 獲取產品資料
  */
-async function getProduct(id: string): Promise<ProductData | null> {
-  try {
-    const res = await fetch(`${API_URL}/products/${id}`, {
-      next: { revalidate: 60 }, // 60 秒快取
-    })
-
-    if (!res.ok) {
-      return null
-    }
-
-    return res.json()
-  } catch {
-    return null
-  }
+function getProduct(id: string): Promise<ProductData | null> {
+  return fetchDetail<ProductData>(`${API_URL}/products/${id}`, 60)
 }
 
 /**

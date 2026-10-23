@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { LocationDetailClient, type LocationData } from './LocationDetailClient'
 import { LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo'
 import { API_URL } from '@/lib/api-url'
+import { fetchDetail } from '@/lib/fetch-detail'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface LocationDetailPageProps {
@@ -12,28 +13,15 @@ interface LocationDetailPageProps {
 /**
  * 從 API 獲取地點資料
  */
-async function getLocation(id: string): Promise<LocationData | null> {
-  try {
-    const res = await fetch(`${API_URL}/locations/${id}`, {
-      next: { revalidate: 300 }, // 5 分鐘快取（據點資料較少變動）
-    })
-
-    if (!res.ok) {
-      return null
-    }
-
-    return res.json()
-  } catch {
-    return null
-  }
+function getLocation(id: string): Promise<LocationData | null> {
+  // 5 分鐘快取（據點資料較少變動）
+  return fetchDetail<LocationData>(`${API_URL}/locations/${id}`, 300)
 }
 
 /**
  * 動態生成 Metadata（SEO）
  */
-export async function generateMetadata({
-  params,
-}: LocationDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: LocationDetailPageProps): Promise<Metadata> {
   const { id } = await params
   const location = await getLocation(id)
 
@@ -100,9 +88,7 @@ export async function generateStaticParams() {
 /**
  * 據點詳情頁 - Server Component
  */
-export default async function LocationDetailPage({
-  params,
-}: LocationDetailPageProps) {
+export default async function LocationDetailPage({ params }: LocationDetailPageProps) {
   const { id } = await params
   const location = await getLocation(id)
 

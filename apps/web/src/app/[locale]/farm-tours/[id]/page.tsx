@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { FarmTourDetailClient, type FarmTourData } from './FarmTourDetailClient'
 import { EventSchema, BreadcrumbSchema } from '@/components/seo'
 import { API_URL } from '@/lib/api-url'
+import { fetchDetail } from '@/lib/fetch-detail'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://haude-tea.com'
 
 interface FarmTourDetailPageProps {
@@ -12,28 +13,14 @@ interface FarmTourDetailPageProps {
 /**
  * 從 API 獲取農場體驗資料
  */
-async function getFarmTour(id: string): Promise<FarmTourData | null> {
-  try {
-    const res = await fetch(`${API_URL}/farm-tours/${id}`, {
-      next: { revalidate: 60 },
-    })
-
-    if (!res.ok) {
-      return null
-    }
-
-    return res.json()
-  } catch {
-    return null
-  }
+function getFarmTour(id: string): Promise<FarmTourData | null> {
+  return fetchDetail<FarmTourData>(`${API_URL}/farm-tours/${id}`, 60)
 }
 
 /**
  * 動態生成 Metadata（SEO）
  */
-export async function generateMetadata({
-  params,
-}: FarmTourDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: FarmTourDetailPageProps): Promise<Metadata> {
   const { id } = await params
   const tour = await getFarmTour(id)
 
@@ -44,9 +31,7 @@ export async function generateMetadata({
   }
 
   const description =
-    tour.description.length > 155
-      ? `${tour.description.slice(0, 155)}...`
-      : tour.description
+    tour.description.length > 155 ? `${tour.description.slice(0, 155)}...` : tour.description
 
   const imageUrl = tour.imageUrl || `${SITE_URL}/opengraph-image`
 
@@ -104,9 +89,7 @@ export async function generateStaticParams() {
 /**
  * 農場體驗詳情頁 - Server Component
  */
-export default async function FarmTourDetailPage({
-  params,
-}: FarmTourDetailPageProps) {
+export default async function FarmTourDetailPage({ params }: FarmTourDetailPageProps) {
   const { id } = await params
   const tour = await getFarmTour(id)
 
