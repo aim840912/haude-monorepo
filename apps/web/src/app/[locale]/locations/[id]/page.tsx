@@ -67,22 +67,10 @@ export async function generateMetadata({ params }: LocationDetailPageProps): Pro
 }
 
 /**
- * 靜態路由生成
+ * 不在 build 時預先產生，第一次瀏覽時才產生並快取（原因見 products/[id]/page.tsx）
  */
 export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${API_URL}/locations`)
-    if (!res.ok) return []
-
-    const locations = await res.json()
-    return locations
-      .filter((loc: { isActive?: boolean }) => loc.isActive !== false)
-      .map((loc: { id: string }) => ({
-        id: loc.id,
-      }))
-  } catch {
-    return []
-  }
+  return []
 }
 
 /**

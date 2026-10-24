@@ -95,24 +95,13 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
 }
 
 /**
- * 靜態路由生成
- *
- * 在建置時預先生成所有產品頁面，提升 SEO 和載入速度
+ * 詳細頁不在 build 時預先產生：build 會平行抓每一頁，撞上 API 限流（429）；
+ * fetchDetail 對 404 以外的錯誤一律 throw（見 lib/fetch-detail.ts），於是 build 失敗。
+ * 回傳空陣列 = 第一次有人瀏覽時才產生，之後依 revalidate 快取（ISR）。
+ * 要改回 build 時預先產生，必須先讓 API 對 build 流量放行限流。
  */
 export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${API_URL}/products`)
-    if (!res.ok) return []
-
-    const products = await res.json()
-    return products
-      .filter((product: { isActive?: boolean }) => product.isActive !== false)
-      .map((product: { id: string }) => ({
-        id: product.id,
-      }))
-  } catch {
-    return []
-  }
+  return []
 }
 
 /**

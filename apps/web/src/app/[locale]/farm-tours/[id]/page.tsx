@@ -68,22 +68,10 @@ export async function generateMetadata({ params }: FarmTourDetailPageProps): Pro
 }
 
 /**
- * 靜態路由生成
+ * 不在 build 時預先產生，第一次瀏覽時才產生並快取（原因見 products/[id]/page.tsx）
  */
 export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${API_URL}/farm-tours`)
-    if (!res.ok) return []
-
-    const tours = await res.json()
-    return tours
-      .filter((tour: { isActive?: boolean }) => tour.isActive !== false)
-      .map((tour: { id: string }) => ({
-        id: tour.id,
-      }))
-  } catch {
-    return []
-  }
+  return []
 }
 
 /**
