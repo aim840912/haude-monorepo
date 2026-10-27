@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { productsApi } from '@/services/api'
 import type { Product } from '@haude/types'
+import logger from '@/lib/logger'
 
 /**
  * 動態載入 Mock 資料（僅開發環境使用）
@@ -52,7 +53,7 @@ export function useProducts(options: UseProductsOptions = {}): UseProductsReturn
       // 開發模式：API 失敗時使用 Mock 資料
       if (process.env.NODE_ENV !== 'production') {
         try {
-          console.warn('[useProducts] API 不可用，使用 Mock 資料')
+          logger.warn('[useProducts] API 不可用，使用 Mock 資料')
           const { mockProducts } = await getMockData()
           setProducts(mockProducts)
           setError(null)
@@ -118,7 +119,7 @@ export function useProduct(productId: string | undefined): UseProductReturn {
           const { getMockProductById } = await getMockData()
           const mockProduct = getMockProductById(productId)
           if (mockProduct) {
-            console.warn('[useProduct] API 不可用，使用 Mock 資料')
+            logger.warn('[useProduct] API 不可用，使用 Mock 資料')
             setProduct(mockProduct)
             setError(null)
           } else {
@@ -179,7 +180,7 @@ export function useCategories(): UseCategoriesReturn {
         // 開發模式：API 失敗時使用 Mock 類別
         if (process.env.NODE_ENV !== 'production') {
           try {
-            console.warn('[useCategories] API 不可用，使用 Mock 類別')
+            logger.warn('[useCategories] API 不可用，使用 Mock 類別')
             const { mockCategories } = await getMockData()
             setCategories(mockCategories)
             setError(null)

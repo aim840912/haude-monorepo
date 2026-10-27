@@ -14,7 +14,11 @@ interface LogMessage {
 
 const isDev = process.env.NODE_ENV !== 'production'
 
-function formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): LogMessage {
+function formatMessage(
+  level: LogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): LogMessage {
   return {
     level,
     message,
@@ -24,8 +28,11 @@ function formatMessage(level: LogLevel, message: string, context?: Record<string
 }
 
 function log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
-  if (isDev) {
-    const consoleFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
+  // 開發環境全部輸出；生產環境只輸出 warn / error（還沒接監控服務前，console 是線上唯一看得到問題的地方，
+  // 例如「API 不可用、改用 Mock 資料」這種 warn 在線上最需要被看見）
+  if (isDev || level === 'warn' || level === 'error') {
+    const consoleFn =
+      level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
     consoleFn(`[${level.toUpperCase()}] ${message}`, context || '')
   }
 

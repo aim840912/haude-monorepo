@@ -1,4 +1,5 @@
 import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals'
+import logger from '@/lib/logger'
 
 type MetricHandler = (metric: Metric) => void
 
@@ -7,7 +8,7 @@ const reportMetric: MetricHandler = (metric) => {
   if (process.env.NODE_ENV === 'development') {
     const rating = metric.rating // 'good' | 'needs-improvement' | 'poor'
     const ratingEmoji = rating === 'good' ? '✅' : rating === 'needs-improvement' ? '⚠️' : '❌'
-    console.log(
+    logger.info(
       `[Web Vitals] ${metric.name}: ${metric.value.toFixed(2)}ms ${ratingEmoji} (${rating})`
     )
     return

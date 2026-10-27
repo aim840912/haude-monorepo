@@ -2,6 +2,7 @@
 
 import React, { Component, type ReactNode, type ErrorInfo } from 'react'
 import { ErrorFallback } from './ErrorFallback'
+import logger from '@/lib/logger'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -38,7 +39,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // 記錄錯誤到監控服務（如 Sentry）
-    console.error('[ErrorBoundary] Caught error:', error, errorInfo)
+    logger.error('[ErrorBoundary] Caught error', { error, componentStack: errorInfo.componentStack })
 
     // 呼叫自訂錯誤處理
     this.props.onError?.(error, errorInfo)

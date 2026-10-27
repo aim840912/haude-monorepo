@@ -24,7 +24,14 @@ const eslintConfig = [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      // 記錄一律走 src/lib/logger（生產環境保留 warn / error，之後接監控只需改一處）
+      'no-console': 'error',
     },
+  },
+  {
+    // logger 本身、測試與測試用 mock 可以直接呼叫 console
+    files: ['src/lib/logger.ts', 'src/test/**', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    rules: { 'no-console': 'off' },
   },
 ]
 

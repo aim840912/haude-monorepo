@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import Link from 'next/link'
+import logger from '@/lib/logger'
 
 /**
  * Route-level error boundary
@@ -20,7 +21,7 @@ export default function Error({
   const isDev = process.env.NODE_ENV === 'development'
 
   useEffect(() => {
-    console.error('Route error:', error)
+    logger.error('Route error', { error })
   }, [error])
 
   return (

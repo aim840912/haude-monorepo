@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '@/services/api'
 import type { SiteSetting, SettingKey } from '@/types/siteSettings'
+import logger from '@/lib/logger'
 
 // Site settings API enabled (backend implemented)
 const SITE_SETTINGS_API_ENABLED = true
@@ -64,7 +65,7 @@ export function useSiteSettings(keys: (SettingKey | string)[]): UseSiteSettingsR
       setSettings(settingsMap)
     } catch {
       // API 不可用時使用預設值
-      console.warn('Site settings API not available, using defaults')
+      logger.warn('Site settings API not available, using defaults')
       setSettings({})
     } finally {
       setLoading(false)

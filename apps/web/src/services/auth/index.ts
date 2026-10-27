@@ -1,5 +1,6 @@
 import { realAuthService } from './realAuthService'
 import type { AuthServiceInterface } from './types'
+import logger from '@/lib/logger'
 
 /**
  * 根據環境變數決定使用 Mock 或 Real Auth Service
@@ -46,7 +47,7 @@ export const authService: AuthServiceInterface = {
 
 // 開發時顯示當前模式
 if (process.env.NODE_ENV !== 'production') {
-  console.log(`[Auth Service] 使用 ${USE_MOCK ? 'Mock' : 'Real'} 模式`)
+  logger.info(`[Auth Service] 使用 ${USE_MOCK ? 'Mock' : 'Real'} 模式`)
 }
 
 // 完整登出（撤銷後端 session + 清本地狀態）

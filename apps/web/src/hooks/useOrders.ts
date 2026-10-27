@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ordersApi } from '@/services/api'
 import type { Order, CreateOrderRequest } from '@haude/types'
+import logger from '@/lib/logger'
 
 /**
  * 動態載入 Mock 資料（僅開發環境使用）
@@ -67,7 +68,7 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersReturn {
         // 開發模式：API 失敗時使用 Mock 資料
         if (process.env.NODE_ENV !== 'production') {
           try {
-            console.warn('[useOrders] API 不可用，使用 Mock 資料')
+            logger.warn('[useOrders] API 不可用，使用 Mock 資料')
             const { mockOrders } = await getMockData()
             const currentOffset = reset ? 0 : offset
             const paginatedOrders = mockOrders.slice(currentOffset, currentOffset + limit)
@@ -154,7 +155,7 @@ export function useOrder(orderId: string | undefined): UseOrderReturn {
           const { getMockOrderById } = await getMockData()
           const mockOrder = getMockOrderById(orderId)
           if (mockOrder) {
-            console.warn('[useOrder] API 不可用，使用 Mock 資料')
+            logger.warn('[useOrder] API 不可用，使用 Mock 資料')
             setOrder(mockOrder)
             setError(null)
           } else {

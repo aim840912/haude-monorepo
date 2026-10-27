@@ -4,6 +4,7 @@ import { useEffect, useCallback, useRef } from 'react'
 import { api } from '@/services/api'
 import { useSystemStore } from '@/stores/systemStore'
 import type { SystemStatusResponse } from '@haude/types'
+import logger from '@/lib/logger'
 
 const POLL_INTERVAL = 60000 // 60 秒
 
@@ -29,7 +30,7 @@ export function useSystemStatus() {
         setError(error instanceof Error ? error.message : 'Failed to fetch system status')
       }
       // 靜默失敗，不影響使用者體驗
-      console.warn('[SystemStatus] Failed to fetch:', error)
+      logger.warn('[SystemStatus] Failed to fetch', { error })
     }
   }, [setStatus, setError])
 

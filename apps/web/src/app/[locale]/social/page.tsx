@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { Facebook, Instagram, RefreshCw } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/navigation'
 import { socialPostsApi } from '@/services/api'
+import logger from '@/lib/logger'
 
 // 動態導入重型社群嵌入元件
 const FacebookEmbed = dynamic(
@@ -61,7 +62,7 @@ export default function SocialPage() {
       const response = await socialPostsApi.getAll()
       setPosts(response.data)
     } catch (err) {
-      console.error('Failed to fetch social posts:', err)
+      logger.error('Failed to fetch social posts', { error: err })
       setError('無法載入社群貼文')
     } finally {
       setIsLoading(false)
