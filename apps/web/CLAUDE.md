@@ -13,37 +13,32 @@
 
 ## 快速開始
 
-### 5 秒速查
-
-```bash
-# 開發前必做
-npm run build  # TypeScript 檢查 + 建置
-
-# 常用指令
-npm run dev    # 啟動開發伺服器 (Next.js)
-npm run lint   # ESLint 檢查
-```
-
 ### 常用指令
 
+pnpm monorepo；以下在 `apps/web` 執行（或在根目錄用 `pnpm --filter`）。
+
 ```bash
-npm run dev      # 啟動開發伺服器 http://localhost:3000
-npm run build    # TypeScript 檢查 + 生產建置
-npm run lint     # ESLint 程式碼檢查
-npm run start    # 啟動生產版本
+pnpm dev          # 開發伺服器 http://localhost:5173
+pnpm type-check   # TypeScript 檢查
+pnpm build        # 生產建置（會先建 @haude/types）
+pnpm lint         # ESLint
+pnpm test         # vitest（E2E：pnpm test:e2e）
 ```
 
 ### 技術棧
 
-| 技術         | 版本  | 用途                  |
-| ------------ | ----- | --------------------- |
-| Next.js      | 15.5  | 全端框架 (App Router) |
-| React        | 19.2  | UI 框架               |
-| TypeScript   | 5.9   | 類型系統              |
-| Zustand      | 5.0   | 狀態管理              |
-| Tailwind CSS | 4.1   | 樣式框架              |
-| Axios        | 1.13  | HTTP 客戶端           |
-| lucide-react | 0.560 | 圖示庫                |
+版本以 `package.json` 為準。
+
+| 技術         | 用途                  |
+| ------------ | --------------------- |
+| Next.js      | 全端框架 (App Router) |
+| React        | UI 框架               |
+| TypeScript   | 類型系統              |
+| Zustand      | 狀態管理              |
+| Tailwind CSS | 樣式框架              |
+| Axios        | HTTP 客戶端           |
+| next-intl    | 多語系路由（`[locale]`） |
+| lucide-react | 圖示庫                |
 
 ---
 
@@ -53,12 +48,7 @@ npm run start    # 啟動生產版本
 src/
 ├── app/                  # Next.js App Router
 │   ├── layout.tsx       # 根 Layout
-│   ├── page.tsx         # 首頁
-│   ├── login/page.tsx   # 登入頁
-│   ├── products/
-│   │   ├── page.tsx     # 產品列表
-│   │   └── [id]/page.tsx # 產品詳情（動態路由）
-│   └── admin/           # 管理後台路由
+│   └── [locale]/        # 所有頁面（page.tsx、login、products/[id]、cart、checkout、account…）
 ├── components/          # React 元件
 │   ├── Layout.tsx       # 全局布局
 │   └── ProtectedRoute.tsx  # 路由保護
@@ -76,7 +66,7 @@ src/
 
 ## App Router 規範
 
-> **詳見全域規則**：`~/.claude/rules/nextjs-components.md`
+> **詳見全域規則**：`~/.claude/rules/frontend.md`
 > 包含：Client/Server Components 判斷、動態路由參數、useSearchParams + Suspense 等完整說明
 
 ### 本專案關鍵提醒
@@ -109,7 +99,7 @@ export default function DashboardPage() {
 
 ## 狀態管理
 
-### Zustand Store（與之前相同）
+### Zustand Store
 
 ```typescript
 // stores/authStore.ts
@@ -140,7 +130,7 @@ Next.js 使用 `process.env.NEXT_PUBLIC_*`：
 
 ```typescript
 // ✅ 正確：Next.js 環境變數
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001' // 只放 Base URL，/api/v1 由 @/lib/api-url 組
 
 // ❌ 錯誤：Vite 語法
 const API_URL = import.meta.env.VITE_API_URL // 不支援
@@ -150,7 +140,7 @@ const API_URL = import.meta.env.VITE_API_URL // 不支援
 
 ```env
 # .env.local
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 NEXT_PUBLIC_USE_MOCK=false
 ```
 
@@ -191,7 +181,7 @@ NEXT_PUBLIC_USE_MOCK=false
    在 Server Component 匯入這些檔案，共用的 axios 實例與 Zustand store 會變成同一個
    Node 實例上所有並行請求共用 —— 那是跨使用者身分外洩。
 
-部署後用 `node scripts/check-cache-headers.mjs https://haude-web.vercel.app` 驗收。
+部署後在 repo 根目錄執行 `node scripts/check-cache-headers.mjs https://haude-web.vercel.app` 驗收。
 這是唯一能抓到「平台 Dashboard 規則覆蓋了程式碼設定」的方法。
 
 ---
@@ -214,8 +204,8 @@ NEXT_PUBLIC_USE_MOCK=false
 
 ### 完成定義
 
-- [ ] TypeScript 類型檢查通過（`npm run build`）
-- [ ] ESLint 無錯誤（`npm run lint`）
+- [ ] TypeScript 類型檢查通過（`pnpm type-check`）
+- [ ] ESLint 無錯誤（`pnpm lint`）
 - [ ] Client/Server Components 正確分離
 - [ ] 動態路由使用 `use(params)` 解開 Promise
 - [ ] `useSearchParams()` 包在 Suspense 中

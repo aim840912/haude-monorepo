@@ -53,16 +53,18 @@ npx prisma db seed       # 執行種子資料
 
 ### 技術棧
 
-| 技術       | 版本 | 用途       |
-| ---------- | ---- | ---------- |
-| NestJS     | 11.0 | 後端框架   |
-| TypeScript | 5.7  | 類型系統   |
-| Prisma     | 7.1  | ORM        |
-| PostgreSQL | 15   | 資料庫     |
-| Passport   | 0.7  | 認證框架   |
-| JWT        | 11.0 | Token 認證 |
-| Swagger    | 11.2 | API 文檔   |
-| Jest       | 30.0 | 測試框架   |
+版本以 `package.json` 為準。
+
+| 技術       | 用途       |
+| ---------- | ---------- |
+| NestJS     | 後端框架   |
+| TypeScript | 類型系統   |
+| Prisma     | ORM        |
+| PostgreSQL | 資料庫     |
+| Passport   | 認證框架   |
+| JWT        | Token 認證 |
+| Swagger    | API 文檔   |
+| Jest       | 測試框架   |
 
 ---
 
@@ -356,8 +358,9 @@ export class UsersService {
 ```bash
 # 1. 修改 schema.prisma
 
-# 2. 建立遷移
-npx prisma migrate dev --name add_new_field
+# 2. 建立遷移（非互動環境不能用 migrate dev，見下方規則 3）
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script
+#    → 手動建 prisma/migrations/<timestamp>_<name>/migration.sql 貼上輸出
 
 # 3. 生成 Prisma Client
 npx prisma generate

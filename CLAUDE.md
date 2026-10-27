@@ -121,7 +121,7 @@ haude-v2/                     # Monorepo 根目錄
 ### 3 條核心原則
 
 1. **使用繁體中文** - 所有溝通均使用繁體中文
-2. **使用 TodoWrite 追蹤複雜任務** - 完成後立即標記 completed
+2. **複雜任務分階段** - 在回應中條列追蹤進度
 3. **遵循 Monorepo 規範** - 共用型別放 packages/types，專案特定放各自目錄
 
 ### Plan Mode 工作流程
@@ -198,7 +198,7 @@ pnpm type-check                     # 2. 檢查前端型別
 > **詳見全域規範：`~/.claude/CLAUDE.md`**
 >
 > 以下規範已在全域文件中定義：
-> - **Claude 行為準則** - 執行原則、Git 提交流程、TodoWrite 使用規範
+> - **Claude 行為準則** - 執行原則、Git 提交流程
 > - **開發理念** - 核心信念、永不與始終、決策框架
 > - **程式碼品質標準** - 架構原則、品質標準、測試指南
 > - **驗證原則** - 變更後驗證工作流程
@@ -241,9 +241,7 @@ pnpm type-check                     # 2. 檢查前端型別
    pnpm type-check   # 型別檢查（必做）
    pnpm build        # 完整建置（確認無錯誤）
    ```
-5. **提交** - 使用 `/git-pr` 或清晰的 commit message
-
-> 💡 Boris Cherny：「給 Claude 驗證方式會讓結果品質提升 2-3 倍」
+5. **提交** - 使用清晰的 commit message
 
 ### API 端點（現有）
 
@@ -289,23 +287,8 @@ GET    /health/ready    # readiness，DB 斷線回 503
 | **api** | 3001 | NestJS 後端 API |
 | **admin** | 5174 | Vite 管理後台 |
 
-**啟動服務前必須執行**：
-
-```bash
-# 檢查 port 是否被占用
-lsof -i :5173 -i :3001 -i :5174
-
-# 如果有殘留進程，強制終止後再啟動
-# 終止特定 port 的進程
-kill -9 $(lsof -t -i :5173)  # 終止佔用 5173 的進程
-kill -9 $(lsof -t -i :3001)  # 終止佔用 3001 的進程
-kill -9 $(lsof -t -i :5174)  # 終止佔用 5174 的進程
-```
-
-**規則**：
-- **永不** 自動切換到其他 port - 如果指定 port 被占用，必須先終止占用進程
-- **永不** 假設服務已停止 - 啟動前必須用 `lsof` 檢查
-- **始終** 使用固定 port - 確保前後端 URL 設定一致
+啟動前若 port 被佔用，先 `pnpm kill:servers`（跨平台，清 5173 / 3001 / 5174）再啟動。
+不要改用其他 port：前後端 URL 是寫死的，換 port 就對不上。
 
 ### 生產環境網址
 
@@ -392,8 +375,8 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 
 ## 專案特定錯誤
 
-> 通用錯誤請見：`~/.claude/CLAUDE.md`（常見錯誤追蹤區塊）
-> Next.js 錯誤請見：`~/.claude/rules/nextjs-components.md`
+> 通用錯誤請見：`~/.claude/rules/error-tracking.md`
+> Next.js 錯誤請見：`~/.claude/rules/frontend.md`
 
 ### 型別與 API 回應（本專案特定）
 
@@ -425,7 +408,7 @@ const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
 
 | 錯誤 | 正確做法 |
 |------|----------|
-| `/preview` 用全域版（port 3000、只啟動 web） | 先讀專案版 `.claude/commands/preview.md`（port 5173+3001、雙 server、ulimit fix） |
+| 預覽時只啟動 web（port 3000） | 用 `/system:preview`：它會讀專案的 `.claude/preview.config.md`（web 5173 + API 3001、ulimit fix） |
 | 直接 `pnpm dev` 不處理 EMFILE | 用 `[ -f ~/.zshrc ] && source ~/.zshrc` 條件式設定 `ulimit`（跨平台相容） |
 | 只啟動 web 不啟動 API | 本專案前後端耦合，預覽必須同時啟動 web(:5173) + API(:3001) |
 

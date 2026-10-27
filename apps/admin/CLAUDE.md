@@ -34,15 +34,17 @@ pnpm preview   # 預覽生產版本
 
 ### 技術棧
 
-| 技術 | 版本 | 用途 |
-|------|------|------|
-| Vite | 7.3 | 建置工具 |
-| React | 19.2 | UI 框架 |
-| TypeScript | 5.9 | 類型系統 |
-| React Router | 7.11 | 路由管理 |
-| Tailwind CSS | 4.1 | 樣式框架 |
-| Axios | 1.13 | HTTP 客戶端 |
-| lucide-react | 0.560 | 圖示庫 |
+版本以 `package.json` 為準。
+
+| 技術 | 用途 |
+|------|------|
+| Vite | 建置工具 |
+| React | UI 框架 |
+| TypeScript | 類型系統 |
+| React Router | 路由管理 |
+| Tailwind CSS | 樣式框架 |
+| Axios | HTTP 客戶端 |
+| lucide-react | 圖示庫 |
 
 ---
 
@@ -51,20 +53,16 @@ pnpm preview   # 預覽生產版本
 ```
 src/
 ├── components/          # React 元件
-│   ├── Layout.tsx      # 管理後台布局
-│   ├── Sidebar.tsx     # 側邊欄導航
-│   └── DataTable.tsx   # 資料表格
-├── pages/               # 頁面元件
-│   ├── Dashboard.tsx   # 儀表板
+│   └── Layout.tsx      # 管理後台布局
+├── pages/               # 頁面元件（*Page.tsx）
+│   ├── DashboardPage.tsx   # 儀表板
 │   ├── ProductsPage.tsx    # 產品管理
-│   ├── OrdersPage.tsx      # 訂單管理
-│   └── UsersPage.tsx       # 使用者管理
+│   └── OrdersPage.tsx      # 訂單管理
 ├── services/            # API 服務層
-│   └── api.ts          # Axios 實例
+│   └── api/client.ts   # Axios 實例（Base URL + API 版本集中在此）
 ├── hooks/               # 自訂 Hooks
 │   ├── useProducts.ts  # 產品資料 Hook
 │   └── useOrders.ts    # 訂單資料 Hook
-├── types/               # TypeScript 類型
 ├── utils/               # 工具函數
 ├── App.tsx              # 應用根元件
 ├── main.tsx             # 應用入口
@@ -104,79 +102,8 @@ export function ProductsPage() {
 
 ### 路由配置
 
-使用 React Router 7：
-
-```tsx
-// App.tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { Layout } from './components/Layout'
-import { Dashboard } from './pages/Dashboard'
-import { ProductsPage } from './pages/ProductsPage'
-
-export function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="users" element={<UsersPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  )
-}
-```
-
-### 表格元件模式
-
-管理後台大量使用資料表格：
-
-```tsx
-interface DataTableProps<T> {
-  data: T[]
-  columns: Column<T>[]
-  onRowClick?: (row: T) => void
-  isLoading?: boolean
-}
-
-export function DataTable<T>({
-  data,
-  columns,
-  onRowClick,
-  isLoading
-}: DataTableProps<T>) {
-  if (isLoading) {
-    return <TableSkeleton columns={columns.length} />
-  }
-
-  return (
-    <table className="w-full">
-      <thead>
-        <tr>
-          {columns.map((col) => (
-            <th key={col.key}>{col.header}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, idx) => (
-          <tr
-            key={idx}
-            onClick={() => onRowClick?.(row)}
-            className="hover:bg-gray-50 cursor-pointer"
-          >
-            {columns.map((col) => (
-              <td key={col.key}>{col.render(row)}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
-}
-```
+路由定義在 `src/App.tsx`：React Router 7（`BrowserRouter` + `Routes`），頁面以 `lazy()` 載入 `pages/*Page.tsx`，
+需登入的頁面包在 `ProtectedRoute` 裡。新增頁面照既有的 `lazy()` 寫法加一行。
 
 ---
 
@@ -188,7 +115,7 @@ Vite 使用 `import.meta.env.VITE_*`：
 
 ```typescript
 // ✅ 正確：Vite 環境變數
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 // ❌ 錯誤：Next.js 語法
 const API_URL = process.env.NEXT_PUBLIC_API_URL  // 不支援
@@ -198,104 +125,22 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL  // 不支援
 
 ```env
 # .env.development
-VITE_API_URL=http://localhost:3001
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
 ### API 服務
 
-```typescript
-// services/api.ts
-import axios from 'axios'
+共用 Axios 實例在 `services/api/client.ts`（`services/api.ts` 只是向後相容的 re-export）：
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// 請求攔截器：自動附加 Token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// 回應攔截器：處理錯誤
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('admin_token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
-
-export default api
-```
+- Base URL 讀 `VITE_API_BASE_URL`，API 版本（`/api/v1`）集中在這個檔案
+- 認證走 **httpOnly cookie**（`withCredentials: true`）；非安全方法自動附 `X-CSRF-Token`
+- 401 時自動呼叫 `/auth/refresh`，並重送排隊中的請求
+- ⛔ 不要在 admin 用 `localStorage` 存 token 或手動加 `Authorization` header —— 會繞過 cookie + CSRF 機制
 
 ### 自訂 Hooks
 
-```typescript
-// hooks/useProducts.ts
-import { useState, useEffect } from 'react'
-import api from '../services/api'
-
-export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true)
-      const { data } = await api.get('/admin/products')
-      setProducts(data)
-    } catch (err) {
-      setError(err as Error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const createProduct = async (product: CreateProductDto) => {
-    const { data } = await api.post('/admin/products', product)
-    setProducts((prev) => [...prev, data])
-    return data
-  }
-
-  const updateProduct = async (id: string, product: UpdateProductDto) => {
-    const { data } = await api.put(`/admin/products/${id}`, product)
-    setProducts((prev) => prev.map((p) => (p.id === id ? data : p)))
-    return data
-  }
-
-  const deleteProduct = async (id: string) => {
-    await api.delete(`/admin/products/${id}`)
-    setProducts((prev) => prev.filter((p) => p.id !== id))
-  }
-
-  return {
-    products,
-    isLoading,
-    error,
-    fetchProducts,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-  }
-}
-```
-
----
+照 `hooks/useProducts.ts` 的寫法：呼叫 `services/api` 匯出的模組 API（如 `productsApi`），
+型別從 `@haude/types` 匯入，錯誤記錄用 `lib/logger`。
 
 ## 品質標準
 
