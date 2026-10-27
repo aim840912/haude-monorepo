@@ -65,7 +65,7 @@ npx prisma studio            # 開啟資料庫管理 UI
 ### Monorepo 結構
 
 ```
-haude-v2/                     # Monorepo 根目錄
+haude-monorepo/               # Monorepo 根目錄
 ├── apps/
 │   ├── web/                  # @haude/web - 用戶端前端 (Next.js)
 │   │   ├── src/

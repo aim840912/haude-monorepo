@@ -17,31 +17,31 @@
 
 ```bash
 # 開發前必做
-npx prisma generate && npm run lint
+npx prisma generate && pnpm lint
 
 # 常用指令
-npm run start:dev   # 啟動開發伺服器（熱重載）
-npm run test        # 執行測試
+pnpm start:dev   # 啟動開發伺服器（熱重載）
+pnpm test        # 執行測試
 ```
 
 ### 常用指令
 
 ```bash
 # 開發
-npm run start:dev    # 開發伺服器（熱重載）http://localhost:3001
-npm run start:debug  # Debug 模式
-npm run build        # 編譯
-npm run start:prod   # 生產模式
+pnpm start:dev    # 開發伺服器（熱重載）http://localhost:3001
+pnpm start:debug  # Debug 模式
+pnpm build        # 編譯
+pnpm start:prod   # 生產模式
 
 # 程式碼品質
-npm run lint         # ESLint 檢查並自動修復
-npm run format       # Prettier 格式化
+pnpm lint         # ESLint 檢查並自動修復
+pnpm format       # Prettier 格式化
 
 # 測試
-npm run test         # 單元測試
-npm run test:watch   # 監看模式
-npm run test:cov     # 測試覆蓋率
-npm run test:e2e     # 端對端測試
+pnpm test         # 單元測試
+pnpm test:watch   # 監看模式
+pnpm test:cov     # 測試覆蓋率
+pnpm test:e2e     # 端對端測試
 
 # 資料庫
 npx prisma generate      # 生成 Prisma Client
@@ -245,7 +245,7 @@ export class CreateUserDto {
 ### JWT 認證流程
 
 1. **註冊**：`POST /auth/register`
-2. **登入**：`POST /auth/login` → 返回 JWT Token
+2. **登入**：`POST /auth/login` → JWT 寫進 httpOnly cookie `access_token`（`jwt.strategy.ts` 先讀 cookie，Bearer header 只是過渡期備援）
 3. **驗證**：使用 `@UseGuards(JwtAuthGuard)` 保護端點
 4. **取得使用者**：從 `@Request()` 取得當前使用者
 
@@ -267,33 +267,8 @@ export class ProtectedController {
 
 ### 自訂 Guard（角色檢查）
 
-```typescript
-// common/guards/roles.guard.ts
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
-
-@Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
-
-  canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler())
-    if (!requiredRoles) {
-      return true
-    }
-    const { user } = context.switchToHttp().getRequest()
-    return requiredRoles.includes(user.role)
-  }
-}
-
-// 使用方式
-@Get('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
-getAdminData() {
-  return { message: '管理員資料' }
-}
-```
+已實作，不要另寫：guard 在 `src/common/guards/roles.guard.ts`、decorator 在 `src/common/decorators/roles.decorator.ts`。
+用法是 `@UseGuards(JwtAuthGuard, RolesGuard)` 加 `@Roles(...)`，實例照 `src/modules/auth/auth.controller.ts`。
 
 ---
 
@@ -301,26 +276,8 @@ getAdminData() {
 
 ### Prisma Schema
 
-```prisma
-// prisma/schema.prisma
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(USER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-```
+以 `prisma/schema.prisma` 為準，不在這裡抄 model（抄了就會過時：例如 `Role` 實際有 USER／VIP／STAFF／ADMIN 四種）。
+改 schema 前先讀根目錄 `CLAUDE.md`「Git 與部署」：正式環境沒有自動 migration。
 
 ### Prisma Service 使用
 
@@ -499,16 +456,16 @@ export class ItemController {
 
 ### 開發完成檢查
 
-使用專案指令執行 API 檢查：
+在 `apps/api` 目錄下：
 
 ```bash
-/api-check
+pnpm type-check && pnpm lint && pnpm test
 ```
 
 ### 完成定義
 
-- [ ] TypeScript 編譯成功
-- [ ] ESLint 無錯誤（`npm run lint`）
+- [ ] TypeScript 編譯成功（`pnpm type-check`）
+- [ ] ESLint 無錯誤（`pnpm lint`；注意它帶 `--fix`，會直接改檔）
 - [ ] DTO 有完整的驗證規則
 - [ ] 端點有適當的 Guard 保護
 - [ ] 錯誤處理使用 NestJS 內建異常
@@ -518,7 +475,7 @@ export class ItemController {
 
 ## 相關文件
 
-- **專案總覽**：`../haude-v2/CLAUDE.md`
-- **前端規範**：`../haude-v2-frontend/CLAUDE.md`
+- **專案總覽**：`../../CLAUDE.md`
+- **前端規範**：`../web/CLAUDE.md`
 - **全域規範**：`~/.claude/CLAUDE.md`
-- **Swagger 文檔**：`http://localhost:3001/api`
+- **Swagger 文檔**：`http://localhost:3001/docs`（只在 `NODE_ENV=development` 掛載，見 `src/main.ts`）

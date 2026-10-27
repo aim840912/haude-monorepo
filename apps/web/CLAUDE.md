@@ -29,16 +29,16 @@ pnpm test         # vitest（E2E：pnpm test:e2e）
 
 版本以 `package.json` 為準。
 
-| 技術         | 用途                  |
-| ------------ | --------------------- |
-| Next.js      | 全端框架 (App Router) |
-| React        | UI 框架               |
-| TypeScript   | 類型系統              |
-| Zustand      | 狀態管理              |
-| Tailwind CSS | 樣式框架              |
-| Axios        | HTTP 客戶端           |
+| 技術         | 用途                     |
+| ------------ | ------------------------ |
+| Next.js      | 全端框架 (App Router)    |
+| React        | UI 框架                  |
+| TypeScript   | 類型系統                 |
+| Zustand      | 狀態管理                 |
+| Tailwind CSS | 樣式框架                 |
+| Axios        | HTTP 客戶端              |
 | next-intl    | 多語系路由（`[locale]`） |
-| lucide-react | 圖示庫                |
+| lucide-react | 圖示庫                   |
 
 ---
 
@@ -77,23 +77,9 @@ src/
 
 ### 路由保護
 
-使用 `ProtectedRoute` 元件：
-
-```tsx
-// app/dashboard/page.tsx
-'use client'
-
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { DashboardContent } from './DashboardContent'
-
-export default function DashboardPage() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
-  )
-}
-```
+用 `ProtectedRoute` 包住需要登入的內容：元件在 `src/components/ProtectedRoute.tsx`，
+實際用法看 `src/app/[locale]/checkout/page.tsx`、`src/app/[locale]/orders/page.tsx`。
+它會先等 Zustand persist hydration 完成才判斷登入狀態，未登入才導向登入頁。
 
 ---
 
@@ -101,24 +87,11 @@ export default function DashboardPage() {
 
 ### Zustand Store
 
-```typescript
-// stores/authStore.ts
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+認證狀態在 `src/stores/authStore.ts`（persist key `auth-storage`），寫法照該檔與 `authStore.test.ts`。
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
-    }),
-    { name: 'auth-storage' }
-  )
-)
-```
+⛔ **不變式：JWT 不進 store、不進 localStorage。** access token 由 API 設成 httpOnly cookie
+（`access_token`，見 `apps/api/src/modules/auth/strategies/jwt.strategy.ts`）；store 只存 `user` 與 `csrfToken`。
+新增欄位或改寫 `setAuth` 時不要把 token 加回去 —— 那會讓任何 XSS 都能讀走登入憑證。
 
 ---
 
