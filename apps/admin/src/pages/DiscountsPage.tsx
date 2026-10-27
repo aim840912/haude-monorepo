@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, Search, Edit, Trash2, RefreshCw, Tag, Calendar, Percent, DollarSign } from 'lucide-react'
 import { discountsApi, type DiscountCode } from '../services/api'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import logger from '../lib/logger'
 
 interface DiscountFormData {
   code: string
@@ -50,7 +51,7 @@ export function DiscountsPage() {
       const { data } = await discountsApi.getAll()
       setDiscounts(data)
     } catch (err) {
-      console.error('取得折扣碼失敗:', err)
+      logger.error('取得折扣碼失敗', { error: err })
       setError('無法載入折扣碼資料')
     } finally {
       setIsLoading(false)
@@ -123,7 +124,7 @@ export function DiscountsPage() {
       setIsModalOpen(false)
       fetchDiscounts()
     } catch (err) {
-      console.error('儲存折扣碼失敗:', err)
+      logger.error('儲存折扣碼失敗', { error: err })
       alert('儲存失敗，請稍後再試')
     } finally {
       setIsSubmitting(false)
@@ -140,7 +141,7 @@ export function DiscountsPage() {
       setDeletingDiscount(null)
       fetchDiscounts()
     } catch (err) {
-      console.error('刪除折扣碼失敗:', err)
+      logger.error('刪除折扣碼失敗', { error: err })
       alert('刪除失敗，請稍後再試')
     } finally {
       setIsDeleting(false)

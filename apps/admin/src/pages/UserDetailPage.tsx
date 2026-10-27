@@ -27,6 +27,7 @@ import { useUser, type UpdateUserData, type UserRole } from '../hooks/useUsers'
 import { membersApi, usersApi, MemberLevel } from '../services/api'
 import { UserStatusModal } from '../components/UserStatusModal'
 import { useAuthStore } from '../stores/authStore'
+import logger from '../lib/logger'
 
 // 會員等級設定
 const MEMBER_LEVEL_CONFIG: Record<MemberLevel, {
@@ -185,7 +186,7 @@ export function UserDetailPage() {
       setLevelReason('')
       refetch()
     } catch (err) {
-      console.error('調整等級失敗', err)
+      logger.error('調整等級失敗', { error: err })
     } finally {
       setIsAdjustingLevel(false)
     }
@@ -202,7 +203,7 @@ export function UserDetailPage() {
       await refetchAccount()
       return { success: true }
     } catch (err) {
-      console.error('更新帳號權限失敗', err)
+      logger.error('更新帳號權限失敗', { error: err })
       return { success: false, error: extractApiErrorMessage(err) }
     } finally {
       setIsUpdatingRole(false)
@@ -224,7 +225,7 @@ export function UserDetailPage() {
       setPointsReason('')
       refetch()
     } catch (err) {
-      console.error('調整積分失敗', err)
+      logger.error('調整積分失敗', { error: err })
     } finally {
       setIsAdjustingPoints(false)
     }

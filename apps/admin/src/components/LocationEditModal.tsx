@@ -57,7 +57,7 @@ export function LocationEditModal({
       const { data } = await locationImagesApi.getImages(locationId)
       setImages(data)
     } catch (err) {
-      console.error('載入圖片失敗', err)
+      logger.error('載入圖片失敗', { error: err })
     } finally {
       setIsLoadingImages(false)
     }

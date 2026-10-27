@@ -4,6 +4,7 @@ import { api } from '@/services/api/client'
 import { useToast } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { SystemBanner, SystemBannerType, CreateSystemBannerData } from '@haude/types'
+import logger from '../../lib/logger'
 
 const BANNER_TYPES: { value: SystemBannerType; label: string; icon: typeof Info }[] = [
   { value: 'info', label: '一般資訊', icon: Info },
@@ -42,7 +43,7 @@ export function BannerManager() {
       const response = await api.get<SystemBanner[]>('/admin/system/banners')
       setBanners(response.data)
     } catch (err) {
-      console.error('Failed to fetch banners:', err)
+      logger.error('Failed to fetch banners', { error: err })
     }
   }
 

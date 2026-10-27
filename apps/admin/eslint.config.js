@@ -30,6 +30,13 @@ export default tseslint.config(
       ],
       // 降級為警告：在 useEffect 中設定狀態（常見的表單初始化模式）
       'react-hooks/set-state-in-effect': 'warn',
+      // 錯誤記錄一律走 src/lib/logger（正式環境也會輸出 error，之後接監控只需改一處）
+      'no-console': 'error',
     },
+  },
+  {
+    // logger 本身是唯一允許直接呼叫 console 的地方
+    files: ['src/lib/logger.ts'],
+    rules: { 'no-console': 'off' },
   }
 )

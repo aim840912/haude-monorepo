@@ -3,6 +3,7 @@ import { Power, Clock, MessageSquare, Users, AlertTriangle, CheckCircle } from '
 import { api } from '@/services/api/client'
 import { useToast } from '@/components/ui/Toast'
 import type { MaintenanceStatus, UpdateMaintenanceData } from '@haude/types'
+import logger from '../../lib/logger'
 
 /**
  * 維護模式控制面板
@@ -43,7 +44,7 @@ export function MaintenanceControl() {
         allowedRoles: response.data.allowedRoles || ['ADMIN'],
       })
     } catch (err) {
-      console.error('Failed to fetch maintenance status:', err)
+      logger.error('Failed to fetch maintenance status', { error: err })
     }
   }
 

@@ -13,8 +13,9 @@ function log(level: LogLevel, message: string, context?: Record<string, unknown>
     consoleFn(`[${level.toUpperCase()}] ${message}`, context || '')
   }
 
-  // 生產環境可發送到後端
+  // 生產環境：error 仍輸出到 console（還沒接監控服務前，這是線上唯一看得到錯誤的地方）
   if (!isDev && level === 'error') {
+    console.error(`[ERROR] ${message}`, context || '')
     // TODO: 發送到監控服務
   }
 }
