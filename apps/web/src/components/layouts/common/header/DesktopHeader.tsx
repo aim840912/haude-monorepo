@@ -19,7 +19,6 @@ import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/authStore'
 import { performLogout } from '@/services/auth'
 import { useTotalItems } from '@/stores/cartStore'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 
 const navItemsConfig = [
@@ -118,10 +117,7 @@ export function DesktopHeader({ transparent = false }: DesktopHeaderProps) {
 
         {/* 右側：工具按鈕 */}
         <div className="flex items-center space-x-2 h-8">
-          <div className={transparent ? 'text-white [&_button]:text-white/90' : ''}>
-            <LanguageSwitcher />
-          </div>
-
+          {/* LanguageSwitcher stays out until /en is translated beyond the nav (see i18n/routing.ts) */}
           <ThemeToggle className={`w-10 h-10 ${iconBtn}`} />
 
           <Link

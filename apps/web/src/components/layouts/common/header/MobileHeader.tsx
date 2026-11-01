@@ -16,7 +16,6 @@ import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/authStore'
 import { performLogout } from '@/services/auth'
 import { useTotalItems } from '@/stores/cartStore'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 
 const navItemsConfig = [
@@ -94,10 +93,7 @@ export function MobileHeader({
 
         {/* 右側:工具按鈕組 */}
         <div className="flex items-center flex-shrink-0 space-x-1">
-          <div className={transparent ? 'text-white [&_button]:text-white/90' : ''}>
-            <LanguageSwitcher />
-          </div>
-
+          {/* LanguageSwitcher stays out until /en is translated beyond the nav (see i18n/routing.ts) */}
           <ThemeToggle className={`min-h-[44px] min-w-[44px] p-2 ${iconBtn}`} />
 
           <Link
