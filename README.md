@@ -85,12 +85,12 @@ The monorepo uses Turborepo's dependency graph to determine build order (`types`
 ### Customer-Facing (Next.js)
 
 - Full shopping flow: browse &rarr; cart &rarr; checkout &rarr; payment
-- Multiple payment methods via ECPay (credit card, ATM, convenience store)
+- ECPay payments (credit card, ATM, convenience store): implemented and unit-tested on the API, not yet enabled in the storefront; live orders use phone confirmation
 - Member system with registration, login, password reset
 - Order tracking with real-time status updates
 - Discount code validation and application
 - Farm tour browsing and booking
-- i18n support (Traditional Chinese / English)
+- i18n routing with next-intl: Traditional Chinese is the site language; English covers the navigation only and is not linked from the header
 - Responsive design (320px+)
 
 ### Admin Dashboard (Vite + React)
