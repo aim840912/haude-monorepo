@@ -277,6 +277,8 @@ GET    /health          # liveness，不查 DB
 GET    /health/ready    # readiness，DB 斷線回 503
 ```
 
+> 本機免密碼登入：`GET /api/v1/auth/dev-login?role=USER&target=web`（需要 `ENABLE_DEV_LOGIN=true` 且不是 production；`role=ADMIN` 可以直接拿到管理員身分）
+
 ### Port 管理規範
 
 **固定 Port 分配（不可變更）**：
@@ -304,6 +306,9 @@ GET    /health/ready    # readiness，DB 斷線回 503
 - **原因**：`vercel.app` 與 `onrender.com` 都在 Public Suffix List，是不同網站；API 直接設的 cookie 對 web 是第三方 cookie，會被丟掉。一般模式的 Chrome 不擋，所以平常測不出來。
 - **做法**：瀏覽器一律打同網域 `/api/v1`（`BROWSER_API_URL`），由 `apps/web/next.config.ts` 的 rewrites 轉給 Render；Server Component 才用絕對的 `API_URL`。⛔ 不要讓瀏覽器端改回直接打 `API_URL`。
 - **Google OAuth 另需兩處設定**（在程式碼外）：Render 的 `GOOGLE_WEB_CALLBACK_URL=https://haude-web.vercel.app/api/v1/auth/google/callback`，以及 Google Cloud Console 的「已授權的重新導向 URI」加入同一個網址。未設定時 web 沿用 `GOOGLE_CALLBACK_URL`（onrender.com），Google 登入仍會在無痕模式壞掉。
+- **OAuth 用戶端在哪**：Google Cloud Console 的「Gemini API」專案 →「Haude Tea Web Client」（沒有叫 haude 的專案）
+- **Render 改環境變數**：「Save only」不會重新部署，下次 push 或手動 Deploy 才生效；「Save and deploy」會立刻重新部署
+- **線上驗收**：`curl -sI https://haude-api.onrender.com/api/v1/auth/google | grep -i location` 的 `redirect_uri` 要指向 haude-web；`curl -s -o /dev/null -w '%{http_code}' https://haude-web.vercel.app/api/v1/products` 回 200 代表代理正常；最後用無痕視窗實際用 Google 登入一次（2026-11-11 通過）
 - Admin（`haude-admin.vercel.app`，Vite）沒有這層代理，仍是跨網站。
 
 ### 健康檢查分工（改動前必讀）
