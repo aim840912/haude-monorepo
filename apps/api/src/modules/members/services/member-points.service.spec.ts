@@ -29,6 +29,8 @@ describe('MemberPointsService', () => {
     },
     pointTransaction: {
       create: jest.fn(),
+      aggregate: jest.fn(),
+      findFirst: jest.fn(),
     },
     $transaction: jest.fn((callbacks) => {
       if (Array.isArray(callbacks)) {
@@ -398,6 +400,80 @@ describe('MemberPointsService', () => {
       );
 
       expect(result.upgraded).toBe(false);
+    });
+  });
+
+  describe('revokePurchasePoints', () => {
+    const userId = 'user-123';
+    const orderId = 'order-123';
+
+    const givenAwarded = (points: number | null) => {
+      mockPrismaService.pointTransaction.aggregate.mockResolvedValue({
+        _sum: { points },
+      });
+    };
+
+    beforeEach(() => {
+      mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
+    });
+
+    it('扣回這張訂單發出的積分並寫一筆負數紀錄', async () => {
+      givenAwarded(1200);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        currentPoints: 5000,
+      });
+
+      const result = await service.revokePurchasePoints(userId, orderId);
+
+      expect(result).toBe(1200);
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { currentPoints: 3800 },
+      });
+      expect(mockPrismaService.pointTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          type: 'ADJUSTMENT',
+          points: -1200,
+          balance: 3800,
+          orderId,
+        }),
+      });
+    });
+
+    it('餘額不足時只扣到 0，不讓餘額變負數', async () => {
+      givenAwarded(1200);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        currentPoints: 300,
+      });
+
+      const result = await service.revokePurchasePoints(userId, orderId);
+
+      expect(result).toBe(300);
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { currentPoints: 0 },
+      });
+    });
+
+    it('這張訂單沒發過積分時不做任何事', async () => {
+      givenAwarded(null);
+
+      const result = await service.revokePurchasePoints(userId, orderId);
+
+      expect(result).toBe(0);
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('已經收回過時不再重複扣除', async () => {
+      givenAwarded(1200);
+      mockPrismaService.pointTransaction.findFirst.mockResolvedValue({
+        id: 'pt-revoke',
+      });
+
+      const result = await service.revokePurchasePoints(userId, orderId);
+
+      expect(result).toBe(0);
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
     });
   });
 });

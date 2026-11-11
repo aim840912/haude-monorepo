@@ -11,6 +11,30 @@ export type OrderStatus =
   | 'cancelled'
   | 'refunded'
 
+/**
+ * Allowed admin status changes. Single source of truth for the API (which
+ * rejects anything else) and the admin UI (which only offers these options).
+ *
+ * - Forward moves may skip steps (pending → shipped is fine).
+ * - Nothing moves backwards: side effects (stock restore, points) are tied to
+ *   entering a state, so going back and forth would repeat them.
+ * - Cancelling is only possible before processing starts.
+ * - Delivered orders can only be refunded; cancelled / refunded are final.
+ */
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
+  pending: ['confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
+  confirmed: ['processing', 'shipped', 'delivered', 'cancelled'],
+  processing: ['shipped', 'delivered'],
+  shipped: ['delivered'],
+  delivered: ['refunded'],
+  cancelled: [],
+  refunded: [],
+}
+
+export function canTransitionOrderStatus(from: OrderStatus, to: OrderStatus): boolean {
+  return ORDER_STATUS_TRANSITIONS[from].includes(to)
+}
+
 export type PaymentMethod = 'CREDIT' | 'VACC' | 'CVS' | 'WEBATM' | 'STORE_CONTACT'
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expired'

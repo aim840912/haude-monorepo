@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { Order, PaymentStatus } from '../hooks/useOrders'
-import type { OrderStatus } from '@haude/types'
+import { ORDER_STATUS_TRANSITIONS, type OrderStatus } from '@haude/types'
 
 interface OrderStatusModalProps {
   order: Order
@@ -68,6 +68,12 @@ export function OrderStatusModal({
   }, [order])
 
   if (!isOpen) return null
+
+  // Only offer the current status plus the moves the API accepts
+  const allowedStatuses = ORDER_STATUS_TRANSITIONS[order.status] ?? []
+  const visibleStatusOptions = statusOptions.filter(
+    (option) => option.value === order.status || allowedStatuses.includes(option.value),
+  )
 
   const hasChanges =
     selectedStatus !== order.status ||
@@ -144,8 +150,11 @@ export function OrderStatusModal({
             <label className="block text-sm font-medium text-gray-700 mb-3">
               訂單狀態
             </label>
+            {allowedStatuses.length === 0 && (
+              <p className="mb-3 text-xs text-gray-500">此訂單已是最終狀態，無法再變更。</p>
+            )}
             <div className="space-y-2">
-              {statusOptions.map((option) => (
+              {visibleStatusOptions.map((option) => (
                 <label
                   key={option.value}
                   className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${

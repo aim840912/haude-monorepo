@@ -119,6 +119,13 @@ export class MembersService {
   }
 
   /**
+   * 收回某張訂單的消費積分（訂單退款時呼叫）
+   */
+  async revokePurchasePoints(userId: string, orderId: string): Promise<number> {
+    return this.pointsService.revokePurchasePoints(userId, orderId);
+  }
+
+  /**
    * 更新累積消費並檢查升級
    * 應在訂單完成後呼叫
    */

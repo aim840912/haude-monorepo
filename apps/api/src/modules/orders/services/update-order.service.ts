@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { canTransitionOrderStatus } from '@haude/types';
+import { PrismaService } from '@/prisma/prisma.service';
 import { UpdateOrderStatusDto } from '../dto';
 import { EmailService } from '../../email/email.service';
 import { MembersService } from '../../members/members.service';
@@ -8,6 +15,13 @@ import { MembersService } from '../../members/members.service';
 /**
  * 訂單更新服務
  * 負責處理管理員端的訂單狀態更新，包含通知和會員系統整合
+ *
+ * 狀態只能照 ORDER_STATUS_TRANSITIONS（@haude/types）轉換，副作用綁在
+ * 「進入某狀態」：
+ * - cancelled → 補回庫存（與狀態更新同一個交易）
+ * - shipped   → 寄出貨通知
+ * - delivered → 累積消費 + 發點數（已發過就不再發）
+ * - refunded  → 收回這張訂單發出的點數（不補庫存：商品已寄出）
  */
 @Injectable()
 export class UpdateOrderService {
@@ -23,12 +37,14 @@ export class UpdateOrderService {
    * 更新訂單狀態（管理員）
    */
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
-    // 確認訂單存在並取得使用者資訊
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
         user: {
           select: { email: true, name: true },
+        },
+        items: {
+          select: { productId: true, quantity: true },
         },
       },
     });
@@ -37,22 +53,48 @@ export class UpdateOrderService {
       throw new NotFoundException('訂單不存在');
     }
 
-    const updateData: Prisma.OrderUpdateInput = {};
+    const nextStatus =
+      dto.status && dto.status !== order.status ? dto.status : undefined;
 
-    if (dto.status) updateData.status = dto.status;
+    if (nextStatus && !canTransitionOrderStatus(order.status, nextStatus)) {
+      throw new BadRequestException(
+        `訂單狀態無法從 ${order.status} 改為 ${nextStatus}`,
+      );
+    }
+
+    const updateData: Prisma.OrderUpdateManyMutationInput = {};
+
+    if (nextStatus) updateData.status = nextStatus;
     if (dto.trackingNumber) updateData.trackingNumber = dto.trackingNumber;
     if (dto.notes) updateData.notes = dto.notes;
     if (dto.paymentStatus) updateData.paymentStatus = dto.paymentStatus;
 
-    const updatedOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: { items: true },
+    await this.prisma.$transaction(async (tx) => {
+      // Conditional on the status we validated against: if another request
+      // changed it in between, the transition check above no longer holds.
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, status: order.status },
+        data: updateData,
+      });
+
+      if (count === 0) {
+        throw new ConflictException(
+          '訂單狀態已被其他操作變更，請重新整理後再試',
+        );
+      }
+
+      if (nextStatus === 'cancelled') {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      }
     });
 
-    // 當訂單狀態變更為 shipped 且有物流追蹤號時，發送發貨通知郵件
     if (
-      dto.status === 'shipped' &&
+      nextStatus === 'shipped' &&
       (dto.trackingNumber || order.trackingNumber)
     ) {
       const trackingNumber = dto.trackingNumber || order.trackingNumber || '';
@@ -64,8 +106,7 @@ export class UpdateOrderService {
       );
     }
 
-    // 當訂單狀態變更為 delivered（已送達）時，更新會員累積消費並發放積分
-    if (dto.status === 'delivered' && order.status !== 'delivered') {
+    if (nextStatus === 'delivered') {
       void this.processOrderCompletionAsync(
         order.userId,
         order.id,
@@ -73,7 +114,14 @@ export class UpdateOrderService {
       );
     }
 
-    return updatedOrder;
+    if (nextStatus === 'refunded') {
+      void this.revokeOrderPointsAsync(order.userId, order.id);
+    }
+
+    return this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
   }
 
   /**
@@ -87,6 +135,17 @@ export class UpdateOrderService {
     orderAmount: number,
   ) {
     try {
+      // Defence in depth: the transition table already makes delivered a
+      // one-way door, but a second award would double both points and totalSpent.
+      const alreadyAwarded = await this.prisma.pointTransaction.findFirst({
+        where: { orderId, type: 'PURCHASE' },
+        select: { id: true },
+      });
+      if (alreadyAwarded) {
+        this.logger.warn(`訂單 ${orderId} 已發過積分，略過`);
+        return;
+      }
+
       // 1. 更新累積消費並檢查升級
       const { upgraded } =
         await this.membersService.updateTotalSpentAndCheckUpgrade(
@@ -109,6 +168,21 @@ export class UpdateOrderService {
     } catch (error) {
       // 會員系統更新失敗不應影響訂單狀態更新
       this.logger.error(`處理訂單完成會員更新失敗: ${error}`);
+    }
+  }
+
+  /**
+   * 非同步收回退款訂單的積分
+   */
+  private async revokeOrderPointsAsync(userId: string, orderId: string) {
+    try {
+      const revoked = await this.membersService.revokePurchasePoints(
+        userId,
+        orderId,
+      );
+      this.logger.log(`訂單 ${orderId} 退款，收回 ${revoked} 積分`);
+    } catch (error) {
+      this.logger.error(`收回退款訂單積分失敗: ${error}`);
     }
   }
 

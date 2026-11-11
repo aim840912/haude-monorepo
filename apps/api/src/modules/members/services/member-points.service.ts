@@ -146,6 +146,55 @@ export class MemberPointsService {
   }
 
   /**
+   * 收回某張訂單發出的消費積分（訂單退款時呼叫）
+   *
+   * 扣除量以目前餘額為上限：使用者若已把積分兌換掉，不讓餘額變成負數。
+   * 回傳實際扣除的點數；這張訂單沒發過積分、或已經收回過時回傳 0。
+   */
+  async revokePurchasePoints(userId: string, orderId: string): Promise<number> {
+    return this.prisma.$transaction(async (tx) => {
+      const awarded = await tx.pointTransaction.aggregate({
+        where: { orderId, type: 'PURCHASE' },
+        _sum: { points: true },
+      });
+      const earned = awarded._sum.points ?? 0;
+      if (earned <= 0) return 0;
+
+      const alreadyRevoked = await tx.pointTransaction.findFirst({
+        where: { orderId, type: 'ADJUSTMENT', points: { lt: 0 } },
+        select: { id: true },
+      });
+      if (alreadyRevoked) return 0;
+
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { currentPoints: true },
+      });
+      if (!user) return 0;
+
+      const deduct = Math.min(earned, user.currentPoints);
+      const newBalance = user.currentPoints - deduct;
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { currentPoints: newBalance },
+      });
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          type: 'ADJUSTMENT',
+          points: -deduct,
+          balance: newBalance,
+          description: '訂單退款，收回消費積分',
+          orderId,
+        },
+      });
+
+      return deduct;
+    });
+  }
+
+  /**
    * 更新累積消費並檢查升級
    * 應在訂單完成後呼叫
    */
