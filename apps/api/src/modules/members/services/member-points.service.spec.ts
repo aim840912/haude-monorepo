@@ -403,13 +403,14 @@ describe('MemberPointsService', () => {
     });
   });
 
-  describe('revokePurchasePoints', () => {
+  describe('revokeOrderRewards', () => {
     const userId = 'user-123';
     const orderId = 'order-123';
 
-    const givenAwarded = (points: number | null) => {
+    const givenAwarded = (points: number, rows = 1) => {
       mockPrismaService.pointTransaction.aggregate.mockResolvedValue({
-        _sum: { points },
+        _sum: { points: rows ? points : null },
+        _count: { _all: rows },
       });
     };
 
@@ -417,18 +418,19 @@ describe('MemberPointsService', () => {
       mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
     });
 
-    it('扣回這張訂單發出的積分並寫一筆負數紀錄', async () => {
+    it('扣回這張訂單的積分與累積消費，並寫一筆調整紀錄', async () => {
       givenAwarded(1200);
       mockPrismaService.user.findUnique.mockResolvedValue({
         currentPoints: 5000,
+        totalSpent: 20000,
       });
 
-      const result = await service.revokePurchasePoints(userId, orderId);
+      const result = await service.revokeOrderRewards(userId, orderId, 1200);
 
-      expect(result).toBe(1200);
+      expect(result).toEqual({ points: 1200, totalSpent: 1200 });
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
-        data: { currentPoints: 3800 },
+        data: { currentPoints: 3800, totalSpent: 18800 },
       });
       expect(mockPrismaService.pointTransaction.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -440,37 +442,54 @@ describe('MemberPointsService', () => {
       });
     });
 
-    it('餘額不足時只扣到 0，不讓餘額變負數', async () => {
+    it('餘額不足時積分只扣到 0，累積消費照扣', async () => {
       givenAwarded(1200);
       mockPrismaService.user.findUnique.mockResolvedValue({
         currentPoints: 300,
+        totalSpent: 20000,
       });
 
-      const result = await service.revokePurchasePoints(userId, orderId);
+      const result = await service.revokeOrderRewards(userId, orderId, 1200);
 
-      expect(result).toBe(300);
+      expect(result).toEqual({ points: 300, totalSpent: 1200 });
+    });
+
+    it('積分已經是 0 時仍扣累積消費並留下紀錄，作為已收回的記號', async () => {
+      givenAwarded(1200);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        currentPoints: 0,
+        totalSpent: 20000,
+      });
+
+      await service.revokeOrderRewards(userId, orderId, 1200);
+
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
-        data: { currentPoints: 0 },
+        data: { currentPoints: 0, totalSpent: 18800 },
       });
+      expect(mockPrismaService.pointTransaction.create).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
-    it('餘額已經是 0 時不寫入 0 點的紀錄', async () => {
+    it('累積消費不會被扣成負數', async () => {
       givenAwarded(1200);
-      mockPrismaService.user.findUnique.mockResolvedValue({ currentPoints: 0 });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        currentPoints: 5000,
+        totalSpent: 500,
+      });
 
-      const result = await service.revokePurchasePoints(userId, orderId);
+      const result = await service.revokeOrderRewards(userId, orderId, 1200);
 
-      expect(result).toBe(0);
-      expect(mockPrismaService.pointTransaction.create).not.toHaveBeenCalled();
+      expect(result.totalSpent).toBe(500);
     });
 
-    it('這張訂單沒發過積分時不做任何事', async () => {
-      givenAwarded(null);
+    it('這張訂單沒發過積分（沒送達過）時不扣任何東西', async () => {
+      givenAwarded(0, 0);
 
-      const result = await service.revokePurchasePoints(userId, orderId);
+      const result = await service.revokeOrderRewards(userId, orderId, 1200);
 
-      expect(result).toBe(0);
+      expect(result).toEqual({ points: 0, totalSpent: 0 });
       expect(mockPrismaService.user.update).not.toHaveBeenCalled();
     });
 
@@ -480,9 +499,9 @@ describe('MemberPointsService', () => {
         id: 'pt-revoke',
       });
 
-      const result = await service.revokePurchasePoints(userId, orderId);
+      const result = await service.revokeOrderRewards(userId, orderId, 1200);
 
-      expect(result).toBe(0);
+      expect(result).toEqual({ points: 0, totalSpent: 0 });
       expect(mockPrismaService.user.update).not.toHaveBeenCalled();
     });
   });

@@ -119,10 +119,14 @@ export class MembersService {
   }
 
   /**
-   * 收回某張訂單的消費積分（訂單退款時呼叫）
+   * 收回某張訂單給的回饋：消費積分 + 累積消費（訂單退款時呼叫）
    */
-  async revokePurchasePoints(userId: string, orderId: string): Promise<number> {
-    return this.pointsService.revokePurchasePoints(userId, orderId);
+  async revokeOrderRewards(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ): Promise<{ points: number; totalSpent: number }> {
+    return this.pointsService.revokeOrderRewards(userId, orderId, orderAmount);
   }
 
   /**

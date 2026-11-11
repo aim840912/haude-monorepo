@@ -146,53 +146,66 @@ export class MemberPointsService {
   }
 
   /**
-   * 收回某張訂單發出的消費積分（訂單退款時呼叫）
+   * 收回某張訂單給的回饋（訂單退款時呼叫）：消費積分 + 累積消費
    *
-   * 扣除量以目前餘額為上限：使用者若已把積分兌換掉，不讓餘額變成負數。
-   * 回傳實際扣除的點數；這張訂單沒發過積分、或已經收回過時回傳 0。
+   * - 只有這張訂單發過 PURCHASE 積分（= 曾經送達）時才收回；從已出貨直接退款的
+   *   訂單沒發過，什麼都不扣。
+   * - 兩者都以目前值為上限，不讓餘額或累積消費變成負數。
+   * - 不自動降級：等級只影響之後是否再升級，降級規則另議。
+   * - 一定會寫一筆帶 orderId 的 ADJUSTMENT 紀錄（即使扣 0 點），它同時是
+   *   「已經收回過」的記號。管理員手動調整積分不帶 orderId，不會誤判。
    */
-  async revokePurchasePoints(userId: string, orderId: string): Promise<number> {
+  async revokeOrderRewards(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ): Promise<{ points: number; totalSpent: number }> {
+    const none = { points: 0, totalSpent: 0 };
+
     return this.prisma.$transaction(async (tx) => {
       const awarded = await tx.pointTransaction.aggregate({
         where: { orderId, type: 'PURCHASE' },
         _sum: { points: true },
+        _count: { _all: true },
       });
+      if (awarded._count._all === 0) return none;
       const earned = awarded._sum.points ?? 0;
-      if (earned <= 0) return 0;
 
       const alreadyRevoked = await tx.pointTransaction.findFirst({
-        where: { orderId, type: 'ADJUSTMENT', points: { lt: 0 } },
+        where: { orderId, type: 'ADJUSTMENT' },
         select: { id: true },
       });
-      if (alreadyRevoked) return 0;
+      if (alreadyRevoked) return none;
 
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { currentPoints: true },
+        select: { currentPoints: true, totalSpent: true },
       });
-      if (!user) return 0;
+      if (!user) return none;
 
-      const deduct = Math.min(earned, user.currentPoints);
-      // Nothing left to take back: a 0-point row would only add noise
-      if (deduct <= 0) return 0;
-      const newBalance = user.currentPoints - deduct;
+      const points = Math.min(earned, user.currentPoints);
+      const totalSpent = Math.min(orderAmount, user.totalSpent);
+      const newBalance = user.currentPoints - points;
 
       await tx.user.update({
         where: { id: userId },
-        data: { currentPoints: newBalance },
+        data: {
+          currentPoints: newBalance,
+          totalSpent: user.totalSpent - totalSpent,
+        },
       });
       await tx.pointTransaction.create({
         data: {
           userId,
           type: 'ADJUSTMENT',
-          points: -deduct,
+          points: -points,
           balance: newBalance,
-          description: '訂單退款，收回消費積分',
+          description: `訂單退款，收回消費積分 ${points} 點、累積消費 ${totalSpent} 元`,
           orderId,
         },
       });
 
-      return deduct;
+      return { points, totalSpent };
     });
   }
 

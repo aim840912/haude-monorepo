@@ -29,7 +29,7 @@ describe('UpdateOrderService', () => {
   const mockMembers = {
     updateTotalSpentAndCheckUpgrade: jest.fn(),
     addPointsForPurchase: jest.fn(),
-    revokePurchasePoints: jest.fn(),
+    revokeOrderRewards: jest.fn(),
   };
 
   const baseOrder = {
@@ -111,6 +111,14 @@ describe('UpdateOrderService', () => {
         .catch(() => undefined);
 
       expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('已出貨可以直接改成已退款（包裹遺失或退回）', async () => {
+      givenOrder('shipped');
+
+      await expect(
+        service.updateOrderStatus('order-1', { status: 'refunded' }),
+      ).resolves.toBeDefined();
     });
 
     it('允許往前跳過中間狀態（待處理 → 已出貨）', async () => {
@@ -224,9 +232,10 @@ describe('UpdateOrderService', () => {
       await service.updateOrderStatus('order-1', { status: 'refunded' });
       await flush();
 
-      expect(mockMembers.revokePurchasePoints).toHaveBeenCalledWith(
+      expect(mockMembers.revokeOrderRewards).toHaveBeenCalledWith(
         'user-1',
         'order-1',
+        1200,
       );
       expect(mockPrisma.product.update).not.toHaveBeenCalled();
     });

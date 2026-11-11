@@ -22,7 +22,7 @@ import { restoreOrderStock } from './order-stock';
  * - cancelled → 補回庫存（與狀態更新同一個交易）
  * - shipped   → 寄出貨通知
  * - delivered → 累積消費 + 發點數（已發過就不再發）
- * - refunded  → 收回這張訂單發出的點數（不補庫存：商品已寄出）
+ * - refunded  → 收回這張訂單給的點數與累積消費（不補庫存：商品已寄出）
  */
 @Injectable()
 export class UpdateOrderService {
@@ -118,7 +118,11 @@ export class UpdateOrderService {
     }
 
     if (nextStatus === 'refunded') {
-      await this.revokeOrderPointsAsync(order.userId, order.id);
+      await this.revokeOrderRewardsAsync(
+        order.userId,
+        order.id,
+        order.totalAmount,
+      );
     }
 
     return updatedOrder;
@@ -174,15 +178,22 @@ export class UpdateOrderService {
   /**
    * 非同步收回退款訂單的積分
    */
-  private async revokeOrderPointsAsync(userId: string, orderId: string) {
+  private async revokeOrderRewardsAsync(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ) {
     try {
-      const revoked = await this.membersService.revokePurchasePoints(
+      const revoked = await this.membersService.revokeOrderRewards(
         userId,
         orderId,
+        orderAmount,
       );
-      this.logger.log(`訂單 ${orderId} 退款，收回 ${revoked} 積分`);
+      this.logger.log(
+        `訂單 ${orderId} 退款，收回 ${revoked.points} 積分、累積消費 ${revoked.totalSpent} 元`,
+      );
     } catch (error) {
-      this.logger.error(`收回退款訂單積分失敗: ${error}`);
+      this.logger.error(`收回退款訂單回饋失敗: ${error}`);
     }
   }
 

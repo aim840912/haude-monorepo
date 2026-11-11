@@ -59,6 +59,12 @@ describe('OrderStatusModal', () => {
     expect(statusRadioValues()).not.toContain('cancelled')
   })
 
+  it('已出貨的訂單可以改成已送達或已退款', () => {
+    renderWithStatus('shipped')
+
+    expect(statusRadioValues()).toEqual(['shipped', 'delivered', 'refunded'])
+  })
+
   it('已送達的訂單只能改成已退款', () => {
     renderWithStatus('delivered')
 
