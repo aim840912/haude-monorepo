@@ -220,7 +220,12 @@ const nextConfig: NextConfig = {
       // 個人化頁面：覆蓋上面的 public 快取（同一 key 由後者勝出）
       // 順序有意義 —— 這組必須排在 pageCacheHeaders 之後
       ...personalizedHeaderRules,
-      // Next.js API 路由：不快取
+      // /api/*：不快取。web 沒有自己的 API 路由，這裡全是代理到 Render 的請求。
+      // 這條會蓋掉後端給公開端點的 `public, s-maxage=600`（2026-11-11 線上實測），是刻意的：
+      // 代理前 Render 前面沒有共享快取；放行 s-maxage 等於在中間新增 Vercel CDN 這層，
+      // 而後端防止個人化回應外洩靠的是 `Vary: Cookie`，Vercel CDN 是否照它分開存放未經驗證。
+      // ⛔ 不要為了讓商品列表能快取就刪掉這條或把 /api 排除在外 —— 上面的 /(.*) 規則
+      // 會改套 public + s-maxage=60，連 /auth/me 這類個人化回應都會被放進 CDN。
       {
         source: '/api/:path*',
         headers: apiNoCacheHeaders,
