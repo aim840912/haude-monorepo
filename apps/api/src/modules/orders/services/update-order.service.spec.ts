@@ -19,6 +19,7 @@ describe('UpdateOrderService', () => {
     order: {
       findUnique: jest.fn(),
       updateMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
     },
     product: { update: jest.fn() },
     pointTransaction: { findFirst: jest.fn() },
@@ -54,6 +55,10 @@ describe('UpdateOrderService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockPrisma.order.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.order.findUniqueOrThrow.mockResolvedValue({
+      id: 'order-1',
+      items: [],
+    });
     mockPrisma.pointTransaction.findFirst.mockResolvedValue(null);
     mockMembers.updateTotalSpentAndCheckUpgrade.mockResolvedValue({
       newTotalSpent: 1200,
@@ -188,6 +193,27 @@ describe('UpdateOrderService', () => {
       expect(
         mockMembers.updateTotalSpentAndCheckUpgrade,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('副作用的先後順序', () => {
+    it('回應前就已發完點數，緊接著退款時收回不會落空', async () => {
+      givenOrder('shipped');
+
+      // No flush(): the award must already be done when the call resolves
+      await service.updateOrderStatus('order-1', { status: 'delivered' });
+
+      expect(mockMembers.addPointsForPurchase).toHaveBeenCalled();
+    });
+
+    it('回傳的是同一個交易裡讀出的訂單', async () => {
+      givenOrder('pending');
+
+      const result = await service.updateOrderStatus('order-1', {
+        status: 'confirmed',
+      });
+
+      expect(result).toEqual({ id: 'order-1', items: [] });
     });
   });
 

@@ -3,6 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
 import { CancelOrderDto } from '../dto';
 import { QueryUserOrdersService } from './query-user-orders.service';
+import { restoreOrderStock } from './order-stock';
 
 /**
  * 訂單取消服務
@@ -33,9 +34,10 @@ export class CancelOrderService {
 
     // 3. 使用交易取消訂單並恢復庫存
     await this.prisma.$transaction(async (tx) => {
-      // 更新訂單狀態
-      await tx.order.update({
-        where: { id: orderId },
+      // Conditional: admin cancel / payment expiry may have cancelled it
+      // since we read it, and they restock too.
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, status: { in: cancellableStatuses } },
         data: {
           status: 'cancelled',
           notes: dto.reason
@@ -44,13 +46,11 @@ export class CancelOrderService {
         },
       });
 
-      // 恢復庫存
-      for (const item of order.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } },
-        });
+      if (count === 0) {
+        throw new BadRequestException('此訂單狀態無法取消');
       }
+
+      await restoreOrderStock(tx, order.items);
     });
 
     return { message: '訂單已取消' };

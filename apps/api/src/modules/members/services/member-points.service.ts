@@ -173,6 +173,8 @@ export class MemberPointsService {
       if (!user) return 0;
 
       const deduct = Math.min(earned, user.currentPoints);
+      // Nothing left to take back: a 0-point row would only add noise
+      if (deduct <= 0) return 0;
       const newBalance = user.currentPoints - deduct;
 
       await tx.user.update({

@@ -455,6 +455,16 @@ describe('MemberPointsService', () => {
       });
     });
 
+    it('餘額已經是 0 時不寫入 0 點的紀錄', async () => {
+      givenAwarded(1200);
+      mockPrismaService.user.findUnique.mockResolvedValue({ currentPoints: 0 });
+
+      const result = await service.revokePurchasePoints(userId, orderId);
+
+      expect(result).toBe(0);
+      expect(mockPrismaService.pointTransaction.create).not.toHaveBeenCalled();
+    });
+
     it('這張訂單沒發過積分時不做任何事', async () => {
       givenAwarded(null);
 

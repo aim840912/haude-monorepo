@@ -11,6 +11,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { UpdateOrderStatusDto } from '../dto';
 import { EmailService } from '../../email/email.service';
 import { MembersService } from '../../members/members.service';
+import { restoreOrderStock } from './order-stock';
 
 /**
  * 訂單更新服務
@@ -69,7 +70,7 @@ export class UpdateOrderService {
     if (dto.notes) updateData.notes = dto.notes;
     if (dto.paymentStatus) updateData.paymentStatus = dto.paymentStatus;
 
-    await this.prisma.$transaction(async (tx) => {
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
       // Conditional on the status we validated against: if another request
       // changed it in between, the transition check above no longer holds.
       const { count } = await tx.order.updateMany({
@@ -84,13 +85,13 @@ export class UpdateOrderService {
       }
 
       if (nextStatus === 'cancelled') {
-        for (const item of order.items) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } },
-          });
-        }
+        await restoreOrderStock(tx, order.items);
       }
+
+      return tx.order.findUniqueOrThrow({
+        where: { id: orderId },
+        include: { items: true },
+      });
     });
 
     if (
@@ -107,7 +108,9 @@ export class UpdateOrderService {
     }
 
     if (nextStatus === 'delivered') {
-      void this.processOrderCompletionAsync(
+      // Awaited (it never throws): a quick delivered → refunded must not let
+      // the revoke run before the award has been written.
+      await this.processOrderCompletionAsync(
         order.userId,
         order.id,
         order.totalAmount,
@@ -115,13 +118,10 @@ export class UpdateOrderService {
     }
 
     if (nextStatus === 'refunded') {
-      void this.revokeOrderPointsAsync(order.userId, order.id);
+      await this.revokeOrderPointsAsync(order.userId, order.id);
     }
 
-    return this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true },
-    });
+    return updatedOrder;
   }
 
   /**

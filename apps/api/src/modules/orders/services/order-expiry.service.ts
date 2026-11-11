@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/prisma/prisma.service';
+import { restoreOrderStock } from './order-stock';
 
 /**
  * 訂單過期自動取消服務
@@ -55,8 +56,9 @@ export class OrderExpiryService {
 
       if (this.isExpired(order.createdAt, payment)) {
         try {
-          await this.expireOrder(order.id, order.items, payment?.id);
-          expiredCount++;
+          if (await this.expireOrder(order.id, order.items, payment?.id)) {
+            expiredCount++;
+          }
         } catch (error) {
           this.logger.error(
             `取消過期訂單失敗 [${order.orderNumber}]: ${error}`,
@@ -103,8 +105,7 @@ export class OrderExpiryService {
     }
 
     try {
-      await this.expireOrder(orderId, items, pendingPayment?.id);
-      return true;
+      return await this.expireOrder(orderId, items, pendingPayment?.id);
     } catch (error) {
       this.logger.error(`懶檢查取消訂單失敗 [${orderId}]: ${error}`);
       return false;
@@ -152,17 +153,20 @@ export class OrderExpiryService {
     orderId: string,
     items: Array<{ productId: string; quantity: number }>,
     paymentId?: string | null,
-  ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      // 更新訂單狀態
-      await tx.order.update({
-        where: { id: orderId },
+  ): Promise<boolean> {
+    const expired = await this.prisma.$transaction(async (tx) => {
+      // Conditional: the user or an admin may have cancelled / confirmed it
+      // since it was read. Without this both paths would restock.
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, status: 'pending', paymentStatus: 'pending' },
         data: {
           status: 'cancelled',
           paymentStatus: 'expired',
           notes: '系統自動取消：付款超時',
         },
       });
+
+      if (count === 0) return false;
 
       // 更新付款狀態
       if (paymentId) {
@@ -172,15 +176,13 @@ export class OrderExpiryService {
         });
       }
 
-      // 恢復庫存
-      for (const item of items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } },
-        });
-      }
+      await restoreOrderStock(tx, items);
+      return true;
     });
 
-    this.logger.log(`訂單過期取消: ${orderId}`);
+    if (expired) {
+      this.logger.log(`訂單過期取消: ${orderId}`);
+    }
+    return expired;
   }
 }
