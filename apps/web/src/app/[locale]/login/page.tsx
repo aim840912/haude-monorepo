@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { API_URL } from '@/lib/api-url'
+import { BROWSER_API_URL } from '@/lib/api-url'
 import { Mail, Lock, LogIn } from 'lucide-react'
 
 function LoginForm() {
@@ -45,7 +45,10 @@ function LoginForm() {
             <h2 className="text-3xl font-bold text-foreground font-display">登入</h2>
             <p className="mt-2 text-sm text-text-secondary">
               還沒有帳號？{' '}
-              <Link href="/register" className="text-primary-tea hover:text-primary-tea-hover font-medium">
+              <Link
+                href="/register"
+                className="text-primary-tea hover:text-primary-tea-hover font-medium"
+              >
                 註冊帳號
               </Link>
             </p>
@@ -118,7 +121,10 @@ function LoginForm() {
               </div>
 
               <div className="text-sm">
-                <Link href="/forgot-password" className="text-primary-tea hover:text-primary-tea-hover">
+                <Link
+                  href="/forgot-password"
+                  className="text-primary-tea hover:text-primary-tea-hover"
+                >
                   忘記密碼？
                 </Link>
               </div>
@@ -151,7 +157,7 @@ function LoginForm() {
 
             {/* Google 登入按鈕 */}
             <a
-              href={`${API_URL}/auth/google`}
+              href={`${BROWSER_API_URL}/auth/google`}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-tea"
             >
               {/* Google Logo SVG */}
@@ -191,7 +197,7 @@ function LoginForm() {
                   {(['USER', 'VIP', 'STAFF', 'ADMIN'] as const).map((role) => (
                     <a
                       key={role}
-                      href={`${API_URL}/auth/dev-login?role=${role}&target=web`}
+                      href={`${BROWSER_API_URL}/auth/dev-login?role=${role}&target=web`}
                       className="flex items-center justify-center px-3 py-2 border border-dashed border-orange-300 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors text-orange-700 font-medium text-sm"
                     >
                       {role}
@@ -201,7 +207,6 @@ function LoginForm() {
               </>
             )}
           </form>
-
         </div>
 
         <p className="mt-4 text-center text-sm text-text-tertiary">
@@ -216,11 +221,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-tea"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-tea"></div>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   )

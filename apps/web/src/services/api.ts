@@ -5,10 +5,10 @@
 // 'use client' 讓它只能在瀏覽器端運行。
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../stores/authStore'
-import { API_URL } from '@/lib/api-url'
+import { BROWSER_API_URL } from '@/lib/api-url'
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: BROWSER_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -81,7 +81,7 @@ api.interceptors.response.use(
     try {
       // Attempt to refresh tokens (cookies are sent automatically)
       const { data } = await axios.post(
-        `${API_URL}/auth/refresh`,
+        `${BROWSER_API_URL}/auth/refresh`,
         {},
         { withCredentials: true }
       )
@@ -110,8 +110,7 @@ api.interceptors.response.use(
 
 // API endpoints
 export const authApi = {
-  login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
+  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
 
   register: (email: string, password: string, name: string) =>
     api.post('/auth/register', { email, password, name }),
@@ -329,8 +328,7 @@ export const farmToursApi = {
     tags?: string[]
     isActive?: boolean
   }) => api.post('/admin/farm-tours', data),
-  update: (id: string, data: Record<string, unknown>) =>
-    api.put(`/admin/farm-tours/${id}`, data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/admin/farm-tours/${id}`, data),
   delete: (id: string) => api.delete(`/admin/farm-tours/${id}`),
 }
 
@@ -362,8 +360,7 @@ export const locationsApi = {
     isMain?: boolean
     isActive?: boolean
   }) => api.post('/admin/locations', data),
-  update: (id: string, data: Record<string, unknown>) =>
-    api.put(`/admin/locations/${id}`, data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/admin/locations/${id}`, data),
   delete: (id: string) => api.delete(`/admin/locations/${id}`),
 }
 
@@ -391,8 +388,7 @@ export const schedulesApi = {
     weatherNote?: string
     isActive?: boolean
   }) => api.post('/admin/schedules', data),
-  update: (id: string, data: Record<string, unknown>) =>
-    api.put(`/admin/schedules/${id}`, data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/admin/schedules/${id}`, data),
   delete: (id: string) => api.delete(`/admin/schedules/${id}`),
 }
 
@@ -495,8 +491,7 @@ export const searchApiReal = {
   /**
    * 搜尋建議（自動完成）
    */
-  getSuggestions: (q: string) =>
-    api.get<string[]>('/search/suggestions', { params: { q } }),
+  getSuggestions: (q: string) => api.get<string[]>('/search/suggestions', { params: { q } }),
 
   /**
    * 熱門搜尋

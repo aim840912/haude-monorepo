@@ -17,8 +17,38 @@ export interface GoogleProfile {
   avatar?: string;
 }
 
+type GoogleTarget = 'web' | 'admin';
+
+/**
+ * Decide which app this OAuth round-trip belongs to and which callback URL
+ * Google must redirect back to.
+ *
+ * Web gets its own callback (GOOGLE_WEB_CALLBACK_URL) that points at the web
+ * origin, which proxies /api/v1/* to this API. The auth cookies are then set
+ * on the web origin as first-party cookies; set on onrender.com they are
+ * third-party to vercel.app and get dropped by Safari and Chrome incognito.
+ *
+ * The callback phase (Google returns ?code=&state=) must send the same
+ * redirect_uri in the token exchange as the authorization request, so the
+ * target is re-derived from `state` there instead of from `redirect`.
+ */
+export function resolveGoogleAuthOptions(
+  query: Record<string, unknown>,
+  webCallbackURL: string | undefined,
+): { state: GoogleTarget; callbackURL?: string } {
+  const requested = query.code ? query.state : query.redirect;
+  const state: GoogleTarget = requested === 'admin' ? 'admin' : 'web';
+
+  if (state === 'web' && webCallbackURL) {
+    return { state, callbackURL: webCallbackURL };
+  }
+  return { state };
+}
+
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+  private readonly webCallbackURL: string | undefined;
+
   constructor(
     configService: ConfigService,
     private authService: AuthService,
@@ -32,16 +62,20 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       passReqToCallback: true,
     };
     super(options);
+    // Unset → web keeps using GOOGLE_CALLBACK_URL (the pre-proxy behaviour)
+    this.webCallbackURL =
+      configService.get<string>('GOOGLE_WEB_CALLBACK_URL') || undefined;
   }
 
   /**
-   * 動態生成 OAuth state，包含 redirect 參數
-   * 這會在重導向到 Google 前被調用
+   * 動態生成 OAuth state（web / admin），並為 web 換成走代理的 callback
+   * 授權請求與 callback 兩個階段都會經過這裡
    */
   authenticate(req: Request, options?: object) {
-    const redirect = req.query.redirect as string;
-    const state = redirect === 'admin' ? 'admin' : 'web';
-    super.authenticate(req, { ...options, state });
+    super.authenticate(req, {
+      ...options,
+      ...resolveGoogleAuthOptions(req.query, this.webCallbackURL),
+    });
   }
 
   /**

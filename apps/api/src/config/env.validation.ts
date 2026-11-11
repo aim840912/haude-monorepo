@@ -50,6 +50,12 @@ export const envValidationSchema = Joi.object({
     .uri()
     .optional()
     .description('Google OAuth 回調 URL'),
+  GOOGLE_WEB_CALLBACK_URL: Joi.string()
+    .uri()
+    .optional()
+    .description(
+      'Web 專用的 Google 回調 URL（經 web 網域代理，讓 cookie 成為第一方）；未設定時沿用 GOOGLE_CALLBACK_URL',
+    ),
 
   // === Email 服務（選填）===
   RESEND_API_KEY: Joi.string().optional().description('Resend API 金鑰'),

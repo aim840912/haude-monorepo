@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { API_BASE, API_PATH } from './src/lib/api-url'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
@@ -184,6 +185,20 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+
+  // API 代理：瀏覽器一律打同網域的 /api/v1，由這裡轉給後端（Render）。
+  // 目的是讓後端設的 auth cookie 屬於 web 網域（第一方）。直接跨網域呼叫時，
+  // cookie 屬於 onrender.com，對 vercel.app 是第三方 cookie → Safari 與
+  // Chrome 無痕模式會丟掉 → OAuth 回來後 /auth/me 回 401。
+  // ⛔ 不要讓瀏覽器端改回直接打 API_URL（見 src/lib/api-url.ts）。
+  async rewrites() {
+    return [
+      {
+        source: `${API_PATH}/:path*`,
+        destination: `${API_BASE}${API_PATH}/:path*`,
+      },
+    ]
   },
 
   // 安全標頭與快取標頭
