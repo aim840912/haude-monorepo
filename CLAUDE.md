@@ -298,6 +298,14 @@ GET    /health/ready    # readiness，DB 斷線回 503
 | Admin 後台 | https://haude-admin.vercel.app | Vercel |
 | API | https://haude-api.onrender.com | Render（Project: haude-tea-shop） |
 
+### Web 登入 Cookie 必須是第一方（改動前必讀）
+
+- **症狀**：無痕模式 / Safari 用 Google 登入，callback 頁顯示「登入失敗 Request failed with status code 401」，右上角卻已出現使用者名稱。
+- **原因**：`vercel.app` 與 `onrender.com` 都在 Public Suffix List，是不同網站；API 直接設的 cookie 對 web 是第三方 cookie，會被丟掉。一般模式的 Chrome 不擋，所以平常測不出來。
+- **做法**：瀏覽器一律打同網域 `/api/v1`（`BROWSER_API_URL`），由 `apps/web/next.config.ts` 的 rewrites 轉給 Render；Server Component 才用絕對的 `API_URL`。⛔ 不要讓瀏覽器端改回直接打 `API_URL`。
+- **Google OAuth 另需兩處設定**（在程式碼外）：Render 的 `GOOGLE_WEB_CALLBACK_URL=https://haude-web.vercel.app/api/v1/auth/google/callback`，以及 Google Cloud Console 的「已授權的重新導向 URI」加入同一個網址。未設定時 web 沿用 `GOOGLE_CALLBACK_URL`（onrender.com），Google 登入仍會在無痕模式壞掉。
+- Admin（`haude-admin.vercel.app`，Vite）沒有這層代理，仍是跨網站。
+
 ### 健康檢查分工（改動前必讀）
 
 | 檢查者 | 端點 | 用途 |
