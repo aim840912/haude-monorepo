@@ -311,6 +311,12 @@ GET    /health/ready    # readiness，DB 斷線回 503
 - **線上驗收**：`curl -sI https://haude-api.onrender.com/api/v1/auth/google | grep -i location` 的 `redirect_uri` 要指向 haude-web；`curl -s -o /dev/null -w '%{http_code}' https://haude-web.vercel.app/api/v1/products` 回 200 代表代理正常；最後用無痕視窗實際用 Google 登入一次（2026-11-11 通過）
 - Admin（`haude-admin.vercel.app`，Vite）沒有這層代理，仍是跨網站。
 
+### 訂單狀態（改動前必讀）
+
+- 狀態只能照 `packages/types/src/order.ts` 的 `ORDER_STATUS_TRANSITIONS` 轉換：API 拒絕表外的轉換，後台只列表內選項。要新增轉換先改這張表。
+- 副作用綁在「進入某狀態」：已取消 → 補庫存、已送達 → 發點數與累積消費、已退款 → 收回兩者。⛔ 不要加「往回走」的轉換，副作用會重複執行。
+- 取消有三條路徑（顧客取消、付款逾期、後台改狀態），全部必須「狀態符合預期才寫入（`updateMany` + `count`），寫入成功才呼叫 `restoreOrderStock()`」。新增取消或退款路徑也照這個寫法；綠界退款（`payment-refund.service.ts`）目前還沒照做，開放金流前要補。
+
 ### 健康檢查分工（改動前必讀）
 
 | 檢查者 | 端點 | 用途 |
