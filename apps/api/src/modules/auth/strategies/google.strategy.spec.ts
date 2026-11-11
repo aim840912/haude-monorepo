@@ -29,6 +29,15 @@ describe('resolveGoogleAuthOptions', () => {
     ).toEqual({ state: 'admin' });
   });
 
+  it('keeps admin when Google returns an error instead of a code', () => {
+    expect(
+      resolveGoogleAuthOptions(
+        { error: 'access_denied', state: 'admin' },
+        WEB_CALLBACK,
+      ),
+    ).toEqual({ state: 'admin' });
+  });
+
   it('falls back to the default callback when no web callback is configured', () => {
     expect(resolveGoogleAuthOptions({}, undefined)).toEqual({ state: 'web' });
   });

@@ -36,7 +36,10 @@ export function resolveGoogleAuthOptions(
   query: Record<string, unknown>,
   webCallbackURL: string | undefined,
 ): { state: GoogleTarget; callbackURL?: string } {
-  const requested = query.code ? query.state : query.redirect;
+  // Google comes back with either ?code= or ?error= (e.g. access_denied); both
+  // carry the state we sent, and neither carries `redirect`.
+  const isCallback = Boolean(query.code || query.error);
+  const requested = isCallback ? query.state : query.redirect;
   const state: GoogleTarget = requested === 'admin' ? 'admin' : 'web';
 
   if (state === 'web' && webCallbackURL) {

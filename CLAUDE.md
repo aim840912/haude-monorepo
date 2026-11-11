@@ -368,16 +368,12 @@ VITE_API_BASE_URL=http://localhost:3001
 > ⚠️ **重要**：API 版本已集中管理，升級時只需修改 2 個檔案
 
 **版本定義位置**：
-- `apps/web/src/lib/api-url.ts` → `API_VERSION = 'v1'`（Server/Client 共用）
+- `apps/web/src/lib/api-url.ts` → `API_PATH = '/api/v1'`（同時是 `next.config.ts` 代理規則的來源路徑）
 - `apps/admin/src/services/api/client.ts` → `API_VERSION = 'v1'`
 
-**升級 API 版本**：
-```typescript
-// 只需修改這兩個檔案中的 API_VERSION 常數
-const API_VERSION = 'v2'  // 從 'v1' 改為 'v2'
-```
-
-**注意**：升級 API 版本後，需同步更新 Google Cloud Console 的 OAuth 回調 URI
+**注意**：升級 API 版本後，需同步更新：
+- Google Cloud Console 的 OAuth 回調 URI，以及 Render 的 `GOOGLE_CALLBACK_URL` / `GOOGLE_WEB_CALLBACK_URL`
+- `auth.controller.ts` 寫死的 refresh cookie 路徑 `/api/v1/auth/refresh` —— 它必須和 web 代理的前綴一致，不一致時瀏覽器不會送出 refresh cookie，使用者每 15 分鐘被登出，且 build 不會報錯
 
 ---
 
