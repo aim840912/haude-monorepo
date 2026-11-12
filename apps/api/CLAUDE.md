@@ -366,6 +366,13 @@ npx prisma migrate deploy
 - **不遮罩**結構化欄位（`Payment.vaAccount`、`bankCode`、`paymentCode`）——客戶要靠它們繳費
 - 新增任何寫入原始 payload 的程式碼時，必須套用此函式
 
+### Log 不可寫入憑證與網址參數
+
+請求 log（`src/common/logger/pino-http.options.ts`）會遮掉 cookie、authorization、Vercel 簽章與 Set-Cookie，
+並把 url／referer／location 的 query 和 fragment 全部切掉（重設密碼 `?token=`、OAuth `#user=` 都靠這個擋）。
+**自己用 `this.logger` 印網址時要套 `stripUrlSecrets()`**（`src/common/logger/url-secrets.ts`）——
+pino 的遮罩只管它自己的 `req` 欄位，訊息字串裡的 `request.url` 會原文寫進 Render Logs。
+
 ### 資料保留
 
 `DataRetentionService`（`modules/data-retention/`）每日 03:00 清理：
