@@ -42,6 +42,11 @@ function processQueue(error: unknown) {
   failedQueue = []
 }
 
+function isSessionDead(refreshError: unknown): boolean {
+  const status = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined
+  return status === 401 || status === 403
+}
+
 function retryQueue() {
   failedQueue.forEach(({ resolve, config }) => resolve(config))
   failedQueue = []
@@ -83,10 +88,13 @@ api.interceptors.response.use(
 
       retryQueue()
       return api(originalRequest)
-    } catch {
+    } catch (refreshError) {
       processQueue(error)
 
-      if (!isRedirectingToLogin) {
+      // Only a 401/403 from /auth/refresh means the session is dead. 429 (the
+      // refresh endpoint is rate-limited per IP), 5xx, network errors and Render
+      // cold-start timeouts are transient: fail this request, keep the user in.
+      if (isSessionDead(refreshError) && !isRedirectingToLogin) {
         isRedirectingToLogin = true
         useAuthStore.getState().logout()
         clearCsrfToken()
