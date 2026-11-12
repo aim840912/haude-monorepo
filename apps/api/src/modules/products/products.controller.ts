@@ -244,6 +244,19 @@ export class AdminProductsController {
     return this.productsService.addImage(id, dto);
   }
 
+  // Must stay above ':id/images/:imageId', or 'reorder' is taken as an imageId
+  @Put(':id/images/reorder')
+  @AuditLog('UPDATE', 'products')
+  @ApiOperation({ summary: '重新排序產品圖片' })
+  @ApiResponse({ status: 200, description: '排序更新成功' })
+  @ApiResponse({ status: 404, description: '產品不存在' })
+  reorderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReorderImagesDto,
+  ) {
+    return this.productsService.reorderImages(id, dto.imageIds);
+  }
+
   @Put(':id/images/:imageId')
   @AuditLog('UPDATE', 'products')
   @ApiOperation({ summary: '更新產品圖片資訊' })
@@ -267,17 +280,5 @@ export class AdminProductsController {
     @Param('imageId', ParseUUIDPipe) imageId: string,
   ) {
     return this.productsService.removeImage(id, imageId);
-  }
-
-  @Put(':id/images/reorder')
-  @AuditLog('UPDATE', 'products')
-  @ApiOperation({ summary: '重新排序產品圖片' })
-  @ApiResponse({ status: 200, description: '排序更新成功' })
-  @ApiResponse({ status: 404, description: '產品不存在' })
-  reorderImages(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ReorderImagesDto,
-  ) {
-    return this.productsService.reorderImages(id, dto.imageIds);
   }
 }

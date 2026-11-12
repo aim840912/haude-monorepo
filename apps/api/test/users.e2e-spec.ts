@@ -163,10 +163,15 @@ describe('Users API (e2e)', () => {
     });
 
     it('應該返回 404 當用戶不存在', async () => {
+      // Answer by id, not by call order: the audit log reads the target
+      // user once before the handler runs.
       const adminUser = createMockUser({ id: 'admin-1', role: 'ADMIN' });
-      mockPrisma.user.findUnique
-        .mockResolvedValueOnce(adminUser)
-        .mockResolvedValueOnce(null);
+      mockPrisma.user.findUnique.mockImplementation(
+        (args?: { where?: { id?: string } }) =>
+          Promise.resolve(
+            args?.where?.id === 'non-existent-user' ? null : adminUser,
+          ),
+      );
 
       await request(app.getHttpServer())
         .patch('/api/v1/users/non-existent-user')
@@ -206,10 +211,15 @@ describe('Users API (e2e)', () => {
     });
 
     it('應該返回 404 當用戶不存在', async () => {
+      // Answer by id, not by call order: the audit log reads the target
+      // user once before the handler runs.
       const adminUser = createMockUser({ id: 'admin-1', role: 'ADMIN' });
-      mockPrisma.user.findUnique
-        .mockResolvedValueOnce(adminUser)
-        .mockResolvedValueOnce(null);
+      mockPrisma.user.findUnique.mockImplementation(
+        (args?: { where?: { id?: string } }) =>
+          Promise.resolve(
+            args?.where?.id === 'non-existent-user' ? null : adminUser,
+          ),
+      );
 
       await request(app.getHttpServer())
         .delete('/api/v1/users/non-existent-user')

@@ -145,6 +145,16 @@ export class AdminFarmToursController {
     return this.farmToursService.addImage(id, dto);
   }
 
+  // Must stay above ':id/images/:imageId', or 'reorder' is taken as an imageId
+  @Put(':id/images/reorder')
+  @AuditLog('UPDATE', 'farm-tours')
+  reorderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReorderFarmTourImagesDto,
+  ) {
+    return this.farmToursService.reorderImages(id, dto.imageIds);
+  }
+
   @Put(':id/images/:imageId')
   @AuditLog('UPDATE', 'farm-tours')
   updateImage(
@@ -162,14 +172,5 @@ export class AdminFarmToursController {
     @Param('imageId', ParseUUIDPipe) imageId: string,
   ) {
     return this.farmToursService.removeImage(id, imageId);
-  }
-
-  @Put(':id/images/reorder')
-  @AuditLog('UPDATE', 'farm-tours')
-  reorderImages(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ReorderFarmTourImagesDto,
-  ) {
-    return this.farmToursService.reorderImages(id, dto.imageIds);
   }
 }

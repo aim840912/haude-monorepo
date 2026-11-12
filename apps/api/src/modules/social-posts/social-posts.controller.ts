@@ -82,6 +82,17 @@ export class AdminSocialPostsController {
     return this.socialPostsService.create(dto);
   }
 
+  // Must stay above ':id', or 'reorder' is taken as an id
+  @Put('reorder')
+  @AuditLog('UPDATE', 'social-posts')
+  @ApiOperation({ summary: '重新排序社群貼文（管理員）' })
+  @ApiResponse({ status: 200, description: '排序更新成功' })
+  @ApiResponse({ status: 401, description: '未認證' })
+  @ApiResponse({ status: 403, description: '權限不足' })
+  reorder(@Body() body: { ids: string[] }) {
+    return this.socialPostsService.reorder(body.ids);
+  }
+
   @Put(':id')
   @AuditLog('UPDATE', 'social-posts')
   @ApiOperation({ summary: '更新社群貼文（管理員）' })
@@ -105,15 +116,5 @@ export class AdminSocialPostsController {
   @ApiResponse({ status: 404, description: '社群貼文不存在' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.socialPostsService.remove(id);
-  }
-
-  @Put('reorder')
-  @AuditLog('UPDATE', 'social-posts')
-  @ApiOperation({ summary: '重新排序社群貼文（管理員）' })
-  @ApiResponse({ status: 200, description: '排序更新成功' })
-  @ApiResponse({ status: 401, description: '未認證' })
-  @ApiResponse({ status: 403, description: '權限不足' })
-  reorder(@Body() body: { ids: string[] }) {
-    return this.socialPostsService.reorder(body.ids);
   }
 }

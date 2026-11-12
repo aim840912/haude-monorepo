@@ -295,10 +295,8 @@ describe('Social Posts API (e2e)', () => {
   });
 
   describe('PUT /admin/social-posts/reorder', () => {
-    // 注意：此端點由於路由定義順序問題，目前會返回 400
-    // @Put(':id') 定義在 @Put('reorder') 之前，導致 'reorder' 被當作 :id 參數
-    // 這是一個需要修復的 bug（將 reorder 路由移到 :id 之前）
-    it('應該重新排序社群貼文（待修復路由順序）', async () => {
+    // @Put('reorder') 必須宣告在 @Put(':id') 之前，否則 'reorder' 會被當成 :id
+    it('應該重新排序社群貼文', async () => {
       const adminUser = createMockUser({ id: 'admin-1', role: 'ADMIN' });
       mockPrisma.user.findUnique.mockResolvedValue(adminUser);
 
@@ -314,13 +312,13 @@ describe('Social Posts API (e2e)', () => {
         { id: ids[2], sortOrder: 2 },
       ]);
 
-      // 目前因路由順序問題會返回 400（'reorder' 被當作 UUID 驗證）
-      // 修復路由順序後應改回 expect(200)
       await request(app.getHttpServer())
         .put('/api/v1/admin/social-posts/reorder')
         .set(authHeader('mock-jwt-token'))
         .send({ ids })
-        .expect(400);
+        .expect(200);
+
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
 
     it('應該拒絕非管理員的請求', async () => {

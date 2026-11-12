@@ -114,6 +114,16 @@ export class AdminLocationsController {
     return this.locationsService.addImage(id, dto);
   }
 
+  // Must stay above ':id/images/:imageId', or 'reorder' is taken as an imageId
+  @Put(':id/images/reorder')
+  @AuditLog('UPDATE', 'locations')
+  reorderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReorderLocationImagesDto,
+  ) {
+    return this.locationsService.reorderImages(id, dto.imageIds);
+  }
+
   @Put(':id/images/:imageId')
   @AuditLog('UPDATE', 'locations')
   updateImage(
@@ -131,14 +141,5 @@ export class AdminLocationsController {
     @Param('imageId', ParseUUIDPipe) imageId: string,
   ) {
     return this.locationsService.removeImage(id, imageId);
-  }
-
-  @Put(':id/images/reorder')
-  @AuditLog('UPDATE', 'locations')
-  reorderImages(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ReorderLocationImagesDto,
-  ) {
-    return this.locationsService.reorderImages(id, dto.imageIds);
   }
 }
