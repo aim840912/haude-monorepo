@@ -1,26 +1,54 @@
 import { Injectable } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import {
+  InjectThrottlerOptions,
+  InjectThrottlerStorage,
+  ThrottlerGuard,
+  type ThrottlerModuleOptions,
+  type ThrottlerStorage,
+} from '@nestjs/throttler';
 
 /**
  * Per-User Rate Limiting Guard
  *
- * Extends the default ThrottlerGuard to track rate limits by:
- * - Authenticated users: user ID (prevents quota sharing on shared IPs)
+ * Tracks rate limits by:
+ * - Authenticated users: user ID from a *verified* access_token cookie
  * - Anonymous users: IP address (default behavior)
  *
- * This ensures a single authenticated user can't exhaust the quota
- * for other users behind the same corporate network/VPN.
+ * This is a global guard, so it runs before JwtAuthGuard: req.user is never
+ * set here. The cookie is verified directly instead — a forged or expired
+ * token falls back to IP, so it can't be used to mint fresh quotas.
  */
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
+  constructor(
+    @InjectThrottlerOptions() options: ThrottlerModuleOptions,
+    @InjectThrottlerStorage() storageService: ThrottlerStorage,
+    reflector: Reflector,
+    private readonly jwtService: JwtService,
+  ) {
+    super(options, storageService, reflector);
+  }
+
   protected async getTracker(req: Record<string, unknown>): Promise<string> {
-    // If user is authenticated, use their ID for rate limiting
-    const user = req.user as { userId?: string } | undefined;
-    if (user?.userId) {
-      return `user:${user.userId}`;
+    const userId = this.verifiedUserId(req);
+    if (userId) {
+      return `user:${userId}`;
     }
 
     // Fallback to IP for anonymous requests
     return super.getTracker(req);
+  }
+
+  private verifiedUserId(req: Record<string, unknown>): string | undefined {
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const token = cookies?.access_token;
+    if (!token) return undefined;
+    try {
+      return this.jwtService.verify<{ sub: string }>(token).sub;
+    } catch {
+      return undefined;
+    }
   }
 }

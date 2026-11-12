@@ -66,6 +66,7 @@ const googleStrategyProvider = {
     JwtStrategy,
     googleStrategyProvider,
   ],
-  exports: [AuthService],
+  // JwtModule: the global UserThrottlerGuard verifies the access_token cookie
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
