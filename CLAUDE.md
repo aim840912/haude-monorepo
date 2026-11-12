@@ -311,6 +311,12 @@ GET    /health/ready    # readiness，DB 斷線回 503
 - **線上驗收**：`curl -sI https://haude-api.onrender.com/api/v1/auth/google | grep -i location` 的 `redirect_uri` 要指向 haude-web；`curl -s -o /dev/null -w '%{http_code}' https://haude-web.vercel.app/api/v1/products` 回 200 代表代理正常；最後用無痕視窗實際用 Google 登入一次（2026-11-11 通過）
 - Admin（`haude-admin.vercel.app`，Vite）沒有這層代理，仍是跨網站。
 
+### CSRF：Origin 白名單（改動前必讀）
+
+- API 對 POST/PUT/PATCH/DELETE 檢查 `Origin`（`apps/api/src/common/middleware/origin-check.middleware.ts`，在 `main.ts` 掛載），白名單與 CORS 共用 Render 的 `FRONTEND_URL` / `ADMIN_URL`。前端不送 CSRF token。
+- **症狀**：線上下單、後台改資料全部回 403 `Origin not allowed`。**判斷**：Render 的 `FRONTEND_URL` / `ADMIN_URL` 是否與瀏覽器網址列的來源**完全相同**（含 `https://`、不可有結尾 `/`）。
+- 新增「第三方從自己的網域 POST 進來」的端點（金流、Webhook 的瀏覽器導回）→ 加進 `main.ts` 的排除前綴，否則會被擋。目前只排除 `/api/v1/payments/ecpay/`；這類端點必須靠簽章驗證，不能靠 cookie。
+
 ### 訂單狀態（改動前必讀）
 
 - 狀態只能照 `packages/types/src/order.ts` 的 `ORDER_STATUS_TRANSITIONS` 轉換：API 拒絕表外的轉換，後台只列表內選項。要新增轉換先改這張表。
