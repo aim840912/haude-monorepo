@@ -2,46 +2,28 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
-import { authService } from '@/services/auth'
+import { processOAuthCallback } from '@/services/auth/processOAuthCallback'
 import logger from '@/lib/logger'
 
 /**
  * Google OAuth callback page
- * Processes user info from server redirect — tokens are in httpOnly cookies
- * URL format: /auth/callback#user=xxx&csrfToken=xxx
+ * Processes the server redirect — tokens are in httpOnly cookies
+ * URL format: /auth/callback#user=xxx  or  /auth/callback#error=xxx
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
-  const { setAuth } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(true)
 
   useEffect(() => {
     const processCallback = async () => {
+      // Read synchronously: StrictMode runs this effect twice in dev, and both
+      // runs must see the fragment before either one clears it below.
+      const hash = window.location.hash
+
       try {
-        // Read user info from URL fragment (tokens are in httpOnly cookies)
-        const hash = window.location.hash.substring(1) // Remove #
-        const params = new URLSearchParams(hash)
-
-        const userJson = params.get('user')
-        const csrfToken = params.get('csrfToken')
-
-        if (!userJson) {
-          throw new Error('缺少認證資訊')
-        }
-
-        // Parse user info from URL fragment (unverified — set temporarily so cookies work)
-        const user = JSON.parse(decodeURIComponent(userJson))
-        setAuth(user, csrfToken ?? undefined)
-
-        // Verify session is actually valid: httpOnly cookie must be accepted by server.
-        // This prevents spoofing via crafted /auth/callback#user={fake} URLs.
-        // NOTE: /auth/me responds with { user }, so unwrap it — storing the whole
-        // envelope leaves user.role/user.name undefined for every OAuth login.
-        const { user: verifiedUser } = await authService.getMe()
-        setAuth(verifiedUser, csrfToken ?? undefined)
+        await processOAuthCallback(hash)
 
         // Merge local cart to backend (if any)
         try {
@@ -55,13 +37,16 @@ export default function AuthCallbackPage() {
         router.replace('/')
       } catch (err) {
         logger.error('Google 登入處理失敗', { error: err })
+        // Drop the fragment so the user JSON doesn't linger in the address bar
+        // or get re-processed on reload (success navigates away instead).
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
         setError(err instanceof Error ? err.message : '登入失敗')
         setIsProcessing(false)
       }
     }
 
     processCallback()
-  }, [router, setAuth])
+  }, [router])
 
   if (error) {
     return (
@@ -86,9 +71,7 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-tea mx-auto mb-4"></div>
-        <p className="text-gray-600">
-          {isProcessing ? '正在處理登入...' : '準備導向...'}
-        </p>
+        <p className="text-gray-600">{isProcessing ? '正在處理登入...' : '準備導向...'}</p>
       </div>
     </div>
   )
