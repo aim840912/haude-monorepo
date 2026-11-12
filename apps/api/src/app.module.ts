@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
+import { pinoHttpOptions } from './common/logger/pino-http.options';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { envValidationSchema } from './config/env.validation';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -47,28 +48,7 @@ import { DataRetentionModule } from './modules/data-retention/data-retention.mod
     }),
 
     // Structured Logging - JSON in production, pretty print in dev
-    LoggerModule.forRoot({
-      pinoHttp: {
-        // Auto-assign request ID
-        genReqId: (req) =>
-          req.headers['x-request-id']?.toString() || crypto.randomUUID(),
-        customProps: () => ({
-          context: 'HTTP',
-        }),
-        // Reduce noise: skip health check logs
-        autoLogging: {
-          ignore: (req) => req.url === '/health',
-        },
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                target: 'pino-pretty',
-                options: { colorize: true, singleLine: true },
-              }
-            : undefined,
-        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
-      },
-    }),
+    LoggerModule.forRoot({ pinoHttp: pinoHttpOptions }),
 
     // Scheduling - 排程任務（如訂單超時自動取消）
     ScheduleModule.forRoot(),
