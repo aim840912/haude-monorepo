@@ -27,6 +27,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 /**
  * 公開 API + 使用者預約
@@ -95,21 +96,25 @@ export class AdminFarmToursController {
   }
 
   @Post('draft')
+  @AuditLog('CREATE', 'farm-tours')
   createDraft() {
     return this.farmToursService.createDraft();
   }
 
   @Post()
+  @AuditLog('CREATE', 'farm-tours')
   create(@Body() dto: CreateFarmTourDto) {
     return this.farmToursService.create(dto);
   }
 
   @Put(':id')
+  @AuditLog('UPDATE', 'farm-tours')
   update(@Param('id') id: string, @Body() dto: UpdateFarmTourDto) {
     return this.farmToursService.update(id, dto);
   }
 
   @Delete(':id')
+  @AuditLog('DELETE', 'farm-tours')
   remove(@Param('id') id: string) {
     return this.farmToursService.remove(id);
   }
@@ -132,6 +137,7 @@ export class AdminFarmToursController {
   }
 
   @Post(':id/images')
+  @AuditLog('UPDATE', 'farm-tours')
   addImage(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateFarmTourImageDto,
@@ -140,6 +146,7 @@ export class AdminFarmToursController {
   }
 
   @Put(':id/images/:imageId')
+  @AuditLog('UPDATE', 'farm-tours')
   updateImage(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('imageId', ParseUUIDPipe) imageId: string,
@@ -149,6 +156,7 @@ export class AdminFarmToursController {
   }
 
   @Delete(':id/images/:imageId')
+  @AuditLog('DELETE', 'farm-tours')
   removeImage(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('imageId', ParseUUIDPipe) imageId: string,
@@ -157,6 +165,7 @@ export class AdminFarmToursController {
   }
 
   @Put(':id/images/reorder')
+  @AuditLog('UPDATE', 'farm-tours')
   reorderImages(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReorderFarmTourImagesDto,

@@ -22,6 +22,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 /**
  * 系統狀態控制器（公開 API）
@@ -70,6 +71,7 @@ export class AdminSystemController {
   }
 
   @Post('maintenance')
+  @AuditLog('UPDATE', 'system')
   @ApiOperation({ summary: '更新維護模式（管理員）' })
   @ApiResponse({ status: 200, description: '維護模式更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -92,6 +94,7 @@ export class AdminSystemController {
   }
 
   @Post('banners')
+  @AuditLog('CREATE', 'banners')
   @ApiOperation({ summary: '新增系統公告（管理員）' })
   @ApiResponse({ status: 201, description: '公告建立成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -101,6 +104,7 @@ export class AdminSystemController {
   }
 
   @Delete('banners/:id')
+  @AuditLog('DELETE', 'banners')
   @ApiOperation({ summary: '刪除系統公告（管理員）' })
   @ApiResponse({ status: 200, description: '公告刪除成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -112,6 +116,7 @@ export class AdminSystemController {
   }
 
   @Delete('banners')
+  @AuditLog('DELETE', 'banners')
   @ApiOperation({ summary: '清除所有公告（管理員）' })
   @ApiResponse({ status: 200, description: '所有公告已清除' })
   @ApiResponse({ status: 401, description: '未認證' })

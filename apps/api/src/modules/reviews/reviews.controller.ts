@@ -21,6 +21,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 /**
  * 評論 Controller
@@ -193,6 +194,7 @@ export class ReviewsController {
    * 審核評論（管理員）
    */
   @Patch('admin/reviews/:id/approve')
+  @AuditLog('STATUS_CHANGE', 'reviews')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.STAFF)
   async approveReview(@Param('id') id: string, @Body() dto: ApproveReviewDto) {
@@ -203,6 +205,7 @@ export class ReviewsController {
    * 刪除評論（管理員）
    */
   @Delete('admin/reviews/:id')
+  @AuditLog('DELETE', 'reviews')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   async adminDeleteReview(

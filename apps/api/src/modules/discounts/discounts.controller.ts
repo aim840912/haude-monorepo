@@ -18,6 +18,7 @@ import { Role } from '@prisma/client';
 import { DiscountsService } from './discounts.service';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { UpdateDiscountDto } from './dto/update-discount.dto';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 @ApiTags('discounts')
 @Controller()
@@ -86,6 +87,7 @@ export class DiscountsController {
    * POST /admin/discounts
    */
   @Post('admin/discounts')
+  @AuditLog('CREATE', 'discounts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -99,6 +101,7 @@ export class DiscountsController {
    * PUT /admin/discounts/:id
    */
   @Put('admin/discounts/:id')
+  @AuditLog('UPDATE', 'discounts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -115,6 +118,7 @@ export class DiscountsController {
    * DELETE /admin/discounts/:id
    */
   @Delete('admin/discounts/:id')
+  @AuditLog('DELETE', 'discounts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()

@@ -25,6 +25,7 @@ import { Role } from '@prisma/client';
 
 import { NotificationsService } from './notifications.service';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 @ApiTags('admin/notifications')
 @Controller('admin/notifications')
@@ -102,6 +103,7 @@ export class StockAlertsController {
   }
 
   @Patch(':productId')
+  @AuditLog('UPDATE', 'stock-alerts', 'productId')
   @ApiOperation({ summary: '更新產品庫存預警設定' })
   @ApiResponse({ status: 200, description: '成功更新設定' })
   async updateSetting(

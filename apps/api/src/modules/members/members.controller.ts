@@ -23,6 +23,7 @@ import {
 import { MembersService } from './members.service';
 import { AdjustLevelDto, AdjustPointsDto } from './dto';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 @ApiTags('members')
 @Controller('members')
@@ -222,6 +223,7 @@ export class AdminMembersController {
   }
 
   @Patch(':id/level')
+  @AuditLog('UPDATE', 'members')
   @ApiOperation({ summary: '手動調整會員等級' })
   @ApiResponse({ status: 200, description: '成功調整會員等級' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -242,6 +244,7 @@ export class AdminMembersController {
   }
 
   @Patch(':id/points')
+  @AuditLog('UPDATE', 'members')
   @ApiOperation({ summary: '手動調整會員積分' })
   @ApiResponse({ status: 200, description: '成功調整會員積分' })
   @ApiResponse({ status: 401, description: '未認證' })

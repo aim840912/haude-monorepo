@@ -20,6 +20,7 @@ import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -50,6 +51,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @AuditLog('UPDATE', 'users')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update user (Admin only)' })
@@ -65,6 +67,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @AuditLog('DELETE', 'users')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete user (Admin only)' })

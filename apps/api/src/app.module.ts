@@ -33,6 +33,7 @@ import { MembersModule } from './modules/members/members.module';
 import { SystemModule } from './modules/system/system.module';
 import { SiteSettingsModule } from './modules/site-settings/site-settings.module';
 import { DataRetentionModule } from './modules/data-retention/data-retention.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { DataRetentionModule } from './modules/data-retention/data-retention.mod
     SystemModule,
     SiteSettingsModule,
     DataRetentionModule,
+    AuditLogsModule,
   ],
   controllers: [AppController],
   providers: [

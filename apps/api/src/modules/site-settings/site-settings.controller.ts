@@ -99,6 +99,7 @@ export class AdminSiteSettingsController {
   }
 
   @Delete('images/file')
+  @AuditLog('DELETE', 'site-settings')
   @ApiOperation({ summary: '刪除單張 Storage 圖片檔案（管理員）' })
   @ApiResponse({ status: 200, description: '檔案刪除成功' })
   @ApiResponse({ status: 401, description: '未認證' })

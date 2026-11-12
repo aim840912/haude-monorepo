@@ -22,6 +22,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 // ========================================
 // 公開 API
@@ -72,6 +73,7 @@ export class AdminSocialPostsController {
   }
 
   @Post()
+  @AuditLog('CREATE', 'social-posts')
   @ApiOperation({ summary: '建立社群貼文（管理員）' })
   @ApiResponse({ status: 201, description: '社群貼文建立成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -81,6 +83,7 @@ export class AdminSocialPostsController {
   }
 
   @Put(':id')
+  @AuditLog('UPDATE', 'social-posts')
   @ApiOperation({ summary: '更新社群貼文（管理員）' })
   @ApiResponse({ status: 200, description: '社群貼文更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -94,6 +97,7 @@ export class AdminSocialPostsController {
   }
 
   @Delete(':id')
+  @AuditLog('DELETE', 'social-posts')
   @ApiOperation({ summary: '刪除社群貼文（管理員）' })
   @ApiResponse({ status: 200, description: '社群貼文刪除成功' })
   @ApiResponse({ status: 401, description: '未認證' })
@@ -104,6 +108,7 @@ export class AdminSocialPostsController {
   }
 
   @Put('reorder')
+  @AuditLog('UPDATE', 'social-posts')
   @ApiOperation({ summary: '重新排序社群貼文（管理員）' })
   @ApiResponse({ status: 200, description: '排序更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })

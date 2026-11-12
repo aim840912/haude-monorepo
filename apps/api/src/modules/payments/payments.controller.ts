@@ -35,6 +35,7 @@ import {
   ConfirmManualRefundDto,
 } from './dto';
 import { ConfigService } from '@nestjs/config';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string };
@@ -249,6 +250,7 @@ export class AdminPaymentsController {
   // ========================================
 
   @Post('refund')
+  @AuditLog('CREATE', 'refunds')
   @ApiOperation({ summary: '執行退款（管理員）' })
   @ApiResponse({ status: 201, description: '退款已處理' })
   @ApiResponse({ status: 400, description: '退款條件不符' })
@@ -267,6 +269,7 @@ export class AdminPaymentsController {
   }
 
   @Post('refund/:id/confirm')
+  @AuditLog('STATUS_CHANGE', 'refunds')
   @ApiOperation({ summary: '確認人工退款（ATM/CVS）' })
   @ApiResponse({ status: 200, description: '退款已確認' })
   @ApiResponse({ status: 400, description: '退款狀態不允許確認' })

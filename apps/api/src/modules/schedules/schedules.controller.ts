@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
+import { AuditLog } from '@/common/decorators/audit-log.decorator';
 
 /**
  * 公開 API
@@ -62,16 +63,19 @@ export class AdminSchedulesController {
   }
 
   @Post()
+  @AuditLog('CREATE', 'schedules')
   create(@Body() dto: CreateScheduleDto) {
     return this.schedulesService.create(dto);
   }
 
   @Put(':id')
+  @AuditLog('UPDATE', 'schedules')
   update(@Param('id') id: string, @Body() dto: UpdateScheduleDto) {
     return this.schedulesService.update(id, dto);
   }
 
   @Delete(':id')
+  @AuditLog('DELETE', 'schedules')
   remove(@Param('id') id: string) {
     return this.schedulesService.remove(id);
   }

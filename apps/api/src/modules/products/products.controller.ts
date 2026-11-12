@@ -112,6 +112,7 @@ export class ProductsController {
   // ========================================
 
   @Post()
+  @AuditLog('CREATE', 'products')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -128,6 +129,7 @@ export class ProductsController {
   }
 
   @Put(':id')
+  @AuditLog('UPDATE', 'products')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -152,6 +154,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @AuditLog('DELETE', 'products')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -242,6 +245,7 @@ export class AdminProductsController {
   }
 
   @Put(':id/images/:imageId')
+  @AuditLog('UPDATE', 'products')
   @ApiOperation({ summary: '更新產品圖片資訊' })
   @ApiResponse({ status: 200, description: '圖片更新成功' })
   @ApiResponse({ status: 404, description: '產品或圖片不存在' })
@@ -266,6 +270,7 @@ export class AdminProductsController {
   }
 
   @Put(':id/images/reorder')
+  @AuditLog('UPDATE', 'products')
   @ApiOperation({ summary: '重新排序產品圖片' })
   @ApiResponse({ status: 200, description: '排序更新成功' })
   @ApiResponse({ status: 404, description: '產品不存在' })
