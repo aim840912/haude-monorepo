@@ -39,6 +39,14 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { UsersService } from '../users/users.service';
 
+/**
+ * Must match the web proxy prefix (/api/v1): the browser only sends these
+ * cookies to /auth/refresh when the request path starts with this value.
+ */
+const REFRESH_COOKIE_PATH = '/api/v1/auth/refresh';
+const REMEMBER_ME_COOKIE = 'remember_me';
+const REMEMBER_ME_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -84,11 +92,24 @@ export class AuthController {
     });
 
     // Refresh token cookie — restricted path, 30d or session
+    const refreshMaxAge = rememberMe ? REMEMBER_ME_MAX_AGE_MS : undefined;
     res.cookie('refresh_token', refreshToken, {
       ...this.cookieBase(),
-      path: '/api/v1/auth/refresh',
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined,
+      path: REFRESH_COOKIE_PATH,
+      maxAge: refreshMaxAge,
     });
+
+    // The refresh endpoint has no other way to know the user chose
+    // "remember me": without this, the first refresh downgrades the 30-day
+    // cookie to a session cookie. Same path + lifetime as refresh_token so it
+    // is sent to /auth/refresh exactly when refresh_token is.
+    if (rememberMe) {
+      res.cookie(REMEMBER_ME_COOKIE, '1', {
+        ...this.cookieBase(),
+        path: REFRESH_COOKIE_PATH,
+        maxAge: refreshMaxAge,
+      });
+    }
   }
 
   /**
@@ -110,7 +131,11 @@ export class AuthController {
     res.clearCookie('access_token', { ...this.cookieBase(), path: '/' });
     res.clearCookie('refresh_token', {
       ...this.cookieBase(),
-      path: '/api/v1/auth/refresh',
+      path: REFRESH_COOKIE_PATH,
+    });
+    res.clearCookie(REMEMBER_ME_COOKIE, {
+      ...this.cookieBase(),
+      path: REFRESH_COOKIE_PATH,
     });
   }
 
@@ -480,8 +505,9 @@ export class AuthController {
     const { accessToken, refreshToken: newRefreshToken } =
       await this.authService.refreshAccessToken(refreshToken);
 
-    // Set new httpOnly auth cookies
-    this.setAuthCookies(res, accessToken, newRefreshToken);
+    // Set new httpOnly auth cookies, keeping the lifetime chosen at login
+    const rememberMe = req.cookies?.[REMEMBER_ME_COOKIE] === '1';
+    this.setAuthCookies(res, accessToken, newRefreshToken, rememberMe);
 
     return { message: 'Token refreshed successfully' };
   }

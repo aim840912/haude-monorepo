@@ -530,4 +530,77 @@ describe('AuthController', () => {
       );
     });
   });
+
+  // ========================================
+  // refresh — 「記住我」必須跨刷新保留
+  // ========================================
+
+  describe('refresh — 記住我', () => {
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    const REFRESH_PATH = '/api/v1/auth/refresh';
+
+    /** Options passed to res.cookie(name, value, options) for the given cookie */
+    function cookieOptions(name: string) {
+      const call = (mockResponse.cookie as jest.Mock).mock.calls.find(
+        ([n]) => n === name,
+      );
+      return call?.[2] as { maxAge?: number; path?: string } | undefined;
+    }
+
+    beforeEach(() => {
+      mockAuthService.refreshAccessToken.mockResolvedValue({
+        accessToken: 'new-access',
+        refreshToken: 'new-refresh',
+      });
+    });
+
+    it('勾選記住我登入時，另設同路徑、同期限的 remember_me cookie', async () => {
+      mockAuthService.login.mockResolvedValue({
+        user: { id: 'user-1' },
+        accessToken: 'a',
+        refreshToken: 'r',
+      });
+
+      await controller.login(
+        { email: 'a@b.c', password: 'x', rememberMe: true },
+        mockResponse,
+      );
+
+      expect(cookieOptions('remember_me')).toMatchObject({
+        path: REFRESH_PATH,
+        maxAge: THIRTY_DAYS_MS,
+      });
+    });
+
+    it('帶 remember_me cookie 刷新時，新的 refresh cookie 仍是 30 天', async () => {
+      const req = {
+        cookies: { refresh_token: 'old', remember_me: '1' },
+      } as any;
+
+      await controller.refresh(req, mockResponse);
+
+      expect(cookieOptions('refresh_token')?.maxAge).toBe(THIRTY_DAYS_MS);
+      expect(cookieOptions('remember_me')?.maxAge).toBe(THIRTY_DAYS_MS);
+    });
+
+    it('沒有 remember_me cookie 刷新時，refresh cookie 維持 session cookie', async () => {
+      const req = { cookies: { refresh_token: 'old' } } as any;
+
+      await controller.refresh(req, mockResponse);
+
+      expect(cookieOptions('refresh_token')?.maxAge).toBeUndefined();
+      expect(cookieOptions('remember_me')).toBeUndefined();
+    });
+
+    it('登出時一併清除 remember_me', async () => {
+      const req = { cookies: {} } as any;
+
+      await controller.logout(req, mockResponse);
+
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'remember_me',
+        expect.objectContaining({ path: REFRESH_PATH }),
+      );
+    });
+  });
 });
