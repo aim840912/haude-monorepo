@@ -1,5 +1,5 @@
 import type { Options } from 'pino-http';
-import { stripUrlSecrets } from './url-secrets';
+import { stripUrlSecrets, stripUrlSecretsInText } from './url-secrets';
 
 /** Shape of pino's default request serializer output */
 interface LoggedRequest {
@@ -18,6 +18,7 @@ interface LoggedResponse {
 }
 
 const HEALTH_PATHS = new Set(['/health', '/health/ready']);
+const REQUEST_ID_FORMAT = /^[\w-]{1,128}$/;
 
 /**
  * Request logging options for nestjs-pino (JSON in production, pretty in dev).
@@ -27,14 +28,31 @@ const HEALTH_PATHS = new Set(['/health', '/health/ready']);
  * evaluated when they were inline.
  */
 export const buildPinoHttpOptions = (): Options => ({
-  // One id per request, whichever of this and RequestIdMiddleware runs first:
-  // both reuse x-request-id when present and write it back, so the log line,
-  // the X-Request-Id response header and error bodies all carry the same id.
+  // The only source of the request id: written back to the request (read by
+  // AllExceptionsFilter for error bodies) and the X-Request-Id response
+  // header, so a user-reported id always finds its log lines. A client id is
+  // reused only when well formed; anything else could be oversized or reuse
+  // another request's id to muddy log searches.
   genReqId: (req, res) => {
-    const id = req.headers['x-request-id']?.toString() || crypto.randomUUID();
+    const incoming = req.headers['x-request-id']?.toString();
+    const id =
+      incoming && REQUEST_ID_FORMAT.test(incoming)
+        ? incoming
+        : crypto.randomUUID();
     req.headers['x-request-id'] = id;
     res.setHeader('x-request-id', id);
     return id;
+  },
+  // Every application log (this.logger.x in any file) goes through this
+  // pino instance, so URL secrets in message strings are cut here once —
+  // e.g. the slow-request warning and Nest's "Cannot GET <originalUrl>".
+  hooks: {
+    logMethod(args, method) {
+      const cleaned = args.map((arg: unknown) =>
+        typeof arg === 'string' ? stripUrlSecretsInText(arg) : arg,
+      ) as typeof args;
+      method.apply(this, cleaned);
+    },
   },
   customProps: () => ({
     context: 'HTTP',
@@ -69,20 +87,28 @@ export const buildPinoHttpOptions = (): Options => ({
     paths: [
       'req.headers.cookie',
       'req.headers.authorization',
+      'req.headers["proxy-authorization"]',
       'req.headers["x-vercel-proxy-signature"]',
       'req.headers["x-vercel-proxy-signature-ts"]',
       'res.headers["set-cookie"]',
     ],
     censor: '[REDACTED]',
   },
-  // Successful health checks are noise (cron-job.org hits /health/ready every
-  // 5 minutes); failures still log. pino-http's default level is 'info'.
-  customLogLevel: (req, res, err) =>
-    !err &&
-    res.statusCode < 400 &&
-    HEALTH_PATHS.has(stripUrlSecrets(req.url ?? ''))
-      ? 'silent'
-      : 'info',
+  customLogLevel: (req, res, err) => {
+    // Error level so Render Logs level filters and alerts catch failures
+    if (err || res.statusCode >= 500) return 'error';
+    // Successful health checks are noise (cron-job.org hits /health/ready
+    // every 5 minutes). writableEnded: a request the client gave up on (e.g.
+    // stuck on the database) still reports the default 200 and must be logged.
+    if (
+      res.writableEnded &&
+      res.statusCode < 400 &&
+      HEALTH_PATHS.has(stripUrlSecrets(req.url ?? ''))
+    ) {
+      return 'silent';
+    }
+    return 'info';
+  },
   transport:
     process.env.NODE_ENV !== 'production'
       ? {

@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ApiException, ErrorCode } from '../exceptions';
-import { stripUrlSecrets } from '../logger/url-secrets';
 
 /**
  * 統一錯誤回應介面
@@ -54,12 +53,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // 記錄錯誤 - 5xx 錯誤使用 error 級別，其他使用 warn
     if (status >= 500) {
       this.logger.error(
-        `[${errorCode}] ${message} - ${request.method} ${stripUrlSecrets(request.url)}`,
+        `[${errorCode}] ${message} - ${request.method} ${request.url}`,
         exception instanceof Error ? exception.stack : undefined,
       );
     } else if (status >= 400) {
       this.logger.warn(
-        `[${errorCode}] ${message} - ${request.method} ${stripUrlSecrets(request.url)}`,
+        `[${errorCode}] ${message} - ${request.method} ${request.url}`,
       );
     }
 
