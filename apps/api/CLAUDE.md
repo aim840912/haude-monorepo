@@ -368,10 +368,9 @@ npx prisma migrate deploy
 
 ### Log 不可寫入憑證與網址參數
 
-請求 log（`src/common/logger/pino-http.options.ts`）會遮掉 cookie、authorization、Vercel 簽章與 Set-Cookie，
-並把 url／referer／location 的 query 和 fragment 全部切掉（重設密碼 `?token=`、OAuth `#user=` 都靠這個擋）。
-**自己用 `this.logger` 印網址時要套 `stripUrlSecrets()`**（`src/common/logger/url-secrets.ts`）——
-pino 的遮罩只管它自己的 `req` 欄位，訊息字串裡的 `request.url` 會原文寫進 Render Logs。
+`src/common/logger/pino-http.options.ts` 在 pino 出口統一處理：遮掉 cookie、authorization、Vercel 簽章與 Set-Cookie，
+並把 url／referer／location **以及所有 log 訊息字串裡**網址的 query 和 fragment 切掉（重設密碼 `?token=`、OAuth `?code=`／`#user=` 都靠這個擋）。
+`this.logger`（Nest 或 nestjs-pino）會自動經過，不必自己清理。⛔ **不要用 `console.log`／`process.stdout` 印請求資訊**——它們繞過 pino，什麼都不會遮。
 
 ### 資料保留
 
