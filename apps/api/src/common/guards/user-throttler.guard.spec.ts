@@ -54,4 +54,31 @@ describe('UserThrottlerGuard.getTracker', () => {
     );
     expect(jwt.verify).not.toHaveBeenCalled();
   });
+
+  // 2026-11-12 線上實測（Render log）：每個請求的 req.ip 都是 127.0.0.1，
+  // 全站匿名請求共用一份額度。cf-connecting-ip 由 Cloudflare 設定，
+  // 偽造它的請求在邊緣層就被 403 擋掉。
+  it('匿名請求以 cf-connecting-ip 限流，不用 req.ip（永遠是 127.0.0.1）', async () => {
+    await expect(
+      track({
+        ip: '127.0.0.1',
+        headers: { 'cf-connecting-ip': '220.143.33.199' },
+        cookies: {},
+      }),
+    ).resolves.toBe('220.143.33.199');
+  });
+
+  it('可偽造的 x-forwarded-for / x-vercel-forwarded-for 不採用', async () => {
+    await expect(
+      track({
+        ip: '127.0.0.1',
+        headers: {
+          'cf-connecting-ip': '220.143.33.199',
+          'x-forwarded-for': '1.2.3.4, 220.143.33.199',
+          'x-vercel-forwarded-for': '9.9.9.9',
+        },
+        cookies: {},
+      }),
+    ).resolves.toBe('220.143.33.199');
+  });
 });

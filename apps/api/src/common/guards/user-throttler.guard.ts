@@ -37,7 +37,21 @@ export class UserThrottlerGuard extends ThrottlerGuard {
       return `user:${userId}`;
     }
 
-    // Fallback to IP for anonymous requests
+    // Anonymous: the client IP as Cloudflare (in front of Render) saw it.
+    // req.ip is useless here — measured 2026-11-12, it is 127.0.0.1 for every
+    // request, so everyone shared one quota. cf-connecting-ip is set by
+    // Cloudflare and a request forging it is rejected at the edge (403);
+    // x-forwarded-for and x-vercel-forwarded-for pass through forged, so they
+    // must not be used.
+    // shortcut: web/admin traffic arrives via Vercel's proxy, so this is a
+    // Vercel egress IP shared by its users. Upgrade path: trust
+    // x-vercel-forwarded-for only after verifying x-vercel-proxy-signature.
+    const cfIp = (req.headers as Record<string, unknown> | undefined)?.[
+      'cf-connecting-ip'
+    ];
+    if (typeof cfIp === 'string' && cfIp) {
+      return cfIp;
+    }
     return super.getTracker(req);
   }
 
