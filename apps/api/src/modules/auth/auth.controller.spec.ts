@@ -592,6 +592,25 @@ describe('AuthController', () => {
       expect(cookieOptions('remember_me')).toBeUndefined();
     });
 
+    it('不勾選記住我登入時，清掉上一次留下的 remember_me（共用電腦）', async () => {
+      mockAuthService.login.mockResolvedValue({
+        user: { id: 'user-1' },
+        accessToken: 'a',
+        refreshToken: 'r',
+      });
+
+      await controller.login(
+        { email: 'a@b.c', password: 'x', rememberMe: false },
+        mockResponse,
+      );
+
+      expect(cookieOptions('remember_me')).toBeUndefined();
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'remember_me',
+        expect.objectContaining({ path: REFRESH_PATH }),
+      );
+    });
+
     it('登出時一併清除 remember_me', async () => {
       const req = { cookies: {} } as any;
 

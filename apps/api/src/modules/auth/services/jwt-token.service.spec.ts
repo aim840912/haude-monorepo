@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@/prisma/prisma.service';
 import { JwtTokenService } from './jwt-token.service';
@@ -62,13 +62,13 @@ describe('JwtTokenService.refreshAccessToken', () => {
     jest.useRealTimers();
   });
 
-  it('30 秒內重複使用剛換掉的舊 token：回 401，但不撤銷全部', async () => {
+  it('30 秒內重複使用剛換掉的舊 token：回 409（前端會等新 cookie），不撤銷全部', async () => {
     prisma.refreshToken.findUnique.mockResolvedValue(
       storedToken({ revokedAt: new Date(NOW.getTime() - 5_000) }),
     );
 
     await expect(service.refreshAccessToken('old-token')).rejects.toThrow(
-      UnauthorizedException,
+      ConflictException,
     );
 
     expect(revokedAll()).toBe(false);
@@ -104,7 +104,7 @@ describe('JwtTokenService.refreshAccessToken', () => {
     prisma.refreshToken.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(service.refreshAccessToken('old-token')).rejects.toThrow(
-      UnauthorizedException,
+      ConflictException,
     );
 
     expect(prisma.refreshToken.create).not.toHaveBeenCalled();

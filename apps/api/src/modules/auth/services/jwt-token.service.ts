@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -57,11 +62,12 @@ export class JwtTokenService {
     if (stored.revokedAt) {
       // Two tabs refreshing at once is normal: the second one sends the token
       // the first one just rotated (its new cookie arrives a moment later).
-      // Within the grace window reject without punishing — nothing is issued,
-      // so a stolen token replayed in this window still gets nothing.
+      // Within the grace window answer 409 (not 401): the client waits for the
+      // other tab's cookies and retries instead of logging out. Nothing is
+      // issued, so a stolen token replayed in this window still gets nothing.
       const sinceRevokedMs = Date.now() - stored.revokedAt.getTime();
       if (sinceRevokedMs < this.REUSE_GRACE_MS) {
-        throw new UnauthorizedException('Refresh token was just rotated');
+        throw new ConflictException('Refresh token was just rotated');
       }
 
       this.logger.warn(
@@ -86,7 +92,7 @@ export class JwtTokenService {
       data: { revokedAt: new Date() },
     });
     if (count === 0) {
-      throw new UnauthorizedException('Refresh token was just rotated');
+      throw new ConflictException('Refresh token was just rotated');
     }
 
     return this.generateTokenPair(stored.user.id, stored.user.email);

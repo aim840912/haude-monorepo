@@ -25,7 +25,8 @@ export function createOriginCheck(
   allowedOrigins: readonly string[],
   exemptPrefixes: readonly string[] = [],
 ) {
-  const allowed = new Set(allowedOrigins);
+  // Browsers never send a trailing slash in Origin; tolerate one in env vars
+  const allowed = new Set(allowedOrigins.map((o) => o.replace(/\/+$/, '')));
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const origin = req.headers.origin;

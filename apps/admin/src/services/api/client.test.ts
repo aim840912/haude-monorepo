@@ -75,33 +75,55 @@ describe('api refresh interceptor', () => {
     expect(logout).not.toHaveBeenCalled()
   })
 
-  it('刷新回 403 時登出', async () => {
-    refreshFailsWith(403)
+  it.each([401, 403])('刷新回 %i 時直接登出，不重送原請求', async (status) => {
+    refreshFailsWith(status)
+    const calls: string[] = []
+    const inner = adapter([401, 200])
+    api.defaults.adapter = (config) => {
+      calls.push(config.url ?? '')
+      return inner(config)
+    }
 
     await expect(api.get('/orders')).rejects.toBeInstanceOf(AxiosError)
 
     expect(logout).toHaveBeenCalledTimes(1)
+    expect(calls).toHaveLength(1)
   })
 
-  // 多分頁：另一個分頁剛換掉 refresh token，這個分頁的刷新拿到 401，
-  // 但瀏覽器裡的 cookie 已經是新的 —— 先重送一次原請求再決定要不要登出
-  it('刷新回 401、重送原請求成功時不登出', async () => {
-    refreshFailsWith(401)
-    api.defaults.adapter = adapter([401, 200])
+  // 多分頁：另一個分頁剛換掉 refresh token，API 在寬限期內回 409。
+  // 那個分頁的新 cookie 可能還在路上 —— 等一下再重送原請求，不登出
+  describe('刷新回 409（另一個分頁剛換掉 token）', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
 
-    const res = await api.get('/orders')
+    afterEach(() => {
+      vi.useRealTimers()
+    })
 
-    expect(res.data).toEqual({ ok: true })
-    expect(logout).not.toHaveBeenCalled()
-  })
+    it('等待後重送原請求成功時不登出', async () => {
+      refreshFailsWith(409)
+      api.defaults.adapter = adapter([401, 200])
 
-  it('刷新回 401、重送原請求仍然 401 時登出', async () => {
-    refreshFailsWith(401)
-    api.defaults.adapter = adapter([401, 401])
+      const pending = api.get('/orders')
+      await vi.advanceTimersByTimeAsync(2000)
+      const res = await pending
 
-    await expect(api.get('/orders')).rejects.toBeInstanceOf(AxiosError)
+      expect(res.data).toEqual({ ok: true })
+      expect(logout).not.toHaveBeenCalled()
+    })
 
-    expect(logout).toHaveBeenCalledTimes(1)
+    it('重送原請求仍然 401 時登出', async () => {
+      refreshFailsWith(409)
+      api.defaults.adapter = adapter([401, 401])
+
+      const pending = api.get('/orders')
+      const assertion = expect(pending).rejects.toBeInstanceOf(AxiosError)
+      await vi.advanceTimersByTimeAsync(2000)
+      await assertion
+
+      expect(logout).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('刷新成功時重送原請求', async () => {

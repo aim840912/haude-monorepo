@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cartStore'
 import { processOAuthCallback } from '@/services/auth/processOAuthCallback'
@@ -15,11 +15,15 @@ export default function AuthCallbackPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(true)
+  // StrictMode runs effects twice in dev; without this guard the local cart
+  // would be merged into the backend cart twice.
+  const started = useRef(false)
 
   useEffect(() => {
+    if (started.current) return
+    started.current = true
+
     const processCallback = async () => {
-      // Read synchronously: StrictMode runs this effect twice in dev, and both
-      // runs must see the fragment before either one clears it below.
       const hash = window.location.hash
 
       try {

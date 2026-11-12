@@ -109,6 +109,14 @@ export class AuthController {
         path: REFRESH_COOKIE_PATH,
         maxAge: refreshMaxAge,
       });
+    } else {
+      // A leftover remember_me from an earlier login (session expired without
+      // logout) would otherwise upgrade this session cookie to 30 days on the
+      // first refresh — wrong on a shared computer.
+      res.clearCookie(REMEMBER_ME_COOKIE, {
+        ...this.cookieBase(),
+        path: REFRESH_COOKIE_PATH,
+      });
     }
   }
 

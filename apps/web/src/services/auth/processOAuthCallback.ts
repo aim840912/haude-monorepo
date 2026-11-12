@@ -15,9 +15,12 @@ import { authService } from '@/services/auth'
 export async function processOAuthCallback(hash: string): Promise<void> {
   const params = new URLSearchParams(hash.replace(/^#/, ''))
 
+  // The #error= text is attacker-controllable too: show a fixed message so the
+  // site can't be made to display arbitrary text (phishing). Keep the detail
+  // on the error for logging.
   const errorMsg = params.get('error')
   if (errorMsg) {
-    throw new Error(errorMsg)
+    throw new Error('登入失敗，請重新登入', { cause: errorMsg })
   }
 
   if (!params.get('user')) {

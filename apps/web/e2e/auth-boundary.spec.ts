@@ -23,7 +23,6 @@ const PROTECTED_ROUTES = [
 const FAKE_AUTH_STATE = JSON.stringify({
   state: {
     user: { id: '1', email: 'test@example.com', name: 'Test User', role: 'USER', createdAt: '2025-01-01T00:00:00Z' },
-    csrfToken: null,
     isAuthenticated: true,
   },
   version: 0,
@@ -140,7 +139,7 @@ test.describe('Auth Boundary: token cleared from storage', () => {
     // Set corrupted auth data (no user = not authenticated)
     await page.evaluate(() => {
       localStorage.setItem('auth-storage', JSON.stringify({
-        state: { user: null, csrfToken: null, isAuthenticated: false },
+        state: { user: null, isAuthenticated: false },
         version: 0,
       }))
     })

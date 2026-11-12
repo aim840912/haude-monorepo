@@ -33,6 +33,9 @@ function processQueue(error: unknown) {
   failedQueue = []
 }
 
+/** How long to wait for another tab's refresh cookies before retrying */
+const CONCURRENT_REFRESH_WAIT_MS = 1500
+
 function statusOf(err: unknown): number | undefined {
   return axios.isAxiosError(err) ? err.response?.status : undefined
 }
@@ -81,10 +84,15 @@ api.interceptors.response.use(
       // Retry the original request
       return api(originalRequest)
     } catch (refreshError) {
-      // A 401 may only mean another tab rotated the refresh token a moment ago;
-      // its new cookies are already in this browser. Retry once before deciding
-      // the session is dead.
-      if (statusOf(refreshError) === 401) {
+      // 409 = another tab rotated the refresh token a moment ago (API grace
+      // window). Its Set-Cookie may still be in flight, so wait briefly, then
+      // retry the original request with the cookies it set.
+      // shortcut: one fixed wait; if the other tab's refresh response takes
+      // longer than this the user is logged out. Upgrade path: retry the refresh
+      // itself (or BroadcastChannel between tabs) instead of a timed wait.
+      let sessionDead = isSessionDead(refreshError)
+      if (statusOf(refreshError) === 409) {
+        await new Promise((resolve) => setTimeout(resolve, CONCURRENT_REFRESH_WAIT_MS))
         try {
           const response = await api(originalRequest)
           retryQueue()
@@ -95,14 +103,16 @@ api.interceptors.response.use(
             retryQueue()
             return Promise.reject(retryError)
           }
+          // Still 401 after the other tab had time to refresh: session is gone
+          sessionDead = true
         }
       }
 
       processQueue(error)
-      // Only a 401/403 from /auth/refresh means the session is dead. 429 (the
+      // Only a 401/403 from /auth/refresh (or still 401 after the 409 wait) means the session is dead. 429 (the
       // refresh endpoint is rate-limited per IP), 5xx, network errors and Render
       // cold-start timeouts are transient: fail this request, keep the user in.
-      if (isSessionDead(refreshError)) {
+      if (sessionDead) {
         useAuthStore.getState().logout()
         window.location.href = '/login'
       }

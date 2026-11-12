@@ -56,11 +56,14 @@ describe('processOAuthCallback', () => {
     expect(seen.some((u) => (u as { name?: string } | null)?.name === 'Fake Admin')).toBe(false)
   })
 
-  it('#error= 時拋出 API 回傳的實際錯誤，且不呼叫 /auth/me', async () => {
-    await expect(
-      processOAuthCallback(`#error=${encodeURIComponent('Dev login failed: boom')}`)
-    ).rejects.toThrow('Dev login failed: boom')
+  // #error= 的內容任何人都能偽造（「帳號已凍結，請撥打 0800…」），不可原樣顯示
+  it('#error= 時顯示固定文案，不顯示網址上的文字，且不呼叫 /auth/me', async () => {
+    const phishing = '您的帳號已被凍結，請撥打 0800-000-000'
 
+    const result = processOAuthCallback(`#error=${encodeURIComponent(phishing)}`)
+
+    await expect(result).rejects.toThrow('登入失敗，請重新登入')
+    await expect(result).rejects.not.toThrow(phishing)
     expect(mockedGetMe).not.toHaveBeenCalled()
   })
 

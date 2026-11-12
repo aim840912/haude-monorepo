@@ -50,12 +50,10 @@ test('Debug: Google OAuth cookie flow', async ({ page, context }) => {
   // Check specific auth cookies
   const accessToken = allCookies.find((c) => c.name === 'access_token')
   const refreshToken = allCookies.find((c) => c.name === 'refresh_token')
-  const csrfToken = allCookies.find((c) => c.name === 'csrf-token')
 
   console.log('\n--- Auth Cookie Status ---')
   console.log(`access_token:  ${accessToken ? 'EXISTS' : 'MISSING'}`)
   console.log(`refresh_token: ${refreshToken ? 'EXISTS' : 'MISSING'}`)
-  console.log(`csrf-token:    ${csrfToken ? 'EXISTS' : 'MISSING'}`)
 
   if (accessToken) {
     console.log(`\naccess_token details:`)
@@ -75,7 +73,6 @@ test('Debug: Google OAuth cookie flow', async ({ page, context }) => {
       return {
         isAuthenticated: parsed?.state?.isAuthenticated,
         hasUser: !!parsed?.state?.user,
-        hasCsrfToken: !!parsed?.state?.csrfToken,
         userName: parsed?.state?.user?.name || null,
       }
     } catch {

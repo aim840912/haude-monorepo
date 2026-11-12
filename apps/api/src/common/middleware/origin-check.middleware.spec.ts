@@ -82,6 +82,24 @@ describe('createOriginCheck', () => {
     expect(next).toHaveBeenCalled();
   });
 
+  it('環境變數多了結尾斜線也能比對（瀏覽器的 Origin 永遠沒有斜線）', () => {
+    const lenient = createOriginCheck(['https://haude-web.vercel.app/']);
+    const req = {
+      method: 'POST',
+      path: '/api/v1/orders',
+      headers: { origin: 'https://haude-web.vercel.app' },
+    } as unknown as Request;
+    const res = {
+      status: jest.fn(),
+      setHeader: jest.fn(),
+    } as unknown as Response;
+    const next = jest.fn() as NextFunction;
+
+    lenient(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
   it('403 回應不可被快取', () => {
     const { res } = run('POST', '/api/v1/orders', 'https://evil.example');
 
