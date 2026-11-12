@@ -59,7 +59,8 @@ const FIELD_LABELS: Record<string, string> = {
   role: '角色',
   memberLevel: '會員等級',
   level: '會員等級',
-  points: '積分',
+  points: '調整積分',
+  currentPoints: '積分',
   code: '折扣碼',
   value: '數值',
   threshold: '預警門檻',
@@ -98,11 +99,14 @@ export interface FieldChange {
   field: string
   from: unknown
   to: unknown
+  /** 改前資料有這個欄位，才能顯示「舊 → 新」 */
+  hasBefore: boolean
 }
 
 /**
  * 比對「改之前」與「送出的內容」，只列出真的有變的欄位。
- * 沒有 before（新增、或舊紀錄）時，送出的每個欄位都列為新值。
+ * 送出的欄位不在改前資料裡（新增、舊紀錄、或像積分調整量這種不是欄位值的參數）
+ * → 只列送出的值，不假裝它原本是空的。
  */
 export function describeChanges(meta: AuditLogMeta | null): FieldChange[] {
   const body = meta?.body
@@ -110,5 +114,5 @@ export function describeChanges(meta: AuditLogMeta | null): FieldChange[] {
   const before = meta.before ?? {}
   return Object.entries(body)
     .filter(([field, to]) => JSON.stringify(before[field]) !== JSON.stringify(to))
-    .map(([field, to]) => ({ field, from: before[field], to }))
+    .map(([field, to]) => ({ field, from: before[field], to, hasBefore: field in before }))
 }

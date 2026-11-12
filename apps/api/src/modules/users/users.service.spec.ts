@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 describe('UsersService', () => {
@@ -324,6 +329,18 @@ describe('UsersService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(userId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('帳號有訂單或操作紀錄時回 400 並建議停用，而不是 500', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: userId });
+      mockPrismaService.user.delete.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('FK', {
+          code: 'P2003',
+          clientVersion: 'test',
+        }),
+      );
+
+      await expect(service.remove(userId)).rejects.toThrow(BadRequestException);
     });
   });
 });

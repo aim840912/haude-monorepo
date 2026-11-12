@@ -6,7 +6,6 @@ describe('AuditLogsService', () => {
     auditLog: {
       findMany: jest.Mock;
       count: jest.Mock;
-      groupBy: jest.Mock;
     };
     user: { findMany: jest.Mock };
   };
@@ -17,7 +16,6 @@ describe('AuditLogsService', () => {
       auditLog: {
         findMany: jest.fn().mockResolvedValue([]),
         count: jest.fn().mockResolvedValue(0),
-        groupBy: jest.fn().mockResolvedValue([]),
       },
       user: { findMany: jest.fn().mockResolvedValue([]) },
     };
@@ -53,8 +51,10 @@ describe('AuditLogsService', () => {
     );
   });
 
-  it('沒有任何紀錄時不查使用者表', async () => {
-    await expect(service.findOperators()).resolves.toEqual([]);
-    expect(prisma.user.findMany).not.toHaveBeenCalled();
+  it('操作者清單只列出有紀錄的人，一次查詢完成', async () => {
+    await service.findOperators();
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { auditLogs: { some: {} } } }),
+    );
   });
 });

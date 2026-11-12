@@ -120,6 +120,33 @@ describe('AuditLogInterceptor', () => {
     expect(meta.body).toEqual({ name: '新茶' });
   });
 
+  it('改名時對象顯示新名稱，舊名稱留在改前資料', async () => {
+    metadata = { action: 'UPDATE', resource: 'products' };
+    await run(makeRequest({ method: 'PUT', body: { name: '冬茶' } }), {
+      id: 'p1',
+      name: '冬茶',
+    });
+    await flush();
+
+    const meta = writtenData().metadata;
+    expect(meta.label).toBe('冬茶');
+    expect(meta.before.name).toBe('龍眼蜜');
+  });
+
+  it('圖片子路由只記產品名稱，不複製整筆產品資料', async () => {
+    await run(
+      makeRequest({
+        url: '/api/v1/admin/products/p1/images/i1',
+        params: { id: 'p1', imageId: 'i1' },
+      }),
+    );
+    await flush();
+
+    const meta = writtenData().metadata;
+    expect(meta.label).toBe('龍眼蜜');
+    expect(meta.before).toBeUndefined();
+  });
+
   it('IP 用 cf-connecting-ip，不採用可偽造的 x-forwarded-for', async () => {
     await run(
       makeRequest({

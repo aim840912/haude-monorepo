@@ -55,13 +55,9 @@ export class AuditLogsService {
   }
 
   /** Everyone who has at least one log entry, for the operator filter. */
-  async findOperators() {
-    const groups = await this.prisma.auditLog.groupBy({
-      by: ['operatorId'],
-    });
-    if (groups.length === 0) return [];
+  findOperators() {
     return this.prisma.user.findMany({
-      where: { id: { in: groups.map((g) => g.operatorId) } },
+      where: { auditLogs: { some: {} } },
       select: OPERATOR_SELECT,
       orderBy: { name: 'asc' },
     });

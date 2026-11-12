@@ -19,13 +19,21 @@ describe('describeChanges', () => {
       before: { name: '龍眼蜜', price: 550, stock: 60 },
       body: { name: '龍眼蜜', price: 600 },
     })
-    expect(changes).toEqual([{ field: 'price', from: 550, to: 600 }])
+    expect(changes).toEqual([{ field: 'price', from: 550, to: 600, hasBefore: true }])
   })
 
   it('沒有改前資料時，送出的欄位都列為新值', () => {
     expect(describeChanges({ body: { name: '冬茶' } })).toEqual([
-      { field: 'name', from: undefined, to: '冬茶' },
+      { field: 'name', from: undefined, to: '冬茶', hasBefore: false },
     ])
+  })
+
+  it('改前資料沒有的欄位（如積分調整量）不顯示成「空 → 值」', () => {
+    const [change] = describeChanges({
+      before: { currentPoints: 500 },
+      body: { points: 100 },
+    })
+    expect(change.hasBefore).toBe(false)
   })
 })
 

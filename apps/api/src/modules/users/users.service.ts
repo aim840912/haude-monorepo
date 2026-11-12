@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -91,9 +93,22 @@ export class UsersService {
   async remove(id: string) {
     await this.findOne(id);
 
-    await this.prisma.user.delete({
-      where: { id },
-    });
+    try {
+      await this.prisma.user.delete({
+        where: { id },
+      });
+    } catch (error) {
+      // Orders and audit logs reference the user and must outlive the account
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          '此帳號有訂單或後台操作紀錄，無法刪除。建議改為停用帳號。',
+        );
+      }
+      throw error;
+    }
 
     return { message: 'User deleted successfully' };
   }

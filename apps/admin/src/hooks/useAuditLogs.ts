@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { isAxiosError } from 'axios'
 import { auditLogsApi, type AuditLogFilters } from '../services/api'
 import type { AuditLogMeta } from '../lib/audit-format'
@@ -40,19 +40,24 @@ export function useAuditLogs(filters: AuditLogFilters) {
 
   // 以字串當依賴：filters 物件每次 render 都是新的
   const key = JSON.stringify(filters)
+  // 快速切換篩選時，只採用最後一次請求的結果，避免舊回應晚到蓋掉新的
+  const latestRequest = useRef(0)
 
   const fetchLogs = useCallback(async () => {
+    const requestId = ++latestRequest.current
     setIsLoading(true)
     setError(null)
     try {
       const { data } = await auditLogsApi.getAll(JSON.parse(key) as AuditLogFilters)
+      if (requestId !== latestRequest.current) return
       setLogs(data.data || [])
       setTotal(data.total || 0)
     } catch (err) {
+      if (requestId !== latestRequest.current) return
       setError(toMessage(err))
       logger.error('[useAuditLogs] API 錯誤', { error: err })
     } finally {
-      setIsLoading(false)
+      if (requestId === latestRequest.current) setIsLoading(false)
     }
   }, [key])
 

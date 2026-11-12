@@ -274,7 +274,7 @@ function LogRow({
                 {changes.map((c) => (
                   <li key={c.field} className="text-gray-700">
                     <span className="font-medium">{fieldLabel(c.field)}</span>：
-                    {meta?.before && (
+                    {c.hasBefore && (
                       <>
                         <span className="text-gray-500 line-through">{formatValue(c.from)}</span>
                         {' → '}

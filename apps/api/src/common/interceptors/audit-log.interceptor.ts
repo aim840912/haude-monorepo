@@ -130,11 +130,12 @@ export class AuditLogInterceptor implements NestInterceptor {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const startTime = Date.now();
 
     return from(this.loadSnapshot(request, metadata)).pipe(
-      switchMap((before) =>
-        next.handle().pipe(
+      switchMap((before) => {
+        // Timed after the snapshot so `duration` measures the handler only
+        const startTime = Date.now();
+        return next.handle().pipe(
           tap((responseBody: unknown) => {
             const duration = Date.now() - startTime;
 
@@ -152,8 +153,8 @@ export class AuditLogInterceptor implements NestInterceptor {
               );
             });
           }),
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -195,10 +196,17 @@ export class AuditLogInterceptor implements NestInterceptor {
     // Extract resource ID from route params or response body
     const resourceId = this.extractResourceId(request, responseBody, metadata);
 
+    // Current name first, so a rename is listed under the new name; the old
+    // one stays in metadata.before. After a DELETE only `before` has it.
     const label =
-      this.pickLabel(before) ??
       this.pickLabel(this.unwrapBody(responseBody)) ??
-      this.pickLabel(request.body as Snapshot | undefined);
+      this.pickLabel(request.body as Snapshot | undefined) ??
+      this.pickLabel(before);
+
+    // Image sub-routes change an image, not the parent: keep the parent's
+    // name as the label but don't store a full copy of it on every upload.
+    const keepBefore =
+      before && !request.url.includes('/images') ? before : null;
 
     // Build human-readable summary
     const summary = this.buildSummary(
@@ -219,7 +227,7 @@ export class AuditLogInterceptor implements NestInterceptor {
           request,
           metadata,
           label,
-          before,
+          keepBefore,
         ) as object,
         ipAddress: this.getClientIp(request),
         userAgent: request.headers['user-agent']?.substring(0, 500) || null,
