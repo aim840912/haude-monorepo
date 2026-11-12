@@ -81,7 +81,50 @@ export class MemberPointsService {
     orderAmount: number,
     orderId: string,
   ): Promise<number> {
-    const user = await this.prisma.user.findUnique({
+    return this.prisma.$transaction((tx) =>
+      this.applyPurchasePoints(tx, userId, orderAmount, orderId),
+    );
+  }
+
+  /**
+   * 訂單送達時的全部回饋：累積消費 → 檢查升級 → 依（可能已升級的）等級發點數
+   *
+   * 全部在同一個交易裡：舊版分兩個交易，點數寫入失敗時累積消費已經加了、
+   * 點數卻沒發，而且沒有任何重試。現在失敗就整筆不算，「沒有 PURCHASE 紀錄」
+   * 本身就是可查、可安全重跑的狀態。
+   *
+   * 已發過（有帶 orderId 的 PURCHASE 紀錄）→ 什麼都不做，回傳 null。
+   */
+  async awardOrderRewards(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ): Promise<{ earnedPoints: number; upgraded: boolean } | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const alreadyAwarded = await tx.pointTransaction.findFirst({
+        where: { orderId, type: 'PURCHASE' },
+        select: { id: true },
+      });
+      if (alreadyAwarded) return null;
+
+      const { upgraded } = await this.applyTotalSpent(tx, userId, orderAmount);
+      const earnedPoints = await this.applyPurchasePoints(
+        tx,
+        userId,
+        orderAmount,
+        orderId,
+      );
+      return { earnedPoints, upgraded };
+    });
+  }
+
+  private async applyPurchasePoints(
+    db: TransactionClient,
+    userId: string,
+    orderAmount: number,
+    orderId: string,
+  ): Promise<number> {
+    const user = await db.user.findUnique({
       where: { id: userId },
       select: {
         memberLevel: true,
@@ -94,7 +137,7 @@ export class MemberPointsService {
       return 0;
     }
 
-    const config = await this.prisma.memberLevelConfig.findUnique({
+    const config = await db.memberLevelConfig.findUnique({
       where: { level: user.memberLevel },
     });
 
@@ -123,24 +166,22 @@ export class MemberPointsService {
 
     const newBalance = user.currentPoints + earnedPoints;
 
-    // 更新積分
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: { currentPoints: newBalance },
-      }),
-      this.prisma.pointTransaction.create({
-        data: {
-          userId,
-          type: 'PURCHASE',
-          points: earnedPoints,
-          balance: newBalance,
-          description: `消費獲得積分 (${config.pointMultiplier}x)`,
-          orderId,
-          expiresAt,
-        },
-      }),
-    ]);
+    // 更新積分（呼叫端負責交易）
+    await db.user.update({
+      where: { id: userId },
+      data: { currentPoints: newBalance },
+    });
+    await db.pointTransaction.create({
+      data: {
+        userId,
+        type: 'PURCHASE',
+        points: earnedPoints,
+        balance: newBalance,
+        description: `消費獲得積分 (${config.pointMultiplier}x)`,
+        orderId,
+        expiresAt,
+      },
+    });
 
     return earnedPoints;
   }
@@ -217,23 +258,30 @@ export class MemberPointsService {
     userId: string,
     orderAmount: number,
   ): Promise<{ newTotalSpent: number; upgraded: boolean }> {
-    return this.prisma.$transaction(async (tx) => {
-      // 更新累積消費
-      const user = await tx.user.update({
-        where: { id: userId },
-        data: {
-          totalSpent: { increment: orderAmount },
-        },
-        select: { totalSpent: true },
-      });
+    return this.prisma.$transaction((tx) =>
+      this.applyTotalSpent(tx, userId, orderAmount),
+    );
+  }
 
-      // 檢查升級（同一 transaction 內）
-      const upgraded = await this.checkAndUpgradeLevel(userId, tx);
-
-      return {
-        newTotalSpent: user.totalSpent,
-        upgraded,
-      };
+  private async applyTotalSpent(
+    db: TransactionClient,
+    userId: string,
+    orderAmount: number,
+  ): Promise<{ newTotalSpent: number; upgraded: boolean }> {
+    const user = await db.user.update({
+      where: { id: userId },
+      data: {
+        totalSpent: { increment: orderAmount },
+      },
+      select: { totalSpent: true },
     });
+
+    // 檢查升級（同一 transaction 內）
+    const upgraded = await this.checkAndUpgradeLevel(userId, db);
+
+    return {
+      newTotalSpent: user.totalSpent,
+      upgraded,
+    };
   }
 }

@@ -139,39 +139,27 @@ export class UpdateOrderService {
     orderAmount: number,
   ) {
     try {
-      // Defence in depth: the transition table already makes delivered a
-      // one-way door, but a second award would double both points and totalSpent.
-      const alreadyAwarded = await this.prisma.pointTransaction.findFirst({
-        where: { orderId, type: 'PURCHASE' },
-        select: { id: true },
-      });
-      if (alreadyAwarded) {
+      // One transaction: totalSpent, level upgrade and points all land or none
+      // do. It also skips orders already awarded (defence in depth: the
+      // transition table already makes delivered a one-way door).
+      const result = await this.membersService.awardOrderRewards(
+        userId,
+        orderId,
+        orderAmount,
+      );
+
+      if (!result) {
         this.logger.warn(`訂單 ${orderId} 已發過積分，略過`);
         return;
       }
-
-      // 1. 更新累積消費並檢查升級
-      const { upgraded } =
-        await this.membersService.updateTotalSpentAndCheckUpgrade(
-          userId,
-          orderAmount,
-        );
-
-      if (upgraded) {
+      if (result.upgraded) {
         this.logger.log(`會員 ${userId} 已升級`);
       }
-
-      // 2. 發放積分
-      const earnedPoints = await this.membersService.addPointsForPurchase(
-        userId,
-        orderAmount,
-        orderId,
-      );
-
-      this.logger.log(`會員 ${userId} 獲得 ${earnedPoints} 積分`);
+      this.logger.log(`會員 ${userId} 獲得 ${result.earnedPoints} 積分`);
     } catch (error) {
-      // 會員系統更新失敗不應影響訂單狀態更新
-      this.logger.error(`處理訂單完成會員更新失敗: ${error}`);
+      // 會員系統更新失敗不應影響訂單狀態更新。整筆已回滾（這張訂單沒有
+      // PURCHASE 紀錄），之後可安全補發，不會重複加累積消費。
+      this.logger.error(`訂單 ${orderId} 送達回饋失敗，未發放: ${error}`);
     }
   }
 

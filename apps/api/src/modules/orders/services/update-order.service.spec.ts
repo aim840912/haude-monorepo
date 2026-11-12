@@ -27,8 +27,7 @@ describe('UpdateOrderService', () => {
   };
   const mockEmail = { sendShippingNotificationEmail: jest.fn() };
   const mockMembers = {
-    updateTotalSpentAndCheckUpgrade: jest.fn(),
-    addPointsForPurchase: jest.fn(),
+    awardOrderRewards: jest.fn(),
     revokeOrderRewards: jest.fn(),
   };
 
@@ -60,11 +59,10 @@ describe('UpdateOrderService', () => {
       items: [],
     });
     mockPrisma.pointTransaction.findFirst.mockResolvedValue(null);
-    mockMembers.updateTotalSpentAndCheckUpgrade.mockResolvedValue({
-      newTotalSpent: 1200,
+    mockMembers.awardOrderRewards.mockResolvedValue({
+      earnedPoints: 1200,
       upgraded: false,
     });
-    mockMembers.addPointsForPurchase.mockResolvedValue(1200);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -179,28 +177,22 @@ describe('UpdateOrderService', () => {
       await service.updateOrderStatus('order-1', { status: 'delivered' });
       await flush();
 
-      expect(mockMembers.addPointsForPurchase).toHaveBeenCalledWith(
+      // One call = one transaction (points + totalSpent all-or-nothing);
+      // the already-awarded check lives inside it (member-points.service.spec.ts)
+      expect(mockMembers.awardOrderRewards).toHaveBeenCalledWith(
         'user-1',
-        1200,
         'order-1',
-      );
-      expect(mockMembers.updateTotalSpentAndCheckUpgrade).toHaveBeenCalledWith(
-        'user-1',
         1200,
       );
     });
 
-    it('這張訂單已發過點數時不再重複發放', async () => {
+    it('發點數失敗時不影響訂單狀態更新', async () => {
       givenOrder('shipped');
-      mockPrisma.pointTransaction.findFirst.mockResolvedValue({ id: 'pt-1' });
+      mockMembers.awardOrderRewards.mockRejectedValue(new Error('db down'));
 
-      await service.updateOrderStatus('order-1', { status: 'delivered' });
-      await flush();
-
-      expect(mockMembers.addPointsForPurchase).not.toHaveBeenCalled();
-      expect(
-        mockMembers.updateTotalSpentAndCheckUpgrade,
-      ).not.toHaveBeenCalled();
+      await expect(
+        service.updateOrderStatus('order-1', { status: 'delivered' }),
+      ).resolves.toBeDefined();
     });
   });
 
@@ -211,7 +203,7 @@ describe('UpdateOrderService', () => {
       // No flush(): the award must already be done when the call resolves
       await service.updateOrderStatus('order-1', { status: 'delivered' });
 
-      expect(mockMembers.addPointsForPurchase).toHaveBeenCalled();
+      expect(mockMembers.awardOrderRewards).toHaveBeenCalled();
     });
 
     it('回傳的是同一個交易裡讀出的訂單', async () => {

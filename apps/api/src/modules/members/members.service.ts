@@ -119,6 +119,18 @@ export class MembersService {
   }
 
   /**
+   * 發放某張訂單的回饋：累積消費 + 升級 + 消費積分，同一個交易（訂單送達時呼叫）
+   * 已發過回傳 null
+   */
+  async awardOrderRewards(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ): Promise<{ earnedPoints: number; upgraded: boolean } | null> {
+    return this.pointsService.awardOrderRewards(userId, orderId, orderAmount);
+  }
+
+  /**
    * 收回某張訂單給的回饋：消費積分 + 累積消費（訂單退款時呼叫）
    */
   async revokeOrderRewards(

@@ -505,4 +505,71 @@ describe('MemberPointsService', () => {
       expect(mockPrismaService.user.update).not.toHaveBeenCalled();
     });
   });
+
+  // ========================================
+  // awardOrderRewards — 送達時的回饋必須全有或全無
+  // ========================================
+
+  describe('awardOrderRewards', () => {
+    const userId = 'user-123';
+    const orderId = 'order-123';
+
+    beforeEach(() => {
+      mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
+      mockPrismaService.user.update.mockResolvedValue({ totalSpent: 1200 });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        memberLevel: MemberLevel.NORMAL,
+        totalSpent: 1200,
+        currentPoints: 0,
+        birthday: null,
+      });
+      mockPrismaService.memberLevelConfig.findMany.mockResolvedValue([
+        { level: MemberLevel.NORMAL, minSpent: 0 },
+      ]);
+      mockPrismaService.memberLevelConfig.findUnique.mockResolvedValue({
+        pointMultiplier: 1,
+      });
+      mockPrismaService.pointTransaction.create.mockResolvedValue({});
+    });
+
+    it('累積消費與發點數在同一個交易裡完成', async () => {
+      const result = await service.awardOrderRewards(userId, orderId, 1200);
+
+      expect(result).toEqual({ earnedPoints: 1200, upgraded: false });
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { totalSpent: { increment: 1200 } },
+        }),
+      );
+      expect(mockPrismaService.pointTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'PURCHASE', orderId }),
+      });
+    });
+
+    // 舊版分兩個交易：累積消費已寫入、點數失敗時客人少拿點數，而且沒人發現
+    it('寫點數失敗時整筆失敗，不會只留下累積消費', async () => {
+      mockPrismaService.pointTransaction.create.mockRejectedValue(
+        new Error('connection lost'),
+      );
+
+      await expect(
+        service.awardOrderRewards(userId, orderId, 1200),
+      ).rejects.toThrow('connection lost');
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('這張訂單已發過時什麼都不做，回傳 null', async () => {
+      mockPrismaService.pointTransaction.findFirst.mockResolvedValue({
+        id: 'pt-1',
+      });
+
+      const result = await service.awardOrderRewards(userId, orderId, 1200);
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+      expect(mockPrismaService.pointTransaction.create).not.toHaveBeenCalled();
+    });
+  });
 });
