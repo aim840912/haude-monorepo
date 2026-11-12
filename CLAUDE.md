@@ -317,6 +317,13 @@ GET    /health/ready    # readiness，DB 斷線回 503
 - **症狀**：線上下單、後台改資料全部回 403 `Origin not allowed`。**判斷**：Render 的 `FRONTEND_URL` / `ADMIN_URL` 是否與瀏覽器網址列的來源**完全相同**（含 `https://`；結尾 `/` 會自動去掉）。Vercel preview 網址（`haude-web-git-…vercel.app`）、`127.0.0.1:5173`、區網 IP 都不在白名單，寫入請求一律 403，屬預期行為。
 - 新增「第三方從自己的網域 POST 進來」的端點（金流、Webhook 的瀏覽器導回）→ 加進 `main.ts` 的排除前綴，否則會被擋。目前只排除 `/api/v1/payments/ecpay/`；這類端點必須靠簽章驗證，不能靠 cookie。
 
+### 限流的訪客 IP（改動前必讀）
+
+- **事實**（2026-11-12 從 Render log 實測）：Render 前面是 Cloudflare，**每個請求的 `req.ip` 都是 `127.0.0.1`**；設 `trust proxy` 也沒用，因為 `X-Forwarded-For` 最左邊可以被偽造。
+- 唯一偽造不了的是 `cf-connecting-ip`：偽造它的請求在 Cloudflare 就被 403 擋掉。`x-vercel-forwarded-for` 直接打 onrender.com 可以偽造，⛔ 不可直接採用。
+- 限流鍵（`UserThrottlerGuard`）：已登入 → 驗證過的 JWT `sub`；匿名 → `cf-connecting-ip`。web／admin 都經過 Vercel 代理，所以匿名請求分到的是 **Vercel 出口 IP**（同一區域的使用者共用）。要再細分得先驗證 `x-vercel-proxy-signature`。
+- 重新實測：帶獨特的 User-Agent `curl` 一次（分別經 Vercel、直打 onrender.com），再到 Render Logs 找那一行的 headers。
+
 ### 訂單狀態（改動前必讀）
 
 - 狀態只能照 `packages/types/src/order.ts` 的 `ORDER_STATUS_TRANSITIONS` 轉換：API 拒絕表外的轉換，後台只列表內選項。要新增轉換先改這張表。
