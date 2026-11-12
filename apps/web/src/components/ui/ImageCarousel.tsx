@@ -175,9 +175,7 @@ export function ImageCarousel({
                 onClick={() => goToIndex(index)}
                 className={cn(
                   'w-2.5 h-2.5 rounded-full transition-[transform,background-color] duration-200',
-                  currentIndex === index
-                    ? 'bg-white scale-110'
-                    : 'bg-white/50 hover:bg-white/70'
+                  currentIndex === index ? 'bg-white scale-110' : 'bg-white/50 hover:bg-white/70'
                 )}
                 aria-label={`跳至第 ${index + 1} 張圖片`}
               />
@@ -188,13 +186,6 @@ export function ImageCarousel({
           <span className="text-white text-sm font-medium bg-black/40 px-2 py-0.5 rounded">
             {currentIndex + 1} / {totalImages}
           </span>
-        </div>
-      )}
-
-      {/* 自動播放暫停提示（hover 時顯示） */}
-      {hasMultipleImages && autoPlayInterval > 0 && isPaused && (
-        <div className="absolute top-3 right-3 text-white text-xs bg-black/40 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-          已暫停
         </div>
       )}
 
