@@ -447,6 +447,8 @@ VITE_API_BASE_URL=http://localhost:3001
 | `page.goto()` hard navigation 導致 ProtectedRoute 重導到 `/login` | Zustand persist hydration 競態：`useEffect` 在 localStorage hydration 前觸發。解法：先用 UI 表單登入（soft navigate），再點 navbar 連結導覽，保持 React tree 不卸載 |
 | 以 `addCookies()` / `page.evaluate()` / `addInitScript()` 注入認證狀態 | 全部失效（Zustand 預設 state 覆蓋）。唯一可靠方案：透過登入表單 → client-side navigation |
 | Playwright 懶載入圖片截圖空白 | 先 `scrollTo(0, document.body.scrollHeight)` 觸發載入，再回頂部截圖 |
+| 登入表單填完送出卻停在 `/login`，失敗截圖裡 Email 是空的、密碼有值 | React hydration 前填的值會被重設成 `''`（受控輸入框）。等元素出現 `__reactProps$…` 屬性（代表已 hydrate）再填，送出前用 `toHaveValue` 確認兩欄都在；⛔ 不要用 `waitForLoadState('networkidle')`，`next dev` 的 HMR 連線讓它永遠等不到。寫法見 `e2e/smoke-prod/login-cookies.smoke.ts` |
+| 正式站冒煙測試（`pnpm test:smoke`）要用哪個帳號 | 在正式站註冊**專用測試帳號**，不用真實顧客或管理員帳號。帳密只用環境變數傳入，⛔ 不寫進 `.claude/test.config.md`（那裡只放本機 DB 帳號）。登入每分鐘限 5 次，測試已設 `workers: 1`，短時間連跑會 429 |
 
 ### Next.js 設定（本專案特定）
 
