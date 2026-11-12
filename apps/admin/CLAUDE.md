@@ -132,7 +132,7 @@ VITE_API_BASE_URL=http://localhost:3001
 
 共用 Axios 實例在 `services/api/client.ts`（`services/api.ts` 只是向後相容的 re-export）：
 
-- Base URL 讀 `VITE_API_BASE_URL`，API 版本（`/api/v1`）集中在這個檔案
+- API 網址由 `services/api/api-url.ts` 決定：正式環境打同網域 `/api/v1`（`vercel.json` 代理到 Render，讓登入 cookie 是第一方）；開發環境讀 `VITE_API_BASE_URL` 直連。⛔ 不要讓正式環境改回直接打 onrender.com，Safari／無痕會登入失敗
 - 認證走 **httpOnly cookie**（`withCredentials: true`）；CSRF 由 API 檢查 `Origin` 白名單（`apps/api/src/common/middleware/origin-check.middleware.ts`），前端不送 token
 - 401 時自動呼叫 `/auth/refresh`，並重送排隊中的請求
 - ⛔ 不要在 admin 用 `localStorage` 存 token 或手動加 `Authorization` header —— 會繞過 httpOnly cookie 機制

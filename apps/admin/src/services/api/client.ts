@@ -1,10 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../../stores/authStore'
-
-// API version centrally managed: only change here when upgrading
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
-const API_VERSION = 'v1'
-const API_URL = `${API_BASE}/api/${API_VERSION}`
+import { API_URL } from './api-url'
 
 export const api = axios.create({
   baseURL: API_URL,

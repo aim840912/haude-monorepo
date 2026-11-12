@@ -23,10 +23,11 @@ type GoogleTarget = 'web' | 'admin';
  * Decide which app this OAuth round-trip belongs to and which callback URL
  * Google must redirect back to.
  *
- * Web gets its own callback (GOOGLE_WEB_CALLBACK_URL) that points at the web
- * origin, which proxies /api/v1/* to this API. The auth cookies are then set
- * on the web origin as first-party cookies; set on onrender.com they are
- * third-party to vercel.app and get dropped by Safari and Chrome incognito.
+ * Web and admin each get their own callback (GOOGLE_WEB_CALLBACK_URL /
+ * GOOGLE_ADMIN_CALLBACK_URL) pointing at their own origin, which proxies
+ * /api/v1/* to this API. The auth cookies are then set on that origin as
+ * first-party cookies; set on onrender.com they are third-party to vercel.app
+ * and get dropped by Safari and Chrome incognito.
  *
  * The callback phase (Google returns ?code=&state=) must send the same
  * redirect_uri in the token exchange as the authorization request, so the
@@ -34,7 +35,7 @@ type GoogleTarget = 'web' | 'admin';
  */
 export function resolveGoogleAuthOptions(
   query: Record<string, unknown>,
-  webCallbackURL: string | undefined,
+  callbackURLs: Partial<Record<GoogleTarget, string>>,
 ): { state: GoogleTarget; callbackURL?: string } {
   // Google comes back with either ?code= or ?error= (e.g. access_denied); both
   // carry the state we sent, and neither carries `redirect`.
@@ -42,15 +43,13 @@ export function resolveGoogleAuthOptions(
   const requested = isCallback ? query.state : query.redirect;
   const state: GoogleTarget = requested === 'admin' ? 'admin' : 'web';
 
-  if (state === 'web' && webCallbackURL) {
-    return { state, callbackURL: webCallbackURL };
-  }
-  return { state };
+  const callbackURL = callbackURLs[state];
+  return callbackURL ? { state, callbackURL } : { state };
 }
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  private readonly webCallbackURL: string | undefined;
+  private readonly callbackURLs: Partial<Record<GoogleTarget, string>>;
 
   constructor(
     configService: ConfigService,
@@ -65,19 +64,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       passReqToCallback: true,
     };
     super(options);
-    // Unset → web keeps using GOOGLE_CALLBACK_URL (the pre-proxy behaviour)
-    this.webCallbackURL =
-      configService.get<string>('GOOGLE_WEB_CALLBACK_URL') || undefined;
+    // Unset → that app keeps using GOOGLE_CALLBACK_URL (the pre-proxy behaviour)
+    this.callbackURLs = {
+      web: configService.get<string>('GOOGLE_WEB_CALLBACK_URL') || undefined,
+      admin:
+        configService.get<string>('GOOGLE_ADMIN_CALLBACK_URL') || undefined,
+    };
   }
 
   /**
-   * 動態生成 OAuth state（web / admin），並為 web 換成走代理的 callback
+   * 動態生成 OAuth state（web / admin），並換成各自網域走代理的 callback
    * 授權請求與 callback 兩個階段都會經過這裡
    */
   authenticate(req: Request, options?: object) {
     super.authenticate(req, {
       ...options,
-      ...resolveGoogleAuthOptions(req.query, this.webCallbackURL),
+      ...resolveGoogleAuthOptions(req.query, this.callbackURLs),
     });
   }
 

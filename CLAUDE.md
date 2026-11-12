@@ -309,7 +309,7 @@ GET    /health/ready    # readiness，DB 斷線回 503
 - **OAuth 用戶端在哪**：Google Cloud Console 的「Gemini API」專案 →「Haude Tea Web Client」（沒有叫 haude 的專案）
 - **Render 改環境變數**：「Save only」不會重新部署，下次 push 或手動 Deploy 才生效；「Save and deploy」會立刻重新部署
 - **線上驗收**：`curl -sI https://haude-api.onrender.com/api/v1/auth/google | grep -i location` 的 `redirect_uri` 要指向 haude-web；`curl -s -o /dev/null -w '%{http_code}' https://haude-web.vercel.app/api/v1/products` 回 200 代表代理正常；最後用無痕視窗實際用 Google 登入一次（2026-11-11 通過）
-- Admin（`haude-admin.vercel.app`，Vite）沒有這層代理，仍是跨網站。
+- **Admin 同一套做法**（2026-11-12 起）：正式環境打同網域 `/api/v1`（`apps/admin/src/services/api/api-url.ts`），由 `apps/admin/vercel.json` 的 rewrite 轉給 Render（**Render 網址寫死在 vercel.json**，API 換主機要一起改）；開發環境照舊直連 `localhost:3001`。Google 登入另需 Render 的 `GOOGLE_ADMIN_CALLBACK_URL=https://haude-admin.vercel.app/api/v1/auth/google/callback`，並在 Google Console 加入同一個網址；**未設定時 admin 的 Google 登入會壞掉**（cookie 設在 onrender.com，admin 網域的請求帶不到）。線上驗收：`curl -sI 'https://haude-api.onrender.com/api/v1/auth/google?redirect=admin' | grep -i location` 的 `redirect_uri` 要指向 haude-admin。
 
 ### CSRF：Origin 白名單（改動前必讀）
 
@@ -386,10 +386,10 @@ VITE_API_BASE_URL=http://localhost:3001
 
 **版本定義位置**：
 - `apps/web/src/lib/api-url.ts` → `API_PATH = '/api/v1'`（同時是 `next.config.ts` 代理規則的來源路徑）
-- `apps/admin/src/services/api/client.ts` → `API_VERSION = 'v1'`
+- `apps/admin/src/services/api/api-url.ts` → `API_VERSION = 'v1'`（同時是 `apps/admin/vercel.json` 代理規則的來源路徑）
 
 **注意**：升級 API 版本後，需同步更新：
-- Google Cloud Console 的 OAuth 回調 URI，以及 Render 的 `GOOGLE_CALLBACK_URL` / `GOOGLE_WEB_CALLBACK_URL`
+- Google Cloud Console 的 OAuth 回調 URI，以及 Render 的 `GOOGLE_CALLBACK_URL` / `GOOGLE_WEB_CALLBACK_URL` / `GOOGLE_ADMIN_CALLBACK_URL`
 - `auth.controller.ts` 寫死的 refresh cookie 路徑 `/api/v1/auth/refresh` —— 它必須和 web 代理的前綴一致，不一致時瀏覽器不會送出 refresh cookie，使用者每 15 分鐘被登出，且 build 不會報錯
 
 ---
