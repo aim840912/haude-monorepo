@@ -5,6 +5,9 @@ import {
   Min,
   IsUrl,
   IsEnum,
+  ArrayMaxSize,
+  IsArray,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -62,7 +65,9 @@ export class ReorderImagesDto {
     description: '圖片 ID 陣列（按新順序排列）',
     example: ['uuid1', 'uuid2', 'uuid3'],
   })
-  @IsString({ each: true })
+  @IsArray()
+  @ArrayMaxSize(100)
+  @IsUUID('all', { each: true })
   imageIds: string[];
 }
 

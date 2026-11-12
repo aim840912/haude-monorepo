@@ -19,15 +19,18 @@ const IMAGE_IDS = [
 ];
 
 type MockPrisma = ReturnType<typeof createMockPrismaService>;
+type ImageModel = 'productImage' | 'farmTourImage' | 'locationImage';
 
 const cases: Array<{
   name: string;
   path: string;
+  imageModel: ImageModel;
   arrange: (prisma: MockPrisma) => void;
 }> = [
   {
     name: 'products',
     path: `/api/v1/admin/products/${PARENT_ID}/images/reorder`,
+    imageModel: 'productImage',
     arrange: (p) => {
       p.product.findUnique.mockResolvedValue({ id: PARENT_ID, name: '茶' });
       p.productImage.findMany.mockResolvedValue([]);
@@ -36,6 +39,7 @@ const cases: Array<{
   {
     name: 'farm-tours',
     path: `/api/v1/admin/farm-tours/${PARENT_ID}/images/reorder`,
+    imageModel: 'farmTourImage',
     arrange: (p) => {
       p.farmTour.findUnique.mockResolvedValue({ id: PARENT_ID, name: '果園' });
       p.farmTourImage.findMany.mockResolvedValue([]);
@@ -44,11 +48,18 @@ const cases: Array<{
   {
     name: 'locations',
     path: `/api/v1/admin/locations/${PARENT_ID}/images/reorder`,
+    imageModel: 'locationImage',
     arrange: (p) => {
       p.location.findUnique.mockResolvedValue({ id: PARENT_ID, name: '門市' });
       p.locationImage.findMany.mockResolvedValue([]);
     },
   },
+];
+
+const BAD_BODIES = [
+  { imageIds: 'not-an-array' },
+  { imageIds: ['not-a-uuid'] },
+  {},
 ];
 
 describe('Image reorder routes (e2e)', () => {
@@ -69,8 +80,8 @@ describe('Image reorder routes (e2e)', () => {
   });
 
   it.each(cases)(
-    'PUT $name/:id/images/reorder 會執行排序，不被 :imageId 路由攔走',
-    async ({ path, arrange }) => {
+    'PUT $name/:id/images/reorder 依送出的順序寫入位置，不被 :imageId 路由攔走',
+    async ({ path, imageModel, arrange }) => {
       arrange(mockPrisma);
 
       await request(app.getHttpServer())
@@ -79,7 +90,26 @@ describe('Image reorder routes (e2e)', () => {
         .send({ imageIds: IMAGE_IDS })
         .expect(200);
 
-      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      const written = mockPrisma[imageModel].updateMany.mock.calls.map(
+        ([args]: [
+          { where: { id: string }; data: { displayPosition: number } },
+        ]) => [args.where.id, args.data.displayPosition],
+      );
+      expect(written).toEqual([
+        [IMAGE_IDS[0], 0],
+        [IMAGE_IDS[1], 1],
+      ]);
+    },
+  );
+
+  it.each(cases.flatMap((c) => BAD_BODIES.map((body) => ({ ...c, body }))))(
+    'PUT $name reorder 收到格式錯誤的 body 回 400，不是 500',
+    async ({ path, body }) => {
+      await request(app.getHttpServer())
+        .put(path)
+        .set(authHeader('mock-jwt-token'))
+        .send(body)
+        .expect(400);
     },
   );
 });

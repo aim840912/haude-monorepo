@@ -104,7 +104,7 @@ export class UsersService {
         error.code === 'P2003'
       ) {
         throw new BadRequestException(
-          '此帳號有訂單或後台操作紀錄，無法刪除。建議改為停用帳號。',
+          '此帳號仍有關聯資料（如訂單、退款或後台操作紀錄），無法刪除。建議改為停用帳號。',
         );
       }
       throw error;

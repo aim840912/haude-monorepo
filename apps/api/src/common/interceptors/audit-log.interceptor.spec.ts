@@ -12,6 +12,7 @@ describe('AuditLogInterceptor', () => {
     auditLog: { create: jest.Mock };
     product: { findUnique: jest.Mock };
     user: { findUnique: jest.Mock };
+    siteSetting: { findUnique: jest.Mock };
   };
   let metadata: AuditLogMetadata | undefined;
   let interceptor: AuditLogInterceptor;
@@ -61,6 +62,7 @@ describe('AuditLogInterceptor', () => {
         }),
       },
       user: { findUnique: jest.fn() },
+      siteSetting: { findUnique: jest.fn() },
     };
     const reflector = { get: () => metadata } as unknown as Reflector;
     interceptor = new AuditLogInterceptor(
@@ -137,6 +139,7 @@ describe('AuditLogInterceptor', () => {
     await run(
       makeRequest({
         url: '/api/v1/admin/products/p1/images/i1',
+        route: { path: '/api/v1/admin/products/:id/images/:imageId' },
         params: { id: 'p1', imageId: 'i1' },
       }),
     );
@@ -145,6 +148,37 @@ describe('AuditLogInterceptor', () => {
     const meta = writtenData().metadata;
     expect(meta.label).toBe('龍眼蜜');
     expect(meta.before).toBeUndefined();
+  });
+
+  it('網站圖片（images/:key）是設定本身，刪除時保留改前資料', async () => {
+    metadata = { action: 'DELETE', resource: 'site-settings', idParam: 'key' };
+    prisma.siteSetting.findUnique.mockResolvedValue({
+      key: 'hero',
+      value: 'https://cdn/hero.png',
+    });
+    await run(
+      makeRequest({
+        url: '/api/v1/admin/site-settings/images/hero',
+        route: { path: '/api/v1/admin/site-settings/images/:key' },
+        params: { key: 'hero' },
+      }),
+    );
+    await flush();
+
+    expect(writtenData().metadata.before).toEqual({
+      key: 'hero',
+      value: 'https://cdn/hero.png',
+    });
+  });
+
+  it('回應裡無關的名稱欄位不會蓋掉對象名稱', async () => {
+    metadata = { action: 'UPDATE', resource: 'products' };
+    await run(makeRequest({ method: 'PUT', body: { stock: 5 } }), {
+      data: { code: 'OK' },
+    });
+    await flush();
+
+    expect(writtenData().metadata.label).toBe('龍眼蜜');
   });
 
   it('IP 用 cf-connecting-ip，不採用可偽造的 x-forwarded-for', async () => {

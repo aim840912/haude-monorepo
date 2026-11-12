@@ -17,7 +17,11 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { SocialPostsService } from './social-posts.service';
-import { CreateSocialPostDto, UpdateSocialPostDto } from './dto';
+import {
+  CreateSocialPostDto,
+  UpdateSocialPostDto,
+  ReorderSocialPostsDto,
+} from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -89,7 +93,7 @@ export class AdminSocialPostsController {
   @ApiResponse({ status: 200, description: '排序更新成功' })
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
-  reorder(@Body() body: { ids: string[] }) {
+  reorder(@Body() body: ReorderSocialPostsDto) {
     return this.socialPostsService.reorder(body.ids);
   }
 

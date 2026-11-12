@@ -196,17 +196,22 @@ export class AuditLogInterceptor implements NestInterceptor {
     // Extract resource ID from route params or response body
     const resourceId = this.extractResourceId(request, responseBody, metadata);
 
-    // Current name first, so a rename is listed under the new name; the old
-    // one stays in metadata.before. After a DELETE only `before` has it.
+    // Submitted name first, so a rename is listed under the new name (the old
+    // one stays in metadata.before); after a DELETE only `before` has it. The
+    // response comes last: it may be a wrapper whose name/code isn't the
+    // target's. It is the only source for a CREATE with an empty body.
     const label =
-      this.pickLabel(this.unwrapBody(responseBody)) ??
       this.pickLabel(request.body as Snapshot | undefined) ??
-      this.pickLabel(before);
+      this.pickLabel(before) ??
+      this.pickLabel(this.unwrapBody(responseBody));
 
-    // Image sub-routes change an image, not the parent: keep the parent's
-    // name as the label but don't store a full copy of it on every upload.
-    const keepBefore =
-      before && !request.url.includes('/images') ? before : null;
+    // `:id/images` sub-routes change an image, not the parent: keep the
+    // parent's name as the label but don't store a full copy of it on every
+    // upload. Matched on the route pattern, not the URL — site-settings'
+    // `images/:key` *is* the setting and must keep its before value.
+    const routePath = (request.route as { path?: string } | undefined)?.path;
+    const isImageSubRoute = routePath?.includes(':id/images') ?? false;
+    const keepBefore = before && !isImageSubRoute ? before : null;
 
     // Build human-readable summary
     const summary = this.buildSummary(

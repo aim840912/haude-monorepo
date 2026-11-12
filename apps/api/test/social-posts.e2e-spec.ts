@@ -321,6 +321,20 @@ describe('Social Posts API (e2e)', () => {
       expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
 
+    it.each([{ ids: 'not-an-array' }, { ids: ['not-a-uuid'] }, {}])(
+      '收到格式錯誤的 body 回 400，不是 500（%j）',
+      async (body) => {
+        const adminUser = createMockUser({ id: 'admin-1', role: 'ADMIN' });
+        mockPrisma.user.findUnique.mockResolvedValue(adminUser);
+
+        await request(app.getHttpServer())
+          .put('/api/v1/admin/social-posts/reorder')
+          .set(authHeader('mock-jwt-token'))
+          .send(body)
+          .expect(400);
+      },
+    );
+
     it('應該拒絕非管理員的請求', async () => {
       const ids = [
         '550e8400-e29b-41d4-a716-446655440001',

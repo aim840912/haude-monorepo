@@ -28,6 +28,12 @@ describe('describeChanges', () => {
     ])
   })
 
+  it('欄位名剛好是物件內建屬性（constructor）時不誤判為有改前值', () => {
+    const [change] = describeChanges({ before: {}, body: { constructor: 'x' } })
+    expect(change.hasBefore).toBe(false)
+    expect(change.from).toBeUndefined()
+  })
+
   it('改前資料沒有的欄位（如積分調整量）不顯示成「空 → 值」', () => {
     const [change] = describeChanges({
       before: { currentPoints: 500 },

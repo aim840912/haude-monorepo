@@ -114,5 +114,9 @@ export function describeChanges(meta: AuditLogMeta | null): FieldChange[] {
   const before = meta.before ?? {}
   return Object.entries(body)
     .filter(([field, to]) => JSON.stringify(before[field]) !== JSON.stringify(to))
-    .map(([field, to]) => ({ field, from: before[field], to, hasBefore: field in before }))
+    .map(([field, to]) => {
+      // Own keys only: `in` would also see Object.prototype (constructor, toString…)
+      const hasBefore = Object.prototype.hasOwnProperty.call(before, field)
+      return { field, from: hasBefore ? before[field] : undefined, to, hasBefore }
+    })
 }
