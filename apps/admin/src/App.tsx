@@ -26,6 +26,7 @@ const UserDetailPage = lazy(() => import('./pages/UserDetailPage').then((m) => (
 const SiteImagesPage = lazy(() => import('./pages/SiteImagesPage').then((m) => ({ default: m.SiteImagesPage })))
 const SystemPage = lazy(() => import('./pages/SystemPage').then((m) => ({ default: m.SystemPage })))
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then((m) => ({ default: m.ReportsPage })))
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage').then((m) => ({ default: m.AuditLogsPage })))
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
                 <Route path="/reports" element={<Suspense fallback={<PageLoader />}><ReportsPage /></Suspense>} />
                 <Route path="/site-images" element={<Suspense fallback={<PageLoader />}><SiteImagesPage /></Suspense>} />
                 <Route path="/system" element={<Suspense fallback={<PageLoader />}><SystemPage /></Suspense>} />
+                <Route path="/audit-logs" element={<Suspense fallback={<PageLoader />}><AuditLogsPage /></Suspense>} />
               </Route>
 
               {/* 其他路由重導向 */}

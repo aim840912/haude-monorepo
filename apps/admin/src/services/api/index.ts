@@ -25,6 +25,10 @@ export { schedulesApi } from './schedules.api'
 // 付款監控
 export { paymentsApi } from './payments.api'
 
+// 操作紀錄
+export { auditLogsApi } from './audit-logs.api'
+export type { AuditLogFilters } from './audit-logs.api'
+
 // 折扣碼管理
 export { discountsApi } from './discounts.api'
 export type { DiscountCode } from './discounts.api'

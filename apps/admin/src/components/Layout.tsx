@@ -19,6 +19,7 @@ import {
   ImageIcon,
   Store,
   ExternalLink,
+  History,
   type LucideIcon,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
@@ -79,6 +80,7 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/users', label: '會員管理', icon: Users },
       { path: '/reports', label: '銷售報表', icon: FileSpreadsheet },
+      { path: '/audit-logs', label: '操作紀錄', icon: History },
       { path: '/settings', label: '系統設定', icon: Settings },
     ],
   },
