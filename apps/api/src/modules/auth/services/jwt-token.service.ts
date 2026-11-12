@@ -7,6 +7,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 export class JwtTokenService {
   private readonly logger = new Logger(JwtTokenService.name);
   private readonly REFRESH_TOKEN_DAYS = 30;
+  /** Reuse of a token rotated less than this long ago is a concurrent tab, not theft */
+  private readonly REUSE_GRACE_MS = 30_000;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -53,6 +55,15 @@ export class JwtTokenService {
     }
 
     if (stored.revokedAt) {
+      // Two tabs refreshing at once is normal: the second one sends the token
+      // the first one just rotated (its new cookie arrives a moment later).
+      // Within the grace window reject without punishing — nothing is issued,
+      // so a stolen token replayed in this window still gets nothing.
+      const sinceRevokedMs = Date.now() - stored.revokedAt.getTime();
+      if (sinceRevokedMs < this.REUSE_GRACE_MS) {
+        throw new UnauthorizedException('Refresh token was just rotated');
+      }
+
       this.logger.warn(
         `Refresh token reuse detected for user ${stored.userId}`,
       );
@@ -68,11 +79,15 @@ export class JwtTokenService {
       throw new UnauthorizedException('帳戶已被停用');
     }
 
-    // Rotation: revoke old token, generate new pair
-    await this.prisma.refreshToken.update({
-      where: { id: stored.id },
+    // Rotation: revoke old token only if still unrevoked, so two concurrent
+    // requests with the same token can't both rotate it into two live pairs.
+    const { count } = await this.prisma.refreshToken.updateMany({
+      where: { id: stored.id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    if (count === 0) {
+      throw new UnauthorizedException('Refresh token was just rotated');
+    }
 
     return this.generateTokenPair(stored.user.id, stored.user.email);
   }

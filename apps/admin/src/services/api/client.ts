@@ -32,8 +32,12 @@ function processQueue(error: unknown) {
   failedQueue = []
 }
 
+function statusOf(err: unknown): number | undefined {
+  return axios.isAxiosError(err) ? err.response?.status : undefined
+}
+
 function isSessionDead(refreshError: unknown): boolean {
-  const status = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined
+  const status = statusOf(refreshError)
   return status === 401 || status === 403
 }
 
@@ -70,6 +74,23 @@ api.interceptors.response.use(
       retryQueue()
       return api(originalRequest)
     } catch (refreshError) {
+      // A 401 may only mean another tab rotated the refresh token a moment ago;
+      // its new cookies are already in this browser. Retry once before deciding
+      // the session is dead.
+      if (statusOf(refreshError) === 401) {
+        try {
+          const response = await api(originalRequest)
+          retryQueue()
+          return response
+        } catch (retryError) {
+          if (statusOf(retryError) !== 401) {
+            // Auth got past (or the failure is unrelated): the session is alive
+            retryQueue()
+            return Promise.reject(retryError)
+          }
+        }
+      }
+
       processQueue(error)
 
       // Only a 401/403 from /auth/refresh means the session is dead. 429 (the

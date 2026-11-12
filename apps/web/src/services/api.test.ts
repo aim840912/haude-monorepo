@@ -23,13 +23,14 @@ function fail(config: InternalAxiosRequestConfig, status?: number): AxiosError {
   )
 }
 
-/** Original request: 401 the first time, 200 afterwards. */
-function adapter(): AxiosAdapter {
+/** Original request answers with these statuses in order; the last one repeats. */
+function adapter(statuses: number[] = [401, 200]): AxiosAdapter {
   let calls = 0
   return async (config) => {
+    const status = statuses[Math.min(calls, statuses.length - 1)]
     calls += 1
-    if (calls === 1) throw fail(config, 401)
-    return { status: 200, statusText: 'OK', headers: {}, config, data: { ok: true } }
+    if (status >= 400) throw fail(config, status)
+    return { status, statusText: 'OK', headers: {}, config, data: { ok: true } }
   }
 }
 
@@ -74,8 +75,29 @@ describe('api refresh interceptor', () => {
     expect(logout).not.toHaveBeenCalled()
   })
 
-  it.each([401, 403])('刷新回 %i 時登出', async (status) => {
-    refreshFailsWith(status)
+  it('刷新回 403 時登出', async () => {
+    refreshFailsWith(403)
+
+    await expect(api.get('/orders')).rejects.toBeInstanceOf(AxiosError)
+
+    expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  // 多分頁：另一個分頁剛換掉 refresh token，這個分頁的刷新拿到 401，
+  // 但瀏覽器裡的 cookie 已經是新的 —— 先重送一次原請求再決定要不要登出
+  it('刷新回 401、重送原請求成功時不登出', async () => {
+    refreshFailsWith(401)
+    api.defaults.adapter = adapter([401, 200])
+
+    const res = await api.get('/orders')
+
+    expect(res.data).toEqual({ ok: true })
+    expect(logout).not.toHaveBeenCalled()
+  })
+
+  it('刷新回 401、重送原請求仍然 401 時登出', async () => {
+    refreshFailsWith(401)
+    api.defaults.adapter = adapter([401, 401])
 
     await expect(api.get('/orders')).rejects.toBeInstanceOf(AxiosError)
 
