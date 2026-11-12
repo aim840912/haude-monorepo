@@ -42,12 +42,12 @@ export function useAuth(): UseAuthReturn {
     checkAuth()
   }, [isAuthenticated, setAuth])
 
-  const login = async (email: string, password: string, _rememberMe: boolean = false) => {
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
     setError(null)
     setIsLoading(true)
     try {
       // Login — tokens are in httpOnly cookies, response has { user }
-      const data = await authService.login(email, password)
+      const data = await authService.login(email, password, rememberMe)
       setAuth(data.user)
       // Merge local cart to backend (guest items are preserved)
       await useCartStore.getState().mergeLocalToBackend()

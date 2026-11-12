@@ -43,9 +43,9 @@ export const realAuthService: AuthServiceInterface = {
    * Login — tokens are set via httpOnly cookies by the server
    * Response body only contains { user }
    */
-  async login(email: string, password: string): Promise<AuthResponse> {
+  async login(email: string, password: string, rememberMe = false): Promise<AuthResponse> {
     try {
-      const { data } = await api.post<AuthResponse>('/auth/login', { email, password })
+      const { data } = await api.post<AuthResponse>('/auth/login', { email, password, rememberMe })
       return data
     } catch (error) {
       throw new Error(getAuthErrorMessage(error, '登入失敗，請稍後再試'))

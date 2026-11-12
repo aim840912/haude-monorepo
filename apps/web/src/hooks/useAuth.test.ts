@@ -61,7 +61,9 @@ const mockUser = {
 }
 
 // Mock CartState factory
-const createMockCartState = (overrides: Partial<ReturnType<typeof useCartStore.getState>> = {}) => ({
+const createMockCartState = (
+  overrides: Partial<ReturnType<typeof useCartStore.getState>> = {}
+) => ({
   items: [],
   isLoaded: false,
   isLoading: false,
@@ -186,8 +188,22 @@ describe('useAuth', () => {
         await result.current.login('test@example.com', 'password123')
       })
 
-      expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123')
+      expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123', false)
       expect(mockSetAuth).toHaveBeenCalledWith(mockUser)
+    })
+
+    // 回歸防護：勾選框的值曾在 useAuth 被丟掉，API 永遠收到 rememberMe 未設定，
+    // 「記住我」從來沒作用（Playwright 冒煙測試 2026-11-12 抓到）
+    it('勾選記住我時要把 rememberMe 傳給登入 API', async () => {
+      vi.mocked(authService.login).mockResolvedValue({ user: mockUser })
+
+      const { result } = renderHook(() => useAuth())
+
+      await act(async () => {
+        await result.current.login('test@example.com', 'password123', true)
+      })
+
+      expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123', true)
     })
 
     it('登入後應該合併購物車', async () => {

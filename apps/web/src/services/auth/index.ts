@@ -31,9 +31,9 @@ async function getAuthService(): Promise<AuthServiceInterface> {
  * 透過代理模式實現動態選擇 Mock 或 Real 服務
  */
 export const authService: AuthServiceInterface = {
-  login: async (email, password) => {
+  login: async (email, password, rememberMe) => {
     const service = await getAuthService()
-    return service.login(email, password)
+    return service.login(email, password, rememberMe)
   },
   register: async (email, password, name) => {
     const service = await getAuthService()
