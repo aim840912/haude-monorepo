@@ -19,13 +19,28 @@ describe('resolveGoogleAuthOptions', () => {
     expect(resolveGoogleAuthOptions({ redirect: 'admin' }, BOTH)).toEqual({
       state: 'admin',
       callbackURL: ADMIN_CALLBACK,
+      prompt: 'select_account',
     });
+  });
+
+  it('always shows the Google account chooser for admin sign-in', () => {
+    // Logging out of admin does not sign the browser out of Google, so without
+    // this Google silently reuses the last account and a second admin on the
+    // same machine can never switch in
+    expect(resolveGoogleAuthOptions({ redirect: 'admin' }, {})).toEqual({
+      state: 'admin',
+      prompt: 'select_account',
+    });
+  });
+
+  it('keeps one-click Google sign-in for web customers', () => {
+    expect(resolveGoogleAuthOptions({}, BOTH)).not.toHaveProperty('prompt');
   });
 
   it('keeps admin on the default callback when no admin callback is configured', () => {
     expect(
       resolveGoogleAuthOptions({ redirect: 'admin' }, { web: WEB_CALLBACK }),
-    ).toEqual({ state: 'admin' });
+    ).toEqual({ state: 'admin', prompt: 'select_account' });
   });
 
   it('re-derives the web callback from state when Google returns the code', () => {

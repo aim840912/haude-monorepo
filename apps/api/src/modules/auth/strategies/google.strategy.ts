@@ -32,11 +32,16 @@ type GoogleTarget = 'web' | 'admin';
  * The callback phase (Google returns ?code=&state=) must send the same
  * redirect_uri in the token exchange as the authorization request, so the
  * target is re-derived from `state` there instead of from `redirect`.
+ *
+ * Admin sign-in always shows Google's account chooser: logging out of admin
+ * does not sign the browser out of Google, so Google would otherwise silently
+ * reuse the last account and a second admin on the same machine could never
+ * switch in. Web customers keep one-click sign-in.
  */
 export function resolveGoogleAuthOptions(
   query: Record<string, unknown>,
   callbackURLs: Partial<Record<GoogleTarget, string>>,
-): { state: GoogleTarget; callbackURL?: string } {
+): { state: GoogleTarget; callbackURL?: string; prompt?: 'select_account' } {
   // Google comes back with either ?code= or ?error= (e.g. access_denied); both
   // carry the state we sent, and neither carries `redirect`.
   const isCallback = Boolean(query.code || query.error);
@@ -44,7 +49,12 @@ export function resolveGoogleAuthOptions(
   const state: GoogleTarget = requested === 'admin' ? 'admin' : 'web';
 
   const callbackURL = callbackURLs[state];
-  return callbackURL ? { state, callbackURL } : { state };
+  return {
+    state,
+    ...(callbackURL && { callbackURL }),
+    // prompt only shapes the authorization URL; the token exchange ignores it
+    ...(state === 'admin' && !isCallback && { prompt: 'select_account' }),
+  };
 }
 
 @Injectable()
