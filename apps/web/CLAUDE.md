@@ -23,6 +23,7 @@ pnpm type-check   # TypeScript 檢查
 pnpm build        # 生產建置（會先建 @haude/types）
 pnpm lint         # ESLint
 pnpm test         # vitest（E2E：pnpm test:e2e）
+pnpm test:smoke   # 線上冒煙：WebKit 帳密登入 → cookie／記住我／刷新（需 SMOKE_EMAIL、SMOKE_PASSWORD；SMOKE_BASE_URL 預設正式站）
 ```
 
 ### 技術棧

@@ -308,7 +308,7 @@ GET    /health/ready    # readiness，DB 斷線回 503
 - **Google OAuth 另需兩處設定**（在程式碼外）：Render 的 `GOOGLE_WEB_CALLBACK_URL=https://haude-web.vercel.app/api/v1/auth/google/callback`，以及 Google Cloud Console 的「已授權的重新導向 URI」加入同一個網址。未設定時 web 沿用 `GOOGLE_CALLBACK_URL`（onrender.com），Google 登入仍會在無痕模式壞掉。
 - **OAuth 用戶端在哪**：Google Cloud Console 的「Gemini API」專案 →「Haude Tea Web Client」（沒有叫 haude 的專案）
 - **Render 改環境變數**：「Save only」不會重新部署，下次 push 或手動 Deploy 才生效；「Save and deploy」會立刻重新部署
-- **線上驗收**：`curl -sI https://haude-api.onrender.com/api/v1/auth/google | grep -i location` 的 `redirect_uri` 要指向 haude-web；`curl -s -o /dev/null -w '%{http_code}' https://haude-web.vercel.app/api/v1/products` 回 200 代表代理正常；最後用無痕視窗實際用 Google 登入一次（2026-11-11 通過）
+- **線上驗收**：`curl -sI https://haude-api.onrender.com/api/v1/auth/google | grep -i location` 的 `redirect_uri` 要指向 haude-web；`curl -s -o /dev/null -w '%{http_code}' https://haude-web.vercel.app/api/v1/products` 回 200 代表代理正常；最後用無痕視窗實際用 Google 登入一次（2026-11-11 通過）。cookie 這一段可改跑 `apps/web` 的 `pnpm test:smoke`（Playwright WebKit，擋第三方 cookie 的行為和 Safari 一樣；用測試帳號帳密登入），Google 登入只在改 OAuth 設定時人工確認
 - **Admin 同一套做法**（2026-11-12 起）：正式環境打同網域 `/api/v1`（`apps/admin/src/services/api/api-url.ts`），由 `apps/admin/vercel.json` 的 rewrite 轉給 Render（**Render 網址寫死在 vercel.json**，API 換主機要一起改）；開發環境照舊直連 `localhost:3001`。Google 登入另需 Render 的 `GOOGLE_ADMIN_CALLBACK_URL=https://haude-admin.vercel.app/api/v1/auth/google/callback`，並在 Google Console 加入同一個網址；**未設定時 admin 的 Google 登入會壞掉**（cookie 設在 onrender.com，admin 網域的請求帶不到）。線上驗收：`curl -sI 'https://haude-api.onrender.com/api/v1/auth/google?redirect=admin' | grep -i location` 的 `redirect_uri` 要指向 haude-admin。
 
 ### CSRF：Origin 白名單（改動前必讀）
