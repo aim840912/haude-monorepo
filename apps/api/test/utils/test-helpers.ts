@@ -9,7 +9,7 @@ import { MemberLevel, OrderStatus, Role } from '@prisma/client';
  * 建立 Mock Prisma Service
  */
 export function createMockPrismaService() {
-  return {
+  const mock = {
     // User
     user: {
       findUnique: jest.fn(),
@@ -41,6 +41,10 @@ export function createMockPrismaService() {
         updatedAt: new Date(),
       }),
       update: jest.fn(),
+      // Status writes are conditional (updateMany + count); 1 = the guard held
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      // Re-read after the conditional write; tests set the updated order here
+      findUniqueOrThrow: jest.fn(),
       delete: jest.fn(),
       count: jest.fn().mockResolvedValue(0),
       aggregate: jest.fn(),
@@ -204,6 +208,16 @@ export function createMockPrismaService() {
       aggregate: jest.fn(),
     },
 
+    // Refund
+    refund: {
+      findUnique: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn(),
+      update: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+      aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 0 } }),
+    },
+
     // PaymentLog
     paymentLog: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -282,15 +296,18 @@ export function createMockPrismaService() {
       create: jest.fn(),
       groupBy: jest.fn().mockResolvedValue([]),
     },
+  };
 
-    // Transaction
+  // Interactive transactions get this same mock as `tx`, so what a test sets
+  // up on mockPrisma is what the code sees inside the transaction too.
+  return Object.assign(mock, {
     $transaction: jest.fn((callback) => {
       if (typeof callback === 'function') {
-        return callback(createMockPrismaService());
+        return callback(mock);
       }
       return Promise.all(callback);
     }),
-  };
+  });
 }
 
 /**
@@ -351,6 +368,7 @@ export function createMockProduct(
     reservedStock: number;
     isActive: boolean;
     isDraft: boolean;
+    isReviewsVisible: boolean;
     createdAt: Date;
     updatedAt: Date;
     images: Array<{
@@ -374,6 +392,7 @@ export function createMockProduct(
     reservedStock: 0,
     isActive: true,
     isDraft: false,
+    isReviewsVisible: true, // schema default
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     images: [
@@ -439,8 +458,12 @@ export function createMockOrder(
     paymentMethod: 'CREDIT',
     trackingNumber: null,
     notes: null,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
+    // Just created: a pending, unpaid order from long ago is correctly
+    // auto-cancelled by the lazy expiry check on read.
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // Queries include the payments relation; Prisma returns [] when empty
+    payments: [] as Array<Record<string, unknown>>,
     items: [
       {
         id: 'item-1',

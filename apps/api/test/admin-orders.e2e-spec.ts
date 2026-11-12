@@ -217,7 +217,7 @@ describe('Admin Orders API (e2e)', () => {
       };
 
       mockPrisma.order.findUnique.mockResolvedValue(existingOrder);
-      mockPrisma.order.update.mockResolvedValue({
+      mockPrisma.order.findUniqueOrThrow.mockResolvedValue({
         ...existingOrder,
         status: 'processing',
       });
@@ -242,7 +242,7 @@ describe('Admin Orders API (e2e)', () => {
       };
 
       mockPrisma.order.findUnique.mockResolvedValue(existingOrder);
-      mockPrisma.order.update.mockResolvedValue({
+      mockPrisma.order.findUniqueOrThrow.mockResolvedValue({
         ...existingOrder,
         status: 'shipped',
         trackingNumber: 'TRACK123456',
@@ -269,7 +269,7 @@ describe('Admin Orders API (e2e)', () => {
       };
 
       mockPrisma.order.findUnique.mockResolvedValue(existingOrder);
-      mockPrisma.order.update.mockResolvedValue({
+      mockPrisma.order.findUniqueOrThrow.mockResolvedValue({
         ...existingOrder,
         status: 'delivered',
       });

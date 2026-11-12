@@ -133,6 +133,15 @@ jobs:
           JWT_SECRET: test-jwt-secret-for-ci
           JWT_EXPIRES_IN: 7d
 
+      # `pnpm test` only matches *.spec.ts, so these never ran and 10 of them
+      # drifted out of date unnoticed. Mocked Prisma: no database needed.
+      - name: Run API e2e tests
+        run: pnpm --filter @haude/api test:e2e
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/haude_test
+          JWT_SECRET: test-jwt-secret-for-ci
+          JWT_EXPIRES_IN: 7d
+
   build:
     name: Build
     runs-on: ubuntu-latest

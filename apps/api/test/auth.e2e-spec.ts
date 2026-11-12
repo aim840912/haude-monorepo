@@ -37,7 +37,7 @@ describe('Auth API (e2e)', () => {
     it('應該成功註冊新用戶並返回 user', async () => {
       const registerDto = {
         email: 'newuser@example.com',
-        password: 'password123',
+        password: 'Password123',
         name: '新用戶',
       };
 
@@ -67,7 +67,7 @@ describe('Auth API (e2e)', () => {
     it('應該拒絕重複的 email 並返回 409', async () => {
       const registerDto = {
         email: 'existing@example.com',
-        password: 'password123',
+        password: 'Password123',
         name: '重複用戶',
       };
 
@@ -87,7 +87,7 @@ describe('Auth API (e2e)', () => {
     it('應該驗證 email 格式', async () => {
       const invalidDto = {
         email: 'not-an-email',
-        password: 'password123',
+        password: 'Password123',
         name: '測試',
       };
 

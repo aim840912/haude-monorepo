@@ -108,21 +108,14 @@ describe('Reports API (e2e)', () => {
         .expect(401);
     });
 
-    // 注意：ReportsController 只使用 JwtAuthGuard，沒有角色限制
-    // 任何已認證的用戶都可以存取報表
-    it('應該允許一般用戶存取報表（無角色限制）', async () => {
+    // 營收報表只限 STAFF / ADMIN（255ef20 起）；一般會員不可看
+    it('應該拒絕一般用戶存取報表', async () => {
       // 預設 mock 是一般用戶
-      mockPrisma.order.aggregate.mockResolvedValue({
-        _sum: { totalAmount: 5000 },
-        _count: { id: 5 },
-      });
-      mockPrisma.order.count.mockResolvedValue(0);
-
       await request(app.getHttpServer())
         .get('/api/v1/admin/reports/summary')
         .set(authHeader('mock-jwt-token'))
         .query({ startDate: '2024-01-01', endDate: '2024-01-31' })
-        .expect(200);
+        .expect(403);
     });
 
     it('應該返回 400 當缺少日期參數', async () => {
