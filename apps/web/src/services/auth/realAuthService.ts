@@ -41,7 +41,7 @@ function getAuthErrorMessage(error: unknown, defaultMessage: string): string {
 export const realAuthService: AuthServiceInterface = {
   /**
    * Login — tokens are set via httpOnly cookies by the server
-   * Response body only contains { user, csrfToken }
+   * Response body only contains { user }
    */
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
@@ -54,7 +54,7 @@ export const realAuthService: AuthServiceInterface = {
 
   /**
    * Register — tokens are set via httpOnly cookies by the server
-   * Response body only contains { user, csrfToken }
+   * Response body only contains { user }
    */
   async register(email: string, password: string, name: string): Promise<AuthResponse> {
     try {

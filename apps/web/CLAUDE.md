@@ -90,7 +90,7 @@ src/
 認證狀態在 `src/stores/authStore.ts`（persist key `auth-storage`），寫法照該檔與 `authStore.test.ts`。
 
 ⛔ **不變式：JWT 不進 store、不進 localStorage。** access token 由 API 設成 httpOnly cookie
-（`access_token`，見 `apps/api/src/modules/auth/strategies/jwt.strategy.ts`）；store 只存 `user` 與 `csrfToken`。
+（`access_token`，見 `apps/api/src/modules/auth/strategies/jwt.strategy.ts`）；store 只存 `user`。
 新增欄位或改寫 `setAuth` 時不要把 token 加回去 —— 那會讓任何 XSS 都能讀走登入憑證。
 
 ---

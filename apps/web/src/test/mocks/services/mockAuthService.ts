@@ -58,7 +58,6 @@ export const mockAuthService: AuthServiceInterface = {
 
     return {
       user: userWithoutPassword,
-      csrfToken: `mock-csrf-${Date.now()}`,
     }
   },
 
@@ -91,7 +90,6 @@ export const mockAuthService: AuthServiceInterface = {
 
     return {
       user: newUser,
-      csrfToken: `mock-csrf-${Date.now()}`,
     }
   },
 

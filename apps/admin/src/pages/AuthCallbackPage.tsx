@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { api, setCsrfToken } from '../services/api'
+import { api } from '../services/api'
 import logger from '../lib/logger'
 
 /**
  * Google OAuth callback page
  * Processes user info from server redirect — tokens are in httpOnly cookies
- * URL format: /auth/callback#user=xxx&csrfToken=xxx
+ * URL format: /auth/callback#user=xxx
  * Or error: /auth/callback#error=xxx
  */
 export function AuthCallbackPage() {
@@ -30,15 +30,9 @@ export function AuthCallbackPage() {
         }
 
         const userJson = params.get('user')
-        const csrfTokenValue = params.get('csrfToken')
 
         if (!userJson) {
           throw new Error('缺少認證資訊')
-        }
-
-        // Store CSRF Token before API call (not required for GET, but ready for later)
-        if (csrfTokenValue) {
-          setCsrfToken(csrfTokenValue)
         }
 
         // Verify session is actually valid: httpOnly cookie must be accepted by server.

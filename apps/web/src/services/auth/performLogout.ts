@@ -8,8 +8,7 @@ import { useAuthStore, clearAllAuthStorage } from '@/stores/authStore'
  * refresh_token（30 天效期）仍留在瀏覽器且後端未撤銷，任何觸發 401 的請求
  * 都會讓 axios interceptor 用它換回有效 session —— 共用電腦上等於沒登出。
  *
- * 順序刻意如此：先「發出」請求（axios 的 request interceptor 於呼叫當下同步
- * 附上 CSRF header，所以此時 store 尚未清空），再立刻清本地狀態讓 UI 即時反應，
+ * 順序刻意如此：先「發出」請求，再立刻清本地狀態讓 UI 即時反應，
  * 不必等後端往返（API 冷啟動可能數十秒）。回傳的 Promise 讓呼叫端可選擇等待。
  */
 export async function performLogout(): Promise<void> {

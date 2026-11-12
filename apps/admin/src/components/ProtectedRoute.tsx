@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore, type AdminUser } from '../stores/authStore'
-import { api, setCsrfToken } from '../services/api/client'
+import { api } from '../services/api/client'
 import { performLogout } from '../services/auth'
 
 interface ProtectedRouteProps {
@@ -26,15 +26,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     restoreAttempted.current = true
     setIsCheckingCookie(true)
-    // Step 1: Refresh tokens first — ensures access_token is fresh and gets CSRF token.
+    // Step 1: Refresh tokens first — ensures access_token is fresh.
     // /auth/me is an auth endpoint so the Axios interceptor won't auto-retry on 401;
     // calling /auth/refresh first avoids that limitation.
     api
-      .post<{ csrfToken?: string }>('/auth/refresh', {})
-      .then(async ({ data: refreshData }) => {
-        if (refreshData.csrfToken) {
-          setCsrfToken(refreshData.csrfToken)
-        }
+      .post('/auth/refresh', {})
+      .then(async () => {
         // Step 2: Fetch user data with the fresh access_token
         const { data: meData } = await api.get<{ user: AdminUser }>('/auth/me')
         if (meData.user) {

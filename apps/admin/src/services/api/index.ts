@@ -2,7 +2,7 @@
 // 本檔案統一導出所有 API 模組，方便使用者透過單一入口引用
 
 // Client & 認證工具
-export { api, setCsrfToken, getCsrfToken, clearCsrfToken } from './client'
+export { api } from './client'
 
 // 產品管理
 export { productsApi, productImagesApi } from './products.api'

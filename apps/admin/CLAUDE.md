@@ -133,9 +133,9 @@ VITE_API_BASE_URL=http://localhost:3001
 共用 Axios 實例在 `services/api/client.ts`（`services/api.ts` 只是向後相容的 re-export）：
 
 - Base URL 讀 `VITE_API_BASE_URL`，API 版本（`/api/v1`）集中在這個檔案
-- 認證走 **httpOnly cookie**（`withCredentials: true`）；非安全方法自動附 `X-CSRF-Token`
+- 認證走 **httpOnly cookie**（`withCredentials: true`）；CSRF 由 API 檢查 `Origin` 白名單（`apps/api/src/common/middleware/origin-check.middleware.ts`），前端不送 token
 - 401 時自動呼叫 `/auth/refresh`，並重送排隊中的請求
-- ⛔ 不要在 admin 用 `localStorage` 存 token 或手動加 `Authorization` header —— 會繞過 cookie + CSRF 機制
+- ⛔ 不要在 admin 用 `localStorage` 存 token 或手動加 `Authorization` header —— 會繞過 httpOnly cookie 機制
 
 ### 自訂 Hooks
 

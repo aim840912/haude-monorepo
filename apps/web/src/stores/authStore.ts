@@ -26,10 +26,8 @@ export interface User {
 
 interface AuthState {
   user: User | null
-  csrfToken: string | null
   isAuthenticated: boolean
-  setAuth: (user: User, csrfToken?: string) => void
-  setCsrfToken: (csrfToken: string) => void
+  setAuth: (user: User) => void
   logout: () => void
 }
 
@@ -64,18 +62,13 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      csrfToken: null,
       isAuthenticated: false,
 
-      setAuth: (user, csrfToken) =>
+      setAuth: (user) =>
         set({
           user,
-          csrfToken: csrfToken ?? null,
           isAuthenticated: true,
         }),
-
-      setCsrfToken: (csrfToken) =>
-        set({ csrfToken }),
 
       logout: () => {
         // Clear local cart (avoid stale guest cart after logout)
@@ -83,7 +76,6 @@ export const useAuthStore = create<AuthState>()(
         useCartStore.setState({ items: [] }) // Reset cart in-memory state for immediate UI update
         set({
           user: null,
-          csrfToken: null,
           isAuthenticated: false,
         })
       },

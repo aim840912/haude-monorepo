@@ -58,7 +58,7 @@ describe('performLogout', () => {
     expect(clearAllAuthStorage).toHaveBeenCalled()
   })
 
-  it('應在清除本地狀態之前送出撤銷請求（否則請求會少帶 CSRF token）', async () => {
+  it('應在清除本地狀態之前送出撤銷請求', async () => {
     const callOrder: string[] = []
     mockedLogoutApi.mockImplementation(() => {
       callOrder.push('api')

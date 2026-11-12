@@ -10,11 +10,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('./api/client', () => ({
   api: { post: vi.fn() },
-  clearCsrfToken: vi.fn(),
 }))
 
 import { performLogout } from './auth'
-import { api, clearCsrfToken } from './api/client'
+import { api } from './api/client'
 import { useAuthStore } from '../stores/authStore'
 
 const mockedPost = vi.mocked(api.post)
@@ -42,10 +41,9 @@ describe('performLogout', () => {
     expect(mockedPost).toHaveBeenCalledWith('/auth/logout')
   })
 
-  it('應清除 CSRF token 與前端 auth state', async () => {
+  it('應清除前端 auth state', async () => {
     await performLogout()
 
-    expect(clearCsrfToken).toHaveBeenCalled()
     const state = useAuthStore.getState()
     expect(state.user).toBeNull()
     expect(state.isAuthenticated).toBe(false)
@@ -57,22 +55,23 @@ describe('performLogout', () => {
 
     await expect(performLogout()).resolves.toBeUndefined()
 
-    expect(clearCsrfToken).toHaveBeenCalled()
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
   })
 
-  it('應先撤銷後端再清本地狀態（順序反了會讓請求少帶 cookie/CSRF）', async () => {
+  it('應先撤銷後端再清本地狀態', async () => {
     const callOrder: string[] = []
     mockedPost.mockImplementation(() => {
       callOrder.push('api')
       return Promise.resolve({ data: {} })
     })
-    vi.mocked(clearCsrfToken).mockImplementation(() => {
-      callOrder.push('clearCsrf')
+    useAuthStore.setState({
+      logout: () => {
+        callOrder.push('storeLogout')
+      },
     })
 
     await performLogout()
 
-    expect(callOrder).toEqual(['api', 'clearCsrf'])
+    expect(callOrder).toEqual(['api', 'storeLogout'])
   })
 })

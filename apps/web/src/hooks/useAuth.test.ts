@@ -178,7 +178,6 @@ describe('useAuth', () => {
     it('應該成功登入', async () => {
       vi.mocked(authService.login).mockResolvedValue({
         user: mockUser,
-        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -188,7 +187,7 @@ describe('useAuth', () => {
       })
 
       expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123')
-      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'csrf-token')
+      expect(mockSetAuth).toHaveBeenCalledWith(mockUser)
     })
 
     it('登入後應該合併購物車', async () => {
@@ -199,7 +198,6 @@ describe('useAuth', () => {
 
       vi.mocked(authService.login).mockResolvedValue({
         user: mockUser,
-        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -238,7 +236,6 @@ describe('useAuth', () => {
     it('應該成功註冊', async () => {
       vi.mocked(authService.register).mockResolvedValue({
         user: mockUser,
-        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())
@@ -248,7 +245,7 @@ describe('useAuth', () => {
       })
 
       expect(authService.register).toHaveBeenCalledWith('new@example.com', 'password123', '新用戶')
-      expect(mockSetAuth).toHaveBeenCalledWith(mockUser, 'csrf-token')
+      expect(mockSetAuth).toHaveBeenCalledWith(mockUser)
     })
 
     it('註冊後應該合併購物車', async () => {
@@ -259,7 +256,6 @@ describe('useAuth', () => {
 
       vi.mocked(authService.register).mockResolvedValue({
         user: mockUser,
-        csrfToken: 'csrf-token',
       })
 
       const { result } = renderHook(() => useAuth())

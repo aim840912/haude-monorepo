@@ -3,7 +3,7 @@
  *
  * Test features:
  * - Login/logout
- * - Auth state management (tokens in httpOnly cookies, only user+csrfToken in store)
+ * - Auth state management (tokens in httpOnly cookies, only user in store)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -42,7 +42,6 @@ describe('authStore', () => {
     // Reset store state
     useAuthStore.setState({
       user: null,
-      csrfToken: null,
       isAuthenticated: false,
     })
 
@@ -102,35 +101,15 @@ describe('authStore', () => {
       expect(state.isAuthenticated).toBe(true)
     })
 
-    it('應該設定 CSRF Token', () => {
-      const user = createMockUser()
-      const csrfToken = 'csrf-token-456'
-
-      act(() => {
-        useAuthStore.getState().setAuth(user, csrfToken)
-      })
-
-      expect(useAuthStore.getState().csrfToken).toBe(csrfToken)
-    })
-
-    it('應該單獨更新 CSRF Token', () => {
-      act(() => {
-        useAuthStore.getState().setCsrfToken('new-csrf-token')
-      })
-
-      expect(useAuthStore.getState().csrfToken).toBe('new-csrf-token')
-    })
-
     it('應該登出並清除狀態', () => {
       const user = createMockUser()
       act(() => {
-        useAuthStore.getState().setAuth(user, 'csrf')
+        useAuthStore.getState().setAuth(user)
         useAuthStore.getState().logout()
       })
 
       const state = useAuthStore.getState()
       expect(state.user).toBeNull()
-      expect(state.csrfToken).toBeNull()
       expect(state.isAuthenticated).toBe(false)
     })
 

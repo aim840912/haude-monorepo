@@ -7,6 +7,7 @@ import { AppModule } from './app.module';
 import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
 import { CacheHeadersInterceptor } from './common/interceptors/cache-headers.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { createOriginCheck } from './common/middleware/origin-check.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -59,6 +60,10 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
   });
+
+  // CSRF - 非 GET 請求的 Origin 必須在同一份白名單內（CORS 擋不住表單 POST）
+  // 綠界回呼由綠界網域送出、靠 CheckMacValue 驗證，排除在外
+  app.use(createOriginCheck(allowedOrigins, ['/api/v1/payments/ecpay/']));
 
   // API 版本控制 - 全域前綴 /api/v1
   app.setGlobalPrefix('api/v1', {

@@ -15,24 +15,8 @@ export const api = axios.create({
   withCredentials: true, // Send httpOnly cookies automatically
 })
 
-// Request interceptor - attach CSRF token (JWT is in httpOnly cookie, sent automatically)
-api.interceptors.request.use(
-  (config) => {
-    const state = useAuthStore.getState()
-
-    // CSRF Token (only for non-safe methods)
-    const method = config.method?.toUpperCase()
-    const safeMethods = ['GET', 'HEAD', 'OPTIONS']
-    if (state.csrfToken && method && !safeMethods.includes(method)) {
-      config.headers['X-CSRF-Token'] = state.csrfToken
-    }
-
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+// JWT is in httpOnly cookies (sent automatically). CSRF is enforced by the API's
+// Origin check, so no token header is needed.
 
 // ==================== Token Refresh Queue ====================
 // Queues concurrent 401s so only ONE refresh request is made
@@ -85,16 +69,7 @@ api.interceptors.response.use(
 
     try {
       // Attempt to refresh tokens (cookies are sent automatically)
-      const { data } = await axios.post(
-        `${BROWSER_API_URL}/auth/refresh`,
-        {},
-        { withCredentials: true }
-      )
-
-      // Update CSRF token from refresh response
-      if (data.csrfToken) {
-        useAuthStore.getState().setCsrfToken(data.csrfToken)
-      }
+      await axios.post(`${BROWSER_API_URL}/auth/refresh`, {}, { withCredentials: true })
 
       // Retry all queued requests
       retryQueue()

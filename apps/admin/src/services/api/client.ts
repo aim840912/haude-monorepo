@@ -14,18 +14,8 @@ export const api = axios.create({
   withCredentials: true, // Send httpOnly cookies automatically
 })
 
-// Request interceptor - attach CSRF token (JWT is in httpOnly cookie)
-api.interceptors.request.use((config) => {
-  // CSRF Token (only for non-safe methods)
-  const csrfToken = getCsrfToken()
-  const method = config.method?.toUpperCase()
-  const safeMethods = ['GET', 'HEAD', 'OPTIONS']
-  if (csrfToken && method && !safeMethods.includes(method)) {
-    config.headers['X-CSRF-Token'] = csrfToken
-  }
-
-  return config
-})
+// JWT is in httpOnly cookies (sent automatically). CSRF is enforced by the API's
+// Origin check, so no token header is needed.
 
 // ==================== Token Refresh Queue ====================
 
@@ -75,16 +65,7 @@ api.interceptors.response.use(
     isRefreshing = true
 
     try {
-      const { data } = await axios.post(
-        `${API_URL}/auth/refresh`,
-        {},
-        { withCredentials: true }
-      )
-
-      // Update CSRF token
-      if (data.csrfToken) {
-        setCsrfToken(data.csrfToken)
-      }
+      await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
 
       retryQueue()
       return api(originalRequest)
@@ -97,7 +78,6 @@ api.interceptors.response.use(
       if (isSessionDead(refreshError) && !isRedirectingToLogin) {
         isRedirectingToLogin = true
         useAuthStore.getState().logout()
-        clearCsrfToken()
         window.location.href = '/login'
       }
 
@@ -107,26 +87,3 @@ api.interceptors.response.use(
     }
   }
 )
-
-// ==================== CSRF Token Storage ====================
-
-/**
- * Set CSRF Token
- */
-export function setCsrfToken(token: string): void {
-  localStorage.setItem('admin-csrf-token', token)
-}
-
-/**
- * Get CSRF Token
- */
-export function getCsrfToken(): string | null {
-  return localStorage.getItem('admin-csrf-token')
-}
-
-/**
- * Clear CSRF Token
- */
-export function clearCsrfToken(): void {
-  localStorage.removeItem('admin-csrf-token')
-}

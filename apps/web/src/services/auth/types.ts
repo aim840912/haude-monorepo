@@ -12,7 +12,6 @@ export interface AuthServiceInterface {
 
 export interface AuthResponse {
   user: User
-  csrfToken?: string
 }
 
 export interface GetMeResponse {

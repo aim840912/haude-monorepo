@@ -46,9 +46,9 @@ export function useAuth(): UseAuthReturn {
     setError(null)
     setIsLoading(true)
     try {
-      // Login — tokens are in httpOnly cookies, response has { user, csrfToken }
+      // Login — tokens are in httpOnly cookies, response has { user }
       const data = await authService.login(email, password)
-      setAuth(data.user, data.csrfToken)
+      setAuth(data.user)
       // Merge local cart to backend (guest items are preserved)
       await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
@@ -65,7 +65,7 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(true)
     try {
       const data = await authService.register(email, password, name)
-      setAuth(data.user, data.csrfToken)
+      setAuth(data.user)
       // Merge local cart to backend (guest items are preserved)
       await useCartStore.getState().mergeLocalToBackend()
     } catch (err) {
