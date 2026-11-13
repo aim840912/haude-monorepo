@@ -79,7 +79,7 @@ export class CreateOrderService {
     // 3. 取得會員等級資訊
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { memberLevel: true },
+      select: { memberLevel: true, name: true },
     });
 
     const memberLevelConfig = user?.memberLevel
@@ -184,10 +184,26 @@ export class CreateOrderService {
       return newOrder;
     });
 
+    // Post-commit admin notifications run before anything else that can throw:
+    // the order and the stock decrement are already permanent.
+    // Fire-and-forget: never blocks or fails the order.
+
+    // Payment is confirmed by phone, so the admin bell is how staff learn
+    // about new orders.
+    this.notifications
+      .createNewOrderNotification({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        totalAmount,
+        userName: user?.name || '顧客',
+      })
+      .catch((err: Error) => {
+        this.logger.warn(
+          `New order notification failed for ${order.orderNumber}: ${err.message}`,
+        );
+      });
+
     // Stock just went down: alert admins if any item crossed its threshold.
-    // Runs right after the commit, before anything else that can throw —
-    // the decrement is already permanent. Fire-and-forget: never blocks or
-    // fails the order.
     for (const productId of new Set(dto.items.map((i) => i.productId))) {
       this.notifications
         .checkAndCreateStockAlert(productId)

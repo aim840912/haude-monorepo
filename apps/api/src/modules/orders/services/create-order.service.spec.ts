@@ -6,7 +6,7 @@ import { EmailService } from '../../email/email.service';
 import { MembersService } from '../../members/members.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 
-describe('CreateOrderService — stock alerts after an order', () => {
+describe('CreateOrderService — admin notifications after an order', () => {
   const tx = {
     order: {
       create: jest.fn(),
@@ -27,7 +27,10 @@ describe('CreateOrderService — stock alerts after an order', () => {
     validateDiscountCode: jest.fn(),
     applyDiscount: jest.fn(),
   };
-  const notifications = { checkAndCreateStockAlert: jest.fn() };
+  const notifications = {
+    checkAndCreateStockAlert: jest.fn(),
+    createNewOrderNotification: jest.fn(),
+  };
   const email = { sendOrderConfirmationEmail: jest.fn() };
   const members = { getLevelConfig: jest.fn() };
 
@@ -71,7 +74,10 @@ describe('CreateOrderService — stock alerts after an order', () => {
           images: [],
         }),
     );
-    prisma.user.findUnique.mockResolvedValue({ memberLevel: null });
+    prisma.user.findUnique.mockResolvedValue({
+      memberLevel: null,
+      name: '王小明',
+    });
     prisma.order.count.mockResolvedValue(0);
     tx.order.create.mockResolvedValue({
       id: 'order-1',
@@ -85,6 +91,28 @@ describe('CreateOrderService — stock alerts after an order', () => {
       code: 'SAVE50',
     });
     notifications.checkAndCreateStockAlert.mockResolvedValue(null);
+    notifications.createNewOrderNotification.mockResolvedValue({});
+  });
+
+  it('notifies admins of the new order', async () => {
+    await service.createOrder('user-1', dto());
+
+    expect(notifications.createNewOrderNotification).toHaveBeenCalledWith({
+      id: 'order-1',
+      orderNumber: 'ORD-1',
+      totalAmount: expect.any(Number),
+      userName: '王小明',
+    });
+  });
+
+  it('a failing new-order notification does not fail the order', async () => {
+    notifications.createNewOrderNotification.mockRejectedValue(
+      new Error('notify down'),
+    );
+
+    await expect(service.createOrder('user-1', dto())).resolves.toMatchObject({
+      id: 'order-1',
+    });
   });
 
   it('checks each ordered product once', async () => {
