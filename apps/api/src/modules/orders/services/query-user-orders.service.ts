@@ -42,6 +42,7 @@ export class QueryUserOrdersService {
         const payment = order.payments[0] ?? null;
         const expired = await this.orderExpiryService.checkAndExpireOrder(
           order.id,
+          order.orderNumber,
           order.createdAt,
           order.status,
           order.paymentStatus,
@@ -104,6 +105,7 @@ export class QueryUserOrdersService {
       const latestPayment = order.payments?.[0] ?? null;
       const expired = await this.orderExpiryService.checkAndExpireOrder(
         order.id,
+        order.orderNumber,
         order.createdAt,
         order.status,
         order.paymentStatus,

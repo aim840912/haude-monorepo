@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 /**
@@ -42,5 +42,6 @@ export class CancelOrderDto {
   @ApiPropertyOptional({ description: '取消原因', example: '不想購買了' })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   reason?: string;
 }

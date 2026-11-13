@@ -100,7 +100,7 @@ describe('CreateOrderService — admin notifications after an order', () => {
     expect(notifications.createNewOrderNotification).toHaveBeenCalledWith({
       id: 'order-1',
       orderNumber: 'ORD-1',
-      totalAmount: expect.any(Number),
+      totalAmount: tx.order.create.mock.calls[0][0].data.totalAmount,
       userName: '王小明',
     });
   });

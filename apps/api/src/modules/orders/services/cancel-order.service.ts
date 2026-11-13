@@ -63,7 +63,8 @@ export class CancelOrderService {
       .createOrderCancelledNotification({
         id: order.id,
         orderNumber: order.orderNumber,
-        reason: dto.reason ? `顧客取消：${dto.reason}` : '顧客取消',
+        // Bounded by CancelOrderDto; the bell shows this text verbatim
+        reason: dto.reason ? `顧客自行取消（${dto.reason}）` : '顧客自行取消',
       })
       .catch((err: Error) => {
         this.logger.warn(

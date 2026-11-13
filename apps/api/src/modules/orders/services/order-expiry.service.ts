@@ -60,7 +60,7 @@ export class OrderExpiryService {
 
       if (this.isExpired(order.createdAt, payment)) {
         try {
-          if (await this.expireOrder(order.id, order.items, payment?.id)) {
+          if (await this.expireOrder(order, order.items, payment?.id)) {
             expiredCount++;
           }
         } catch (error) {
@@ -83,6 +83,7 @@ export class OrderExpiryService {
    */
   async checkAndExpireOrder(
     orderId: string,
+    orderNumber: string,
     orderCreatedAt: Date,
     orderStatus: string,
     paymentStatus: string,
@@ -109,7 +110,11 @@ export class OrderExpiryService {
     }
 
     try {
-      return await this.expireOrder(orderId, items, pendingPayment?.id);
+      return await this.expireOrder(
+        { id: orderId, orderNumber },
+        items,
+        pendingPayment?.id,
+      );
     } catch (error) {
       this.logger.error(`懶檢查取消訂單失敗 [${orderId}]: ${error}`);
       return false;
@@ -154,10 +159,11 @@ export class OrderExpiryService {
    * 在事務中取消過期訂單並恢復庫存
    */
   private async expireOrder(
-    orderId: string,
+    order: { id: string; orderNumber: string },
     items: Array<{ productId: string; quantity: number }>,
     paymentId?: string | null,
   ): Promise<boolean> {
+    const orderId = order.id;
     const expired = await this.prisma.$transaction(async (tx) => {
       // Conditional: the user or an admin may have cancelled / confirmed it
       // since it was read. Without this both paths would restock.
@@ -186,31 +192,20 @@ export class OrderExpiryService {
 
     if (expired) {
       this.logger.log(`訂單過期取消: ${orderId}`);
-      void this.notifyExpired(orderId);
+      // Tell admins the system cancelled it (phone-confirmed orders expire
+      // after 24h unconfirmed). Fire-and-forget: the cancel is committed.
+      this.notifications
+        .createOrderCancelledNotification({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          reason: '付款逾期，系統自動取消',
+        })
+        .catch((err: Error) => {
+          this.logger.warn(
+            `Order expired notification failed for ${order.orderNumber}: ${err.message}`,
+          );
+        });
     }
     return expired;
-  }
-
-  /**
-   * Tell admins the system cancelled an order (phone-confirmed orders expire
-   * after 24h unconfirmed). Never throws: the cancel is already committed.
-   */
-  private async notifyExpired(orderId: string): Promise<void> {
-    try {
-      const order = await this.prisma.order.findUnique({
-        where: { id: orderId },
-        select: { orderNumber: true },
-      });
-      if (!order) return;
-      await this.notifications.createOrderCancelledNotification({
-        id: orderId,
-        orderNumber: order.orderNumber,
-        reason: '付款逾期，系統自動取消',
-      });
-    } catch (err) {
-      this.logger.warn(
-        `Order expired notification failed for ${orderId}: ${(err as Error).message}`,
-      );
-    }
   }
 }

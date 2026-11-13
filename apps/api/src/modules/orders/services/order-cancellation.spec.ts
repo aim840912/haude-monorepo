@@ -19,7 +19,7 @@ describe('訂單取消與補庫存', () => {
   ];
 
   const mockPrisma = {
-    order: { updateMany: jest.fn(), findUnique: jest.fn() },
+    order: { updateMany: jest.fn() },
     product: { update: jest.fn() },
     payment: { update: jest.fn() },
     $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(mockPrisma)),
@@ -36,7 +36,6 @@ describe('訂單取消與補庫存', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockPrisma.order.updateMany.mockResolvedValue({ count: 1 });
-    mockPrisma.order.findUnique.mockResolvedValue({ orderNumber: 'ORD-1' });
     mockNotifications.createOrderCancelledNotification.mockResolvedValue({});
 
     const module: TestingModule = await Test.createTestingModule({
@@ -96,7 +95,7 @@ describe('訂單取消與補庫存', () => {
       ).toHaveBeenCalledWith({
         id: 'order-1',
         orderNumber: 'ORD-1',
-        reason: '顧客取消：買錯了',
+        reason: '顧客自行取消（買錯了）',
       });
     });
 
@@ -126,6 +125,7 @@ describe('訂單取消與補庫存', () => {
     it('逾期時取消並補回庫存', async () => {
       const result = await expiryService.checkAndExpireOrder(
         'order-1',
+        'ORD-1',
         expiredAt,
         'pending',
         'pending',
@@ -140,6 +140,7 @@ describe('訂單取消與補庫存', () => {
     it('逾期取消後通知後台', async () => {
       await expiryService.checkAndExpireOrder(
         'order-1',
+        'ORD-1',
         expiredAt,
         'pending',
         'pending',
@@ -162,6 +163,7 @@ describe('訂單取消與補庫存', () => {
 
       const result = await expiryService.checkAndExpireOrder(
         'order-1',
+        'ORD-1',
         expiredAt,
         'pending',
         'pending',
