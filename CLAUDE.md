@@ -334,6 +334,7 @@ GET    /health/ready    # readiness，DB 斷線回 503
 
 - 預警不是資料庫觸發器：庫存變少後要由程式呼叫 `NotificationsService.checkAndCreateStockAlert()`，目前接在「建立訂單」與「後台手動改庫存」兩處（不等待、失敗只記 log），另外儲存預警設定時也會立即檢查一次。**新增會減少庫存的路徑時要一起呼叫**，沒呼叫不會報錯，只是預警靜默失效（2026-11-13 前就是完全沒接，設定了也不會通知）。
 - 只檢查**設定過**的商品；沒設定的商品永遠不會提醒。後台「庫存預警」頁列出全部商品，第一次設定門檻時會一併啟用。
+- **後台鈴鐺的每種通知都一樣**：`notifications.service.ts` 的 `create*Notification()` 寫好不等於會發送，要在業務流程裡呼叫才會出現（2026-11-13 前四種有三種沒人呼叫）。目前接法：新訂單 → 建立訂單；訂單取消 → 顧客取消、付款逾期（後台自己取消不通知）；付款成功 → **尚未接**，開放金流時接在綠界付款成功的 callback。新增通知類型時，同時寫「呼叫點有呼叫」的測試。
 
 ### 後台操作紀錄（改動前必讀）
 
@@ -485,7 +486,7 @@ VITE_API_BASE_URL=http://localhost:3001
 2. **CheckMacValue 驗簽**（純函式，最該先測）：`ecpay-crypto.spec.ts` 要驗「固定輸入 → 簽章等於綠界文件預期值」。驗簽沒做好 = 有人可偽造「已付款」通知。
 3. **Callback / Webhook**：綠界主機要打得到後端 `/payment/callback`。本機開發需 `ngrok http 3001` 把 localhost 暴露到公網，再設為綠界 callback URL。
 4. **冪等性（idempotency）**：綠界可能重送同一筆付款通知，`payment-callback.service` 必須確保同一筆只處理一次（否則庫存扣兩次、發兩封信）。
-5. **情境全覆蓋**：成功 / 授權失敗 / 逾時未付（訂單是否自動取消、釋放庫存）/ 重複通知 / 退款（`payment-refund.service`）。
+5. **情境全覆蓋**：成功 / 授權失敗 / 逾時未付（訂單是否自動取消、釋放庫存）/ 重複通知 / 退款（`payment-refund.service`）。付款成功要呼叫 `createPaymentSuccessNotification()`（目前沒有呼叫點），重複通知時只發一次。
 6. **測試卡號**：綠界測試環境提供假卡號觸發不同結果——**具體卡號以綠界官方當前文件為準**（可用 context7 查 ECPay SDK 文件，勿憑記憶硬寫）。
 7. **上線順序**：先把能 mock 的邏輯（簽章、狀態機）單元測試測滿 → 再接 Stage + ngrok 測完整 callback → 情境卡號全跑 → 最後才切正式金鑰 + `enabled: true`。
 
