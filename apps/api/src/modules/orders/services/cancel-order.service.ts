@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
 import { CancelOrderDto } from '../dto';
 import { QueryUserOrdersService } from './query-user-orders.service';
 import { restoreOrderStock } from './order-stock';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 /**
  * 訂單取消服務
@@ -11,9 +12,12 @@ import { restoreOrderStock } from './order-stock';
  */
 @Injectable()
 export class CancelOrderService {
+  private readonly logger = new Logger(CancelOrderService.name);
+
   constructor(
     private prisma: PrismaService,
     private queryUserOrdersService: QueryUserOrdersService,
+    private notifications: NotificationsService,
   ) {}
 
   /**
@@ -52,6 +56,20 @@ export class CancelOrderService {
 
       await restoreOrderStock(tx, order.items);
     });
+
+    // Payment is confirmed by phone: staff must know before calling the
+    // customer or packing the order. Fire-and-forget, never fails the cancel.
+    this.notifications
+      .createOrderCancelledNotification({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        reason: dto.reason ? `顧客取消：${dto.reason}` : '顧客取消',
+      })
+      .catch((err: Error) => {
+        this.logger.warn(
+          `Order cancelled notification failed for ${order.orderNumber}: ${err.message}`,
+        );
+      });
 
     return { message: '訂單已取消' };
   }

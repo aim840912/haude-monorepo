@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/prisma/prisma.service';
 import { restoreOrderStock } from './order-stock';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 /**
  * 訂單過期自動取消服務
@@ -28,7 +29,10 @@ export class OrderExpiryService {
     DEFAULT: 24 * 60 * 60 * 1000, // 24 小時（無付款記錄）
   } as const;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /**
    * 每小時掃描並取消過期的 pending 訂單
@@ -182,7 +186,31 @@ export class OrderExpiryService {
 
     if (expired) {
       this.logger.log(`訂單過期取消: ${orderId}`);
+      void this.notifyExpired(orderId);
     }
     return expired;
+  }
+
+  /**
+   * Tell admins the system cancelled an order (phone-confirmed orders expire
+   * after 24h unconfirmed). Never throws: the cancel is already committed.
+   */
+  private async notifyExpired(orderId: string): Promise<void> {
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        select: { orderNumber: true },
+      });
+      if (!order) return;
+      await this.notifications.createOrderCancelledNotification({
+        id: orderId,
+        orderNumber: order.orderNumber,
+        reason: '付款逾期，系統自動取消',
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Order expired notification failed for ${orderId}: ${(err as Error).message}`,
+      );
+    }
   }
 }

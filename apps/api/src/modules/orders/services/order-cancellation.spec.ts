@@ -5,6 +5,7 @@ import { CancelOrderService } from './cancel-order.service';
 import { OrderExpiryService } from './order-expiry.service';
 import { QueryUserOrdersService } from './query-user-orders.service';
 import { restoreOrderStock } from './order-stock';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 /**
  * 取消訂單的三條路徑（顧客取消、付款逾期、後台改狀態）都會補庫存。
@@ -18,12 +19,16 @@ describe('訂單取消與補庫存', () => {
   ];
 
   const mockPrisma = {
-    order: { updateMany: jest.fn() },
+    order: { updateMany: jest.fn(), findUnique: jest.fn() },
     product: { update: jest.fn() },
     payment: { update: jest.fn() },
     $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(mockPrisma)),
   };
   const mockQueryUserOrders = { getOrderById: jest.fn() };
+  const mockNotifications = { createOrderCancelledNotification: jest.fn() };
+
+  /** fire-and-forget notifications settle on later microtasks */
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
 
   let cancelService: CancelOrderService;
   let expiryService: OrderExpiryService;
@@ -31,6 +36,8 @@ describe('訂單取消與補庫存', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockPrisma.order.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.order.findUnique.mockResolvedValue({ orderNumber: 'ORD-1' });
+    mockNotifications.createOrderCancelledNotification.mockResolvedValue({});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,6 +45,7 @@ describe('訂單取消與補庫存', () => {
         OrderExpiryService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: QueryUserOrdersService, useValue: mockQueryUserOrders },
+        { provide: NotificationsService, useValue: mockNotifications },
       ],
     }).compile();
 
@@ -60,6 +68,7 @@ describe('訂單取消與補庫存', () => {
     beforeEach(() => {
       mockQueryUserOrders.getOrderById.mockResolvedValue({
         id: 'order-1',
+        orderNumber: 'ORD-1',
         status: 'pending',
         notes: null,
         items,
@@ -75,6 +84,30 @@ describe('訂單取消與補庫存', () => {
         }),
       );
       expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
+    });
+
+    it('取消成功後通知後台，附上顧客填的原因', async () => {
+      await cancelService.cancelOrder('order-1', 'user-1', {
+        reason: '買錯了',
+      });
+
+      expect(
+        mockNotifications.createOrderCancelledNotification,
+      ).toHaveBeenCalledWith({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        reason: '顧客取消：買錯了',
+      });
+    });
+
+    it('通知失敗不影響取消結果', async () => {
+      mockNotifications.createOrderCancelledNotification.mockRejectedValue(
+        new Error('notify down'),
+      );
+
+      await expect(
+        cancelService.cancelOrder('order-1', 'user-1', {}),
+      ).resolves.toEqual({ message: '訂單已取消' });
     });
 
     it('讀取後已被其他路徑取消時回 400，且不補庫存', async () => {
@@ -104,6 +137,26 @@ describe('訂單取消與補庫存', () => {
       expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
     });
 
+    it('逾期取消後通知後台', async () => {
+      await expiryService.checkAndExpireOrder(
+        'order-1',
+        expiredAt,
+        'pending',
+        'pending',
+        items,
+        null,
+      );
+      await flush();
+
+      expect(
+        mockNotifications.createOrderCancelledNotification,
+      ).toHaveBeenCalledWith({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        reason: '付款逾期，系統自動取消',
+      });
+    });
+
     it('讀取後已被其他路徑改掉時不補庫存', async () => {
       mockPrisma.order.updateMany.mockResolvedValue({ count: 0 });
 
@@ -119,6 +172,10 @@ describe('訂單取消與補庫存', () => {
       expect(result).toBe(false);
       expect(mockPrisma.product.update).not.toHaveBeenCalled();
       expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+      await flush();
+      expect(
+        mockNotifications.createOrderCancelledNotification,
+      ).not.toHaveBeenCalled();
     });
   });
 });
