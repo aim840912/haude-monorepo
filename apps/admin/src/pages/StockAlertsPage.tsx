@@ -11,6 +11,14 @@ interface ProductStock {
   id: string
   name: string
   stock: number
+  isDraft?: boolean
+}
+
+/** 空白或非 0 以上整數 → null（Number('') 是 0，不能直接用） */
+function parseThreshold(raw: string): number | null {
+  if (raw.trim() === '') return null
+  const value = Number(raw)
+  return Number.isInteger(value) && value >= 0 ? value : null
 }
 
 interface Row {
@@ -30,7 +38,8 @@ function mergeRows(
   settings: { productId: string; threshold: number; isEnabled: boolean }[],
 ): Row[] {
   const byProduct = new Map(settings.map((s) => [s.productId, s]))
-  return products.map((product) => {
+  // 草稿是新增到一半的商品，還沒上架，不需要預警
+  return products.filter((product) => !product.isDraft).map((product) => {
     const setting = byProduct.get(product.id)
     return {
       product,
@@ -94,14 +103,31 @@ export function StockAlertsPage() {
     }
   }
 
+  /** 輸入框裡還沒儲存的門檻；沒改過回傳目前值，格式錯誤回傳 null */
+  const pendingThreshold = (row: Row): number | null => {
+    const draft = drafts[row.product.id]
+    if (draft === undefined || draft === String(row.threshold)) return row.threshold
+    return parseThreshold(draft)
+  }
+
   const saveThreshold = (row: Row) => {
-    const value = Number(drafts[row.product.id])
-    if (!Number.isInteger(value) || value < 0) {
+    const value = pendingThreshold(row)
+    if (value === null) {
       showError('門檻要是 0 以上的整數')
       return
     }
     // 第一次設定時一起啟用：設了門檻卻沒啟用，等於沒設
     save(row, row.configured ? { threshold: value } : { threshold: value, isEnabled: true })
+  }
+
+  // 開關一起送出輸入框裡的門檻，避免畫面顯示的門檻和實際存的不同
+  const toggleEnabled = (row: Row) => {
+    const threshold = pendingThreshold(row)
+    if (threshold === null) {
+      showError('門檻要是 0 以上的整數')
+      return
+    }
+    save(row, { isEnabled: !row.isEnabled, threshold })
   }
 
   if (isLoading) {
@@ -215,7 +241,7 @@ export function StockAlertsPage() {
                         role="switch"
                         aria-checked={row.isEnabled}
                         aria-label={`${row.product.name} 的庫存預警`}
-                        onClick={() => save(row, { isEnabled: !row.isEnabled, threshold: row.threshold })}
+                        onClick={() => toggleEnabled(row)}
                         disabled={saving}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-green-500 disabled:opacity-50 ${
                           row.isEnabled ? 'bg-green-600' : 'bg-gray-300'

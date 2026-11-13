@@ -184,18 +184,10 @@ export class CreateOrderService {
       return newOrder;
     });
 
-    // 11. 記錄折扣使用（在交易外，避免過長交易）
-    if (discountCode && discountAmount > 0) {
-      await this.discountsService.applyDiscount(
-        discountCode,
-        userId,
-        order.id,
-        discountAmount,
-      );
-    }
-
     // Stock just went down: alert admins if any item crossed its threshold.
-    // Fire-and-forget, like the email below — never blocks or fails the order.
+    // Runs right after the commit, before anything else that can throw —
+    // the decrement is already permanent. Fire-and-forget: never blocks or
+    // fails the order.
     for (const productId of new Set(dto.items.map((i) => i.productId))) {
       this.notifications
         .checkAndCreateStockAlert(productId)
@@ -204,6 +196,16 @@ export class CreateOrderService {
             `Stock alert check failed for ${productId}: ${err.message}`,
           );
         });
+    }
+
+    // 11. 記錄折扣使用（在交易外，避免過長交易）
+    if (discountCode && discountAmount > 0) {
+      await this.discountsService.applyDiscount(
+        discountCode,
+        userId,
+        order.id,
+        discountAmount,
+      );
     }
 
     // 12. 發送訂單確認郵件（非同步，不阻塞回應）

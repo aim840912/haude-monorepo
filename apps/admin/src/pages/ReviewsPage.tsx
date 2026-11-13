@@ -57,6 +57,12 @@ export function ReviewsPage() {
         offset: page * PAGE_SIZE,
         isApproved: FILTER_PARAM[filter],
       })
+      // 刪除或隱藏後，最後一頁可能整頁空掉 → 退回新的最後一頁
+      const lastPage = Math.max(0, Math.ceil(data.total / PAGE_SIZE) - 1)
+      if (page > lastPage) {
+        setPage(lastPage)
+        return
+      }
       setReviews(data.reviews)
       setTotal(data.total)
     } catch (err) {

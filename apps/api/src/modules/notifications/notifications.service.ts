@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { NotificationType, Prisma } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   // ========================================
@@ -234,7 +236,7 @@ export class NotificationsService {
     productId: string,
     data: { threshold?: number; isEnabled?: boolean },
   ) {
-    return this.prisma.stockAlertSetting.upsert({
+    const setting = await this.prisma.stockAlertSetting.upsert({
       where: { productId },
       create: {
         productId,
@@ -246,6 +248,18 @@ export class NotificationsService {
         isEnabled: data.isEnabled,
       },
     });
+
+    // Stock may already be below the new threshold; otherwise nothing would
+    // alert until the next order or manual edit. Never fails the save.
+    try {
+      await this.checkAndCreateStockAlert(productId);
+    } catch (err) {
+      this.logger.warn(
+        `Stock alert check failed for ${productId}: ${(err as Error).message}`,
+      );
+    }
+
+    return setting;
   }
 
   /**

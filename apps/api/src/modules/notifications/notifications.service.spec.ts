@@ -392,6 +392,44 @@ describe('NotificationsService', () => {
         }),
       });
     });
+
+    it('儲存後立即檢查目前庫存，已低於門檻就馬上提醒', async () => {
+      mockPrismaService.stockAlertSetting.upsert.mockResolvedValue({
+        productId: 'product-123',
+        threshold: 10,
+        isEnabled: true,
+      });
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        id: 'product-123',
+        name: '冬茶',
+        stock: 3,
+        stockAlertSetting: { threshold: 10, isEnabled: true },
+      });
+      mockPrismaService.notification.findFirst.mockResolvedValue(null);
+      mockPrismaService.notification.create.mockResolvedValue({ id: 'n1' });
+
+      await service.upsertStockAlertSetting('product-123', {
+        isEnabled: true,
+      });
+
+      expect(mockPrismaService.notification.create).toHaveBeenCalled();
+    });
+
+    it('檢查失敗不影響儲存結果', async () => {
+      const saved = {
+        productId: 'product-123',
+        threshold: 10,
+        isEnabled: true,
+      };
+      mockPrismaService.stockAlertSetting.upsert.mockResolvedValue(saved);
+      mockPrismaService.product.findUnique.mockRejectedValue(
+        new Error('db down'),
+      );
+
+      await expect(
+        service.upsertStockAlertSetting('product-123', { isEnabled: true }),
+      ).resolves.toEqual(saved);
+    });
   });
 
   describe('checkAndCreateStockAlert', () => {
