@@ -67,6 +67,17 @@ describe('describeTarget', () => {
     })
   })
 
+  it('網站設定的名稱就是 key，不會改名，不標示目前名稱', () => {
+    const target = describeTarget({
+      resource: 'site-settings',
+      resourceId: 'home.hero',
+      metadata: null,
+      currentLabel: 'home.hero',
+    })
+    expect(target.text).toBe('home.hero')
+    expect(target.note).toBeUndefined()
+  })
+
   it('空白名稱視同沒有名稱', () => {
     expect(
       describeTarget({ ...base, metadata: { label: ' ' }, currentLabel: '龍眼蜜' }).text,

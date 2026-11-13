@@ -29,6 +29,10 @@ export { paymentsApi } from './payments.api'
 export { auditLogsApi } from './audit-logs.api'
 export type { AuditLogFilters } from './audit-logs.api'
 
+// 評論管理
+export { reviewsApi } from './reviews.api'
+export type { AdminReview, ReviewListResponse } from './reviews.api'
+
 // 折扣碼管理
 export { discountsApi } from './discounts.api'
 export type { DiscountCode } from './discounts.api'

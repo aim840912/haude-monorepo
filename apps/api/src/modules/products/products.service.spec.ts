@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { ProductsService } from './products.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   createMockPrismaService,
   createMockSupabaseService,
@@ -19,16 +20,21 @@ describe('ProductsService', () => {
   let service: ProductsService;
   let mockPrismaService: ReturnType<typeof createMockPrismaService>;
   let mockSupabaseService: ReturnType<typeof createMockSupabaseService>;
+  let mockNotifications: { checkAndCreateStockAlert: jest.Mock };
 
   beforeEach(async () => {
     mockPrismaService = createMockPrismaService();
     mockSupabaseService = createMockSupabaseService();
+    mockNotifications = {
+      checkAndCreateStockAlert: jest.fn().mockResolvedValue(null),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: SupabaseService, useValue: mockSupabaseService },
+        { provide: NotificationsService, useValue: mockNotifications },
       ],
     }).compile();
 
@@ -264,6 +270,38 @@ describe('ProductsService', () => {
   });
 
   describe('update', () => {
+    describe('庫存預警', () => {
+      beforeEach(() => {
+        mockPrismaService.product.findUnique.mockResolvedValue(
+          createMockProduct(),
+        );
+        mockPrismaService.product.update.mockResolvedValue(createMockProduct());
+      });
+
+      it('改了庫存就檢查是否低於預警門檻', async () => {
+        await service.update('product-1', { stock: 2 });
+        expect(mockNotifications.checkAndCreateStockAlert).toHaveBeenCalledWith(
+          'product-1',
+        );
+      });
+
+      it('沒改庫存不檢查', async () => {
+        await service.update('product-1', { name: '新名稱' });
+        expect(
+          mockNotifications.checkAndCreateStockAlert,
+        ).not.toHaveBeenCalled();
+      });
+
+      it('預警檢查失敗不影響更新結果', async () => {
+        mockNotifications.checkAndCreateStockAlert.mockRejectedValue(
+          new Error('db down'),
+        );
+        await expect(
+          service.update('product-1', { stock: 2 }),
+        ).resolves.toBeDefined();
+      });
+    });
+
     const updateDto = {
       name: '更新的產品名',
       price: 600,

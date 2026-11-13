@@ -6,6 +6,7 @@ import { OrderCalculator } from '../utils/order-calculator';
 import { DiscountsService } from '../../discounts/discounts.service';
 import { EmailService, OrderEmailData } from '../../email/email.service';
 import { MembersService } from '../../members/members.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 /**
  * 訂單建立服務
@@ -20,6 +21,7 @@ export class CreateOrderService {
     private discountsService: DiscountsService,
     private emailService: EmailService,
     private membersService: MembersService,
+    private notifications: NotificationsService,
   ) {}
 
   /**
@@ -190,6 +192,18 @@ export class CreateOrderService {
         order.id,
         discountAmount,
       );
+    }
+
+    // Stock just went down: alert admins if any item crossed its threshold.
+    // Fire-and-forget, like the email below — never blocks or fails the order.
+    for (const productId of new Set(dto.items.map((i) => i.productId))) {
+      this.notifications
+        .checkAndCreateStockAlert(productId)
+        .catch((err: Error) => {
+          this.logger.warn(
+            `Stock alert check failed for ${productId}: ${err.message}`,
+          );
+        });
     }
 
     // 12. 發送訂單確認郵件（非同步，不阻塞回應）

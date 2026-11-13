@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -19,9 +21,12 @@ const PRODUCT_IMAGES_BUCKET = 'product-images';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
+
   constructor(
     private prisma: PrismaService,
     private supabase: SupabaseService,
+    private notifications: NotificationsService,
   ) {}
 
   // ========================================
@@ -209,11 +214,21 @@ export class ProductsService {
     if (dto.isReviewsVisible !== undefined)
       data.isReviewsVisible = dto.isReviewsVisible;
 
-    return this.prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id },
       data,
       include: { images: true },
     });
+
+    // A manual stock edit can drop below the alert threshold. Fire-and-forget:
+    // the alert is a side effect and must never fail the update.
+    if (dto.stock !== undefined) {
+      this.notifications.checkAndCreateStockAlert(id).catch((err: Error) => {
+        this.logger.warn(`Stock alert check failed for ${id}: ${err.message}`);
+      });
+    }
+
+    return updated;
   }
 
   /**

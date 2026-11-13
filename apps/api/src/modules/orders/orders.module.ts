@@ -7,6 +7,7 @@ import {
 } from './orders.controller';
 import { DiscountsModule } from '../discounts/discounts.module';
 import { MembersModule } from '../members/members.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 // 專責服務
 import {
@@ -21,7 +22,7 @@ import {
 } from './services';
 
 @Module({
-  imports: [DiscountsModule, MembersModule],
+  imports: [DiscountsModule, MembersModule, NotificationsModule],
   controllers: [
     OrdersController,
     AdminOrdersController,

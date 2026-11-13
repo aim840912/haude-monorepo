@@ -20,6 +20,8 @@ import {
   Store,
   ExternalLink,
   History,
+  MessageSquare,
+  PackageSearch,
   type LucideIcon,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
@@ -55,6 +57,7 @@ const navGroups: NavGroup[] = [
     label: '商品與服務',
     items: [
       { path: '/products', label: '產品管理', icon: Package },
+      { path: '/stock-alerts', label: '庫存預警', icon: PackageSearch },
       { path: '/farm-tours', label: '觀光果園', icon: TreeDeciduous },
       { path: '/schedules', label: '擺攤行程', icon: CalendarDays },
       { path: '/locations', label: '門市管理', icon: MapPin },
@@ -71,6 +74,7 @@ const navGroups: NavGroup[] = [
   {
     label: '內容與行銷',
     items: [
+      { path: '/reviews', label: '評論管理', icon: MessageSquare },
       { path: '/social-posts', label: '社群貼文', icon: Share2 },
       { path: '/site-images', label: '網站圖片', icon: ImageIcon },
     ],

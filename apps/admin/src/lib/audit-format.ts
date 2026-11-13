@@ -121,7 +121,11 @@ export function describeChanges(meta: AuditLogMeta | null): FieldChange[] {
     })
 }
 
+/** 以 key 當識別、key 本身就是名稱的資源：查到的名稱不會跟當時不同 */
+const KEY_NAMED_RESOURCES = new Set(['site-settings'])
+
 export interface AuditTargetSource {
+  resource?: string
   resourceId: string | null
   metadata: AuditLogMeta | null
   /** API 查詢時補上的「現在的名稱」，只有紀錄沒存名稱時才有 */
@@ -154,7 +158,10 @@ export function describeTarget(log: AuditTargetSource): AuditTarget {
 
   if (label) return withTitle({ text: label })
   if (!id) return { text: '—' }
-  if (log.currentLabel) return withTitle({ text: log.currentLabel, note: '目前名稱' })
+  if (log.currentLabel) {
+    const keyNamed = log.resource !== undefined && KEY_NAMED_RESOURCES.has(log.resource)
+    return withTitle(keyNamed ? { text: log.currentLabel } : { text: log.currentLabel, note: '目前名稱' })
+  }
   const shortId = `#${id.slice(0, 8)}`
   if (log.targetMissing) return withTitle({ text: '已刪除或找不到', note: shortId })
   return withTitle({ text: shortId })
