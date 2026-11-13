@@ -1,20 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
-import {
-  hasLabelResolver,
-  resolveAuditLabels,
-} from '@/common/audit/audit-labels';
+import { resolveAuditLabels } from '@/common/audit/audit-labels';
 import { QueryAuditLogsDto } from './dto/query-audit-logs.dto';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Same rule as the admin UI: only a non-blank string counts as a name. */
 function hasLabel(metadata: unknown): boolean {
-  return (
-    !!metadata &&
-    typeof metadata === 'object' &&
-    typeof (metadata as { label?: unknown }).label === 'string'
-  );
+  if (!metadata || typeof metadata !== 'object') return false;
+  const label = (metadata as { label?: unknown }).label;
+  return typeof label === 'string' && label.trim() !== '';
 }
 
 /** Admins pick dates in Taiwan time; convert to the UTC instant it starts. */
@@ -100,16 +96,17 @@ export class AuditLogsService {
       ),
     );
 
+    const unlabeledSet = new Set(unlabeled);
     return logs.map(
       (log): T & { currentLabel?: string; targetMissing?: true } => {
-        if (!unlabeled.includes(log)) return log;
-        const currentLabel = resolved
-          .get(log.resource)
-          ?.get(log.resourceId as string);
-        if (currentLabel) return { ...log, currentLabel };
-        return hasLabelResolver(log.resource)
-          ? { ...log, targetMissing: true }
-          : log;
+        if (!unlabeledSet.has(log)) return log;
+        const id = log.resourceId as string;
+        // null = unknown (no resolver / query failed): never claim "deleted"
+        const labels = resolved.get(log.resource);
+        if (!labels) return log;
+        if (!labels.has(id)) return { ...log, targetMissing: true };
+        const currentLabel = labels.get(id);
+        return currentLabel ? { ...log, currentLabel } : log;
       },
     );
   }

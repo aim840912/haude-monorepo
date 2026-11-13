@@ -26,6 +26,15 @@ const byProductId: LabelResolver = async (p, ids) =>
     })
   ).map((r) => [r.id, r.name]);
 
+// Name only — the email is personal data and the list view doesn't need it
+const byUserId: LabelResolver = async (p, ids) =>
+  (
+    await p.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true },
+    })
+  ).map((r) => [r.id, r.name]);
+
 const LABEL_RESOLVERS: Record<string, LabelResolver> = {
   products: byProductId,
   'stock-alerts': byProductId,
@@ -86,60 +95,44 @@ const LABEL_RESOLVERS: Record<string, LabelResolver> = {
         select: { id: true, order: { select: { orderNumber: true } } },
       })
     ).map((r) => [r.id, r.order.orderNumber]),
-  // Name only — the email is personal data and the list view doesn't need it
-  users: async (p, ids) =>
-    (
-      await p.user.findMany({
-        where: { id: { in: ids } },
-        select: { id: true, name: true },
-      })
-    ).map((r) => [r.id, r.name]),
-  members: async (p, ids) =>
-    (
-      await p.user.findMany({
-        where: { id: { in: ids } },
-        select: { id: true, name: true },
-      })
-    ).map((r) => [r.id, r.name]),
-  // site-settings are addressed by key, and the key is the readable name
-  'site-settings': async (p, keys) =>
-    (
-      await p.siteSetting.findMany({
-        where: { key: { in: keys } },
-        select: { key: true },
-      })
-    ).map((r) => [r.key, r.key]),
+  users: byUserId,
+  members: byUserId,
+  // Addressed by key, and the key already is the readable name — no query,
+  // and never "missing", so a deleted setting still shows its key
+  'site-settings': (_p, keys) =>
+    Promise.resolve(keys.map((key): [string, string] => [key, key])),
 };
 
 const logger = new Logger('AuditLabels');
 
-export function hasLabelResolver(resource: string): boolean {
-  // Own keys only: `in` would also match Object.prototype ("constructor"…)
-  return Object.hasOwn(LABEL_RESOLVERS, resource);
-}
-
 /**
  * Resolve names for many ids of one resource in a single query.
+ *
+ * - `null`  → unknown: no resolver for this resource, or the query failed.
+ *             Callers must not read this as "the target was deleted".
+ * - a Map   → every id that still exists is a key; its value is the name,
+ *             or null when the record exists but has no usable name.
+ *             An id missing from the Map means the record is gone.
+ *
  * Never throws: a failed lookup only means the log shows its id.
  */
 export async function resolveAuditLabels(
   prisma: PrismaService,
   resource: string,
   ids: string[],
-): Promise<Map<string, string>> {
+): Promise<Map<string, string | null> | null> {
+  // Own keys only: `in` would also match Object.prototype ("constructor"…)
+  if (!Object.hasOwn(LABEL_RESOLVERS, resource)) return null;
   const unique = [...new Set(ids)];
-  if (!hasLabelResolver(resource) || unique.length === 0) return new Map();
-  const resolver = LABEL_RESOLVERS[resource];
+  if (unique.length === 0) return new Map();
 
   try {
-    const rows = await resolver(prisma, unique);
-    return new Map(
-      rows.filter((row): row is [string, string] => !!row[1]?.trim()),
-    );
+    const rows = await LABEL_RESOLVERS[resource](prisma, unique);
+    return new Map(rows.map(([id, name]) => [id, name?.trim() ? name : null]));
   } catch (err) {
     logger.warn(
       `Label lookup failed for ${resource}: ${(err as Error).message}`,
     );
-    return new Map();
+    return null;
   }
 }

@@ -213,7 +213,7 @@ export class AuditLogInterceptor implements NestInterceptor {
             await resolveAuditLabels(this.prisma, metadata.resource, [
               resourceId,
             ])
-          ).get(resourceId) ?? null)
+          )?.get(resourceId) ?? null)
         : null);
 
     // `:id/images` sub-routes change an image, not the parent: keep the
@@ -274,8 +274,10 @@ export class AuditLogInterceptor implements NestInterceptor {
     //    when the handler returns e.g. `{ refundId }` rather than `{ id }`
     if (metadata.action === 'CREATE') {
       const data = this.unwrapBody(responseBody);
-      const id = data?.[paramName] ?? data?.id;
-      if (typeof id === 'string') return id;
+      const id = [data?.[paramName], data?.id].find(
+        (v): v is string => typeof v === 'string',
+      );
+      if (id) return id;
     }
 
     return null;

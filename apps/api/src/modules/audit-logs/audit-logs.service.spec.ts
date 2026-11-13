@@ -99,6 +99,27 @@ describe('AuditLogsService', () => {
       expect(data[0].currentLabel).toBeUndefined();
     });
 
+    it('名稱查詢失敗時不標示為找不到（資料庫出錯 ≠ 已刪除）', async () => {
+      prisma.auditLog.findMany.mockResolvedValue([log('a1', 'products', 'p1')]);
+      prisma.product.findMany.mockRejectedValue(new Error('db down'));
+      const { data } = await service.findAll({});
+      expect(data[0].targetMissing).toBeUndefined();
+    });
+
+    it('空字串的名稱視同沒有名稱，會補查目前名稱', async () => {
+      prisma.auditLog.findMany.mockResolvedValue([
+        {
+          id: 'a1',
+          resource: 'products',
+          resourceId: 'p1',
+          metadata: { label: ' ' },
+        },
+      ]);
+      prisma.product.findMany.mockResolvedValue([{ id: 'p1', name: '龍眼蜜' }]);
+      const { data } = await service.findAll({});
+      expect(data[0].currentLabel).toBe('龍眼蜜');
+    });
+
     it('沒有查詢方式的類型不標示為找不到', async () => {
       prisma.auditLog.findMany.mockResolvedValue([log('a1', 'banners', 'b1')]);
       const { data } = await service.findAll({});

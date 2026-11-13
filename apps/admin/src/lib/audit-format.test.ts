@@ -51,32 +51,44 @@ describe('formatValue', () => {
 })
 
 describe('describeTarget', () => {
-  const base = { resourceId: 'a1b2c3d4-e5f6-7890', metadata: null }
+  const id = 'a1b2c3d4-e5f6-7890'
+  const base = { resourceId: id, metadata: null }
 
-  it('紀錄當下存的名稱優先', () => {
+  it('紀錄當下存的名稱優先，滑鼠提示有完整名稱與 ID', () => {
     expect(
       describeTarget({ ...base, metadata: { label: '冬茶' }, currentLabel: '春茶' }),
-    ).toEqual({ text: '冬茶', title: 'a1b2c3d4-e5f6-7890' })
+    ).toEqual({ text: '冬茶', title: `冬茶\nID：${id}` })
   })
 
   it('舊紀錄用查詢時補上的名稱，並註明是目前名稱', () => {
-    expect(describeTarget({ ...base, currentLabel: '龍眼蜜' })).toEqual({
+    expect(describeTarget({ ...base, currentLabel: '龍眼蜜' })).toMatchObject({
       text: '龍眼蜜',
       note: '目前名稱',
-      title: 'a1b2c3d4-e5f6-7890',
     })
   })
 
+  it('空白名稱視同沒有名稱', () => {
+    expect(
+      describeTarget({ ...base, metadata: { label: ' ' }, currentLabel: '龍眼蜜' }).text,
+    ).toBe('龍眼蜜')
+  })
+
   it('對象已不存在時說明找不到，ID 放在註記', () => {
-    expect(describeTarget({ ...base, targetMissing: true })).toEqual({
+    expect(describeTarget({ ...base, targetMissing: true })).toMatchObject({
       text: '已刪除或找不到',
       note: '#a1b2c3d4',
-      title: 'a1b2c3d4-e5f6-7890',
     })
   })
 
   it('沒有任何名稱資訊時才顯示 ID 前 8 碼', () => {
-    expect(describeTarget(base)).toEqual({ text: '#a1b2c3d4', title: 'a1b2c3d4-e5f6-7890' })
+    expect(describeTarget(base).text).toBe('#a1b2c3d4')
+  })
+
+  it('沒有 ID 但有名稱時，滑鼠提示仍是完整名稱', () => {
+    expect(describeTarget({ resourceId: null, metadata: { label: '全站維護' } })).toEqual({
+      text: '全站維護',
+      title: '全站維護',
+    })
   })
 
   it('沒有對象時顯示破折號', () => {

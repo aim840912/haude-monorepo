@@ -144,11 +144,18 @@ export interface AuditTarget {
  */
 export function describeTarget(log: AuditTargetSource): AuditTarget {
   const id = log.resourceId
-  if (!id) return { text: log.metadata?.label ?? '—' }
-  const title = id
-  if (log.metadata?.label) return { text: log.metadata.label, title }
-  if (log.currentLabel) return { text: log.currentLabel, note: '目前名稱', title }
+  // Same rule as the API: a blank label is no label
+  const label = log.metadata?.label?.trim() ? log.metadata.label : undefined
+  // 名稱可能被截斷，滑鼠移上去要看得到完整名稱與 ID
+  const withTitle = (target: Omit<AuditTarget, 'title'>): AuditTarget => ({
+    ...target,
+    title: id ? `${target.text}\nID：${id}` : target.text,
+  })
+
+  if (label) return withTitle({ text: label })
+  if (!id) return { text: '—' }
+  if (log.currentLabel) return withTitle({ text: log.currentLabel, note: '目前名稱' })
   const shortId = `#${id.slice(0, 8)}`
-  if (log.targetMissing) return { text: '已刪除或找不到', note: shortId, title }
-  return { text: shortId, title }
+  if (log.targetMissing) return withTitle({ text: '已刪除或找不到', note: shortId })
+  return withTitle({ text: shortId })
 }
