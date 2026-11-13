@@ -461,6 +461,7 @@ VITE_API_BASE_URL=http://localhost:3001
 | 錯誤 | 正確做法 |
 |------|----------|
 | Google OAuth 頭像觸發 Error Boundary（非圖片破碎） | `next.config.ts` 的 `remotePatterns` 必須加入 `lh3.googleusercontent.com`（commit `e30014c`） |
+| 右下角 AI 客服展開後顯示「這項內容已遭到封鎖」，以為是客服服務壞了 | 是**本站 CSP 擋掉跨網域 iframe**（widget 那邊是 `frame-ancestors *`）。`frame-src` 取自 Vercel 環境變數 `NEXT_PUBLIC_AI_SUPPORT_URL` 的 origin，**在 build 時寫進標頭**：改這個變數後要重新部署 web，CSP 才會跟著換。判斷：`curl -sI https://haude-web.vercel.app/ \| grep -i content-security-policy` 的 `frame-src` 要包含 widget 網域（2026-11-13 修復，commit `701f83e`） |
 
 ---
 
