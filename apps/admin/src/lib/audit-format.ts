@@ -120,3 +120,35 @@ export function describeChanges(meta: AuditLogMeta | null): FieldChange[] {
       return { field, from: hasBefore ? before[field] : undefined, to, hasBefore }
     })
 }
+
+export interface AuditTargetSource {
+  resourceId: string | null
+  metadata: AuditLogMeta | null
+  /** API 查詢時補上的「現在的名稱」，只有紀錄沒存名稱時才有 */
+  currentLabel?: string
+  /** 有查詢方式、但對象已不存在 */
+  targetMissing?: boolean
+}
+
+export interface AuditTarget {
+  text: string
+  /** 名稱下方的小字補充 */
+  note?: string
+  /** 滑鼠移上去看完整 ID */
+  title?: string
+}
+
+/**
+ * 「對象」欄的顯示內容。紀錄當下存的名稱最可信（改名、刪除後仍正確）；
+ * 舊紀錄只能用現在的名稱代替，所以註明「目前名稱」，避免被當成當時的名稱。
+ */
+export function describeTarget(log: AuditTargetSource): AuditTarget {
+  const id = log.resourceId
+  if (!id) return { text: log.metadata?.label ?? '—' }
+  const title = id
+  if (log.metadata?.label) return { text: log.metadata.label, title }
+  if (log.currentLabel) return { text: log.currentLabel, note: '目前名稱', title }
+  const shortId = `#${id.slice(0, 8)}`
+  if (log.targetMissing) return { text: '已刪除或找不到', note: shortId, title }
+  return { text: shortId, title }
+}

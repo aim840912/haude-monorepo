@@ -10,6 +10,7 @@ import { Observable, from } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
 import type { Request } from 'express';
 import { PrismaService } from '@/prisma/prisma.service';
+import { resolveAuditLabels } from '../audit/audit-labels';
 import {
   AUDIT_LOG_KEY,
   AuditLogMetadata,
@@ -200,10 +201,20 @@ export class AuditLogInterceptor implements NestInterceptor {
     // one stays in metadata.before); after a DELETE only `before` has it. The
     // response comes last: it may be a wrapper whose name/code isn't the
     // target's. It is the only source for a CREATE with an empty body.
+    // Last resort: look the target up by id. Covers resources whose requests
+    // carry no name at all (stock-alerts are keyed by productId, refunds only
+    // send an amount). Skipped after a DELETE — the row is already gone.
     const label =
       this.pickLabel(request.body as Snapshot | undefined) ??
       this.pickLabel(before) ??
-      this.pickLabel(this.unwrapBody(responseBody));
+      this.pickLabel(this.unwrapBody(responseBody)) ??
+      (resourceId && metadata.action !== 'DELETE'
+        ? ((
+            await resolveAuditLabels(this.prisma, metadata.resource, [
+              resourceId,
+            ])
+          ).get(resourceId) ?? null)
+        : null);
 
     // `:id/images` sub-routes change an image, not the parent: keep the
     // parent's name as the label but don't store a full copy of it on every
@@ -259,10 +270,12 @@ export class AuditLogInterceptor implements NestInterceptor {
     const paramId = request.params[paramName];
     if (typeof paramId === 'string') return paramId;
 
-    // 2. For CREATE, try extracting from response body
+    // 2. For CREATE, try extracting from response body — under the same name
+    //    when the handler returns e.g. `{ refundId }` rather than `{ id }`
     if (metadata.action === 'CREATE') {
       const data = this.unwrapBody(responseBody);
-      if (typeof data?.id === 'string') return data.id;
+      const id = data?.[paramName] ?? data?.id;
+      if (typeof id === 'string') return id;
     }
 
     return null;

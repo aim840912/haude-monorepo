@@ -8,6 +8,7 @@ describe('AuditLogsService', () => {
       count: jest.Mock;
     };
     user: { findMany: jest.Mock };
+    product: { findMany: jest.Mock };
   };
   let service: AuditLogsService;
 
@@ -18,6 +19,7 @@ describe('AuditLogsService', () => {
         count: jest.fn().mockResolvedValue(0),
       },
       user: { findMany: jest.fn().mockResolvedValue([]) },
+      product: { findMany: jest.fn().mockResolvedValue([]) },
     };
     service = new AuditLogsService(prisma as unknown as PrismaService);
   });
@@ -49,6 +51,59 @@ describe('AuditLogsService', () => {
         include: { operator: expect.any(Object) },
       }),
     );
+  });
+
+  describe('沒有記下名稱的紀錄，查詢時補上目前名稱', () => {
+    const log = (
+      id: string,
+      resource: string,
+      resourceId: string | null,
+      label?: string,
+    ) => ({
+      id,
+      resource,
+      resourceId,
+      metadata: label ? { label } : { method: 'PATCH' },
+    });
+
+    it('一次查出同類型的名稱，已記下名稱的不重查', async () => {
+      prisma.auditLog.findMany.mockResolvedValue([
+        log('a1', 'products', 'p1'),
+        log('a2', 'stock-alerts', 'p2'),
+        log('a3', 'products', 'p3', '冬茶'),
+      ]);
+      prisma.product.findMany.mockResolvedValue([
+        { id: 'p1', name: '龍眼蜜' },
+        { id: 'p2', name: '烏龍茶' },
+      ]);
+
+      const { data } = await service.findAll({});
+
+      expect(data.map((d) => d.currentLabel)).toEqual([
+        '龍眼蜜',
+        '烏龍茶',
+        undefined,
+      ]);
+      const queriedIds = prisma.product.findMany.mock.calls.flatMap(
+        (c) => c[0].where.id.in,
+      );
+      expect(queriedIds).not.toContain('p3');
+    });
+
+    it('對象已不存在時標示為找不到，而不是留空', async () => {
+      prisma.auditLog.findMany.mockResolvedValue([
+        log('a1', 'products', 'gone'),
+      ]);
+      const { data } = await service.findAll({});
+      expect(data[0].targetMissing).toBe(true);
+      expect(data[0].currentLabel).toBeUndefined();
+    });
+
+    it('沒有查詢方式的類型不標示為找不到', async () => {
+      prisma.auditLog.findMany.mockResolvedValue([log('a1', 'banners', 'b1')]);
+      const { data } = await service.findAll({});
+      expect(data[0].targetMissing).toBeUndefined();
+    });
   });
 
   it('操作者清單只列出有紀錄的人，一次查詢完成', async () => {

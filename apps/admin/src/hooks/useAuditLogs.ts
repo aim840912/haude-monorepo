@@ -23,6 +23,10 @@ export interface AuditLogEntry {
   userAgent: string | null
   createdAt: string
   operator: AuditOperator
+  /** 紀錄沒存名稱時，API 依 ID 查到的現在名稱 */
+  currentLabel?: string
+  /** 有查詢方式但對象已不存在 */
+  targetMissing?: boolean
 }
 
 function toMessage(err: unknown): string {

@@ -10,6 +10,7 @@ import {
   RESOURCE_LABELS,
   actionLabel,
   describeChanges,
+  describeTarget,
   fieldLabel,
   formatValue,
   resourceLabel,
@@ -228,7 +229,7 @@ function LogRow({
   onToggle: () => void
 }) {
   const meta = log.metadata
-  const target = meta?.label ?? (log.resourceId ? `#${log.resourceId.slice(0, 8)}` : '—')
+  const target = describeTarget(log)
   const changes = describeChanges(meta)
 
   return (
@@ -251,8 +252,9 @@ function LogRow({
         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
           {resourceLabel(log.resource)}
         </td>
-        <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={target}>
-          {target}
+        <td className="px-4 py-3 text-sm text-gray-900 max-w-xs" title={target.title}>
+          <span className="block truncate">{target.text}</span>
+          {target.note && <span className="block text-xs text-gray-400">{target.note}</span>}
         </td>
         <td className="px-4 py-3 text-right">
           <button

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { actionLabel, describeChanges, formatValue } from './audit-format'
+import { actionLabel, describeChanges, describeTarget, formatValue } from './audit-format'
 
 describe('actionLabel', () => {
   it('圖片子路由標成圖片操作，不是刪除整個產品', () => {
@@ -47,5 +47,39 @@ describe('formatValue', () => {
   it('布林與空值轉成中文', () => {
     expect(formatValue(true)).toBe('是')
     expect(formatValue(null)).toBe('（空）')
+  })
+})
+
+describe('describeTarget', () => {
+  const base = { resourceId: 'a1b2c3d4-e5f6-7890', metadata: null }
+
+  it('紀錄當下存的名稱優先', () => {
+    expect(
+      describeTarget({ ...base, metadata: { label: '冬茶' }, currentLabel: '春茶' }),
+    ).toEqual({ text: '冬茶', title: 'a1b2c3d4-e5f6-7890' })
+  })
+
+  it('舊紀錄用查詢時補上的名稱，並註明是目前名稱', () => {
+    expect(describeTarget({ ...base, currentLabel: '龍眼蜜' })).toEqual({
+      text: '龍眼蜜',
+      note: '目前名稱',
+      title: 'a1b2c3d4-e5f6-7890',
+    })
+  })
+
+  it('對象已不存在時說明找不到，ID 放在註記', () => {
+    expect(describeTarget({ ...base, targetMissing: true })).toEqual({
+      text: '已刪除或找不到',
+      note: '#a1b2c3d4',
+      title: 'a1b2c3d4-e5f6-7890',
+    })
+  })
+
+  it('沒有任何名稱資訊時才顯示 ID 前 8 碼', () => {
+    expect(describeTarget(base)).toEqual({ text: '#a1b2c3d4', title: 'a1b2c3d4-e5f6-7890' })
+  })
+
+  it('沒有對象時顯示破折號', () => {
+    expect(describeTarget({ resourceId: null, metadata: null })).toEqual({ text: '—' })
   })
 })

@@ -250,7 +250,8 @@ export class AdminPaymentsController {
   // ========================================
 
   @Post('refund')
-  @AuditLog('CREATE', 'refunds')
+  // processRefund returns `{ refundId, … }`, not `{ id }`
+  @AuditLog('CREATE', 'refunds', 'refundId')
   @ApiOperation({ summary: '執行退款（管理員）' })
   @ApiResponse({ status: 201, description: '退款已處理' })
   @ApiResponse({ status: 400, description: '退款條件不符' })

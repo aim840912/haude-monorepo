@@ -10,7 +10,7 @@ const flush = () => new Promise((resolve) => setImmediate(resolve));
 describe('AuditLogInterceptor', () => {
   let prisma: {
     auditLog: { create: jest.Mock };
-    product: { findUnique: jest.Mock };
+    product: { findUnique: jest.Mock; findMany: jest.Mock };
     user: { findUnique: jest.Mock };
     siteSetting: { findUnique: jest.Mock };
   };
@@ -60,6 +60,7 @@ describe('AuditLogInterceptor', () => {
           calls.push('snapshot');
           return Promise.resolve({ id: 'p1', name: '龍眼蜜', price: 550 });
         }),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       user: { findUnique: jest.fn() },
       siteSetting: { findUnique: jest.fn() },
@@ -202,5 +203,47 @@ describe('AuditLogInterceptor', () => {
     await flush();
 
     expect(writtenData().metadata.before).toBeUndefined();
+  });
+
+  it('送出內容與快照都沒有名稱時，依對象 ID 查出名稱（庫存預警 → 產品名稱）', async () => {
+    metadata = {
+      action: 'UPDATE',
+      resource: 'stock-alerts',
+      idParam: 'productId',
+    };
+    prisma.product.findMany.mockResolvedValue([{ id: 'p7', name: '高山烏龍' }]);
+    await run(
+      makeRequest({
+        method: 'PATCH',
+        url: '/api/v1/admin/stock-alerts/p7',
+        params: { productId: 'p7' },
+        body: { threshold: 5 },
+      }),
+      { productId: 'p7', threshold: 5 },
+    );
+    await flush();
+
+    expect(writtenData().resourceId).toBe('p7');
+    expect(writtenData().metadata.label).toBe('高山烏龍');
+    expect(writtenData().summary).toContain('高山烏龍');
+  });
+
+  it('新增時回應的 ID 欄位不叫 id（退款回傳 refundId）也能取得對象', async () => {
+    metadata = { action: 'CREATE', resource: 'refunds', idParam: 'refundId' };
+    await run(
+      makeRequest({ method: 'POST', params: {}, body: { amount: 100 } }),
+      {
+        refundId: 'r1',
+        success: true,
+      },
+    );
+    await flush();
+    expect(writtenData().resourceId).toBe('r1');
+  });
+
+  it('已經有名稱時不另外查詢', async () => {
+    await run(makeRequest());
+    await flush();
+    expect(prisma.product.findMany).not.toHaveBeenCalled();
   });
 });

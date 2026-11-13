@@ -19,7 +19,10 @@ export type AuditAction =
 export interface AuditLogMetadata {
   action: AuditAction;
   resource: string;
-  /** Optional: extract resourceId from a different param (default: 'id') */
+  /**
+   * Optional: extract resourceId from a different route param (default: 'id').
+   * For CREATE it is also the field read from the response body.
+   */
   idParam?: string;
 }
 
