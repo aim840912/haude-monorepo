@@ -29,12 +29,17 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
  *    client bundle 不啟動 → 頁面只剩 SSR 的 HTML，完全沒有互動性
  *    （症狀：/auth/callback 永遠停在「正在處理登入...」）。
  *    正式環境的 build 不使用 eval，因此不放寬。
+ *
+ * frame-src 必須明寫：沒寫時 iframe 沿用 default-src 'self'，右下角 AI 客服
+ * （AISupportWidget，跨網域 iframe）會被 Chrome 擋成「這項內容已遭到封鎖」。
+ * 來源取自 NEXT_PUBLIC_AI_SUPPORT_URL 的 origin，未設定或格式錯誤時維持只允許同源。
  */
-function buildCsp(): string {
+export function buildCsp(): string {
   const isDev = process.env.NODE_ENV === 'development'
 
   const connectSrc = isDev ? "'self' http://localhost:* ws://localhost:* https:" : "'self' https:"
   const scriptSrc = isDev ? "'self' 'unsafe-inline' 'unsafe-eval'" : "'self' 'unsafe-inline'"
+  const frameSrc = ["'self'", aiSupportOrigin()].filter(Boolean).join(' ')
 
   return [
     "default-src 'self'",
@@ -43,11 +48,24 @@ function buildCsp(): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     `connect-src ${connectSrc}`,
+    `frame-src ${frameSrc}`,
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
   ].join('; ')
+}
+
+/** Origin of the embedded AI support widget, or '' when unset / invalid. */
+function aiSupportOrigin(): string {
+  const url = process.env.NEXT_PUBLIC_AI_SUPPORT_URL
+  if (!url) return ''
+  try {
+    const { protocol, origin } = new URL(url)
+    return protocol === 'https:' || protocol === 'http:' ? origin : ''
+  } catch {
+    return ''
+  }
 }
 
 // 安全標頭配置
