@@ -21,9 +21,12 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     deleteNotification,
   } = useNotifications()
 
+  // Polling only refreshes the unread count, so the list goes stale; refetch
+  // on open or the badge says "1" while the panel says "no notifications".
   const handleOpen = useCallback(() => {
     setIsOpen(true)
-  }, [])
+    void refresh()
+  }, [refresh])
 
   const handleClose = useCallback(() => {
     setIsOpen(false)
