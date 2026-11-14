@@ -57,6 +57,15 @@ export class UpdateOrderService {
     const nextStatus =
       dto.status && dto.status !== order.status ? dto.status : undefined;
 
+    // Shipping or delivering a refunded order sends goods (and awards points)
+    // for money already returned. Such an order should be cancelled instead.
+    const fulfils = nextStatus === 'shipped' || nextStatus === 'delivered';
+    if (fulfils && order.paymentStatus === 'refunded') {
+      throw new BadRequestException(
+        '此訂單已全額退款，不可出貨或標為已送達，請改為取消',
+      );
+    }
+
     if (nextStatus && !canTransitionOrderStatus(order.status, nextStatus)) {
       throw new BadRequestException(
         `訂單狀態無法從 ${order.status} 改為 ${nextStatus}`,
@@ -74,7 +83,12 @@ export class UpdateOrderService {
       // Conditional on the status we validated against: if another request
       // changed it in between, the transition check above no longer holds.
       const { count } = await tx.order.updateMany({
-        where: { id: orderId, status: order.status },
+        where: {
+          id: orderId,
+          status: order.status,
+          // A refund committing between our read and this write must still block fulfilment.
+          ...(fulfils ? { paymentStatus: { not: 'refunded' as const } } : {}),
+        },
         data: updateData,
       });
 

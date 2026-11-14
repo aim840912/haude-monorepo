@@ -30,7 +30,8 @@ describe('PaymentRefundService', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
-    order: { update: jest.fn(), updateMany: jest.fn() },
+    order: { update: jest.fn(), updateMany: jest.fn(), findUnique: jest.fn() },
+    product: { update: jest.fn() },
     refund: {
       create: jest.fn(),
       update: jest.fn(),
@@ -114,6 +115,10 @@ describe('PaymentRefundService', () => {
     mockPrisma.payment.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.payment.findUniqueOrThrow.mockResolvedValue({ amount: 1000 });
     mockPrisma.order.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.order.findUnique.mockResolvedValue({
+      status: 'shipped',
+      items: [],
+    });
     mockPrisma.refund.create.mockResolvedValue({
       id: 'refund-1',
       paymentId: 'pay-1',
@@ -224,8 +229,18 @@ describe('PaymentRefundService', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    it('全額退完：付款標為已退款，已出貨的訂單轉為已退款並收回點數', async () => {
+    const givenOrderStatus = (status: string) =>
+      mockPrisma.order.findUnique.mockResolvedValue({
+        status,
+        items: [
+          { productId: 'p-2', quantity: 1 },
+          { productId: 'p-1', quantity: 2 },
+        ],
+      });
+
+    it('全額退完、已出貨：付款與訂單標為已退款並收回點數，不補庫存', async () => {
       stubFetch(mockEcpayResponse('1'));
+      givenOrderStatus('shipped');
 
       await service.processRefund('pay-1', 'admin-1', 'FULL');
 
@@ -234,14 +249,51 @@ describe('PaymentRefundService', () => {
         data: { status: 'refunded' },
       });
       expect(mockPrisma.order.updateMany).toHaveBeenCalledWith({
-        where: { id: 'order-1', status: { in: ['shipped', 'delivered'] } },
-        data: { status: 'refunded' },
+        where: { id: 'order-1', status: 'shipped' },
+        data: { paymentStatus: 'refunded', status: 'refunded' },
       });
+      expect(mockPrisma.product.update).not.toHaveBeenCalled();
       expect(mockMembersService.revokeOrderRewards).toHaveBeenCalledWith(
         'user-1',
         'order-1',
         1000,
       );
+    });
+
+    it.each(['pending', 'confirmed', 'processing'])(
+      '全額退完、尚未出貨（%s）：訂單自動取消並補回庫存，不收回點數',
+      async (status) => {
+        stubFetch(mockEcpayResponse('1'));
+        givenOrderStatus(status);
+
+        await service.processRefund('pay-1', 'admin-1', 'FULL');
+
+        expect(mockPrisma.order.updateMany).toHaveBeenCalledWith({
+          where: { id: 'order-1', status },
+          data: { paymentStatus: 'refunded', status: 'cancelled' },
+        });
+        expect(mockPrisma.product.update).toHaveBeenCalledWith({
+          where: { id: 'p-1' },
+          data: { stock: { increment: 2 } },
+        });
+        expect(mockPrisma.product.update).toHaveBeenCalledWith({
+          where: { id: 'p-2' },
+          data: { stock: { increment: 1 } },
+        });
+        expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
+      },
+    );
+
+    it('全額退完時訂單狀態剛被改掉：整筆回滾（不補庫存），退款留在 processing 供人工對帳', async () => {
+      stubFetch(mockEcpayResponse('1'));
+      givenOrderStatus('confirmed');
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.processRefund('pay-1', 'admin-1', 'FULL'),
+      ).rejects.toThrow(ConflictException);
+
+      expect(mockPrisma.product.update).not.toHaveBeenCalled();
     });
 
     it('部分退款尚未退完：不動付款與訂單狀態', async () => {
@@ -255,19 +307,6 @@ describe('PaymentRefundService', () => {
       );
       expect(mockPrisma.order.update).not.toHaveBeenCalled();
       expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
-      expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
-    });
-
-    it('全額退完但訂單未出貨：只標付款狀態，不違反狀態轉換表、不收回點數', async () => {
-      stubFetch(mockEcpayResponse('1'));
-      mockPrisma.order.updateMany.mockResolvedValue({ count: 0 });
-
-      await service.processRefund('pay-1', 'admin-1', 'FULL');
-
-      expect(mockPrisma.order.update).toHaveBeenCalledWith({
-        where: { id: 'order-1' },
-        data: { paymentStatus: 'refunded' },
-      });
       expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
     });
 

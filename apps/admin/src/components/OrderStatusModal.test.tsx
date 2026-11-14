@@ -53,10 +53,10 @@ describe('OrderStatusModal', () => {
     ])
   })
 
-  it('處理中的訂單不能取消', () => {
+  it('處理中的訂單可以取消', () => {
     renderWithStatus('processing')
 
-    expect(statusRadioValues()).not.toContain('cancelled')
+    expect(statusRadioValues()).toContain('cancelled')
   })
 
   it('已出貨的訂單可以改成已送達或已退款', () => {

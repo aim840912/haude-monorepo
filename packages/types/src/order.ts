@@ -18,7 +18,8 @@ export type OrderStatus =
  * - Forward moves may skip steps (pending → shipped is fine).
  * - Nothing moves backwards: side effects (stock restore, points) are tied to
  *   entering a state, so going back and forth would repeat them.
- * - Cancelling is only possible before processing starts.
+ * - Cancelling is possible until the order ships (including while processing:
+ *   the customer cancels mid-packing, or the payment was fully refunded).
  * - Shipped orders can be refunded directly (lost / returned parcel) without
  *   first marking them delivered, which would award points just to revoke them.
  * - Delivered orders can only be refunded; cancelled / refunded are final.
@@ -26,7 +27,7 @@ export type OrderStatus =
 export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   pending: ['confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
   confirmed: ['processing', 'shipped', 'delivered', 'cancelled'],
-  processing: ['shipped', 'delivered'],
+  processing: ['shipped', 'delivered', 'cancelled'],
   shipped: ['delivered', 'refunded'],
   delivered: ['refunded'],
   cancelled: [],

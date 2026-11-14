@@ -93,13 +93,30 @@ describe('UpdateOrderService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('拒絕取消處理中的訂單', async () => {
+    it('允許取消處理中的訂單並補回庫存（包貨中顧客取消或已全額退款）', async () => {
       givenOrder('processing');
 
       await expect(
         service.updateOrderStatus('order-1', { status: 'cancelled' }),
-      ).rejects.toThrow(BadRequestException);
+      ).resolves.toBeDefined();
+      expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
     });
+
+    it.each(['shipped', 'delivered'] as const)(
+      '付款已退款的訂單不可改成 %s（避免出貨或發點數給已退錢的訂單）',
+      async (next) => {
+        mockPrisma.order.findUnique.mockResolvedValue({
+          ...baseOrder,
+          status: 'processing',
+          paymentStatus: 'refunded',
+        });
+
+        await expect(
+          service.updateOrderStatus('order-1', { status: next }),
+        ).rejects.toThrow(BadRequestException);
+        expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+      },
+    );
 
     it('被拒絕的轉換不會寫入資料庫', async () => {
       givenOrder('delivered');

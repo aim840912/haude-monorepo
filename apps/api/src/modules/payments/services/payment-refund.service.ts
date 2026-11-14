@@ -5,22 +5,14 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ORDER_STATUS_TRANSITIONS,
-  canTransitionOrderStatus,
-  type OrderStatus,
-} from '@haude/types';
+import { canTransitionOrderStatus } from '@haude/types';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentConfigService } from './payment-config.service';
 import { EmailService } from '@/modules/email/email.service';
 import { MembersService } from '@/modules/members/members.service';
+import { restoreOrderStock } from '@/modules/orders/services/order-stock';
 import { maskPaymentPayload } from '../utils/mask-payment-payload';
 import type { RefundTypeInput } from '../dto/refund-payment.dto';
-
-/** Order statuses the transition table allows to move to 'refunded' (shipped, delivered). */
-const REFUNDABLE_ORDER_STATUSES = (
-  Object.keys(ORDER_STATUS_TRANSITIONS) as OrderStatus[]
-).filter((status) => canTransitionOrderStatus(status, 'refunded'));
 
 interface RefundOrderContext {
   orderNumber: string;
@@ -379,8 +371,8 @@ export class PaymentRefundService {
    *
    * - 退款記錄只能從 fromStatus 轉為 completed，重複確認會被擋下
    * - 部分退款不動付款與訂單狀態
-   * - 訂單狀態只在轉換表允許時（已出貨 / 已送達）才轉為 refunded；
-   *   未出貨的訂單只標 paymentStatus，由後台照正常流程取消
+   * - 已出貨 / 已送達 → 訂單轉 refunded 並收回點數
+   * - 尚未出貨 → 訂單轉 cancelled 並補回庫存（照 ORDER_STATUS_TRANSITIONS）
    */
   private async completeRefund(
     refund: { id: string; paymentId: string; orderId: string },
@@ -412,18 +404,43 @@ export class PaymentRefundService {
         where: { id: refund.paymentId, status: 'paid' },
         data: { status: 'refunded' },
       });
-      await tx.order.update({
+
+      const order = await tx.order.findUnique({
         where: { id: refund.orderId },
-        data: { paymentStatus: 'refunded' },
-      });
-      const order = await tx.order.updateMany({
-        where: {
-          id: refund.orderId,
-          status: { in: REFUNDABLE_ORDER_STATUSES },
+        select: {
+          status: true,
+          items: { select: { productId: true, quantity: true } },
         },
-        data: { status: 'refunded' },
       });
-      return { orderRefunded: order.count > 0 };
+      if (!order) return { orderRefunded: false };
+
+      // Shipped / delivered → refunded (points revoked after commit).
+      // Not shipped yet → cancelled and restocked: the money is back, so the goods stay.
+      // Already cancelled / refunded → only the payment status changes.
+      const nextStatus = canTransitionOrderStatus(order.status, 'refunded')
+        ? 'refunded'
+        : canTransitionOrderStatus(order.status, 'cancelled')
+          ? 'cancelled'
+          : undefined;
+
+      const { count: orderCount } = await tx.order.updateMany({
+        where: { id: refund.orderId, status: order.status },
+        data: {
+          paymentStatus: 'refunded',
+          ...(nextStatus ? { status: nextStatus } : {}),
+        },
+      });
+      if (orderCount === 0) {
+        // Rolls back the refund's completion too, leaving it for manual review.
+        throw new ConflictException(
+          '訂單狀態剛被其他操作變更，退款款項已處理，請到後台確認訂單狀態後再完成退款',
+        );
+      }
+
+      if (nextStatus === 'cancelled') {
+        await restoreOrderStock(tx, order.items);
+      }
+      return { orderRefunded: nextStatus === 'refunded' };
     });
   }
 
