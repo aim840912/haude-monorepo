@@ -384,6 +384,13 @@ npx prisma migrate deploy
 
 `Order` / `Payment` **不在清理範圍**（會計憑證，另依商業會計法保存）。
 
+### 公開端點與後台共用 `FarmToursService.findOne`
+
+公開的 `GET /farm-tours/:id` 直接回傳 `findOne()`，後台編輯行程（`apps/admin/src/services/api/farm-tours.api.ts` 的 `getById`）也打同一個公開端點。兩條限制：
+
+- ⛔ **不可 `include: { bookings: true }`**：預約含姓名、電話、備註，加回去就是任何人都拿得到（2026-11 安全審查的 HIGH）
+- ⛔ **不可加「只回傳已上架」篩選**：後台會打不開草稿。要篩選得先替後台開 `GET /admin/farm-tours/:id` 並改 `getById`
+
 ---
 
 ### 快取標頭：預設 fail-closed

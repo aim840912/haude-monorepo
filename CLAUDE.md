@@ -328,7 +328,8 @@ GET    /health/ready    # readiness，DB 斷線回 503
 
 - 狀態只能照 `packages/types/src/order.ts` 的 `ORDER_STATUS_TRANSITIONS` 轉換：API 拒絕表外的轉換，後台只列表內選項。要新增轉換先改這張表。
 - 副作用綁在「進入某狀態」：已取消 → 補庫存、已送達 → 發點數與累積消費、已退款 → 收回兩者。⛔ 不要加「往回走」的轉換，副作用會重複執行。
-- 取消有三條路徑（顧客取消、付款逾期、後台改狀態），全部必須「狀態符合預期才寫入（`updateMany` + `count`），寫入成功才呼叫 `restoreOrderStock()`」。新增取消或退款路徑也照這個寫法；綠界退款（`payment-refund.service.ts`）目前還沒照做，開放金流前要補。
+- 取消有三條路徑（顧客取消、付款逾期、後台改狀態），全部必須「狀態符合預期才寫入（`updateMany` + `count`），寫入成功才呼叫 `restoreOrderStock()`」。新增取消或退款路徑也照這個寫法。
+- 綠界退款（`payment-refund.service.ts`）累計退滿才把付款標為已退款；訂單只在轉換表允許時（已出貨／已送達）轉 `refunded` 並收回點數。**未出貨的訂單全額退款後只標 `paymentStatus`，訂單狀態不變**——要由後台取消才會補回庫存，這是刻意的，不要改成直接設 `refunded`（會違反轉換表、也不會補庫存）。
 
 ### 庫存預警（改動前必讀）
 
