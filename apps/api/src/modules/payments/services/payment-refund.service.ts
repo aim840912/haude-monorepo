@@ -431,10 +431,19 @@ export class PaymentRefundService {
         },
       });
       if (orderCount === 0) {
-        // Rolls back the refund's completion too, leaving it for manual review.
-        throw new ConflictException(
-          '訂單狀態剛被其他操作變更，退款款項已處理，請到後台確認訂單狀態後再完成退款',
+        // The order changed between our read and write. The money has already
+        // gone back (ECPay / offline), so never roll the refund back here: that
+        // would strand it in 'processing' with no way to complete it. Record the
+        // refund on the order (which also blocks shipping it) and leave the status
+        // change to a human, without restocking or revoking on a guess.
+        await tx.order.update({
+          where: { id: refund.orderId },
+          data: { paymentStatus: 'refunded' },
+        });
+        this.logger.error(
+          `退款已完成，但訂單 ${refund.orderId} 狀態剛被其他操作變更，未自動取消／轉已退款，請人工確認訂單狀態與庫存`,
         );
+        return { orderRefunded: false };
       }
 
       if (nextStatus === 'cancelled') {

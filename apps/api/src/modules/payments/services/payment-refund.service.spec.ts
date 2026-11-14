@@ -284,16 +284,21 @@ describe('PaymentRefundService', () => {
       },
     );
 
-    it('全額退完時訂單狀態剛被改掉：整筆回滾（不補庫存），退款留在 processing 供人工對帳', async () => {
+    it('全額退完時訂單狀態剛被改掉：退款仍完成、付款標已退款（擋住出貨），訂單狀態留給人工，不補庫存', async () => {
       stubFetch(mockEcpayResponse('1'));
       givenOrderStatus('confirmed');
       mockPrisma.order.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(
         service.processRefund('pay-1', 'admin-1', 'FULL'),
-      ).rejects.toThrow(ConflictException);
+      ).resolves.toMatchObject({ status: 'completed' });
 
+      expect(mockPrisma.order.update).toHaveBeenCalledWith({
+        where: { id: 'order-1' },
+        data: { paymentStatus: 'refunded' },
+      });
       expect(mockPrisma.product.update).not.toHaveBeenCalled();
+      expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
     });
 
     it('部分退款尚未退完：不動付款與訂單狀態', async () => {

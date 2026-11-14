@@ -51,7 +51,12 @@ describe('GoogleAuthService.validateGoogleUser', () => {
   };
 
   it('linking Google to an existing password account clears that password and revokes its sessions', async () => {
-    givenUsers({ id: 'u-1', email: profile.email, password: 'attacker-hash' });
+    givenUsers({
+      id: 'u-1',
+      email: profile.email,
+      password: 'attacker-hash',
+      isActive: true,
+    });
 
     await service.validateGoogleUser(profile);
 
@@ -60,6 +65,21 @@ describe('GoogleAuthService.validateGoogleUser', () => {
       data: { googleId: 'g-1', avatar: profile.avatar, password: null },
     });
     expect(jwtTokens.revokeAllUserTokens).toHaveBeenCalledWith('u-1');
+  });
+
+  it('does not touch a deactivated account (login is refused later anyway)', async () => {
+    givenUsers({
+      id: 'u-1',
+      email: profile.email,
+      password: 'hash',
+      isActive: false,
+    });
+
+    await expect(service.validateGoogleUser(profile)).rejects.toThrow(
+      UnauthorizedException,
+    );
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(jwtTokens.revokeAllUserTokens).not.toHaveBeenCalled();
   });
 
   it('refuses to link an existing account when Google has not verified the email', async () => {

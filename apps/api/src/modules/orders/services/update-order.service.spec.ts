@@ -102,6 +102,22 @@ describe('UpdateOrderService', () => {
       expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
     });
 
+    it.each(['paid', 'pending'] as const)(
+      '已退款的付款狀態是終態，不可改回 %s（否則可分兩次請求繞過出貨檢查）',
+      async (paymentStatus) => {
+        mockPrisma.order.findUnique.mockResolvedValue({
+          ...baseOrder,
+          status: 'processing',
+          paymentStatus: 'refunded',
+        });
+
+        await expect(
+          service.updateOrderStatus('order-1', { paymentStatus }),
+        ).rejects.toThrow(BadRequestException);
+        expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+      },
+    );
+
     it.each(['shipped', 'delivered'] as const)(
       '付款已退款的訂單不可改成 %s（避免出貨或發點數給已退錢的訂單）',
       async (next) => {

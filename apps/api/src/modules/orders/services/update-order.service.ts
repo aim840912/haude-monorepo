@@ -57,6 +57,16 @@ export class UpdateOrderService {
     const nextStatus =
       dto.status && dto.status !== order.status ? dto.status : undefined;
 
+    // 'refunded' is a final payment status: allowing it to be edited back would let
+    // two requests (paymentStatus → paid, then status → delivered) bypass the check below.
+    if (
+      order.paymentStatus === 'refunded' &&
+      dto.paymentStatus &&
+      dto.paymentStatus !== 'refunded'
+    ) {
+      throw new BadRequestException('已退款的訂單付款狀態不可再修改');
+    }
+
     // Shipping or delivering a refunded order sends goods (and awards points)
     // for money already returned. Such an order should be cancelled instead.
     const fulfils = nextStatus === 'shipped' || nextStatus === 'delivered';

@@ -20,7 +20,8 @@ export class GoogleAuthService {
    * victim's address first (account pre-hijacking). Linking therefore requires
    * Google to vouch for the email, and clears the existing password and sessions:
    * whoever set them never proved they own the address. The real owner can set a
-   * password again via forgot-password, which mails that same address.
+   * password again from the account page (PasswordAuthService.setPassword) after
+   * signing in with Google; forgot-password does not mail password-less users.
    */
   async validateGoogleUser(profile: GoogleProfile) {
     const { googleId, email, name, avatar, emailVerified } = profile;
@@ -46,6 +47,11 @@ export class GoogleAuthService {
     user = await this.prisma.user.findUnique({ where: { email } });
 
     if (user) {
+      // googleLogin would refuse a deactivated account anyway; refuse before
+      // wiping its password so a later reactivation still works.
+      if (!user.isActive) {
+        throw new UnauthorizedException('您的帳號已被停用，請聯絡客服');
+      }
       user = await this.prisma.user.update({
         where: { id: user.id },
         data: { googleId, avatar, password: null },
