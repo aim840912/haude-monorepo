@@ -16,6 +16,13 @@ describe('escapeCsvCell', () => {
     expect(escapeCsvCell(-50)).toBe('-50')
   })
 
+  it.each(['+5.2%', '-3.1%', '-50', '+12'])(
+    'leaves report-built signed numbers %j alone',
+    (value) => {
+      expect(escapeCsvCell(value)).toBe(value)
+    },
+  )
+
   it('leaves ordinary text alone', () => {
     expect(escapeCsvCell('王小明')).toBe('王小明')
   })

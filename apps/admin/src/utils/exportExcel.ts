@@ -17,6 +17,8 @@ interface ExportData {
 
 // Spreadsheet apps evaluate a cell starting with these as a formula (CSV injection).
 const FORMULA_TRIGGER = /^[=+\-@\t\r]/
+// Plain signed numbers the report builds itself (e.g. "+5.2%", "-50") are not formulas.
+const SIGNED_NUMBER = /^[+-]?\d+(?:\.\d+)?%?$/
 
 /**
  * 跳脫單一 CSV 儲存格
@@ -26,7 +28,11 @@ const FORMULA_TRIGGER = /^[=+\-@\t\r]/
  */
 export function escapeCsvCell(value: string | number): string {
   let str = String(value)
-  if (typeof value === 'string' && FORMULA_TRIGGER.test(str)) {
+  if (
+    typeof value === 'string' &&
+    FORMULA_TRIGGER.test(str) &&
+    !SIGNED_NUMBER.test(str)
+  ) {
     str = `'${str}`
   }
   if (/[",\n\r]/.test(str)) {
