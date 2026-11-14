@@ -60,9 +60,10 @@ export class FarmToursService {
    * 取得單一農場體驗
    */
   async findOne(id: string) {
+    // Never include bookings here: the public GET /farm-tours/:id returns this
+    // as-is, and bookings carry customers' names, phones and notes.
     const tour = await this.prisma.farmTour.findUnique({
       where: { id },
-      include: { bookings: true },
     });
 
     if (!tour) {

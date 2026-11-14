@@ -121,12 +121,8 @@ describe('FarmToursService', () => {
   describe('findOne', () => {
     const tourId = 'tour-123';
 
-    it('應回傳單一農場體驗含預約', async () => {
-      const mockTour = {
-        id: tourId,
-        name: '採茶體驗',
-        bookings: [{ id: 'booking-1' }],
-      };
+    it('應回傳單一農場體驗，且不帶出預約人資料（公開端點共用此方法）', async () => {
+      const mockTour = { id: tourId, name: '採茶體驗' };
       mockPrismaService.farmTour.findUnique.mockResolvedValue(mockTour);
 
       const result = await service.findOne(tourId);
@@ -134,7 +130,6 @@ describe('FarmToursService', () => {
       expect(result).toEqual(mockTour);
       expect(mockPrismaService.farmTour.findUnique).toHaveBeenCalledWith({
         where: { id: tourId },
-        include: { bookings: true },
       });
     });
 
