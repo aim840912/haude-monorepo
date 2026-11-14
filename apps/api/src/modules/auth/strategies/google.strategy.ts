@@ -15,6 +15,8 @@ export interface GoogleProfile {
   email: string;
   name: string;
   avatar?: string;
+  /** Google's own email_verified claim; required before linking or creating by email. */
+  emailVerified: boolean;
 }
 
 type GoogleTarget = 'web' | 'admin';
@@ -110,6 +112,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       email: emails?.[0]?.value || '',
       name: displayName || '',
       avatar: photos?.[0]?.value,
+      // v3/userinfo (the strategy default) returns a boolean; older Google
+      // endpoints returned the string "true". Accept both, nothing else.
+      emailVerified: ['true', true].includes(
+        (profile._json as { email_verified?: boolean | string } | undefined)
+          ?.email_verified as boolean | string,
+      ),
     };
 
     // 使用 AuthService 處理 Google 用戶驗證

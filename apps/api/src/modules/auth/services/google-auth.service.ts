@@ -13,11 +13,17 @@ export class GoogleAuthService {
   /**
    * Validate and upsert a Google OAuth user
    * - Existing user by googleId → update avatar
-   * - Existing user by email → link Google account
-   * - New user → create account
+   * - Existing user by email → link Google account (verified email only)
+   * - New user → create account (verified email only)
+   *
+   * Password registration does not verify email, so an attacker can register a
+   * victim's address first (account pre-hijacking). Linking therefore requires
+   * Google to vouch for the email, and clears the existing password and sessions:
+   * whoever set them never proved they own the address. The real owner can set a
+   * password again via forgot-password, which mails that same address.
    */
   async validateGoogleUser(profile: GoogleProfile) {
-    const { googleId, email, name, avatar } = profile;
+    const { googleId, email, name, avatar, emailVerified } = profile;
 
     // 1. Find by googleId
     let user = await this.prisma.user.findUnique({ where: { googleId } });
@@ -30,14 +36,21 @@ export class GoogleAuthService {
       return user;
     }
 
+    if (!emailVerified) {
+      throw new UnauthorizedException(
+        '此 Google 帳號的 email 尚未驗證，請改用已驗證 email 的帳號登入',
+      );
+    }
+
     // 2. Find by email (may be a password-registered user)
     user = await this.prisma.user.findUnique({ where: { email } });
 
     if (user) {
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: { googleId, avatar },
+        data: { googleId, avatar, password: null },
       });
+      await this.jwtTokenService.revokeAllUserTokens(user.id);
       return user;
     }
 

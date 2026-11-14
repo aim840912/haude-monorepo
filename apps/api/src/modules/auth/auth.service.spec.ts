@@ -174,6 +174,7 @@ describe('AuthService', () => {
         email: 'google@example.com',
         name: 'Google User',
         avatar: 'https://example.com/avatar.jpg',
+        emailVerified: true,
       };
       const expected = createMockUser({ googleId: 'google-123' });
       mockGoogleAuthService.validateGoogleUser.mockResolvedValue(expected);
