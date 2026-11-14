@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { BROWSER_API_URL } from '@/lib/api-url'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 import { Mail, Lock, LogIn } from 'lucide-react'
 
 function LoginForm() {
@@ -15,10 +16,8 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const rawFrom = searchParams.get('from') || '/'
-  // Validate redirect target is a relative path to prevent open redirect attacks.
-  // Rejects absolute URLs (https://evil.com) and protocol-relative URLs (//evil.com).
-  const from = rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/'
+  // Open-redirect guard: only same-site paths survive (see safe-redirect.ts for the bypasses it covers).
+  const from = safeRedirectPath(searchParams.get('from'))
 
   // Redirect authenticated users away from login page
   useEffect(() => {
