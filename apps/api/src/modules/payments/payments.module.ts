@@ -7,6 +7,7 @@ import {
 import { PaymentsService } from './payments.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { EmailModule } from '../email/email.module';
+import { MembersModule } from '../members/members.module';
 
 // 專責服務
 import {
@@ -19,7 +20,7 @@ import {
 } from './services';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, EmailModule],
+  imports: [PrismaModule, ConfigModule, EmailModule, MembersModule],
   controllers: [PaymentsController, AdminPaymentsController],
   providers: [
     // 專責服務

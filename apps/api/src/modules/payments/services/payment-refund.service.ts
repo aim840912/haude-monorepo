@@ -2,13 +2,32 @@ import {
   Injectable,
   Logger,
   BadRequestException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  ORDER_STATUS_TRANSITIONS,
+  canTransitionOrderStatus,
+  type OrderStatus,
+} from '@haude/types';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentConfigService } from './payment-config.service';
 import { EmailService } from '@/modules/email/email.service';
+import { MembersService } from '@/modules/members/members.service';
 import { maskPaymentPayload } from '../utils/mask-payment-payload';
 import type { RefundTypeInput } from '../dto/refund-payment.dto';
+
+/** Order statuses the transition table allows to move to 'refunded' (shipped, delivered). */
+const REFUNDABLE_ORDER_STATUSES = (
+  Object.keys(ORDER_STATUS_TRANSITIONS) as OrderStatus[]
+).filter((status) => canTransitionOrderStatus(status, 'refunded'));
+
+interface RefundOrderContext {
+  orderNumber: string;
+  userId: string;
+  totalAmount: number;
+  user: { email: string; name: string | null };
+}
 
 /**
  * 退款服務
@@ -18,6 +37,8 @@ import type { RefundTypeInput } from '../dto/refund-payment.dto';
  * - ATM/CVS 退款（建立待處理記錄，管理員線下處理後確認）
  * - 退款記錄查詢
  * - 退款通知郵件
+ *
+ * 狀態寫入一律「狀態符合預期才寫入」（updateMany + count），見根目錄 CLAUDE.md「訂單狀態」。
  */
 @Injectable()
 export class PaymentRefundService {
@@ -33,6 +54,7 @@ export class PaymentRefundService {
     private readonly prisma: PrismaService,
     private readonly configService: PaymentConfigService,
     private readonly emailService: EmailService,
+    private readonly membersService: MembersService,
   ) {}
 
   // ========================================
@@ -88,27 +110,59 @@ export class PaymentRefundService {
       );
     }
 
-    // 4. 根據付款方式處理退款
-    const refundType = type === 'FULL' ? 'FULL' : 'PARTIAL';
+    const isCredit = payment.paymentType === 'CREDIT';
+    if (isCredit && !payment.tradeNo) {
+      throw new BadRequestException('此付款無綠界交易編號，無法自動退款');
+    }
 
-    if (payment.paymentType === 'CREDIT') {
+    // 4. 建立退款記錄
+    // The total above was read without a lock, so two clicks can both pass it and
+    // refund twice. Bumping updatedAt only if it is unchanged since our read lets
+    // exactly one request through before any money moves; the other's WHERE no
+    // longer matches.
+    const refund = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.payment.updateMany({
+        where: { id: payment.id, status: 'paid', updatedAt: payment.updatedAt },
+        data: { updatedAt: new Date() },
+      });
+      if (count === 0) {
+        throw new ConflictException(
+          '此筆付款剛被其他退款操作變更，請重新整理後再試',
+        );
+      }
+      return tx.refund.create({
+        data: {
+          paymentId: payment.id,
+          orderId: payment.orderId,
+          operatorId,
+          type: type === 'FULL' ? 'FULL' : 'PARTIAL',
+          status: isCredit ? 'processing' : 'pending',
+          amount: refundAmount,
+          reason,
+        },
+      });
+    });
+
+    // 5. 根據付款方式處理退款
+    if (isCredit && payment.tradeNo) {
       return this.processCreditRefund(
         payment,
-        operatorId,
-        refundType,
+        payment.tradeNo,
+        refund,
         refundAmount,
-        reason,
-      );
-    } else {
-      // ATM / CVS → 人工退款流程
-      return this.createManualRefund(
-        payment,
-        operatorId,
-        refundType,
-        refundAmount,
-        reason,
       );
     }
+
+    // ATM / CVS → 人工退款流程
+    this.logger.log(
+      `${payment.paymentType} 人工退款已建立：${payment.order.orderNumber}，金額：${refundAmount}`,
+    );
+
+    return {
+      refundId: refund.id,
+      status: 'pending',
+      message: `${payment.paymentType} 退款需人工處理，請線下匯款後確認`,
+    };
   }
 
   // ========================================
@@ -119,35 +173,16 @@ export class PaymentRefundService {
     payment: {
       id: string;
       merchantOrderNo: string;
-      tradeNo: string | null;
-      amount: number;
       orderId: string;
-      order: {
-        orderNumber: string;
-        user: { email: string; name: string | null };
-      };
+      order: RefundOrderContext;
     },
-    operatorId: string,
-    refundType: 'FULL' | 'PARTIAL',
+    tradeNo: string,
+    refund: { id: string; paymentId: string; orderId: string },
     refundAmount: number,
-    reason?: string,
   ) {
-    if (!payment.tradeNo) {
-      throw new BadRequestException('此付款無綠界交易編號，無法自動退款');
-    }
-
-    // 建立退款記錄（processing 狀態）
-    const refund = await this.prisma.refund.create({
-      data: {
-        paymentId: payment.id,
-        orderId: payment.orderId,
-        operatorId,
-        type: refundType,
-        status: 'processing',
-        amount: refundAmount,
-        reason,
-      },
-    });
+    let rtnCode: string | null;
+    let rtnMsg: string | null;
+    const ecpayResponse: Record<string, string> = {};
 
     try {
       // 呼叫 ECPay DoAction API
@@ -161,7 +196,7 @@ export class PaymentRefundService {
       const params: Record<string, string | number> = {
         MerchantID: config.merchantId,
         MerchantTradeNo: payment.merchantOrderNo,
-        TradeNo: payment.tradeNo,
+        TradeNo: tradeNo,
         Action: 'R', // R = 退刷
         TotalAmount: refundAmount,
       };
@@ -186,79 +221,15 @@ export class PaymentRefundService {
 
       const responseText = await response.text();
       const responseParams = new URLSearchParams(responseText);
-      const rtnCode = responseParams.get('RtnCode');
-      const rtnMsg = responseParams.get('RtnMsg');
+      rtnCode = responseParams.get('RtnCode');
+      rtnMsg = responseParams.get('RtnMsg');
 
       // 將回應資料轉為 JSON 儲存
-      const ecpayResponse: Record<string, string> = {};
       responseParams.forEach((value, key) => {
         ecpayResponse[key] = value;
       });
-
-      if (rtnCode === '1') {
-        // 退款成功
-        await this.prisma.$transaction([
-          this.prisma.refund.update({
-            where: { id: refund.id },
-            data: {
-              status: 'completed',
-              ecpayResponse: maskPaymentPayload(ecpayResponse) as object,
-              completedAt: new Date(),
-            },
-          }),
-          this.prisma.payment.update({
-            where: { id: payment.id },
-            data: { status: 'refunded' },
-          }),
-          this.prisma.order.update({
-            where: { id: payment.orderId },
-            data: {
-              paymentStatus: 'refunded',
-              status: 'refunded',
-            },
-          }),
-        ]);
-
-        // 發送退款通知郵件（非同步，不阻塞主流程）
-        this.sendRefundNotificationEmail(
-          payment.order.user.email,
-          payment.order.orderNumber,
-          refundAmount,
-          'CREDIT',
-          payment.order.user.name,
-        ).catch((err) => this.logger.error('發送退款通知郵件失敗', err));
-
-        this.logger.log(
-          `信用卡退款成功：${payment.merchantOrderNo}，金額：${refundAmount}`,
-        );
-
-        return {
-          refundId: refund.id,
-          status: 'completed',
-          message: '信用卡退款已成功處理',
-        };
-      } else {
-        // 退款失敗
-        await this.prisma.refund.update({
-          where: { id: refund.id },
-          data: {
-            status: 'failed',
-            ecpayResponse: maskPaymentPayload(ecpayResponse) as object,
-            failReason: rtnMsg || '綠界退款失敗',
-          },
-        });
-
-        this.logger.error(
-          `信用卡退款失敗：${payment.merchantOrderNo}，RtnCode=${rtnCode}，RtnMsg=${rtnMsg}`,
-        );
-
-        throw new BadRequestException(`退款失敗：${rtnMsg || '綠界回應異常'}`);
-      }
     } catch (error) {
-      // 如果是已經處理過的 BadRequestException，直接拋出
-      if (error instanceof BadRequestException) throw error;
-
-      // 未預期錯誤
+      // 請求沒送出或回應讀不到：未確認綠界有退款
       await this.prisma.refund.update({
         where: { id: refund.id },
         data: {
@@ -270,48 +241,52 @@ export class PaymentRefundService {
       this.logger.error('信用卡退款發生系統錯誤', error);
       throw new BadRequestException('退款處理失敗，請稍後再試');
     }
-  }
 
-  // ========================================
-  // ATM/CVS 人工退款
-  // ========================================
+    if (rtnCode !== '1') {
+      // 退款失敗
+      await this.prisma.refund.update({
+        where: { id: refund.id },
+        data: {
+          status: 'failed',
+          ecpayResponse: maskPaymentPayload(ecpayResponse) as object,
+          failReason: rtnMsg || '綠界退款失敗',
+        },
+      });
 
-  private async createManualRefund(
-    payment: {
-      id: string;
-      amount: number;
-      orderId: string;
-      paymentType: string;
-      order: {
-        orderNumber: string;
-        user: { email: string; name: string | null };
-      };
-    },
-    operatorId: string,
-    refundType: 'FULL' | 'PARTIAL',
-    refundAmount: number,
-    reason?: string,
-  ) {
-    const refund = await this.prisma.refund.create({
-      data: {
-        paymentId: payment.id,
-        orderId: payment.orderId,
-        operatorId,
-        type: refundType,
-        status: 'pending',
-        amount: refundAmount,
-        reason,
-      },
+      this.logger.error(
+        `信用卡退款失敗：${payment.merchantOrderNo}，RtnCode=${rtnCode}，RtnMsg=${rtnMsg}`,
+      );
+
+      throw new BadRequestException(`退款失敗：${rtnMsg || '綠界回應異常'}`);
+    }
+
+    // 綠界已退款。之後的寫入失敗不可把退款標成 failed（錢已退出），
+    // 讓錯誤往上拋，退款記錄停在 processing 供人工對帳。
+    const { orderRefunded } = await this.completeRefund(refund, 'processing', {
+      ecpayResponse: maskPaymentPayload(ecpayResponse) as object,
     });
 
+    if (orderRefunded) {
+      await this.revokeOrderRewards(payment.orderId, payment.order);
+    }
+
+    // 發送退款通知郵件（非同步，不阻塞主流程）
+    this.sendRefundNotificationEmail(
+      payment.order.user.email,
+      payment.order.orderNumber,
+      refundAmount,
+      'CREDIT',
+      payment.order.user.name,
+    ).catch((err) => this.logger.error('發送退款通知郵件失敗', err));
+
     this.logger.log(
-      `${payment.paymentType} 人工退款已建立：${payment.order.orderNumber}，金額：${refundAmount}`,
+      `信用卡退款成功：${payment.merchantOrderNo}，金額：${refundAmount}`,
     );
 
     return {
       refundId: refund.id,
-      status: 'pending',
-      message: `${payment.paymentType} 退款需人工處理，請線下匯款後確認`,
+      status: 'completed',
+      message: '信用卡退款已成功處理',
     };
   }
 
@@ -345,29 +320,15 @@ export class PaymentRefundService {
       );
     }
 
-    await this.prisma.$transaction([
-      this.prisma.refund.update({
-        where: { id: refund.id },
-        data: {
-          status: 'completed',
-          completedAt: new Date(),
-          reason: notes
-            ? `${refund.reason || ''}${refund.reason ? '；' : ''}確認備註：${notes}`
-            : refund.reason,
-        },
-      }),
-      this.prisma.payment.update({
-        where: { id: refund.paymentId },
-        data: { status: 'refunded' },
-      }),
-      this.prisma.order.update({
-        where: { id: refund.orderId },
-        data: {
-          paymentStatus: 'refunded',
-          status: 'refunded',
-        },
-      }),
-    ]);
+    const { orderRefunded } = await this.completeRefund(refund, 'pending', {
+      reason: notes
+        ? `${refund.reason || ''}${refund.reason ? '；' : ''}確認備註：${notes}`
+        : refund.reason,
+    });
+
+    if (orderRefunded) {
+      await this.revokeOrderRewards(refund.orderId, refund.order);
+    }
 
     // 發送退款通知郵件
     this.sendRefundNotificationEmail(
@@ -385,6 +346,84 @@ export class PaymentRefundService {
       status: 'completed',
       message: '退款已確認完成',
     };
+  }
+
+  // ========================================
+  // 完成退款（共用）
+  // ========================================
+
+  /**
+   * 把退款標為完成；累計退完全額時才把付款與訂單標為已退款
+   *
+   * - 退款記錄只能從 fromStatus 轉為 completed，重複確認會被擋下
+   * - 部分退款不動付款與訂單狀態
+   * - 訂單狀態只在轉換表允許時（已出貨 / 已送達）才轉為 refunded；
+   *   未出貨的訂單只標 paymentStatus，由後台照正常流程取消
+   */
+  private async completeRefund(
+    refund: { id: string; paymentId: string; orderId: string },
+    fromStatus: 'processing' | 'pending',
+    data: { ecpayResponse?: object; reason?: string | null },
+  ): Promise<{ orderRefunded: boolean }> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.refund.updateMany({
+        where: { id: refund.id, status: fromStatus },
+        data: { ...data, status: 'completed', completedAt: new Date() },
+      });
+      if (count === 0) {
+        throw new ConflictException('此退款已被處理，請重新整理後再試');
+      }
+
+      const payment = await tx.payment.findUniqueOrThrow({
+        where: { id: refund.paymentId },
+        select: { amount: true },
+      });
+      const completed = await tx.refund.aggregate({
+        where: { paymentId: refund.paymentId, status: 'completed' },
+        _sum: { amount: true },
+      });
+      if ((completed._sum.amount ?? 0) < payment.amount) {
+        return { orderRefunded: false };
+      }
+
+      await tx.payment.updateMany({
+        where: { id: refund.paymentId, status: 'paid' },
+        data: { status: 'refunded' },
+      });
+      await tx.order.update({
+        where: { id: refund.orderId },
+        data: { paymentStatus: 'refunded' },
+      });
+      const order = await tx.order.updateMany({
+        where: {
+          id: refund.orderId,
+          status: { in: REFUNDABLE_ORDER_STATUSES },
+        },
+        data: { status: 'refunded' },
+      });
+      return { orderRefunded: order.count > 0 };
+    });
+  }
+
+  /**
+   * 訂單進入已退款 → 收回積分與累積消費（與後台改狀態同一套，revokeOrderRewards 本身冪等）
+   */
+  private async revokeOrderRewards(
+    orderId: string,
+    order: { userId: string; totalAmount: number },
+  ) {
+    try {
+      const revoked = await this.membersService.revokeOrderRewards(
+        order.userId,
+        orderId,
+        order.totalAmount,
+      );
+      this.logger.log(
+        `訂單 ${orderId} 退款，收回 ${revoked.points} 積分、累積消費 ${revoked.totalSpent} 元`,
+      );
+    } catch (error) {
+      this.logger.error(`收回退款訂單回饋失敗: ${error}`);
+    }
   }
 
   // ========================================
