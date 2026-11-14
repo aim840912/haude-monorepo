@@ -15,22 +15,33 @@ interface ExportData {
   items: SalesDetailItem[]
 }
 
+// Spreadsheet apps evaluate a cell starting with these as a formula (CSV injection).
+const FORMULA_TRIGGER = /^[=+\-@\t\r]/
+
+/**
+ * 跳脫單一 CSV 儲存格
+ * - 字串若以 = + - @ Tab CR 開頭，前綴 ' 讓 Excel 當成文字（客戶姓名、備註可被填入公式）
+ * - 數字不加前綴，負數（如折扣）維持數值
+ * - 含逗號、換行或引號時用引號包裹
+ */
+export function escapeCsvCell(value: string | number): string {
+  let str = String(value)
+  if (typeof value === 'string' && FORMULA_TRIGGER.test(str)) {
+    str = `'${str}`
+  }
+  if (/[",\n\r]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
 /**
  * 將數據轉換為 CSV 格式
  * 使用原生 JavaScript 實作，無需額外依賴
  */
 function arrayToCsv(headers: string[], rows: (string | number)[][]): string {
-  const escape = (value: string | number): string => {
-    const str = String(value)
-    // 如果包含逗號、換行或引號，需要用引號包裹
-    if (str.includes(',') || str.includes('\n') || str.includes('"')) {
-      return `"${str.replace(/"/g, '""')}"`
-    }
-    return str
-  }
-
-  const headerLine = headers.map(escape).join(',')
-  const dataLines = rows.map((row) => row.map(escape).join(','))
+  const headerLine = headers.map(escapeCsvCell).join(',')
+  const dataLines = rows.map((row) => row.map(escapeCsvCell).join(','))
 
   return [headerLine, ...dataLines].join('\n')
 }
