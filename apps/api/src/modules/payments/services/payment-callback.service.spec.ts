@@ -24,6 +24,7 @@ describe('PaymentCallbackService', () => {
   // Mock PaymentConfigService
   const mockPaymentConfigService = {
     getCrypto: jest.fn(() => mockCrypto),
+    getConfig: jest.fn(() => ({ merchantId: '3002607' })),
   };
 
   // Mock EmailService
@@ -41,6 +42,7 @@ describe('PaymentCallbackService', () => {
     order: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     paymentLog: {
       create: jest.fn(),
@@ -79,6 +81,7 @@ describe('PaymentCallbackService', () => {
 
     jest.clearAllMocks();
     mockPrismaService.payment.updateMany.mockResolvedValue({ count: 1 });
+    mockPrismaService.order.updateMany.mockResolvedValue({ count: 1 });
   });
 
   describe('初始化', () => {
@@ -93,6 +96,7 @@ describe('PaymentCallbackService', () => {
 
   describe('handleNotify', () => {
     const validBody = {
+      MerchantID: '3002607',
       MerchantTradeNo: 'TEST123456',
       RtnCode: '1',
       TradeNo: 'EC123456',
@@ -113,6 +117,91 @@ describe('PaymentCallbackService', () => {
           logType: 'error',
           verified: false,
         }),
+      });
+    });
+
+    it('驗簽失敗不把未驗證的請求內容寫進資料庫', async () => {
+      mockCrypto.verifyCheckMacValue.mockReturnValue(false);
+
+      await service.handleNotify(
+        {
+          ...validBody,
+          MerchantTradeNo: 'X'.repeat(5000),
+          junk: 'Y'.repeat(5000),
+        },
+        '127.0.0.1',
+      );
+
+      const { data } = mockPrismaService.paymentLog.create.mock.calls[0][0];
+      expect(data.rawData).toEqual({ error: 'CheckMacValue 驗證失敗' });
+      expect(data.merchantOrderNo.length).toBeLessThanOrEqual(20);
+    });
+
+    describe('付款成功通知的前置檢查（未通過則不寫入）', () => {
+      const pendingPayment = {
+        id: 'payment-1',
+        status: 'pending',
+        orderId: 'order-1',
+        paymentType: 'Credit',
+        amount: 1000,
+        order: { orderNumber: 'ORD-001' },
+      };
+
+      beforeEach(() => {
+        mockCrypto.verifyCheckMacValue.mockReturnValue(true);
+      });
+
+      it.each(['refunded', 'expired', 'failed'])(
+        '付款狀態為 %s 時不改回 paid',
+        async (status) => {
+          mockPrismaService.payment.findUnique.mockResolvedValue({
+            ...pendingPayment,
+            status,
+          });
+
+          const result = await service.handleNotify(validBody, '127.0.0.1');
+
+          expect(result).toBe(true);
+          expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+        },
+      );
+
+      it('金額與付款記錄不符時不寫入', async () => {
+        mockPrismaService.payment.findUnique.mockResolvedValue(pendingPayment);
+
+        await service.handleNotify(
+          { ...validBody, TradeAmt: '1' },
+          '127.0.0.1',
+        );
+
+        expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+      });
+
+      it('商店代號不符時不寫入', async () => {
+        mockPrismaService.payment.findUnique.mockResolvedValue(pendingPayment);
+
+        await service.handleNotify(
+          { ...validBody, MerchantID: '9999999' },
+          '127.0.0.1',
+        );
+
+        expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+      });
+
+      it('訂單已不是待付款狀態時回滾，且不寄付款成功信', async () => {
+        mockPrismaService.payment.findUnique.mockResolvedValue(pendingPayment);
+        mockPrismaService.order.updateMany.mockResolvedValue({ count: 0 });
+
+        await expect(
+          service.handleNotify(validBody, '127.0.0.1'),
+        ).resolves.toBe(true);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(mockPrismaService.order.updateMany).toHaveBeenCalledWith({
+          where: { id: 'order-1', status: { in: ['pending', 'confirmed'] } },
+          data: expect.objectContaining({ paymentStatus: 'paid' }),
+        });
+        expect(mockEmailService.sendPaymentSuccessEmail).not.toHaveBeenCalled();
       });
     });
 
@@ -153,6 +242,7 @@ describe('PaymentCallbackService', () => {
         status: 'pending',
         orderId: 'order-1',
         paymentType: 'Credit',
+        amount: 1000,
         order: { orderNumber: 'ORD-001' },
       });
       mockPrismaService.order.findUnique.mockResolvedValue({
@@ -181,7 +271,7 @@ describe('PaymentCallbackService', () => {
 
       expect(result).toBe(true);
       expect(mockPrismaService.payment.updateMany).toHaveBeenCalledWith({
-        where: { id: 'payment-1', status: { not: 'paid' } },
+        where: { id: 'payment-1', status: 'pending' },
         data: expect.objectContaining({
           status: 'failed',
         }),
@@ -196,6 +286,7 @@ describe('PaymentCallbackService', () => {
         status: 'pending',
         orderId: 'order-1',
         paymentType: 'Credit',
+        amount: 1000,
         order: { orderNumber: 'ORD-001' },
       });
       mockPrismaService.payment.updateMany.mockResolvedValue({ count: 0 });
@@ -205,10 +296,10 @@ describe('PaymentCallbackService', () => {
 
       expect(result).toBe(true);
       expect(mockPrismaService.payment.updateMany).toHaveBeenCalledWith({
-        where: { id: 'payment-1', status: { not: 'paid' } },
+        where: { id: 'payment-1', status: 'pending' },
         data: expect.objectContaining({ status: 'paid' }),
       });
-      expect(mockPrismaService.order.update).not.toHaveBeenCalled();
+      expect(mockPrismaService.order.updateMany).not.toHaveBeenCalled();
       expect(mockEmailService.sendPaymentSuccessEmail).not.toHaveBeenCalled();
     });
 
@@ -226,7 +317,7 @@ describe('PaymentCallbackService', () => {
       const failBody = { ...validBody, RtnCode: '0', RtnMsg: '交易失敗' };
       await service.handleNotify(failBody, '127.0.0.1');
 
-      expect(mockPrismaService.order.update).not.toHaveBeenCalled();
+      expect(mockPrismaService.order.updateMany).not.toHaveBeenCalled();
     });
 
     it('付款成功應更新 Payment 和 Order 狀態', async () => {
@@ -236,6 +327,7 @@ describe('PaymentCallbackService', () => {
         status: 'pending',
         orderId: 'order-1',
         paymentType: 'Credit',
+        amount: 1000,
         order: { orderNumber: 'ORD-001' },
       });
       mockPrismaService.order.findUnique.mockResolvedValue({
@@ -256,6 +348,7 @@ describe('PaymentCallbackService', () => {
         status: 'pending',
         orderId: 'order-1',
         paymentType: 'Credit',
+        amount: 1000,
         order: { orderNumber: 'ORD-001' },
       });
       mockPrismaService.order.findUnique.mockResolvedValue({

@@ -4,6 +4,20 @@ import { PaymentConfigService } from './payment-config.service';
 import { EmailService } from '../../email/email.service';
 import { maskPaymentPayload } from '../utils/mask-payment-payload';
 
+/** Thrown inside the success transaction to roll back when the order can no longer be paid. */
+class OrderNotPayableError extends Error {}
+
+/** ECPay MerchantTradeNo is at most 20 chars; anything longer from an unverified body is junk. */
+const MAX_TRADE_NO_LENGTH = 20;
+
+/** Unverified (bad CheckMacValue) bodies are attacker-controlled: keep only a bounded trade number. */
+function untrustedTradeNo(body: Record<string, string>): string {
+  const value = body.MerchantTradeNo;
+  return typeof value === 'string' && value
+    ? value.slice(0, MAX_TRADE_NO_LENGTH)
+    : 'UNKNOWN';
+}
+
 /**
  * 付款回調處理服務
  *
@@ -41,9 +55,9 @@ export class PaymentCallbackService {
     if (!crypto.verifyCheckMacValue(body)) {
       this.logger.error('綠界回調驗證失敗');
       await this.createPaymentLog({
-        merchantOrderNo: body.MerchantTradeNo || 'UNKNOWN',
+        merchantOrderNo: untrustedTradeNo(body),
         logType: 'error',
-        rawData: { ...body, error: 'CheckMacValue 驗證失敗' },
+        rawData: { error: 'CheckMacValue 驗證失敗' },
         verified: false,
         ipAddress,
       });
@@ -79,8 +93,22 @@ export class PaymentCallbackService {
       return true;
     }
 
+    // Only a pending payment may change. A refunded / expired / failed one must not be
+    // flipped back to paid; a late success here means money arrived for a closed order.
+    if (payment.status !== 'pending') {
+      this.logger.error(
+        `付款狀態為 ${payment.status}，忽略此通知（RtnCode=${body.RtnCode}），` +
+          `若為成功通知需人工確認是否退款: ${merchantTradeNo}`,
+      );
+      return true;
+    }
+
     // 4. 檢查回應狀態（RtnCode = 1 表示成功）
     const isSuccess = rtnCode === 1;
+
+    if (isSuccess && !this.matchesPaymentRecord(payment, body)) {
+      return true;
+    }
 
     if (isSuccess) {
       await this.handlePaymentSuccess(payment, body);
@@ -104,9 +132,9 @@ export class PaymentCallbackService {
     if (!crypto.verifyCheckMacValue(body)) {
       this.logger.error('綠界取號通知驗證失敗');
       await this.createPaymentLog({
-        merchantOrderNo: body.MerchantTradeNo || 'UNKNOWN',
+        merchantOrderNo: untrustedTradeNo(body),
         logType: 'error',
-        rawData: { ...body, error: 'CheckMacValue 驗證失敗' },
+        rawData: { error: 'CheckMacValue 驗證失敗' },
         verified: false,
         ipAddress,
       });
@@ -194,6 +222,27 @@ export class PaymentCallbackService {
   }
 
   /**
+   * 成功通知的金額與商店代號必須與我們的付款記錄一致，否則不寫入
+   */
+  private matchesPaymentRecord(
+    payment: { amount: number },
+    body: Record<string, string>,
+  ): boolean {
+    const { merchantId } = this.paymentConfig.getConfig();
+    const tradeAmt = parseInt(body.TradeAmt, 10);
+
+    if (body.MerchantID !== merchantId || tradeAmt !== payment.amount) {
+      this.logger.error(
+        `付款通知與記錄不符，不寫入：${body.MerchantTradeNo}` +
+          `（商店代號 ${body.MerchantID === merchantId ? '相符' : '不符'}，` +
+          `金額 ${body.TradeAmt} vs ${payment.amount}）`,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * 處理付款成功
    */
   private async handlePaymentSuccess(
@@ -205,32 +254,47 @@ export class PaymentCallbackService {
     },
     body: Record<string, string>,
   ): Promise<void> {
-    const applied = await this.prisma.$transaction(async (tx) => {
-      // Conditional update: the status check in handleNotify runs outside this
-      // transaction, so two near-simultaneous ECPay retries can both pass it.
-      // The WHERE clause makes the database the idempotency guard — only one wins.
-      const { count } = await tx.payment.updateMany({
-        where: { id: payment.id, status: { not: 'paid' } },
-        data: {
-          status: 'paid',
-          tradeNo: body.TradeNo,
-          payTime: body.PaymentDate ? new Date(body.PaymentDate) : new Date(),
-          responseData: maskPaymentPayload(body) as object,
-        },
-      });
-      if (count === 0) return false;
+    let applied: boolean;
+    try {
+      applied = await this.prisma.$transaction(async (tx) => {
+        // Conditional update: the status check in handleNotify runs outside this
+        // transaction, so two near-simultaneous ECPay retries can both pass it.
+        // The WHERE clause makes the database the idempotency guard — only one wins.
+        const { count } = await tx.payment.updateMany({
+          where: { id: payment.id, status: 'pending' },
+          data: {
+            status: 'paid',
+            tradeNo: body.TradeNo,
+            payTime: body.PaymentDate ? new Date(body.PaymentDate) : new Date(),
+            responseData: maskPaymentPayload(body) as object,
+          },
+        });
+        if (count === 0) return false;
 
-      // 更新 Order
-      await tx.order.update({
-        where: { id: payment.orderId },
-        data: {
-          paymentStatus: 'paid',
-          paymentMethod: payment.paymentType,
-          status: 'confirmed',
-        },
+        // The order may have been cancelled (e.g. payment expiry) since it was read.
+        // Throwing rolls back the payment update so the two never disagree.
+        const order = await tx.order.updateMany({
+          where: {
+            id: payment.orderId,
+            status: { in: ['pending', 'confirmed'] },
+          },
+          data: {
+            paymentStatus: 'paid',
+            paymentMethod: payment.paymentType,
+            status: 'confirmed',
+          },
+        });
+        if (order.count === 0) throw new OrderNotPayableError();
+        return true;
       });
-      return true;
-    });
+    } catch (error) {
+      if (!(error instanceof OrderNotPayableError)) throw error;
+      this.logger.error(
+        `收到付款成功通知，但訂單已不是待付款狀態（可能已取消），` +
+          `需人工確認是否退款: ${body.MerchantTradeNo}`,
+      );
+      return;
+    }
 
     if (!applied) {
       this.logger.log(`付款已由並行通知處理: ${body.MerchantTradeNo}`);
@@ -259,9 +323,10 @@ export class PaymentCallbackService {
     body: Record<string, string>,
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // Never downgrade a payment a concurrent success notification already marked paid.
+      // Only a pending payment can fail: never downgrade one a concurrent success
+      // notification already marked paid, nor rewrite a refunded / expired one.
       const { count } = await tx.payment.updateMany({
-        where: { id: payment.id, status: { not: 'paid' } },
+        where: { id: payment.id, status: 'pending' },
         data: {
           status: 'failed',
           responseData: maskPaymentPayload(body) as object,
@@ -269,8 +334,8 @@ export class PaymentCallbackService {
       });
       if (count === 0) return;
 
-      await tx.order.update({
-        where: { id: payment.orderId },
+      await tx.order.updateMany({
+        where: { id: payment.orderId, status: 'pending' },
         data: { paymentStatus: 'failed' },
       });
     });
