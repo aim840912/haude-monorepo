@@ -250,6 +250,8 @@ export class AdminPaymentsController {
   // ========================================
 
   @Post('refund')
+  // Money leaves the business here: ADMIN only (overrides the class-level STAFF, ADMIN)
+  @Roles(Role.ADMIN)
   // processRefund returns `{ refundId, … }`, not `{ id }`
   @AuditLog('CREATE', 'refunds', 'refundId')
   @ApiOperation({ summary: '執行退款（管理員）' })
@@ -270,6 +272,7 @@ export class AdminPaymentsController {
   }
 
   @Post('refund/:id/confirm')
+  @Roles(Role.ADMIN)
   @AuditLog('STATUS_CHANGE', 'refunds')
   @ApiOperation({ summary: '確認人工退款（ATM/CVS）' })
   @ApiResponse({ status: 200, description: '退款已確認' })
