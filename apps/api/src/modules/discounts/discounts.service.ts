@@ -8,7 +8,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { UpdateDiscountDto } from './dto/update-discount.dto';
 import { DiscountValidationResult } from './dto/validate-discount.dto';
-import { DiscountType } from '@prisma/client';
+import { DiscountType, Prisma } from '@prisma/client';
 
 @Injectable()
 export class DiscountsService {
@@ -290,15 +290,22 @@ export class DiscountsService {
   }
 
   /**
-   * 應用折扣到訂單（由 OrdersService 呼叫）
+   * 應用折扣到訂單（由 CreateOrderService 在建立訂單的交易內呼叫）
+   *
+   * validateDiscountCode 的次數檢查在交易外，並行下單可以同時通過。
+   * 這裡在訂單交易內重新檢查，任何一項不通過就拋錯，整筆訂單回滾：
+   * 1. 先以條件式 updateMany 增加使用次數（usageCount < usageLimit 才寫入）。
+   *    這一步同時鎖住折扣碼那一列，同一折扣碼的並行訂單會在此排隊。
+   * 2. 拿到鎖之後才計算此使用者已用次數，因此看得到先完成的訂單。
    */
   async applyDiscount(
+    tx: Prisma.TransactionClient,
     code: string,
     userId: string,
     orderId: string,
     discountAmount: number,
   ) {
-    const discount = await this.prisma.discountCode.findUnique({
+    const discount = await tx.discountCode.findUnique({
       where: { code: code.toUpperCase().trim() },
     });
 
@@ -306,23 +313,33 @@ export class DiscountsService {
       throw new NotFoundException('找不到此折扣碼');
     }
 
-    // 使用交易確保資料一致性
-    return this.prisma.$transaction(async (tx) => {
-      // 建立使用記錄
-      await tx.discountUsage.create({
-        data: {
-          discountCodeId: discount.id,
-          userId,
-          orderId,
-          discountAmount,
-        },
-      });
+    const { count } = await tx.discountCode.updateMany({
+      where: {
+        id: discount.id,
+        ...(discount.usageLimit
+          ? { usageCount: { lt: discount.usageLimit } }
+          : {}),
+      },
+      data: { usageCount: { increment: 1 } },
+    });
+    if (count === 0) {
+      throw new BadRequestException('此折扣碼已達使用上限');
+    }
 
-      // 增加使用次數
-      await tx.discountCode.update({
-        where: { id: discount.id },
-        data: { usageCount: { increment: 1 } },
-      });
+    const usedByUser = await tx.discountUsage.count({
+      where: { discountCodeId: discount.id, userId },
+    });
+    if (usedByUser >= discount.perUserLimit) {
+      throw new BadRequestException('您已達此折扣碼的使用次數上限');
+    }
+
+    await tx.discountUsage.create({
+      data: {
+        discountCodeId: discount.id,
+        userId,
+        orderId,
+        discountAmount,
+      },
     });
   }
 }

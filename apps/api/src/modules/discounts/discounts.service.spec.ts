@@ -19,10 +19,12 @@ describe('DiscountsService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
     discountUsage: {
       create: jest.fn(),
+      count: jest.fn(),
     },
     $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
@@ -398,6 +400,71 @@ describe('DiscountsService', () => {
         );
 
         expect(result.discountAmount).toBe(300);
+      });
+    });
+  });
+
+  describe('applyDiscount（在訂單交易內，以條件式寫入防並行超用）', () => {
+    // 服務直接使用傳入的 tx；這裡用同一個 mock 當 tx
+    const tx = mockPrismaService as unknown as Parameters<
+      DiscountsService['applyDiscount']
+    >[0];
+    const code = {
+      id: 'dc-1',
+      code: 'SAVE50',
+      usageLimit: 10,
+      perUserLimit: 1,
+    };
+
+    beforeEach(() => {
+      mockPrismaService.discountCode.findUnique.mockResolvedValue(code);
+      mockPrismaService.discountCode.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.discountUsage.count.mockResolvedValue(0);
+    });
+
+    it('次數用完時（被並行訂單搶先）拋錯且不建立使用紀錄', async () => {
+      mockPrismaService.discountCode.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.applyDiscount(tx, 'save50', 'user-1', 'order-1', 50),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrismaService.discountCode.updateMany).toHaveBeenCalledWith({
+        where: { id: 'dc-1', usageCount: { lt: 10 } },
+        data: { usageCount: { increment: 1 } },
+      });
+      expect(mockPrismaService.discountUsage.create).not.toHaveBeenCalled();
+    });
+
+    it('每人次數已滿時拋錯且不建立使用紀錄', async () => {
+      mockPrismaService.discountUsage.count.mockResolvedValue(1);
+
+      await expect(
+        service.applyDiscount(tx, 'SAVE50', 'user-1', 'order-1', 50),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrismaService.discountUsage.create).not.toHaveBeenCalled();
+    });
+
+    it('未設總次數上限時不加次數條件', async () => {
+      mockPrismaService.discountCode.findUnique.mockResolvedValue({
+        ...code,
+        usageLimit: null,
+      });
+
+      await service.applyDiscount(tx, 'SAVE50', 'user-1', 'order-1', 50);
+
+      expect(mockPrismaService.discountCode.updateMany).toHaveBeenCalledWith({
+        where: { id: 'dc-1' },
+        data: { usageCount: { increment: 1 } },
+      });
+      expect(mockPrismaService.discountUsage.create).toHaveBeenCalledWith({
+        data: {
+          discountCodeId: 'dc-1',
+          userId: 'user-1',
+          orderId: 'order-1',
+          discountAmount: 50,
+        },
       });
     });
   });

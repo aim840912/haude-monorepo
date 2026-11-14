@@ -138,7 +138,7 @@ export class CreateOrderService {
     // 9. 生成訂單編號
     const orderNumber = await this.generateOrderNumber();
 
-    // 10. 使用交易建立訂單並扣減庫存
+    // 10. 使用交易建立訂單、扣減庫存並記錄折扣使用
     const order = await this.prisma.$transaction(async (tx) => {
       // 建立訂單
       const newOrder = await tx.order.create({
@@ -181,6 +181,17 @@ export class CreateOrderService {
         }
       }
 
+      // 記錄折扣使用：在同一交易內重新檢查次數上限，超用就讓整筆訂單回滾
+      if (discountCode && discountAmount > 0) {
+        await this.discountsService.applyDiscount(
+          tx,
+          discountCode,
+          userId,
+          newOrder.id,
+          discountAmount,
+        );
+      }
+
       return newOrder;
     });
 
@@ -214,17 +225,7 @@ export class CreateOrderService {
         });
     }
 
-    // 11. 記錄折扣使用（在交易外，避免過長交易）
-    if (discountCode && discountAmount > 0) {
-      await this.discountsService.applyDiscount(
-        discountCode,
-        userId,
-        order.id,
-        discountAmount,
-      );
-    }
-
-    // 12. 發送訂單確認郵件（非同步，不阻塞回應）
+    // 11. 發送訂單確認郵件（非同步，不阻塞回應）
     void this.sendOrderConfirmationEmailAsync(userId, order, dto);
 
     return order;

@@ -123,14 +123,29 @@ describe('CreateOrderService — admin notifications after an order', () => {
     expect(notifications.checkAndCreateStockAlert).toHaveBeenCalledWith('p2');
   });
 
-  it('still checks stock when recording the discount fails after commit', async () => {
-    discounts.applyDiscount.mockRejectedValue(new Error('db hiccup'));
+  it('records the discount inside the order transaction', async () => {
+    await service.createOrder('user-1', dto('SAVE50'));
 
-    await expect(service.createOrder('user-1', dto('SAVE50'))).rejects.toThrow(
-      'db hiccup',
+    expect(discounts.applyDiscount).toHaveBeenCalledWith(
+      tx,
+      'SAVE50',
+      'user-1',
+      'order-1',
+      50,
+    );
+  });
+
+  it('a discount that hits its limit rolls the order back: no stock alert, no admin notification', async () => {
+    discounts.applyDiscount.mockRejectedValue(
+      new Error('此折扣碼已達使用上限'),
     );
 
-    expect(notifications.checkAndCreateStockAlert).toHaveBeenCalledTimes(2);
+    await expect(service.createOrder('user-1', dto('SAVE50'))).rejects.toThrow(
+      '此折扣碼已達使用上限',
+    );
+
+    expect(notifications.checkAndCreateStockAlert).not.toHaveBeenCalled();
+    expect(notifications.createNewOrderNotification).not.toHaveBeenCalled();
   });
 
   it('a failing alert check does not fail the order', async () => {
