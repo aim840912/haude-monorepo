@@ -180,6 +180,14 @@ export class FarmToursService {
   async createBooking(userId: string, dto: CreateBookingDto) {
     const tour = await this.findOne(dto.tourId);
 
+    if (
+      !tour.isActive ||
+      tour.isDraft ||
+      tour.status !== FarmTourStatus.upcoming
+    ) {
+      throw new BadRequestException('此行程目前不開放預約');
+    }
+
     const availableSpots = tour.maxParticipants - tour.currentParticipants;
     if (dto.participants > availableSpots) {
       throw new BadRequestException(
@@ -187,9 +195,24 @@ export class FarmToursService {
       );
     }
 
-    // 建立預約並更新人數
-    const [booking] = await this.prisma.$transaction([
-      this.prisma.farmTourBooking.create({
+    // 佔用名額並建立預約。The check above can be passed by two requests at once,
+    // so the increment only applies while there is still room; otherwise nothing
+    // is written and the booking is refused.
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.farmTour.updateMany({
+        where: {
+          id: dto.tourId,
+          currentParticipants: {
+            lte: tour.maxParticipants - dto.participants,
+          },
+        },
+        data: { currentParticipants: { increment: dto.participants } },
+      });
+      if (count === 0) {
+        throw new BadRequestException('名額不足，請重新整理後再試');
+      }
+
+      return tx.farmTourBooking.create({
         data: {
           tourId: dto.tourId,
           userId,
@@ -198,16 +221,8 @@ export class FarmToursService {
           contactPhone: dto.contactPhone,
           notes: dto.notes,
         },
-      }),
-      this.prisma.farmTour.update({
-        where: { id: dto.tourId },
-        data: {
-          currentParticipants: { increment: dto.participants },
-        },
-      }),
-    ]);
-
-    return booking;
+      });
+    });
   }
 
   /**
@@ -237,19 +252,24 @@ export class FarmToursService {
       throw new BadRequestException('無權取消此預約');
     }
 
-    // 取消預約並更新人數
-    await this.prisma.$transaction([
-      this.prisma.farmTourBooking.update({
-        where: { id: bookingId },
+    // 取消預約並歸還名額。Conditional on the booking not being cancelled yet:
+    // otherwise every repeated (or concurrent) cancel would decrement again.
+    await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.farmTourBooking.updateMany({
+        where: { id: bookingId, userId, status: { not: 'cancelled' } },
         data: { status: 'cancelled' },
-      }),
-      this.prisma.farmTour.update({
+      });
+      if (count === 0) {
+        throw new BadRequestException('此預約已取消');
+      }
+
+      await tx.farmTour.update({
         where: { id: booking.tourId },
         data: {
           currentParticipants: { decrement: booking.participants },
         },
-      }),
-    ]);
+      });
+    });
 
     return { message: '預約已取消' };
   }

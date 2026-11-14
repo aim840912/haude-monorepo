@@ -25,6 +25,7 @@ describe('FarmToursService', () => {
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
     farmTourBooking: {
@@ -32,6 +33,7 @@ describe('FarmToursService', () => {
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     farmTourImage: {
       findFirst: jest.fn(),
@@ -273,21 +275,67 @@ describe('FarmToursService', () => {
       contactPhone: '0912345678',
     };
 
-    it('應成功建立預約', async () => {
-      mockPrismaService.farmTour.findUnique.mockResolvedValue({
-        id: bookingDto.tourId,
-        maxParticipants: 20,
-        currentParticipants: 5,
-        bookings: [],
+    const openTour = {
+      id: bookingDto.tourId,
+      maxParticipants: 20,
+      currentParticipants: 5,
+      isActive: true,
+      isDraft: false,
+      status: 'upcoming',
+    };
+
+    /** 互動式交易：把 mockPrismaService 當成 tx 傳入 */
+    const runInteractiveTransaction = () =>
+      mockPrismaService.$transaction.mockImplementation(
+        (cb: (tx: typeof mockPrismaService) => unknown) =>
+          cb(mockPrismaService),
+      );
+
+    it('應成功建立預約，名額以條件式寫入佔用', async () => {
+      mockPrismaService.farmTour.findUnique.mockResolvedValue(openTour);
+      runInteractiveTransaction();
+      mockPrismaService.farmTour.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.farmTourBooking.create.mockResolvedValue({
+        id: 'booking-new',
+        ...bookingDto,
+        userId,
       });
-      mockPrismaService.$transaction.mockResolvedValue([
-        { id: 'booking-new', ...bookingDto, userId },
-        { id: bookingDto.tourId },
-      ]);
 
       const result = await service.createBooking(userId, bookingDto);
 
       expect(result).toHaveProperty('id', 'booking-new');
+      expect(mockPrismaService.farmTour.updateMany).toHaveBeenCalledWith({
+        where: { id: 'tour-123', currentParticipants: { lte: 18 } },
+        data: { currentParticipants: { increment: 2 } },
+      });
+    });
+
+    it('並行預約搶走名額時拋錯，且不建立預約', async () => {
+      mockPrismaService.farmTour.findUnique.mockResolvedValue(openTour);
+      runInteractiveTransaction();
+      mockPrismaService.farmTour.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.createBooking(userId, bookingDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrismaService.farmTourBooking.create).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['未上架', { isActive: false }],
+      ['草稿', { isDraft: true }],
+      ['已結束', { status: 'completed' }],
+      ['已取消', { status: 'cancelled' }],
+    ])('%s的行程不可預約', async (_label, override) => {
+      mockPrismaService.farmTour.findUnique.mockResolvedValue({
+        ...openTour,
+        ...override,
+      });
+
+      await expect(service.createBooking(userId, bookingDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
     });
 
     it('名額不足應拋出 BadRequestException', async () => {
@@ -330,18 +378,56 @@ describe('FarmToursService', () => {
     const userId = 'user-123';
     const bookingId = 'booking-123';
 
-    it('應成功取消預約', async () => {
-      mockPrismaService.farmTourBooking.findUnique.mockResolvedValue({
-        id: bookingId,
-        userId,
-        tourId: 'tour-123',
-        participants: 2,
+    const activeBooking = {
+      id: bookingId,
+      userId,
+      tourId: 'tour-123',
+      participants: 2,
+      status: 'confirmed',
+    };
+
+    beforeEach(() => {
+      mockPrismaService.$transaction.mockImplementation(
+        (cb: (tx: typeof mockPrismaService) => unknown) =>
+          cb(mockPrismaService),
+      );
+    });
+
+    it('應成功取消預約，並歸還名額', async () => {
+      mockPrismaService.farmTourBooking.findUnique.mockResolvedValue(
+        activeBooking,
+      );
+      mockPrismaService.farmTourBooking.updateMany.mockResolvedValue({
+        count: 1,
       });
-      mockPrismaService.$transaction.mockResolvedValue([{}, {}]);
 
       const result = await service.cancelBooking(userId, bookingId);
 
       expect(result).toEqual({ message: '預約已取消' });
+      expect(mockPrismaService.farmTourBooking.updateMany).toHaveBeenCalledWith(
+        {
+          where: { id: bookingId, userId, status: { not: 'cancelled' } },
+          data: { status: 'cancelled' },
+        },
+      );
+      expect(mockPrismaService.farmTour.update).toHaveBeenCalledWith({
+        where: { id: 'tour-123' },
+        data: { currentParticipants: { decrement: 2 } },
+      });
+    });
+
+    it('重複取消（含並行）不再扣人數', async () => {
+      mockPrismaService.farmTourBooking.findUnique.mockResolvedValue(
+        activeBooking,
+      );
+      mockPrismaService.farmTourBooking.updateMany.mockResolvedValue({
+        count: 0,
+      });
+
+      await expect(service.cancelBooking(userId, bookingId)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrismaService.farmTour.update).not.toHaveBeenCalled();
     });
 
     it('預約不存在應拋出 NotFoundException', async () => {

@@ -1,11 +1,13 @@
-import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsString, IsInt, IsOptional, Min, Max } from 'class-validator';
 
 export class CreateBookingDto {
   @IsString()
   tourId: string;
 
-  @IsNumber()
+  // Whole people only; capacity is enforced against the tour, Max is a sanity bound.
+  @IsInt()
   @Min(1)
+  @Max(100)
   participants: number;
 
   @IsString()
