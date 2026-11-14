@@ -271,6 +271,45 @@ describe('PaymentRefundService', () => {
       expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
     });
 
+    it('送出退款後讀不到綠界回應：退款維持 processing（不標 failed），避免重試時重複退款', async () => {
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue(
+          new Error('socket hang up'),
+        ) as unknown as typeof fetch;
+
+      await expect(
+        service.processRefund('pay-1', 'admin-1', 'FULL'),
+      ).rejects.toThrow();
+
+      expect(mockPrisma.refund.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'failed' }),
+        }),
+      );
+      expect(mockPrisma.refund.update).toHaveBeenCalledWith({
+        where: { id: 'refund-1' },
+        data: { failReason: expect.stringContaining('人工對帳') },
+      });
+    });
+
+    it('還沒送出請求就出錯（設定缺漏）：標為 failed，可以重試', async () => {
+      mockPaymentConfigService.getEnabledContext.mockImplementationOnce(() => {
+        throw new Error('支付功能尚未啟用');
+      });
+      stubFetch(mockEcpayResponse('1'));
+
+      await expect(
+        service.processRefund('pay-1', 'admin-1', 'FULL'),
+      ).rejects.toThrow();
+
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPrisma.refund.update).toHaveBeenCalledWith({
+        where: { id: 'refund-1' },
+        data: expect.objectContaining({ status: 'failed' }),
+      });
+    });
+
     it('人工退款重複確認：第二次被擋下，不重複寄信', async () => {
       mockPrisma.refund.findUnique.mockResolvedValue({
         id: 'refund-1',

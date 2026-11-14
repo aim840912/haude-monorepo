@@ -183,13 +183,15 @@ export class PaymentRefundService {
     let rtnCode: string | null;
     let rtnMsg: string | null;
     const ecpayResponse: Record<string, string> = {};
+    let doActionUrl: string;
+    let formBody: string;
 
+    // 階段一：準備請求。這裡出錯代表請求根本沒送出，可安全標為 failed 讓管理員重試。
     try {
-      // 呼叫 ECPay DoAction API
       const { config, crypto } = this.configService.getEnabledContext();
 
       // 判斷是否為測試環境
-      const doActionUrl = config.apiUrl.includes('-stage')
+      doActionUrl = config.apiUrl.includes('-stage')
         ? PaymentRefundService.ECPAY_DOACTION_URL_STAGE
         : PaymentRefundService.ECPAY_DOACTION_URL;
 
@@ -205,14 +207,30 @@ export class PaymentRefundService {
       const checkMacValue = crypto.generateCheckMacValue(params);
       params.CheckMacValue = checkMacValue;
 
-      // 發送請求（ECPay 使用 application/x-www-form-urlencoded）
-      const formBody = Object.entries(params)
+      // ECPay 使用 application/x-www-form-urlencoded
+      formBody = Object.entries(params)
         .map(
           ([key, value]) =>
             `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
         )
         .join('&');
+    } catch (error) {
+      await this.prisma.refund.update({
+        where: { id: refund.id },
+        data: {
+          status: 'failed',
+          failReason: error instanceof Error ? error.message : '系統錯誤',
+        },
+      });
 
+      this.logger.error('信用卡退款請求準備失敗（未送出）', error);
+      throw new BadRequestException('退款處理失敗，請稍後再試');
+    }
+
+    // 階段二：送出並讀回應。請求可能已到達綠界並完成退款，只是回應沒收到，
+    // 所以不可標 failed（failed 不計入已退金額，重試會再退一次）。
+    // 維持 processing：它會計入已退金額、擋住重試，留給人工到綠界後台對帳。
+    try {
       const response = await fetch(doActionUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -229,17 +247,21 @@ export class PaymentRefundService {
         ecpayResponse[key] = value;
       });
     } catch (error) {
-      // 請求沒送出或回應讀不到：未確認綠界有退款
+      const detail = error instanceof Error ? error.message : '未知錯誤';
       await this.prisma.refund.update({
         where: { id: refund.id },
         data: {
-          status: 'failed',
-          failReason: error instanceof Error ? error.message : '系統錯誤',
+          failReason: `綠界回應未確認，需人工對帳（${detail}）`,
         },
       });
 
-      this.logger.error('信用卡退款發生系統錯誤', error);
-      throw new BadRequestException('退款處理失敗，請稍後再試');
+      this.logger.error(
+        `信用卡退款結果未確認，需到綠界後台人工對帳：${payment.merchantOrderNo}`,
+        error,
+      );
+      throw new BadRequestException(
+        '退款結果未確認，請先到綠界後台確認此筆是否已退款，請勿直接重試',
+      );
     }
 
     if (rtnCode !== '1') {

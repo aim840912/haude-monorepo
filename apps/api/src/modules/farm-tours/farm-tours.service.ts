@@ -196,19 +196,16 @@ export class FarmToursService {
     }
 
     // 佔用名額並建立預約。The check above can be passed by two requests at once,
-    // so the increment only applies while there is still room; otherwise nothing
-    // is written and the booking is refused.
+    // so increment first (this locks the row) and compare against the row's own
+    // current maxParticipants — not the value read earlier, which an admin may have
+    // lowered meanwhile. Throwing rolls the increment back.
     return this.prisma.$transaction(async (tx) => {
-      const { count } = await tx.farmTour.updateMany({
-        where: {
-          id: dto.tourId,
-          currentParticipants: {
-            lte: tour.maxParticipants - dto.participants,
-          },
-        },
+      const seats = await tx.farmTour.update({
+        where: { id: dto.tourId },
         data: { currentParticipants: { increment: dto.participants } },
+        select: { currentParticipants: true, maxParticipants: true },
       });
-      if (count === 0) {
+      if (seats.currentParticipants > seats.maxParticipants) {
         throw new BadRequestException('名額不足，請重新整理後再試');
       }
 

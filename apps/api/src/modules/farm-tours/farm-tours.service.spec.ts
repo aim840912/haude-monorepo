@@ -291,10 +291,13 @@ describe('FarmToursService', () => {
           cb(mockPrismaService),
       );
 
-    it('應成功建立預約，名額以條件式寫入佔用', async () => {
+    it('應成功建立預約：先在交易內加人數，再以加完後的實際上限檢查', async () => {
       mockPrismaService.farmTour.findUnique.mockResolvedValue(openTour);
       runInteractiveTransaction();
-      mockPrismaService.farmTour.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.farmTour.update.mockResolvedValue({
+        currentParticipants: 7,
+        maxParticipants: 20,
+      });
       mockPrismaService.farmTourBooking.create.mockResolvedValue({
         id: 'booking-new',
         ...bookingDto,
@@ -304,16 +307,34 @@ describe('FarmToursService', () => {
       const result = await service.createBooking(userId, bookingDto);
 
       expect(result).toHaveProperty('id', 'booking-new');
-      expect(mockPrismaService.farmTour.updateMany).toHaveBeenCalledWith({
-        where: { id: 'tour-123', currentParticipants: { lte: 18 } },
+      expect(mockPrismaService.farmTour.update).toHaveBeenCalledWith({
+        where: { id: 'tour-123' },
         data: { currentParticipants: { increment: 2 } },
+        select: { currentParticipants: true, maxParticipants: true },
       });
     });
 
-    it('並行預約搶走名額時拋錯，且不建立預約', async () => {
+    it('並行預約搶走名額時拋錯（交易回滾），且不建立預約', async () => {
       mockPrismaService.farmTour.findUnique.mockResolvedValue(openTour);
       runInteractiveTransaction();
-      mockPrismaService.farmTour.updateMany.mockResolvedValue({ count: 0 });
+      mockPrismaService.farmTour.update.mockResolvedValue({
+        currentParticipants: 21,
+        maxParticipants: 20,
+      });
+
+      await expect(service.createBooking(userId, bookingDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrismaService.farmTourBooking.create).not.toHaveBeenCalled();
+    });
+
+    it('後台同時調低上限時也擋得住（比的是寫入當下的上限，不是先前讀到的）', async () => {
+      mockPrismaService.farmTour.findUnique.mockResolvedValue(openTour); // 讀到 max 20
+      runInteractiveTransaction();
+      mockPrismaService.farmTour.update.mockResolvedValue({
+        currentParticipants: 7,
+        maxParticipants: 6, // 後台已改成 6
+      });
 
       await expect(service.createBooking(userId, bookingDto)).rejects.toThrow(
         BadRequestException,

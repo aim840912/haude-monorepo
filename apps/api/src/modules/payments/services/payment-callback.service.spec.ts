@@ -151,7 +151,38 @@ describe('PaymentCallbackService', () => {
         mockCrypto.verifyCheckMacValue.mockReturnValue(true);
       });
 
-      it.each(['refunded', 'expired', 'failed'])(
+      it('先前標為 failed 的付款收到成功通知時仍入帳（錢已收到）', async () => {
+        mockPrismaService.payment.findUnique.mockResolvedValue({
+          ...pendingPayment,
+          status: 'failed',
+        });
+
+        await service.handleNotify(validBody, '127.0.0.1');
+
+        expect(mockPrismaService.payment.updateMany).toHaveBeenCalledWith({
+          where: { id: 'payment-1', status: { in: ['pending', 'failed'] } },
+          data: expect.objectContaining({ status: 'paid' }),
+        });
+      });
+
+      it('與逾期取消同時發生（付款已被改成 expired）時，記 error 供人工退款', async () => {
+        const errorSpy = jest.spyOn(
+          (service as unknown as { logger: { error: () => void } }).logger,
+          'error',
+        );
+        mockPrismaService.payment.findUnique
+          .mockResolvedValueOnce(pendingPayment)
+          .mockResolvedValueOnce({ status: 'expired' });
+        mockPrismaService.payment.updateMany.mockResolvedValue({ count: 0 });
+
+        await service.handleNotify(validBody, '127.0.0.1');
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('需人工確認是否退款'),
+        );
+      });
+
+      it.each(['refunded', 'expired'])(
         '付款狀態為 %s 時不改回 paid',
         async (status) => {
           mockPrismaService.payment.findUnique.mockResolvedValue({
@@ -296,7 +327,7 @@ describe('PaymentCallbackService', () => {
 
       expect(result).toBe(true);
       expect(mockPrismaService.payment.updateMany).toHaveBeenCalledWith({
-        where: { id: 'payment-1', status: 'pending' },
+        where: { id: 'payment-1', status: { in: ['pending', 'failed'] } },
         data: expect.objectContaining({ status: 'paid' }),
       });
       expect(mockPrismaService.order.updateMany).not.toHaveBeenCalled();

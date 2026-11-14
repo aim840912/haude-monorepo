@@ -4,6 +4,9 @@ import { PaymentConfigService } from './payment-config.service';
 import { EmailService } from '../../email/email.service';
 import { maskPaymentPayload } from '../utils/mask-payment-payload';
 
+/** Payment statuses a success notification may move to 'paid'. */
+const PAYABLE_STATUSES = ['pending', 'failed'] as const;
+
 /** Thrown inside the success transaction to roll back when the order can no longer be paid. */
 class OrderNotPayableError extends Error {}
 
@@ -93,9 +96,10 @@ export class PaymentCallbackService {
       return true;
     }
 
-    // Only a pending payment may change. A refunded / expired / failed one must not be
-    // flipped back to paid; a late success here means money arrived for a closed order.
-    if (payment.status !== 'pending') {
+    // A success may land on a pending or an earlier-failed payment (the money did arrive).
+    // Refunded / expired payments belong to closed orders and must never flip back to
+    // paid; a late success there means money arrived for a closed order.
+    if (!(PAYABLE_STATUSES as readonly string[]).includes(payment.status)) {
       this.logger.error(
         `付款狀態為 ${payment.status}，忽略此通知（RtnCode=${body.RtnCode}），` +
           `若為成功通知需人工確認是否退款: ${merchantTradeNo}`,
@@ -261,7 +265,7 @@ export class PaymentCallbackService {
         // transaction, so two near-simultaneous ECPay retries can both pass it.
         // The WHERE clause makes the database the idempotency guard — only one wins.
         const { count } = await tx.payment.updateMany({
-          where: { id: payment.id, status: 'pending' },
+          where: { id: payment.id, status: { in: [...PAYABLE_STATUSES] } },
           data: {
             status: 'paid',
             tradeNo: body.TradeNo,
@@ -297,7 +301,21 @@ export class PaymentCallbackService {
     }
 
     if (!applied) {
-      this.logger.log(`付款已由並行通知處理: ${body.MerchantTradeNo}`);
+      // Benign only if a concurrent notification already marked it paid. Anything
+      // else (e.g. order expiry set it to 'expired' meanwhile) means money arrived
+      // for a closed order.
+      const current = await this.prisma.payment.findUnique({
+        where: { id: payment.id },
+        select: { status: true },
+      });
+      if (current?.status === 'paid') {
+        this.logger.log(`付款已由並行通知處理: ${body.MerchantTradeNo}`);
+      } else {
+        this.logger.error(
+          `收到付款成功通知，但付款已變為 ${current?.status ?? '不存在'}（可能已逾期取消），` +
+            `需人工確認是否退款: ${body.MerchantTradeNo}`,
+        );
+      }
       return;
     }
 

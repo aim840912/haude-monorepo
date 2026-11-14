@@ -316,7 +316,7 @@ export class DiscountsService {
     const { count } = await tx.discountCode.updateMany({
       where: {
         id: discount.id,
-        ...(discount.usageLimit
+        ...(discount.usageLimit != null
           ? { usageCount: { lt: discount.usageLimit } }
           : {}),
       },
