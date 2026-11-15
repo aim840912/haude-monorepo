@@ -159,6 +159,8 @@ export class AdminOrdersController {
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   getAllOrders(
+    // 10000, not 100: the admin CSV export (apps/admin orders.api.ts) asks
+    // for limit=10000 in one request. Lowering this makes the export fail (400).
     @Query('limit', limitPipe(20, 10000)) limit: number,
     @Query('offset', offsetPipe()) offset: number,
     @Query('startDate') startDate?: string,
