@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Facebook, Instagram, RefreshCw } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/navigation'
@@ -51,11 +51,8 @@ export default function SocialPage() {
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'facebook' | 'instagram'>('all')
 
-  useEffect(() => {
-    fetchPosts()
-  }, [])
-
-  const fetchPosts = async () => {
+  // Declared before the effect that calls it; stable so the effect runs once
+  const fetchPosts = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -67,7 +64,11 @@ export default function SocialPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
 
   const filteredPosts = posts.filter((post) => {
     if (filter === 'all') return true
