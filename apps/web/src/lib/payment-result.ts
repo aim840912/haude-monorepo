@@ -13,9 +13,11 @@ export type PaymentResult = 'success' | 'failed' | 'confirming' | 'unknown'
  * - no order / refunded → unknown: send the customer to their orders page
  */
 export function resolvePaymentResult(
-  order: { paymentStatus?: PaymentStatus } | null
+  order: { paymentStatus?: PaymentStatus; status?: string } | null
 ): PaymentResult {
   if (!order) return 'unknown'
+  // A cancelled order will never be paid: "still confirming" would wait forever
+  if (order.status === 'cancelled' && order.paymentStatus !== 'paid') return 'unknown'
   switch (order.paymentStatus) {
     case 'paid':
       return 'success'

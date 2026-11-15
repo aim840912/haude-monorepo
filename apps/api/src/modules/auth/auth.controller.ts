@@ -444,12 +444,14 @@ export class AuthController {
         role: string;
         isActive: boolean;
         oauthState?: string;
+        /** Set by GoogleStrategy.validate when the state nonce did not match */
+        oauthRejected?: boolean;
       };
     },
     @Res() res: Response,
   ) {
     // 從 user 物件取得 oauthState（由 GoogleStrategy 附加，格式 "<target>.<nonce>"）
-    const { oauthState, ...userData } = req.user;
+    const { oauthState, oauthRejected, ...userData } = req.user;
     const { target, nonce } = parseOAuthState(oauthState);
     const cookieNonce = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined;
 
@@ -461,8 +463,9 @@ export class AuthController {
     });
 
     // Login CSRF: the callback must come from a sign-in this browser started.
-    // Checked before googleLogin so no session is issued on a mismatch.
-    if (!isValidOAuthNonce(nonce, cookieNonce)) {
+    // The strategy already refused before touching accounts (oauthRejected);
+    // re-check here so no session is issued even if that flag were missing.
+    if (oauthRejected || !isValidOAuthNonce(nonce, cookieNonce)) {
       const appUrl =
         target === 'admin'
           ? this.configService.get<string>('ADMIN_URL') ||

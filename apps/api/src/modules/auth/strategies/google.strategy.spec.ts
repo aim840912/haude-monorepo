@@ -1,4 +1,9 @@
+import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
+import { Profile } from 'passport-google-oauth20';
+import { AuthService } from '../auth.service';
 import {
+  GoogleStrategy,
   isValidOAuthNonce,
   parseOAuthState,
   resolveGoogleAuthOptions,
@@ -108,5 +113,64 @@ describe('resolveGoogleAuthOptions', () => {
 
   it('falls back to the default callback when nothing is configured', () => {
     expect(resolveGoogleAuthOptions({}, {})).toEqual({ state: 'web' });
+  });
+});
+
+describe('GoogleStrategy.validate (login CSRF before side effects)', () => {
+  const authService = { validateGoogleUser: jest.fn() };
+  const config = { get: jest.fn().mockReturnValue('x') };
+  const strategy = new GoogleStrategy(
+    config as unknown as ConfigService,
+    authService as unknown as AuthService,
+  );
+  const profile = {
+    id: 'g-1',
+    emails: [{ value: 'a@b.c' }],
+    displayName: 'A',
+    photos: [],
+    _json: { email_verified: true },
+  } as unknown as Profile;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('rejects a nonce mismatch before creating or linking any account', async () => {
+    const done = jest.fn();
+    await strategy.validate(
+      {
+        query: { state: 'web.attacker' },
+        cookies: { g_oauth_state: 'mine' },
+      } as unknown as Request,
+      'at',
+      'rt',
+      profile,
+      done,
+    );
+
+    expect(authService.validateGoogleUser).not.toHaveBeenCalled();
+    expect(done).toHaveBeenCalledWith(null, {
+      oauthState: 'web.attacker',
+      oauthRejected: true,
+    });
+  });
+
+  it('a matching nonce proceeds to account lookup', async () => {
+    authService.validateGoogleUser.mockResolvedValue({ id: 'u-1' });
+    const done = jest.fn();
+    await strategy.validate(
+      {
+        query: { state: 'web.n1' },
+        cookies: { g_oauth_state: 'n1' },
+      } as unknown as Request,
+      'at',
+      'rt',
+      profile,
+      done,
+    );
+
+    expect(authService.validateGoogleUser).toHaveBeenCalled();
+    expect(done).toHaveBeenCalledWith(null, {
+      id: 'u-1',
+      oauthState: 'web.n1',
+    });
   });
 });

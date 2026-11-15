@@ -48,6 +48,13 @@ describe('token storage: only hashes reach the database', () => {
       );
     });
 
+    it('logout without a refresh cookie is a silent no-op (no 500)', async () => {
+      await expect(
+        service.revokeRefreshToken(undefined as unknown as string),
+      ).resolves.toBeUndefined();
+      expect(prisma.refreshToken.update).not.toHaveBeenCalled();
+    });
+
     it('revokes on logout by hash', async () => {
       await service.revokeRefreshToken('raw-token');
 

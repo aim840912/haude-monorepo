@@ -165,6 +165,17 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: Profile,
     done: VerifyCallback,
   ): Promise<void> {
+    // Login CSRF: refuse before any account is created or linked. The controller
+    // turns oauthRejected into a redirect to the app's error page.
+    const state = req.query.state as string;
+    const cookieNonce = (req.cookies as Record<string, string> | undefined)?.[
+      OAUTH_STATE_COOKIE
+    ];
+    if (!isValidOAuthNonce(parseOAuthState(state).nonce, cookieNonce)) {
+      done(null, { oauthState: state, oauthRejected: true });
+      return;
+    }
+
     const { id, emails, displayName, photos } = profile;
 
     const googleProfile: GoogleProfile = {
@@ -184,7 +195,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const user = await this.authService.validateGoogleUser(googleProfile);
 
     // 將 state 附加到 user 物件，供 callback 使用
-    const state = req.query.state as string;
     done(null, { ...user, oauthState: state });
   }
 }

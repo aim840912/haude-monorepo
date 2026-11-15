@@ -22,6 +22,10 @@ describe('resolvePaymentResult', () => {
     expect(resolvePaymentResult(null)).toBe('unknown')
   })
 
+  it('a cancelled, unpaid order is not "still confirming"', () => {
+    expect(resolvePaymentResult({ paymentStatus: 'pending', status: 'cancelled' })).toBe('unknown')
+  })
+
   it('treats a refunded order as not a fresh success', () => {
     expect(resolvePaymentResult({ paymentStatus: 'refunded' })).toBe('unknown')
   })

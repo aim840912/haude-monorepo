@@ -6,14 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-
-/**
- * A valid cost-10 hash of a random string nobody knows. Comparing against it
- * when there is no password to check makes those failures take as long as a
- * real wrong password (otherwise the fast path reveals the email is unknown).
- */
-const TIMING_DUMMY_HASH =
-  '$2b$10$mhIzRseDUd9G8g0R65RYjupOhBHvORBLrVhx05w.NnuZHMQvsi.TW';
 import * as crypto from 'crypto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RegisterDto } from '../dto/register.dto';
@@ -24,6 +16,14 @@ import { SetPasswordDto } from '../dto/set-password.dto';
 import { EmailService } from '../../email/email.service';
 import { JwtTokenService } from './jwt-token.service';
 import { hashToken } from '../token-hash';
+
+/**
+ * A valid cost-10 hash of a random string nobody knows. Comparing against it
+ * when there is no password to check makes those failures take as long as a
+ * real wrong password (otherwise the fast path reveals the email is unknown).
+ */
+const TIMING_DUMMY_HASH =
+  '$2b$10$mhIzRseDUd9G8g0R65RYjupOhBHvORBLrVhx05w.NnuZHMQvsi.TW';
 
 @Injectable()
 export class PasswordAuthService {

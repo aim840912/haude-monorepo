@@ -59,8 +59,8 @@ function PaymentResultContent() {
   const view = RESULT_VIEW[result]
   const tone = TONE_CLASSES[view.tone]
 
-  // 載入狀態
-  if (isLoading) {
+  // 只在第一次載入時整頁轉圈；「重新查詢」時保留現有結果，避免畫面閃掉
+  if (isLoading && !order) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-background">
         <LoadingSpinner size="lg" />

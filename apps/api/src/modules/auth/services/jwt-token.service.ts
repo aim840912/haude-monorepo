@@ -104,6 +104,8 @@ export class JwtTokenService {
    * Revoke a single refresh token (called on logout)
    */
   async revokeRefreshToken(refreshToken: string): Promise<void> {
+    // Logout without a refresh cookie: nothing to revoke (hashToken would throw)
+    if (!refreshToken) return;
     await this.prisma.refreshToken
       .update({
         where: { token: hashToken(refreshToken) },
