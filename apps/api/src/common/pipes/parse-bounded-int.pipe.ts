@@ -15,12 +15,16 @@ export interface BoundedIntOptions {
  * `offset` makes Prisma throw → 500). Out-of-range values get a 400.
  */
 export class ParseBoundedIntPipe implements PipeTransform<
-  string | undefined,
+  string | number | undefined,
   number
 > {
   constructor(private readonly options: BoundedIntOptions) {}
 
-  transform(value: string | undefined): number {
+  /**
+   * Accepts a number too: main.ts's global ValidationPipe({ transform: true })
+   * runs first and already converts `limit: number` params ('abc' → NaN).
+   */
+  transform(value: string | number | undefined): number {
     const { default: fallback, min, max } = this.options;
 
     if (value === undefined || value === '') {
@@ -30,11 +34,12 @@ export class ParseBoundedIntPipe implements PipeTransform<
       return fallback;
     }
 
-    if (!/^-?\d+$/.test(value)) {
-      throw new BadRequestException(`參數必須是整數：${value.slice(0, 20)}`);
+    const raw = String(value);
+    if (!/^-?\d+$/.test(raw)) {
+      throw new BadRequestException(`參數必須是整數：${raw.slice(0, 20)}`);
     }
 
-    const n = Number(value);
+    const n = Number(raw);
     if ((min !== undefined && n < min) || (max !== undefined && n > max)) {
       throw new BadRequestException(
         `參數超出範圍（${min ?? '-∞'} ~ ${max ?? '∞'}）`,
