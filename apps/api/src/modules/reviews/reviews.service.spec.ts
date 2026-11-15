@@ -453,6 +453,61 @@ describe('ReviewsService', () => {
   describe('getProductReviews', () => {
     const productId = 'product-123';
 
+    it('不回傳 userId，改以 isOwn 標示是否為請求者本人的評論', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        isReviewsVisible: true,
+      });
+      const row = (id: string, userId: string) => ({
+        id,
+        productId,
+        userId,
+        rating: 5,
+        title: 't',
+        content: 'c',
+        isVerified: true,
+        isApproved: true,
+        createdAt: new Date('2026-01-01'),
+        user: { id: userId, name: 'n' },
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([
+        row('r-1', 'me'),
+        row('r-2', 'someone-else'),
+      ]);
+      mockPrismaService.review.count.mockResolvedValue(2);
+
+      const result = await service.getProductReviews(productId, {
+        requesterId: 'me',
+      });
+
+      expect(result.reviews.map((r) => r.isOwn)).toEqual([true, false]);
+      expect(result.reviews[0]).not.toHaveProperty('userId');
+    });
+
+    it('未登入時 isOwn 一律為 false', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        isReviewsVisible: true,
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([
+        {
+          id: 'r-1',
+          productId,
+          userId: 'u-1',
+          rating: 5,
+          title: 't',
+          content: 'c',
+          isVerified: true,
+          isApproved: true,
+          createdAt: new Date('2026-01-01'),
+          user: { id: 'u-1', name: 'n' },
+        },
+      ]);
+      mockPrismaService.review.count.mockResolvedValue(1);
+
+      const result = await service.getProductReviews(productId);
+
+      expect(result.reviews[0].isOwn).toBe(false);
+    });
+
     it('商品設為僅 admin 可見時，非 admin 請求應回傳空列表（不查詢評論）', async () => {
       mockPrismaService.product.findUnique.mockResolvedValue({
         isReviewsVisible: false,

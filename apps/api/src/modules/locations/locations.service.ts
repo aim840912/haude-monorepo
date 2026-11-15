@@ -28,8 +28,9 @@ export class LocationsService {
    * 取得所有據點（公開 API）
    */
   async findAll() {
+    // createDraft sets isActive: true, so isActive alone lets drafts through.
     return this.prisma.location.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDraft: false },
       orderBy: [{ isMain: 'desc' }, { createdAt: 'asc' }],
       include: { images: true },
     });
@@ -40,7 +41,7 @@ export class LocationsService {
    */
   async findMain() {
     const location = await this.prisma.location.findFirst({
-      where: { isMain: true, isActive: true },
+      where: { isMain: true, isActive: true, isDraft: false },
     });
 
     if (!location) {
@@ -56,6 +57,23 @@ export class LocationsService {
   async findOne(id: string) {
     const location = await this.prisma.location.findUnique({
       where: { id },
+      include: { images: true },
+    });
+
+    if (!location) {
+      throw new NotFoundException(`據點不存在: ${id}`);
+    }
+
+    return location;
+  }
+
+  /**
+   * 取得單一據點（公開 API）：停用或草稿一律視為不存在。
+   * findOne 保留給後台與內部使用。
+   */
+  async findOnePublic(id: string) {
+    const location = await this.prisma.location.findUnique({
+      where: { id, isActive: true, isDraft: false },
       include: { images: true },
     });
 

@@ -16,7 +16,7 @@ import logger from '@/lib/logger'
 interface Review {
   id: string
   productId: string
-  userId: string
+  isOwn: boolean
   userName: string
   rating: number
   title: string
@@ -55,7 +55,7 @@ interface EligibilityStatus {
  */
 export function ReviewSection({ productId, productName, className }: ReviewSectionProps) {
   const pathname = usePathname()
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   const { success, error: showError } = useToast()
 
   const [stats, setStats] = useState<ReviewStatsData | null>(null)
@@ -286,7 +286,7 @@ export function ReviewSection({ productId, productName, className }: ReviewSecti
                 content={review.content}
                 isVerified={review.isVerified}
                 createdAt={review.createdAt}
-                isOwnReview={user?.id === review.userId}
+                isOwnReview={review.isOwn}
                 onDelete={() => handleDelete(review.id)}
               />
             ))}

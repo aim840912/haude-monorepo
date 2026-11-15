@@ -84,11 +84,32 @@ export class ProductsService {
   }
 
   /**
+   * 取得單一產品（公開 API）：下架或草稿一律視為不存在。
+   * findOne 保留給後台與內部使用（後台要能開啟草稿）。
+   */
+  async findOnePublic(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id, isActive: true, isDraft: false },
+      include: {
+        images: {
+          orderBy: { displayPosition: 'asc' },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`產品不存在: ${id}`);
+    }
+
+    return product;
+  }
+
+  /**
    * 取得產品分類列表
    */
   async getCategories(): Promise<string[]> {
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDraft: false },
       select: { category: true },
       distinct: ['category'],
     });
@@ -118,7 +139,7 @@ export class ProductsService {
    */
   async getInventoryStatus(productId: string) {
     const product = await this.prisma.product.findUnique({
-      where: { id: productId },
+      where: { id: productId, isActive: true, isDraft: false },
       select: { stock: true, reservedStock: true },
     });
 

@@ -33,8 +33,9 @@ export class FarmToursService {
    * 取得所有農場體驗（公開 API）
    */
   async findAll() {
+    // createDraft relies on the isActive default (true), so filter drafts too.
     return this.prisma.farmTour.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDraft: false },
       orderBy: { date: 'asc' },
     });
   }
@@ -49,6 +50,7 @@ export class FarmToursService {
     return this.prisma.farmTour.findMany({
       where: {
         isActive: true,
+        isDraft: false,
         status: FarmTourStatus.upcoming,
         date: { gte: today },
       },

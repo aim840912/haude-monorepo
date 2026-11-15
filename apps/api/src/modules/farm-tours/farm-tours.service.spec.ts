@@ -95,7 +95,7 @@ describe('FarmToursService', () => {
 
       expect(result).toEqual(mockTours);
       expect(mockPrismaService.farmTour.findMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: { isActive: true, isDraft: false },
         orderBy: { date: 'asc' },
       });
     });
@@ -112,6 +112,7 @@ describe('FarmToursService', () => {
       expect(mockPrismaService.farmTour.findMany).toHaveBeenCalledWith({
         where: {
           isActive: true,
+          isDraft: false,
           status: FarmTourStatus.upcoming,
           date: { gte: expect.any(Date) },
         },

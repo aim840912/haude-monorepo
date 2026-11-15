@@ -44,6 +44,21 @@ export class SocialPostsService {
     return post;
   }
 
+  /**
+   * 取得單一社群貼文（公開 API）：停用的視為不存在。findOne 保留給後台與內部使用。
+   */
+  async findOnePublic(id: string) {
+    const post = await this.prisma.socialPost.findUnique({
+      where: { id, isActive: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException(`社群貼文不存在: ${id}`);
+    }
+
+    return post;
+  }
+
   // ========================================
   // 命令方法（Command Operations）
   // ========================================

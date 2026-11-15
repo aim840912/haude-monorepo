@@ -5,7 +5,7 @@ import { api } from './client'
 export const productsApi = {
   getAll: () => api.get('/products'),
   getAllAdmin: () => api.get('/admin/products'),
-  getById: (id: string) => api.get(`/products/${id}`),
+  getById: (id: string) => api.get(`/admin/products/${id}`),
   createDraft: () => api.post('/admin/products/draft'),
   create: (data: {
     name: string

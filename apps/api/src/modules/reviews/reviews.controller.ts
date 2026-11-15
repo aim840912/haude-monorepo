@@ -66,6 +66,7 @@ export class ReviewsController {
       offset,
       onlyApproved: true,
       requesterRole: req?.user?.role,
+      requesterId: req?.user?.userId,
     });
   }
 

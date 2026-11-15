@@ -8,7 +8,7 @@ export const schedulesApi = {
   getUpcoming: () => api.get('/schedules/upcoming'),
   getByMonth: (year: number, month: number) =>
     api.get(`/schedules/month?year=${year}&month=${month}`),
-  getById: (id: string) => api.get(`/schedules/${id}`),
+  getById: (id: string) => api.get(`/admin/schedules/${id}`),
   // 管理員 API
   getAllAdmin: () => api.get('/admin/schedules'),
   create: (data: {

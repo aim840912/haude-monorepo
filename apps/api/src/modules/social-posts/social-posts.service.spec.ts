@@ -83,6 +83,26 @@ describe('SocialPostsService', () => {
     });
   });
 
+  describe('findOnePublic', () => {
+    it('只查詢啟用中的貼文', async () => {
+      mockPrismaService.socialPost.findUnique.mockResolvedValue({ id: 'p-1' });
+
+      await service.findOnePublic('p-1');
+
+      expect(mockPrismaService.socialPost.findUnique).toHaveBeenCalledWith({
+        where: { id: 'p-1', isActive: true },
+      });
+    });
+
+    it('停用（查無）時應拋出 NotFoundException', async () => {
+      mockPrismaService.socialPost.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOnePublic('p-2')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('findOne', () => {
     it('應回傳單一社群貼文', async () => {
       const mockPost = {

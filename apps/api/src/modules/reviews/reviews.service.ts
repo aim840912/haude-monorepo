@@ -48,6 +48,8 @@ export class ReviewsService {
       offset?: number;
       onlyApproved?: boolean;
       requesterRole?: Role;
+      /** Signed-in requester; used only to compute isOwn. */
+      requesterId?: string;
     },
   ) {
     const {
@@ -55,6 +57,7 @@ export class ReviewsService {
       offset = 0,
       onlyApproved = true,
       requesterRole,
+      requesterId,
     } = options || {};
 
     // 若商品被設為「僅 admin 可見」，非 admin 請求者一律回傳空結果
@@ -84,7 +87,6 @@ export class ReviewsService {
         include: {
           user: {
             select: {
-              id: true,
               name: true,
             },
           },
@@ -93,11 +95,13 @@ export class ReviewsService {
       this.prisma.review.count({ where }),
     ]);
 
+    // Public endpoint: never expose reviewers' user IDs. The web only needs to
+    // know which review is the requester's own (edit/delete buttons).
     return {
       reviews: reviews.map((review) => ({
         id: review.id,
         productId: review.productId,
-        userId: review.userId,
+        isOwn: !!requesterId && review.userId === requesterId,
         userName: review.user.name || '匿名用戶',
         rating: review.rating,
         title: review.title,

@@ -79,10 +79,31 @@ describe('LocationsService', () => {
 
       expect(result).toEqual(mockLocations);
       expect(mockPrismaService.location.findMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: { isActive: true, isDraft: false },
         orderBy: [{ isMain: 'desc' }, { createdAt: 'asc' }],
         include: { images: true },
       });
+    });
+  });
+
+  describe('findOnePublic', () => {
+    it('只查詢啟用中、非草稿的據點', async () => {
+      mockPrismaService.location.findUnique.mockResolvedValue({ id: 'loc-1' });
+
+      await service.findOnePublic('loc-1');
+
+      expect(mockPrismaService.location.findUnique).toHaveBeenCalledWith({
+        where: { id: 'loc-1', isActive: true, isDraft: false },
+        include: { images: true },
+      });
+    });
+
+    it('草稿或停用（查無）時應拋出 NotFoundException', async () => {
+      mockPrismaService.location.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOnePublic('draft-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -95,7 +116,7 @@ describe('LocationsService', () => {
 
       expect(result).toEqual(mockMain);
       expect(mockPrismaService.location.findFirst).toHaveBeenCalledWith({
-        where: { isMain: true, isActive: true },
+        where: { isMain: true, isActive: true, isDraft: false },
       });
     });
 

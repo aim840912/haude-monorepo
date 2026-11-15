@@ -115,7 +115,43 @@ describe('ProductsService', () => {
     });
   });
 
+  describe('findOnePublic', () => {
+    it('只查詢已上架、非草稿的產品', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue(
+        createMockProduct(),
+      );
+
+      await service.findOnePublic('product-1');
+
+      expect(mockPrismaService.product.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'product-1', isActive: true, isDraft: false },
+        }),
+      );
+    });
+
+    it('下架或草稿（查無）時應拋出 NotFoundException', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOnePublic('draft-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('getCategories', () => {
+    it('只從已上架、非草稿的產品取分類', async () => {
+      mockPrismaService.product.findMany.mockResolvedValue([]);
+
+      await service.getCategories();
+
+      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isActive: true, isDraft: false },
+        }),
+      );
+    });
+
     it('應回傳不重複的分類列表', async () => {
       mockPrismaService.product.findMany.mockResolvedValue([
         { category: '茶葉' },
@@ -164,6 +200,21 @@ describe('ProductsService', () => {
   });
 
   describe('getInventoryStatus', () => {
+    it('只查詢已上架、非草稿的產品', async () => {
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        stock: 1,
+        reservedStock: 0,
+      });
+
+      await service.getInventoryStatus('product-1');
+
+      expect(mockPrismaService.product.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'product-1', isActive: true, isDraft: false },
+        }),
+      );
+    });
+
     it('應回傳正確的庫存狀態', async () => {
       mockPrismaService.product.findUnique.mockResolvedValue({
         stock: 100,

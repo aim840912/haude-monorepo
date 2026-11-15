@@ -49,7 +49,7 @@ export class SchedulesController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.schedulesService.findOne(id);
+    return this.schedulesService.findOnePublic(id);
   }
 }
 
@@ -66,6 +66,12 @@ export class AdminSchedulesController {
   @Get()
   findAll() {
     return this.schedulesService.findAllAdmin();
+  }
+
+  // The admin edit form loads inactive schedules too; the public route hides them.
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.schedulesService.findOne(id);
   }
 
   @Post()

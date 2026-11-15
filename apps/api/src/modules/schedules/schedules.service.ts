@@ -53,6 +53,21 @@ export class SchedulesService {
   }
 
   /**
+   * 取得單一日程（公開 API）：停用的視為不存在。findOne 保留給後台與內部使用。
+   */
+  async findOnePublic(id: string) {
+    const schedule = await this.prisma.schedule.findUnique({
+      where: { id, isActive: true },
+    });
+
+    if (!schedule) {
+      throw new NotFoundException(`日程不存在: ${id}`);
+    }
+
+    return schedule;
+  }
+
+  /**
    * 取得指定月份的日程
    */
   async findByMonth(year: number, month: number) {

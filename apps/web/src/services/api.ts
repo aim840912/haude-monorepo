@@ -149,7 +149,7 @@ export const productsApi = {
   getById: (id: string) => api.get(`/products/${id}`),
   getCategories: () => api.get<string[]>('/products/categories'),
   checkName: (name: string, excludeId?: string) =>
-    api.get<{ exists: boolean; name: string }>('/products/check-name', {
+    api.get<{ exists: boolean; name: string }>('/admin/products/check-name', {
       params: { name, excludeId },
     }),
   getInventory: (id: string) =>
@@ -251,7 +251,7 @@ export const reviewsApi = {
       reviews: Array<{
         id: string
         productId: string
-        userId: string
+        isOwn: boolean
         userName: string
         rating: number
         title: string

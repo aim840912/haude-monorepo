@@ -87,6 +87,26 @@ describe('SchedulesService', () => {
     });
   });
 
+  describe('findOnePublic', () => {
+    it('只查詢啟用中的日程', async () => {
+      mockPrismaService.schedule.findUnique.mockResolvedValue({ id: 's-1' });
+
+      await service.findOnePublic('s-1');
+
+      expect(mockPrismaService.schedule.findUnique).toHaveBeenCalledWith({
+        where: { id: 's-1', isActive: true },
+      });
+    });
+
+    it('停用（查無）時應拋出 NotFoundException', async () => {
+      mockPrismaService.schedule.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOnePublic('s-2')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('findOne', () => {
     const scheduleId = 'sch-123';
 

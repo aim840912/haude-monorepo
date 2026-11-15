@@ -67,22 +67,6 @@ export class ProductsController {
     return this.productsService.getCategories();
   }
 
-  @Get('check-name')
-  @ApiOperation({ summary: '檢查產品名稱是否重複' })
-  @ApiQuery({ name: 'name', required: true, description: '產品名稱' })
-  @ApiQuery({
-    name: 'excludeId',
-    required: false,
-    description: '排除的產品 ID',
-  })
-  @ApiResponse({ status: 200, description: '回傳名稱是否存在' })
-  checkName(
-    @Query('name') name: string,
-    @Query('excludeId') excludeId?: string,
-  ) {
-    return this.productsService.checkNameExists(name, excludeId);
-  }
-
   @Get(':id')
   @ApiOperation({ summary: '取得單一產品' })
   @ApiResponse({
@@ -96,7 +80,7 @@ export class ProductsController {
     type: ErrorResponseDto,
   })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.productsService.findOne(id);
+    return this.productsService.findOnePublic(id);
   }
 
   @Get(':id/inventory')
@@ -197,6 +181,32 @@ export class AdminProductsController {
   @ApiResponse({ status: 403, description: '權限不足' })
   findAll() {
     return this.productsService.findAllAdmin(true);
+  }
+
+  // Admin-only: it reveals whether draft or hidden product names exist.
+  // Declared before ':id' so the literal path wins.
+  @Get('check-name')
+  @ApiOperation({ summary: '檢查產品名稱是否重複' })
+  @ApiQuery({ name: 'name', required: true, description: '產品名稱' })
+  @ApiQuery({
+    name: 'excludeId',
+    required: false,
+    description: '排除的產品 ID',
+  })
+  @ApiResponse({ status: 200, description: '回傳名稱是否存在' })
+  checkName(
+    @Query('name') name: string,
+    @Query('excludeId') excludeId?: string,
+  ) {
+    return this.productsService.checkNameExists(name, excludeId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '取得單一產品（含下架及草稿）' })
+  @ApiResponse({ status: 200, description: '成功取得產品' })
+  @ApiResponse({ status: 404, description: '產品不存在' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.findOne(id);
   }
 
   @Post('draft')

@@ -50,7 +50,7 @@ export class SocialPostsController {
   @ApiResponse({ status: 200, description: '成功取得社群貼文' })
   @ApiResponse({ status: 404, description: '社群貼文不存在' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.socialPostsService.findOne(id);
+    return this.socialPostsService.findOnePublic(id);
   }
 }
 
