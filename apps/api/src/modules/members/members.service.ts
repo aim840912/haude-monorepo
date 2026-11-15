@@ -4,7 +4,7 @@
  * 會員服務的統一入口，委派至專責服務
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MemberLevel } from '@prisma/client';
 
 // Types - Re-export for backward compatibility
@@ -34,6 +34,8 @@ import type {
 
 @Injectable()
 export class MembersService {
+  private readonly logger = new Logger(MembersService.name);
+
   constructor(
     private readonly queryService: MemberQueryService,
     private readonly pointsService: MemberPointsService,
@@ -139,6 +141,31 @@ export class MembersService {
     orderAmount: number,
   ): Promise<{ points: number; totalSpent: number }> {
     return this.pointsService.revokeOrderRewards(userId, orderId, orderAmount);
+  }
+
+  /**
+   * revokeOrderRewards for callers that run after the order / refund has
+   * already committed (admin status change, ECPay refund): logs the outcome
+   * and never throws, so a points failure can't fail a completed refund.
+   * revokeOrderRewards itself is idempotent, so both paths can call it.
+   */
+  async revokeOrderRewardsSafe(
+    userId: string,
+    orderId: string,
+    orderAmount: number,
+  ): Promise<void> {
+    try {
+      const revoked = await this.revokeOrderRewards(
+        userId,
+        orderId,
+        orderAmount,
+      );
+      this.logger.log(
+        `訂單 ${orderId} 退款，收回 ${revoked.points} 積分、累積消費 ${revoked.totalSpent} 元`,
+      );
+    } catch (error) {
+      this.logger.error(`收回退款訂單回饋失敗: ${String(error)}`);
+    }
   }
 
   /**

@@ -29,7 +29,7 @@ describe('UpdateOrderService', () => {
   const mockEmail = { sendShippingNotificationEmail: jest.fn() };
   const mockMembers = {
     awardOrderRewards: jest.fn(),
-    revokeOrderRewards: jest.fn(),
+    revokeOrderRewardsSafe: jest.fn(),
   };
 
   const baseOrder = {
@@ -321,7 +321,7 @@ describe('UpdateOrderService', () => {
       await service.updateOrderStatus('order-1', { status: 'refunded' });
       await flush();
 
-      expect(mockMembers.revokeOrderRewards).toHaveBeenCalledWith(
+      expect(mockMembers.revokeOrderRewardsSafe).toHaveBeenCalledWith(
         'user-1',
         'order-1',
         1200,

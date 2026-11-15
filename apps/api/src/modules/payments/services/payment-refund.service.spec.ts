@@ -45,7 +45,7 @@ describe('PaymentRefundService', () => {
   };
 
   const mockMembersService = {
-    revokeOrderRewards: jest.fn(),
+    revokeOrderRewardsSafe: jest.fn(),
   };
 
   const mockPaymentConfigService = {
@@ -127,7 +127,7 @@ describe('PaymentRefundService', () => {
     mockPrisma.refund.update.mockResolvedValue({ id: 'refund-1' });
     mockPrisma.refund.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.refund.aggregate.mockResolvedValue({ _sum: { amount: 1000 } });
-    mockMembersService.revokeOrderRewards.mockResolvedValue({
+    mockMembersService.revokeOrderRewardsSafe.mockResolvedValue({
       points: 10,
       totalSpent: 1000,
     });
@@ -252,7 +252,7 @@ describe('PaymentRefundService', () => {
         data: { paymentStatus: 'refunded', status: 'refunded' },
       });
       expect(mockPrisma.product.update).not.toHaveBeenCalled();
-      expect(mockMembersService.revokeOrderRewards).toHaveBeenCalledWith(
+      expect(mockMembersService.revokeOrderRewardsSafe).toHaveBeenCalledWith(
         'user-1',
         'order-1',
         1000,
@@ -279,7 +279,9 @@ describe('PaymentRefundService', () => {
           where: { id: 'p-2' },
           data: { stock: { increment: 1 } },
         });
-        expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
+        expect(
+          mockMembersService.revokeOrderRewardsSafe,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -297,7 +299,7 @@ describe('PaymentRefundService', () => {
         data: { paymentStatus: 'refunded' },
       });
       expect(mockPrisma.product.update).not.toHaveBeenCalled();
-      expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
+      expect(mockMembersService.revokeOrderRewardsSafe).not.toHaveBeenCalled();
     });
 
     it('部分退款尚未退完：不動付款與訂單狀態', async () => {
@@ -311,7 +313,7 @@ describe('PaymentRefundService', () => {
       );
       expect(mockPrisma.order.update).not.toHaveBeenCalled();
       expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
-      expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
+      expect(mockMembersService.revokeOrderRewardsSafe).not.toHaveBeenCalled();
     });
 
     it('送出退款後讀不到綠界回應：退款維持 processing（不標 failed），避免重試時重複退款', async () => {
@@ -380,7 +382,7 @@ describe('PaymentRefundService', () => {
           where: { id: 'refund-1', status: 'pending' },
         }),
       );
-      expect(mockMembersService.revokeOrderRewards).not.toHaveBeenCalled();
+      expect(mockMembersService.revokeOrderRewardsSafe).not.toHaveBeenCalled();
     });
   });
 });

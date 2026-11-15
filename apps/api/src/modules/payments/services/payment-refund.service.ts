@@ -281,7 +281,11 @@ export class PaymentRefundService {
     });
 
     if (orderRefunded) {
-      await this.revokeOrderRewards(payment.orderId, payment.order);
+      await this.membersService.revokeOrderRewardsSafe(
+        payment.order.userId,
+        payment.orderId,
+        payment.order.totalAmount,
+      );
     }
 
     // 發送退款通知郵件（非同步，不阻塞主流程）
@@ -341,7 +345,11 @@ export class PaymentRefundService {
     });
 
     if (orderRefunded) {
-      await this.revokeOrderRewards(refund.orderId, refund.order);
+      await this.membersService.revokeOrderRewardsSafe(
+        refund.order.userId,
+        refund.orderId,
+        refund.order.totalAmount,
+      );
     }
 
     // 發送退款通知郵件
@@ -451,27 +459,6 @@ export class PaymentRefundService {
       }
       return { orderRefunded: nextStatus === 'refunded' };
     });
-  }
-
-  /**
-   * 訂單進入已退款 → 收回積分與累積消費（與後台改狀態同一套，revokeOrderRewards 本身冪等）
-   */
-  private async revokeOrderRewards(
-    orderId: string,
-    order: { userId: string; totalAmount: number },
-  ) {
-    try {
-      const revoked = await this.membersService.revokeOrderRewards(
-        order.userId,
-        orderId,
-        order.totalAmount,
-      );
-      this.logger.log(
-        `訂單 ${orderId} 退款，收回 ${revoked.points} 積分、累積消費 ${revoked.totalSpent} 元`,
-      );
-    } catch (error) {
-      this.logger.error(`收回退款訂單回饋失敗: ${error}`);
-    }
   }
 
   // ========================================

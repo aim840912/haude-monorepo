@@ -171,7 +171,7 @@ export class UpdateOrderService {
     }
 
     if (nextStatus === 'refunded') {
-      await this.revokeOrderRewardsAsync(
+      await this.membersService.revokeOrderRewardsSafe(
         order.userId,
         order.id,
         order.totalAmount,
@@ -213,28 +213,6 @@ export class UpdateOrderService {
       // 會員系統更新失敗不應影響訂單狀態更新。整筆已回滾（這張訂單沒有
       // PURCHASE 紀錄），之後可安全補發，不會重複加累積消費。
       this.logger.error(`訂單 ${orderId} 送達回饋失敗，未發放: ${error}`);
-    }
-  }
-
-  /**
-   * 非同步收回退款訂單的積分
-   */
-  private async revokeOrderRewardsAsync(
-    userId: string,
-    orderId: string,
-    orderAmount: number,
-  ) {
-    try {
-      const revoked = await this.membersService.revokeOrderRewards(
-        userId,
-        orderId,
-        orderAmount,
-      );
-      this.logger.log(
-        `訂單 ${orderId} 退款，收回 ${revoked.points} 積分、累積消費 ${revoked.totalSpent} 元`,
-      );
-    } catch (error) {
-      this.logger.error(`收回退款訂單回饋失敗: ${error}`);
     }
   }
 

@@ -33,6 +33,7 @@ describe('MembersService (Facade)', () => {
     checkAndUpgradeLevel: jest.fn(),
     addPointsForPurchase: jest.fn(),
     updateTotalSpentAndCheckUpgrade: jest.fn(),
+    revokeOrderRewards: jest.fn(),
   };
 
   // Mock MemberAdminService
@@ -414,6 +415,33 @@ describe('MembersService (Facade)', () => {
 
       expect(adminService.getMemberDetail).toHaveBeenCalledWith(userId);
       expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('revokeOrderRewardsSafe', () => {
+    it('revokes the order rewards', async () => {
+      mockPointsService.revokeOrderRewards.mockResolvedValue({
+        points: 12,
+        totalSpent: 1200,
+      });
+
+      await service.revokeOrderRewardsSafe('u-1', 'o-1', 1200);
+
+      expect(mockPointsService.revokeOrderRewards).toHaveBeenCalledWith(
+        'u-1',
+        'o-1',
+        1200,
+      );
+    });
+
+    // Callers run it after the refund/status change has committed; a points
+    // failure must not turn a completed refund into an error response.
+    it('never throws when revoking fails', async () => {
+      mockPointsService.revokeOrderRewards.mockRejectedValue(new Error('db'));
+
+      await expect(
+        service.revokeOrderRewardsSafe('u-1', 'o-1', 1200),
+      ).resolves.toBeUndefined();
     });
   });
 });
