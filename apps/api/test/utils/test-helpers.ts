@@ -947,6 +947,9 @@ export function createMockFarmTour(
     currentParticipants: 5,
     price: 1500,
     isActive: true,
+    // Schema defaults: bookings are refused unless upcoming and not a draft
+    status: 'upcoming',
+    isDraft: false,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     bookings: [],
