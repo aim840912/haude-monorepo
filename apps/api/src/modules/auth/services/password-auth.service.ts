@@ -23,6 +23,7 @@ import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { SetPasswordDto } from '../dto/set-password.dto';
 import { EmailService } from '../../email/email.service';
 import { JwtTokenService } from './jwt-token.service';
+import { hashToken } from '../token-hash';
 
 @Injectable()
 export class PasswordAuthService {
@@ -188,7 +189,8 @@ export class PasswordAuthService {
     );
 
     await this.prisma.passwordResetToken.create({
-      data: { userId: user.id, token, expiresAt },
+      // Only the hash is stored; the raw token goes in the email link
+      data: { userId: user.id, token: hashToken(token), expiresAt },
     });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -211,7 +213,7 @@ export class PasswordAuthService {
     const { token, newPassword } = resetPasswordDto;
 
     const resetToken = await this.prisma.passwordResetToken.findUnique({
-      where: { token },
+      where: { token: hashToken(token) },
       include: { user: true },
     });
 
@@ -248,7 +250,7 @@ export class PasswordAuthService {
 
   async verifyResetToken(token: string) {
     const resetToken = await this.prisma.passwordResetToken.findUnique({
-      where: { token },
+      where: { token: hashToken(token) },
     });
 
     if (!resetToken) throw new BadRequestException('無效的重設連結');

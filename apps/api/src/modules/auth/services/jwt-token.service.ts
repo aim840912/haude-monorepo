@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { PrismaService } from '@/prisma/prisma.service';
+import { hashToken } from '../token-hash';
 
 @Injectable()
 export class JwtTokenService {
@@ -36,7 +37,8 @@ export class JwtTokenService {
     );
 
     await this.prisma.refreshToken.create({
-      data: { userId, token: refreshToken, expiresAt },
+      // Only the hash is stored; the raw token goes to the cookie
+      data: { userId, token: hashToken(refreshToken), expiresAt },
     });
 
     return { accessToken, refreshToken };
@@ -49,7 +51,7 @@ export class JwtTokenService {
     refreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const stored = await this.prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
+      where: { token: hashToken(refreshToken) },
       include: {
         user: { select: { id: true, email: true, isActive: true } },
       },
@@ -104,7 +106,7 @@ export class JwtTokenService {
   async revokeRefreshToken(refreshToken: string): Promise<void> {
     await this.prisma.refreshToken
       .update({
-        where: { token: refreshToken },
+        where: { token: hashToken(refreshToken) },
         data: { revokedAt: new Date() },
       })
       .catch(() => {
