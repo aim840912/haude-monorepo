@@ -79,11 +79,37 @@ describe('訂單取消與補庫存', () => {
 
       expect(mockPrisma.order.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'order-1', status: { in: ['pending', 'confirmed'] } },
+          where: {
+            id: 'order-1',
+            status: { in: ['pending', 'confirmed'] },
+            // a payment landing between read and write must still block it
+            paymentStatus: { not: 'paid' },
+          },
         }),
       );
       expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
     });
+
+    it.each(['CREDIT', 'STORE_CONTACT'])(
+      '已付款（%s）的訂單顧客不能自行取消：不補庫存，請聯絡客服退款',
+      async (paymentMethod) => {
+        mockQueryUserOrders.getOrderById.mockResolvedValue({
+          id: 'order-1',
+          orderNumber: 'ORD-1',
+          status: 'confirmed',
+          paymentStatus: 'paid',
+          paymentMethod,
+          notes: null,
+          items,
+        });
+
+        await expect(
+          cancelService.cancelOrder('order-1', 'user-1', {}),
+        ).rejects.toThrow(/客服/);
+        expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+        expect(mockPrisma.product.update).not.toHaveBeenCalled();
+      },
+    );
 
     it('取消成功後通知後台，附上顧客填的原因', async () => {
       await cancelService.cancelOrder('order-1', 'user-1', {

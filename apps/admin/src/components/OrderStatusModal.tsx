@@ -8,7 +8,8 @@ interface OrderStatusModalProps {
   isOpen: boolean
   isUpdating: boolean
   onClose: () => void
-  onSave: (id: string, data: { status?: OrderStatus; paymentStatus?: PaymentStatus }) => Promise<boolean>
+  /** true on success; otherwise a reason to show (e.g. "refund first") */
+  onSave: (id: string, data: { status?: OrderStatus; paymentStatus?: PaymentStatus }) => Promise<true | string>
 }
 
 const statusOptions: { value: OrderStatus; label: string; description: string }[] = [
@@ -92,12 +93,12 @@ export function OrderStatusModal({
     if (selectedStatus !== order.status) data.status = selectedStatus
     if (selectedPaymentStatus !== (order.paymentStatus ?? 'pending')) data.paymentStatus = selectedPaymentStatus
 
-    const success = await onSave(order.id, data)
+    const result = await onSave(order.id, data)
 
-    if (success) {
+    if (result === true) {
       onClose()
     } else {
-      setError('更新狀態失敗，請稍後再試')
+      setError(result || '更新狀態失敗，請稍後再試')
     }
   }
 

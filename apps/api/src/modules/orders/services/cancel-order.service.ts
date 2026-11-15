@@ -36,12 +36,23 @@ export class CancelOrderService {
       throw new BadRequestException('此訂單狀態無法取消');
     }
 
+    // Paid orders need a refund, which only staff can do: cancelling here would
+    // restock the goods while the money stays with the shop.
+    if (order.paymentStatus === 'paid') {
+      throw new BadRequestException('此訂單已付款，如需取消請聯絡客服辦理退款');
+    }
+
     // 3. 使用交易取消訂單並恢復庫存
     await this.prisma.$transaction(async (tx) => {
       // Conditional: admin cancel / payment expiry may have cancelled it
       // since we read it, and they restock too.
       const { count } = await tx.order.updateMany({
-        where: { id: orderId, status: { in: cancellableStatuses } },
+        where: {
+          id: orderId,
+          status: { in: cancellableStatuses },
+          // ECPay may mark it paid between our read and this write
+          paymentStatus: { not: 'paid' },
+        },
         data: {
           status: 'cancelled',
           notes: dto.reason

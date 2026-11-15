@@ -102,6 +102,34 @@ describe('UpdateOrderService', () => {
       expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
     });
 
+    it('綠界已付款的訂單不能直接取消：要先退款（全額退款會自動取消並補庫存）', async () => {
+      mockPrisma.order.findUnique.mockResolvedValue({
+        ...baseOrder,
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        paymentMethod: 'CREDIT',
+      });
+
+      await expect(
+        service.updateOrderStatus('order-1', { status: 'cancelled' }),
+      ).rejects.toThrow(/退款/);
+      expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+      expect(mockPrisma.product.update).not.toHaveBeenCalled();
+    });
+
+    it('電話確認（STORE_CONTACT）已付款的訂單仍可取消（款項線下退）', async () => {
+      mockPrisma.order.findUnique.mockResolvedValue({
+        ...baseOrder,
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        paymentMethod: 'STORE_CONTACT',
+      });
+
+      await expect(
+        service.updateOrderStatus('order-1', { status: 'cancelled' }),
+      ).resolves.toBeDefined();
+    });
+
     it.each(['paid', 'pending'] as const)(
       '已退款的付款狀態是終態，不可改回 %s（否則可分兩次請求繞過出貨檢查）',
       async (paymentStatus) => {

@@ -43,7 +43,8 @@ interface UseOrdersReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
-  updateOrderStatus: (id: string, data: { status?: OrderStatus; paymentStatus?: PaymentStatus }) => Promise<boolean>
+  /** true on success; otherwise the API's reason (e.g. "refund first") for the UI to show */
+  updateOrderStatus: (id: string, data: { status?: OrderStatus; paymentStatus?: PaymentStatus }) => Promise<true | string>
   isUpdating: boolean
   // 分頁相關
   pagination: Pagination
@@ -103,7 +104,7 @@ export function useOrders(): UseOrdersReturn {
   const updateOrderStatus = useCallback(async (
     id: string,
     data: { status?: OrderStatus; paymentStatus?: PaymentStatus }
-  ): Promise<boolean> => {
+  ): Promise<true | string> => {
     setIsUpdating(true)
     try {
       await ordersApi.updateStatus(id, data)
@@ -111,7 +112,13 @@ export function useOrders(): UseOrdersReturn {
       return true
     } catch (err) {
       logger.error('[useOrders] 更新狀態失敗', { error: err })
-      return false
+      // The API explains rule violations (refund first, invalid transition…);
+      // pass that reason through instead of a generic failure.
+      const message = (err as { response?: { data?: { message?: unknown } } })
+        ?.response?.data?.message
+      if (typeof message === 'string' && message) return message
+      if (Array.isArray(message) && message.length) return message.join('；')
+      return '更新狀態失敗，請稍後再試'
     } finally {
       setIsUpdating(false)
     }

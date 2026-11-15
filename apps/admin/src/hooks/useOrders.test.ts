@@ -204,13 +204,38 @@ describe('Admin 訂單 Hooks', () => {
         expect(result.current.isLoading).toBe(false)
       })
 
-      let success = false
+      let success: true | string | undefined
       await act(async () => {
         success = await result.current.updateOrderStatus('order-1', { status: 'shipped' })
       })
 
       expect(success).toBe(true)
       expect(ordersApi.updateStatus).toHaveBeenCalledWith('order-1', { status: 'shipped' })
+    })
+
+    it('updateOrderStatus 失敗時回傳 API 的錯誤原因，讓畫面能顯示', async () => {
+      vi.mocked(ordersApi.getAll).mockResolvedValue(mockResponse({
+        orders: [createMockOrder()],
+        total: 1,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      }))
+      vi.mocked(ordersApi.updateStatus).mockRejectedValue({
+        response: { data: { message: '此訂單已透過綠界付款，請先到「付款管理」執行退款' } },
+      })
+
+      const { result } = renderHook(() => useOrders())
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      let outcome: true | string | undefined
+      await act(async () => {
+        outcome = await result.current.updateOrderStatus('order-1', { status: 'cancelled' })
+      })
+
+      expect(outcome).toBe('此訂單已透過綠界付款，請先到「付款管理」執行退款')
     })
 
     it('API 失敗應該設定錯誤', async () => {

@@ -67,6 +67,20 @@ export class UpdateOrderService {
       throw new BadRequestException('已退款的訂單付款狀態不可再修改');
     }
 
+    // An ECPay-paid order must go through the refund flow, which returns the
+    // money and then cancels + restocks automatically. Cancelling directly would
+    // restock while the money stays with the shop. Phone-confirmed
+    // (STORE_CONTACT) orders are refunded offline, so staff may cancel them.
+    const cancelsEcpayPaid =
+      nextStatus === 'cancelled' &&
+      order.paymentStatus === 'paid' &&
+      order.paymentMethod !== 'STORE_CONTACT';
+    if (cancelsEcpayPaid) {
+      throw new BadRequestException(
+        '此訂單已透過綠界付款，請先到「付款管理」執行退款；全額退款後訂單會自動取消並補回庫存',
+      );
+    }
+
     // Shipping or delivering a refunded order sends goods (and awards points)
     // for money already returned. Such an order should be cancelled instead.
     const fulfils = nextStatus === 'shipped' || nextStatus === 'delivered';
