@@ -6,6 +6,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+
+/**
+ * A valid cost-10 hash of a random string nobody knows. Comparing against it
+ * when there is no password to check makes those failures take as long as a
+ * real wrong password (otherwise the fast path reveals the email is unknown).
+ */
+const TIMING_DUMMY_HASH =
+  '$2b$10$mhIzRseDUd9G8g0R65RYjupOhBHvORBLrVhx05w.NnuZHMQvsi.TW';
 import * as crypto from 'crypto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RegisterDto } from '../dto/register.dto';
@@ -65,6 +73,9 @@ export class PasswordAuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
+      // Spend the same bcrypt time as a real check, so response time does not
+      // reveal whether the email is registered.
+      await bcrypt.compare(password, TIMING_DUMMY_HASH);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -87,17 +98,23 @@ export class PasswordAuthService {
       });
     }
 
-    // Google-only user cannot use password login
+    // Google-only user cannot use password login. Same message and timing as
+    // "no such user": a distinct message confirms the email in one request.
     if (!user.password) {
-      throw new UnauthorizedException(
-        '此帳戶使用 Google 登入，請使用 Google 登入',
-      );
+      await bcrypt.compare(password, TIMING_DUMMY_HASH);
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      const newFailedAttempts = user.failedLoginAttempts + 1;
+      // Atomic increment: concurrent failures must not overwrite each other's count
+      const { failedLoginAttempts: newFailedAttempts } =
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: { increment: 1 } },
+          select: { failedLoginAttempts: true },
+        });
 
       if (newFailedAttempts >= this.MAX_LOGIN_ATTEMPTS) {
         const lockedUntil = new Date(
@@ -105,7 +122,7 @@ export class PasswordAuthService {
         );
         await this.prisma.user.update({
           where: { id: user.id },
-          data: { failedLoginAttempts: newFailedAttempts, lockedUntil },
+          data: { lockedUntil },
         });
         this.logger.warn(
           `帳號已鎖定: ${email}，連續失敗 ${newFailedAttempts} 次`,
@@ -114,10 +131,6 @@ export class PasswordAuthService {
           `登入失敗次數過多，帳號已鎖定 ${this.LOCKOUT_DURATION_MINUTES} 分鐘`,
         );
       } else {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { failedLoginAttempts: newFailedAttempts },
-        });
         // 訊息必須與「帳號不存在」時完全相同，否則可被用於帳號枚舉
         // （攻擊者藉由訊息差異判定某 email 是否為真實客戶）
         throw new UnauthorizedException('Invalid credentials');
@@ -212,7 +225,13 @@ export class PasswordAuthService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: resetToken.userId },
-        data: { password: hashedPassword },
+        // Proving the email unlocks the account: anyone can lock it by failing
+        // 5 times, so the owner must be able to clear that themselves.
+        data: {
+          password: hashedPassword,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
       }),
       this.prisma.passwordResetToken.update({
         where: { id: resetToken.id },

@@ -43,6 +43,7 @@ describe('PasswordAuthService', () => {
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
     }),
+    revokeAllUserTokens: jest.fn(),
   };
 
   const loginDto = { email: 'test@example.com', password: 'wrong-password' };
@@ -93,6 +94,9 @@ describe('PasswordAuthService', () => {
 
     it('密碼錯誤時應拋出 UnauthorizedException', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(createMockUser());
+      mockPrismaService.user.update.mockResolvedValue({
+        failedLoginAttempts: 1,
+      });
       mockedCompare.mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(
@@ -117,6 +121,9 @@ describe('PasswordAuthService', () => {
         mockPrismaService.user.findUnique.mockResolvedValue(
           createMockUser({ failedLoginAttempts }),
         );
+        mockPrismaService.user.update.mockResolvedValue({
+          failedLoginAttempts: failedLoginAttempts + 1,
+        });
         mockedCompare.mockResolvedValue(false);
         const wrongPasswordError = await captureLoginError();
 
@@ -133,6 +140,9 @@ describe('PasswordAuthService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(
         createMockUser({ failedLoginAttempts }),
       );
+      mockPrismaService.user.update.mockResolvedValue({
+        failedLoginAttempts: failedLoginAttempts + 1,
+      });
       mockedCompare.mockResolvedValue(false);
 
       const error = await captureLoginError();
@@ -153,6 +163,9 @@ describe('PasswordAuthService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(
         createMockUser({ failedLoginAttempts: 4 }),
       );
+      mockPrismaService.user.update.mockResolvedValue({
+        failedLoginAttempts: 5,
+      });
       mockedCompare.mockResolvedValue(false);
 
       const error = await captureLoginError();
@@ -176,6 +189,68 @@ describe('PasswordAuthService', () => {
 
       expect(error).toBeInstanceOf(UnauthorizedException);
       expect(error.message).toContain('鎖定');
+    });
+
+    it('失敗次數以原子遞增寫入（並行失敗不會互相覆蓋而少算）', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(
+        createMockUser({ failedLoginAttempts: 1 }),
+      );
+      mockPrismaService.user.update.mockResolvedValue({
+        failedLoginAttempts: 2,
+      });
+      mockedCompare.mockResolvedValue(false);
+
+      await captureLoginError();
+
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { failedLoginAttempts: { increment: 1 } },
+        }),
+      );
+    });
+
+    it('重設密碼成功後立即解鎖（被別人故意鎖住時，帳號主人可用 email 自行解除）', async () => {
+      mockPrismaService.passwordResetToken.findUnique.mockResolvedValue({
+        id: 'prt-1',
+        userId: 'user-1',
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+        user: { email: 'test@example.com' },
+      });
+
+      await service.resetPassword({ token: 't', newPassword: 'NewPass123!' });
+
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: {
+          password: '$2b$10$hashed_password',
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
+    });
+  });
+
+  describe('login — 其他列舉管道', () => {
+    it('「只用 Google 登入的帳號」與「帳號不存在」的訊息必須逐字相同', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      const notFoundError = await captureLoginError();
+
+      mockPrismaService.user.findUnique.mockResolvedValue(
+        createMockUser({ password: null }),
+      );
+      const googleOnlyError = await captureLoginError();
+
+      expect(googleOnlyError.message).toBe(notFoundError.message);
+    });
+
+    it('帳號不存在時仍執行一次 bcrypt 比對，讓回應時間與密碼錯誤一致', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockedCompare.mockResolvedValue(false);
+
+      await captureLoginError();
+
+      expect(mockedCompare).toHaveBeenCalledTimes(1);
     });
   });
 });
