@@ -22,6 +22,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
 import { AuditLog } from '@/common/decorators/audit-log.decorator';
+import { limitPipe, offsetPipe } from '@/common/pipes/parse-bounded-int.pipe';
 
 /**
  * 評論 Controller
@@ -56,13 +57,13 @@ export class ReviewsController {
   @NoCache() // 回應內容依請求者角色而異（isReviewsVisible 檢查），不可共享快取
   async getProductReviews(
     @Param('productId') productId: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit', limitPipe(10, 50)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
     @Request() req?: { user?: JwtUser },
   ) {
     return this.reviewsService.getProductReviews(productId, {
-      limit: limit ? parseInt(limit, 10) : 10,
-      offset: offset ? parseInt(offset, 10) : 0,
+      limit,
+      offset,
       onlyApproved: true,
       requesterRole: req?.user?.role,
     });
@@ -179,13 +180,13 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.STAFF)
   async getAllReviews(
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
     @Query('isApproved') isApproved?: string,
   ) {
     return this.reviewsService.findAll({
-      limit: limit ? parseInt(limit, 10) : 20,
-      offset: offset ? parseInt(offset, 10) : 0,
+      limit,
+      offset,
       isApproved: isApproved !== undefined ? isApproved === 'true' : undefined,
     });
   }

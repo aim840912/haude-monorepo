@@ -137,7 +137,7 @@ describe('MembersController', () => {
     it('應回傳積分歷史（使用預設分頁）', async () => {
       mockMembersService.getPointsHistory.mockResolvedValue(historyResult);
 
-      const result = await controller.getPointsHistory(mockRequest);
+      const result = await controller.getPointsHistory(mockRequest, 20, 0);
 
       expect(result).toEqual(historyResult);
       expect(mockMembersService.getPointsHistory).toHaveBeenCalledWith(
@@ -150,7 +150,7 @@ describe('MembersController', () => {
     it('應支援自訂分頁參數', async () => {
       mockMembersService.getPointsHistory.mockResolvedValue(historyResult);
 
-      const result = await controller.getPointsHistory(mockRequest, '10', '5');
+      const result = await controller.getPointsHistory(mockRequest, 10, 5);
 
       expect(result).toEqual(historyResult);
       expect(mockMembersService.getPointsHistory).toHaveBeenCalledWith(
@@ -163,7 +163,7 @@ describe('MembersController', () => {
     it('應正確解析字串參數為數字', async () => {
       mockMembersService.getPointsHistory.mockResolvedValue(historyResult);
 
-      await controller.getPointsHistory(mockRequest, '50', '100');
+      await controller.getPointsHistory(mockRequest, 50, 100);
 
       expect(mockMembersService.getPointsHistory).toHaveBeenCalledWith(
         'user-1',
@@ -286,7 +286,7 @@ describe('AdminMembersController', () => {
     it('應回傳會員列表（無篩選）', async () => {
       mockMembersService.getAdminMembersList.mockResolvedValue(membersResult);
 
-      const result = await controller.getMembers();
+      const result = await controller.getMembers(undefined, undefined, 20, 0);
 
       expect(result).toEqual(membersResult);
       expect(mockMembersService.getAdminMembersList).toHaveBeenCalledWith({
@@ -300,7 +300,7 @@ describe('AdminMembersController', () => {
     it('應支援等級篩選', async () => {
       mockMembersService.getAdminMembersList.mockResolvedValue(membersResult);
 
-      await controller.getMembers(MemberLevel.GOLD);
+      await controller.getMembers(MemberLevel.GOLD, undefined, 20, 0);
 
       expect(mockMembersService.getAdminMembersList).toHaveBeenCalledWith({
         level: MemberLevel.GOLD,
@@ -313,7 +313,7 @@ describe('AdminMembersController', () => {
     it('應支援關鍵字搜尋', async () => {
       mockMembersService.getAdminMembersList.mockResolvedValue(membersResult);
 
-      await controller.getMembers(undefined, '測試');
+      await controller.getMembers(undefined, '測試', 20, 0);
 
       expect(mockMembersService.getAdminMembersList).toHaveBeenCalledWith({
         level: undefined,
@@ -326,7 +326,7 @@ describe('AdminMembersController', () => {
     it('應支援自訂分頁參數', async () => {
       mockMembersService.getAdminMembersList.mockResolvedValue(membersResult);
 
-      await controller.getMembers(undefined, undefined, '50', '100');
+      await controller.getMembers(undefined, undefined, 50, 100);
 
       expect(mockMembersService.getAdminMembersList).toHaveBeenCalledWith({
         level: undefined,
@@ -339,7 +339,7 @@ describe('AdminMembersController', () => {
     it('應同時支援所有篩選條件', async () => {
       mockMembersService.getAdminMembersList.mockResolvedValue(membersResult);
 
-      await controller.getMembers(MemberLevel.SILVER, 'test', '10', '20');
+      await controller.getMembers(MemberLevel.SILVER, 'test', 10, 20);
 
       expect(mockMembersService.getAdminMembersList).toHaveBeenCalledWith({
         level: MemberLevel.SILVER,
@@ -395,7 +395,7 @@ describe('AdminMembersController', () => {
     it('應回傳等級變更歷史（使用預設分頁）', async () => {
       mockMembersService.getMemberLevelHistory.mockResolvedValue(historyResult);
 
-      const result = await controller.getLevelHistory('user-1');
+      const result = await controller.getLevelHistory('user-1', 20, 0);
 
       expect(result).toEqual(historyResult);
       expect(mockMembersService.getMemberLevelHistory).toHaveBeenCalledWith(
@@ -408,7 +408,7 @@ describe('AdminMembersController', () => {
     it('應支援自訂分頁參數', async () => {
       mockMembersService.getMemberLevelHistory.mockResolvedValue(historyResult);
 
-      const result = await controller.getLevelHistory('user-1', '10', '5');
+      const result = await controller.getLevelHistory('user-1', 10, 5);
 
       expect(result).toEqual(historyResult);
       expect(mockMembersService.getMemberLevelHistory).toHaveBeenCalledWith(
@@ -434,7 +434,7 @@ describe('AdminMembersController', () => {
     it('應回傳指定會員的積分歷史', async () => {
       mockMembersService.getPointsHistory.mockResolvedValue(historyResult);
 
-      const result = await controller.getPointsHistory('user-1');
+      const result = await controller.getPointsHistory('user-1', 20, 0);
 
       expect(result).toEqual(historyResult);
       expect(mockMembersService.getPointsHistory).toHaveBeenCalledWith(
@@ -447,7 +447,7 @@ describe('AdminMembersController', () => {
     it('應支援自訂分頁參數', async () => {
       mockMembersService.getPointsHistory.mockResolvedValue(historyResult);
 
-      await controller.getPointsHistory('user-1', '30', '60');
+      await controller.getPointsHistory('user-1', 30, 60);
 
       expect(mockMembersService.getPointsHistory).toHaveBeenCalledWith(
         'user-1',

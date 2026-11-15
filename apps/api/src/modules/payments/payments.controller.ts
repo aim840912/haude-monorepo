@@ -11,8 +11,6 @@ import {
   Logger,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
-  DefaultValuePipe,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import {
@@ -36,6 +34,7 @@ import {
 } from './dto';
 import { ConfigService } from '@nestjs/config';
 import { AuditLog } from '@/common/decorators/audit-log.decorator';
+import { limitPipe, offsetPipe } from '@/common/pipes/parse-bounded-int.pipe';
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string };
@@ -216,8 +215,8 @@ export class AdminPaymentsController {
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   getAllPayments(
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
     return this.paymentsService.getAllPayments(limit, offset);
   }
@@ -230,8 +229,8 @@ export class AdminPaymentsController {
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   getPaymentLogs(
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit', limitPipe(50)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
     return this.paymentsService.getPaymentLogs(limit, offset);
   }

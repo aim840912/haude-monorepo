@@ -9,8 +9,6 @@ import {
   UseGuards,
   ParseUUIDPipe,
   Request,
-  ParseIntPipe,
-  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,6 +31,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtUser } from '@/modules/auth/strategies/jwt.strategy';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
 import { AuditLog } from '@/common/decorators/audit-log.decorator';
+import { limitPipe, offsetPipe } from '@/common/pipes/parse-bounded-int.pipe';
 
 // ========================================
 // 使用者訂單 API
@@ -57,8 +56,8 @@ export class OrdersController {
   @ApiResponse({ status: 401, description: '未認證', type: ErrorResponseDto })
   getUserOrders(
     @Request() req: { user: JwtUser },
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
     return this.ordersService.getUserOrders(req.user.userId, limit, offset);
   }
@@ -160,8 +159,8 @@ export class AdminOrdersController {
   @ApiResponse({ status: 401, description: '未認證' })
   @ApiResponse({ status: 403, description: '權限不足' })
   getAllOrders(
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit', limitPipe(20, 10000)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
@@ -240,9 +239,7 @@ export class AdminDashboardController {
   @ApiOperation({ summary: '取得熱銷產品（儀表板）' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiResponse({ status: 200, description: '成功取得熱銷產品' })
-  getTopProducts(
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-  ) {
+  getTopProducts(@Query('limit', limitPipe(10, 50)) limit: number) {
     return this.ordersService.getTopProducts(limit);
   }
 }

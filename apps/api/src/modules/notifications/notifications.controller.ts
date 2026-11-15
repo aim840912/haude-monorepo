@@ -7,7 +7,6 @@ import {
   Query,
   Body,
   UseGuards,
-  ParseIntPipe,
   DefaultValuePipe,
   ParseBoolPipe,
 } from '@nestjs/common';
@@ -26,6 +25,7 @@ import { Role } from '@prisma/client';
 import { NotificationsService } from './notifications.service';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
 import { AuditLog } from '@/common/decorators/audit-log.decorator';
+import { limitPipe, offsetPipe } from '@/common/pipes/parse-bounded-int.pipe';
 
 @ApiTags('admin/notifications')
 @Controller('admin/notifications')
@@ -43,8 +43,8 @@ export class NotificationsController {
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: '成功取得通知列表' })
   async findAll(
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit', limitPipe(50)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
     @Query('unreadOnly', new DefaultValuePipe(false), ParseBoolPipe)
     unreadOnly: boolean,
   ) {

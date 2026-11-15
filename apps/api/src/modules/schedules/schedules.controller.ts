@@ -17,6 +17,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Cacheable, NoCache } from '@/common/decorators/cacheable.decorator';
 import { AuditLog } from '@/common/decorators/audit-log.decorator';
+import { ParseBoundedIntPipe } from '@/common/pipes/parse-bounded-int.pipe';
 
 /**
  * 公開 API
@@ -37,8 +38,13 @@ export class SchedulesController {
   }
 
   @Get('month')
-  findByMonth(@Query('year') year: string, @Query('month') month: string) {
-    return this.schedulesService.findByMonth(parseInt(year), parseInt(month));
+  findByMonth(
+    @Query('year', new ParseBoundedIntPipe({ min: 2000, max: 2100 }))
+    year: number,
+    @Query('month', new ParseBoundedIntPipe({ min: 1, max: 12 }))
+    month: number,
+  ) {
+    return this.schedulesService.findByMonth(year, month);
   }
 
   @Get(':id')

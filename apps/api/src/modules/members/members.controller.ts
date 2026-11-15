@@ -24,6 +24,7 @@ import { MembersService } from './members.service';
 import { AdjustLevelDto, AdjustPointsDto } from './dto';
 import { NoCache } from '@/common/decorators/cacheable.decorator';
 import { AuditLog } from '@/common/decorators/audit-log.decorator';
+import { limitPipe, offsetPipe } from '@/common/pipes/parse-bounded-int.pipe';
 
 @ApiTags('members')
 @Controller('members')
@@ -74,14 +75,10 @@ export class MembersController {
   })
   async getPointsHistory(
     @Request() req: { user: { userId: string } },
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
-    return this.membersService.getPointsHistory(
-      req.user.userId,
-      limit ? parseInt(limit, 10) : 20,
-      offset ? parseInt(offset, 10) : 0,
-    );
+    return this.membersService.getPointsHistory(req.user.userId, limit, offset);
   }
 
   @Get('level-configs')
@@ -136,16 +133,16 @@ export class AdminMembersController {
     description: '偏移量',
   })
   async getMembers(
-    @Query('level') level?: MemberLevel,
-    @Query('search') search?: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('level') level: MemberLevel | undefined,
+    @Query('search') search: string | undefined,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
     return this.membersService.getAdminMembersList({
       level,
       search,
-      limit: limit ? parseInt(limit, 10) : 20,
-      offset: offset ? parseInt(offset, 10) : 0,
+      limit,
+      offset,
     });
   }
 
@@ -181,14 +178,10 @@ export class AdminMembersController {
   })
   async getLevelHistory(
     @Param('id') id: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
-    return this.membersService.getMemberLevelHistory(
-      id,
-      limit ? parseInt(limit, 10) : 20,
-      offset ? parseInt(offset, 10) : 0,
-    );
+    return this.membersService.getMemberLevelHistory(id, limit, offset);
   }
 
   @Get(':id/points/history')
@@ -212,14 +205,10 @@ export class AdminMembersController {
   })
   async getPointsHistory(
     @Param('id') id: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit', limitPipe(20)) limit: number,
+    @Query('offset', offsetPipe()) offset: number,
   ) {
-    return this.membersService.getPointsHistory(
-      id,
-      limit ? parseInt(limit, 10) : 20,
-      offset ? parseInt(offset, 10) : 0,
-    );
+    return this.membersService.getPointsHistory(id, limit, offset);
   }
 
   @Patch(':id/level')

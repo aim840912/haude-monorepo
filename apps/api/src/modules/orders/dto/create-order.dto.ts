@@ -1,11 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -21,8 +22,9 @@ export class OrderItemDto {
   productId: string;
 
   @ApiProperty({ description: '購買數量', example: 2 })
-  @IsNumber()
+  @IsInt()
   @Min(1)
+  @Max(99)
   quantity: number;
 }
 
