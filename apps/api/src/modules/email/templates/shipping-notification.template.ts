@@ -9,6 +9,7 @@ import {
   BRAND_COLORS,
   getInfoCard,
   getCircleIcon,
+  escapeHtml,
 } from './email-base.template';
 
 export interface ShippingNotificationTemplateData {
@@ -23,8 +24,10 @@ export interface ShippingNotificationTemplateData {
 export function getShippingNotificationTemplate(
   data: ShippingNotificationTemplateData,
 ): string {
-  const { orderNumber, trackingNumber, userName } = data;
-  const name = userName || '顧客';
+  // userName / trackingNumber are user- or admin-entered: always escape
+  const orderNumber = escapeHtml(data.orderNumber);
+  const trackingNumber = escapeHtml(data.trackingNumber);
+  const name = escapeHtml(data.userName || '顧客');
 
   const content = `
     ${getCircleIcon('📦', '#e3f2fd')}

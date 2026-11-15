@@ -10,6 +10,7 @@ import {
   formatCurrency,
   getInfoCard,
   getCircleIcon,
+  escapeHtml,
 } from './email-base.template';
 
 export interface RefundNotificationTemplateData {
@@ -31,7 +32,7 @@ function getPaymentTypeName(paymentType: string): string {
     case 'CVS':
       return '超商代碼';
     default:
-      return paymentType;
+      return escapeHtml(paymentType);
   }
 }
 
@@ -57,8 +58,10 @@ function getRefundTimeEstimate(paymentType: string): string {
 export function getRefundNotificationTemplate(
   data: RefundNotificationTemplateData,
 ): string {
-  const { orderNumber, refundAmount, paymentType, userName } = data;
-  const name = userName || '顧客';
+  const { refundAmount, paymentType } = data;
+  // userName is user-entered at registration: always escape
+  const orderNumber = escapeHtml(data.orderNumber);
+  const name = escapeHtml(data.userName || '顧客');
 
   const content = `
     ${getCircleIcon('<span style="color: #1565c0;">&#8617;</span>', '#e3f2fd')}

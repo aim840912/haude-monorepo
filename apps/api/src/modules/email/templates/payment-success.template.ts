@@ -10,6 +10,7 @@ import {
   formatCurrency,
   getInfoCard,
   getCircleIcon,
+  escapeHtml,
 } from './email-base.template';
 
 export interface PaymentSuccessTemplateData {
@@ -24,8 +25,10 @@ export interface PaymentSuccessTemplateData {
 export function getPaymentSuccessTemplate(
   data: PaymentSuccessTemplateData,
 ): string {
-  const { orderNumber, totalAmount, userName } = data;
-  const name = userName || '顧客';
+  const { totalAmount } = data;
+  // userName is user-entered at registration: always escape
+  const orderNumber = escapeHtml(data.orderNumber);
+  const name = escapeHtml(data.userName || '顧客');
 
   const content = `
     ${getCircleIcon('<span style="color: #4caf50;">✓</span>', '#e8f5e9')}
