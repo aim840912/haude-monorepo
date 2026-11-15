@@ -223,7 +223,9 @@ describe('訂單 Hooks', () => {
       vi.stubEnv('NODE_ENV', 'development')
 
       vi.mocked(ordersApi.getById).mockRejectedValue(new Error('Not found'))
-      vi.mocked(getMockOrderById).mockReturnValue(createMockOrder() as ReturnType<typeof getMockOrderById>)
+      vi.mocked(getMockOrderById).mockReturnValue(
+        createMockOrder() as ReturnType<typeof getMockOrderById>
+      )
 
       const { result } = renderHook(() => useOrder('order-1'))
 
@@ -381,6 +383,22 @@ describe('訂單 Hooks', () => {
 
       expect(success).toBe(false)
       expect(result.current.error).toBe('訂單已出貨，無法取消')
+    })
+
+    it('取消失敗時顯示 API 給的原因（例如已付款要聯絡客服），不是 axios 的英文訊息', async () => {
+      vi.mocked(ordersApi.cancel).mockRejectedValue(
+        Object.assign(new Error('Request failed with status code 400'), {
+          response: { data: { message: '此訂單已付款，如需取消請聯絡客服辦理退款' } },
+        })
+      )
+
+      const { result } = renderHook(() => useCancelOrder())
+
+      await act(async () => {
+        await result.current.cancelOrder('order-1')
+      })
+
+      expect(result.current.error).toBe('此訂單已付款，如需取消請聯絡客服辦理退款')
     })
 
     it('應該在請求期間顯示載入狀態', async () => {

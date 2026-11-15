@@ -23,6 +23,7 @@ describe('UpdateOrderService', () => {
     },
     product: { update: jest.fn() },
     pointTransaction: { findFirst: jest.fn() },
+    payment: { findFirst: jest.fn() },
     $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(mockPrisma)),
   };
   const mockEmail = { sendShippingNotificationEmail: jest.fn() };
@@ -36,6 +37,7 @@ describe('UpdateOrderService', () => {
     orderNumber: 'HD-001',
     userId: 'user-1',
     totalAmount: 1200,
+    paymentStatus: 'pending',
     trackingNumber: null,
     user: { email: 'buyer@test.local', name: 'Buyer' },
     items: [
@@ -59,6 +61,7 @@ describe('UpdateOrderService', () => {
       items: [],
     });
     mockPrisma.pointTransaction.findFirst.mockResolvedValue(null);
+    mockPrisma.payment.findFirst.mockResolvedValue(null);
     mockMembers.awardOrderRewards.mockResolvedValue({
       earnedPoints: 1200,
       upgraded: false,
@@ -102,32 +105,65 @@ describe('UpdateOrderService', () => {
       expect(mockPrisma.product.update).toHaveBeenCalledTimes(2);
     });
 
-    it('綠界已付款的訂單不能直接取消：要先退款（全額退款會自動取消並補庫存）', async () => {
+    // 「是不是綠界付款」看有沒有已付款的 Payment 紀錄（只有綠界通知會寫入），
+    // 不看 order.paymentMethod：那是顧客結帳時自己送的字串
+    const paidOrder = (paymentMethod: string | null) =>
       mockPrisma.order.findUnique.mockResolvedValue({
         ...baseOrder,
         status: 'confirmed',
         paymentStatus: 'paid',
-        paymentMethod: 'CREDIT',
+        paymentMethod,
       });
 
-      await expect(
-        service.updateOrderStatus('order-1', { status: 'cancelled' }),
-      ).rejects.toThrow(/退款/);
-      expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
-      expect(mockPrisma.product.update).not.toHaveBeenCalled();
+    it.each(['CREDIT', 'STORE_CONTACT'])(
+      '有已付款的綠界紀錄就不能直接取消（paymentMethod=%s 也一樣）：要先退款',
+      async (paymentMethod) => {
+        paidOrder(paymentMethod);
+        mockPrisma.payment.findFirst.mockResolvedValue({ id: 'pay-1' });
+
+        await expect(
+          service.updateOrderStatus('order-1', { status: 'cancelled' }),
+        ).rejects.toThrow(/退款/);
+        expect(mockPrisma.payment.findFirst).toHaveBeenCalledWith({
+          where: { orderId: 'order-1', status: 'paid' },
+          select: { id: true },
+        });
+        expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+        expect(mockPrisma.product.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['STORE_CONTACT', 'CREDIT', null])(
+      '沒有綠界付款紀錄的已付款訂單（線下收款，paymentMethod=%s）可取消',
+      async (paymentMethod) => {
+        paidOrder(paymentMethod);
+
+        await expect(
+          service.updateOrderStatus('order-1', { status: 'cancelled' }),
+        ).resolves.toBeDefined();
+      },
+    );
+
+    it('取消時寫入條件包含讀到的付款狀態（付款通知剛好落在讀寫之間時回 409）', async () => {
+      givenOrder('pending');
+
+      await service.updateOrderStatus('order-1', { status: 'cancelled' });
+
+      expect(mockPrisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'order-1', status: 'pending', paymentStatus: 'pending' },
+        }),
+      );
     });
 
-    it('電話確認（STORE_CONTACT）已付款的訂單仍可取消（款項線下退）', async () => {
-      mockPrisma.order.findUnique.mockResolvedValue({
-        ...baseOrder,
-        status: 'confirmed',
-        paymentStatus: 'paid',
-        paymentMethod: 'STORE_CONTACT',
-      });
+    it('綠界已付款的付款狀態不可手動改掉（否則可先改 pending 再取消，繞過退款）', async () => {
+      paidOrder('CREDIT');
+      mockPrisma.payment.findFirst.mockResolvedValue({ id: 'pay-1' });
 
       await expect(
-        service.updateOrderStatus('order-1', { status: 'cancelled' }),
-      ).resolves.toBeDefined();
+        service.updateOrderStatus('order-1', { paymentStatus: 'pending' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
     });
 
     it.each(['paid', 'pending'] as const)(

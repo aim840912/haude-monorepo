@@ -264,7 +264,16 @@ export function useCancelOrder(): UseCancelOrderReturn {
       await ordersApi.cancel(orderId, reason)
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : '取消訂單失敗'
+      // Prefer the API's reason (e.g. "paid, contact support") over axios's
+      // generic "Request failed with status code 400"
+      const apiMessage = (err as { response?: { data?: { message?: unknown } } })?.response?.data
+        ?.message
+      const message =
+        typeof apiMessage === 'string' && apiMessage
+          ? apiMessage
+          : err instanceof Error
+            ? err.message
+            : '取消訂單失敗'
       setError(message)
       return false
     } finally {

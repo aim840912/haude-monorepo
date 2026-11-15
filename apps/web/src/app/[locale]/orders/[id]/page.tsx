@@ -60,7 +60,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
   const router = useRouter()
   const { error: showError } = useToast()
   const { order, isLoading, error, refetch } = useOrder(id)
-  const { cancelOrder, isCancelling } = useCancelOrder()
+  const { cancelOrder, isCancelling, error: cancelOrderError } = useCancelOrder()
   const [cancelError, setCancelError] = useState<string | null>(null)
 
   // 載入狀態
@@ -100,7 +100,9 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
   const canPay = order.status === 'pending' && order.paymentStatus !== 'paid' && !isStoreContact
 
   // 判斷是否可以取消
-  const canCancel = ['pending', 'confirmed'].includes(order.status)
+  // 已付款的訂單要退款，只能由客服處理（API 也會擋）
+  const canCancel =
+    ['pending', 'confirmed'].includes(order.status) && order.paymentStatus !== 'paid'
 
   // 處理取消訂單
   const handleCancel = async () => {
@@ -111,6 +113,9 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
     if (success) {
       refetch()
     } else {
+      // Fallback only; the render below prefers useCancelOrder's error, which
+      // carries the API's reason. (Reading it here would see the stale value
+      // from this render, before the hook's setError lands.)
       setCancelError('取消訂單失敗，請稍後再試')
     }
   }
@@ -177,27 +182,44 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
             </div>
 
             {/* ATM 虛擬帳號資訊 */}
-            {order.payment?.paymentType === 'ATM' && order.payment?.bankCode && order.payment?.vaAccount && (
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-medium text-blue-800 mb-2">ATM 轉帳資訊</p>
-                <div className="space-y-1 text-sm">
-                  <p><span className="text-gray-600">銀行代碼：</span><span className="font-mono font-medium">{order.payment.bankCode}</span></p>
-                  <p><span className="text-gray-600">虛擬帳號：</span><span className="font-mono font-medium">{order.payment.vaAccount}</span></p>
-                  {order.payment.expireDate && (
-                    <p><span className="text-gray-600">繳費期限：</span>{new Date(order.payment.expireDate).toLocaleString('zh-TW')}</p>
-                  )}
+            {order.payment?.paymentType === 'ATM' &&
+              order.payment?.bankCode &&
+              order.payment?.vaAccount && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-2">ATM 轉帳資訊</p>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="text-gray-600">銀行代碼：</span>
+                      <span className="font-mono font-medium">{order.payment.bankCode}</span>
+                    </p>
+                    <p>
+                      <span className="text-gray-600">虛擬帳號：</span>
+                      <span className="font-mono font-medium">{order.payment.vaAccount}</span>
+                    </p>
+                    {order.payment.expireDate && (
+                      <p>
+                        <span className="text-gray-600">繳費期限：</span>
+                        {new Date(order.payment.expireDate).toLocaleString('zh-TW')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* CVS 超商繳費資訊 */}
             {order.payment?.paymentType === 'CVS' && order.payment?.paymentCode && (
               <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <p className="text-sm font-medium text-orange-800 mb-2">超商繳費資訊</p>
                 <div className="space-y-1 text-sm">
-                  <p><span className="text-gray-600">繳費代碼：</span><span className="font-mono font-medium">{order.payment.paymentCode}</span></p>
+                  <p>
+                    <span className="text-gray-600">繳費代碼：</span>
+                    <span className="font-mono font-medium">{order.payment.paymentCode}</span>
+                  </p>
                   {order.payment.expireDate && (
-                    <p><span className="text-gray-600">繳費期限：</span>{new Date(order.payment.expireDate).toLocaleString('zh-TW')}</p>
+                    <p>
+                      <span className="text-gray-600">繳費期限：</span>
+                      {new Date(order.payment.expireDate).toLocaleString('zh-TW')}
+                    </p>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">請至 7-11、全家、萊爾富、OK 超商繳費</p>
@@ -223,9 +245,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
             <p className="text-gray-700">
               您的訂單已成立，店家將盡快致電與您確認訂單內容及付款方式。
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              如有疑問，歡迎透過電話或 LINE 聯繫我們。
-            </p>
+            <p className="text-sm text-gray-500 mt-2">如有疑問，歡迎透過電話或 LINE 聯繫我們。</p>
             <div className="mt-4 flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">應付金額</p>
@@ -233,9 +253,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
                   NT$ {order.totalAmount.toLocaleString()}
                 </p>
               </div>
-              <PaymentStatusBadge
-                status={(order.paymentStatus as PaymentStatus) || 'pending'}
-              />
+              <PaymentStatusBadge status={(order.paymentStatus as PaymentStatus) || 'pending'} />
             </div>
           </div>
         )}
@@ -261,10 +279,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
 
           <div className="space-y-4">
             {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
-              >
+              <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 {item.productImage ? (
                   <div className="w-20 h-20 rounded-lg overflow-hidden relative flex-shrink-0">
                     <SafeImage
@@ -290,9 +305,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-gray-900">
-                    NT$ {item.subtotal.toLocaleString()}
-                  </p>
+                  <p className="font-medium text-gray-900">NT$ {item.subtotal.toLocaleString()}</p>
                 </div>
               </div>
             ))}
@@ -316,9 +329,7 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
             )}
             <div className="flex justify-between text-lg font-bold pt-2 border-t dark:text-gray-900">
               <span>總計</span>
-              <span className="text-green-900">
-                NT$ {order.totalAmount.toLocaleString()}
-              </span>
+              <span className="text-green-900">NT$ {order.totalAmount.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -339,7 +350,9 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
               <div className="text-gray-900">
-                <p>{order.shippingAddress.postalCode} {order.shippingAddress.city}</p>
+                <p>
+                  {order.shippingAddress.postalCode} {order.shippingAddress.city}
+                </p>
                 <p>{order.shippingAddress.street}</p>
               </div>
             </div>
@@ -358,15 +371,11 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">建立時間</p>
-              <p className="text-gray-900">
-                {new Date(order.createdAt).toLocaleString('zh-TW')}
-              </p>
+              <p className="text-gray-900">{new Date(order.createdAt).toLocaleString('zh-TW')}</p>
             </div>
             <div>
               <p className="text-gray-500">更新時間</p>
-              <p className="text-gray-900">
-                {new Date(order.updatedAt).toLocaleString('zh-TW')}
-              </p>
+              <p className="text-gray-900">{new Date(order.updatedAt).toLocaleString('zh-TW')}</p>
             </div>
             {order.trackingNumber && (
               <div>
@@ -398,8 +407,11 @@ function OrderDetailContent({ params }: OrderDetailPageProps) {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">其他操作</h2>
 
             {cancelError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {cancelError}
+              <div
+                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
+                role="alert"
+              >
+                {cancelOrderError || cancelError}
               </div>
             )}
 

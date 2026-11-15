@@ -98,7 +98,8 @@ export function OrderStatusModal({
     if (result === true) {
       onClose()
     } else {
-      setError(result || '更新狀態失敗，請稍後再試')
+      // useOrders always returns a reason (the API's, or its own fallback)
+      setError(result)
     }
   }
 

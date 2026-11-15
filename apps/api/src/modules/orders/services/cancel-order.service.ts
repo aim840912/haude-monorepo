@@ -62,7 +62,10 @@ export class CancelOrderService {
       });
 
       if (count === 0) {
-        throw new BadRequestException('此訂單狀態無法取消');
+        // Either cancelled elsewhere or paid just now (see the where clause)
+        throw new BadRequestException(
+          '訂單狀態剛更新（可能已完成付款），請重新整理；已付款的訂單如需取消請聯絡客服',
+        );
       }
 
       await restoreOrderStock(tx, order.items);

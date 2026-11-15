@@ -69,16 +69,28 @@ export class UpdateOrderService {
 
     // An ECPay-paid order must go through the refund flow, which returns the
     // money and then cancels + restocks automatically. Cancelling directly would
-    // restock while the money stays with the shop. Phone-confirmed
-    // (STORE_CONTACT) orders are refunded offline, so staff may cancel them.
-    const cancelsEcpayPaid =
-      nextStatus === 'cancelled' &&
+    // restock while the money stays with the shop; editing its paymentStatus
+    // away from paid would let a second request cancel it the same way.
+    // "ECPay-paid" means a paid Payment row exists (only ECPay's notify writes
+    // one) — not order.paymentMethod, which is whatever the customer sent at
+    // checkout. Orders paid offline (phone / STORE_CONTACT) have no such row.
+    const wantsCancel = nextStatus === 'cancelled';
+    const editsPaidAway =
       order.paymentStatus === 'paid' &&
-      order.paymentMethod !== 'STORE_CONTACT';
-    if (cancelsEcpayPaid) {
-      throw new BadRequestException(
-        '此訂單已透過綠界付款，請先到「付款管理」執行退款；全額退款後訂單會自動取消並補回庫存',
-      );
+      !!dto.paymentStatus &&
+      dto.paymentStatus !== 'paid';
+    if (wantsCancel || editsPaidAway) {
+      const ecpayPayment = await this.prisma.payment.findFirst({
+        where: { orderId, status: 'paid' },
+        select: { id: true },
+      });
+      if (ecpayPayment) {
+        throw new BadRequestException(
+          wantsCancel
+            ? '此訂單已透過綠界付款，請先到「付款管理」執行退款；全額退款後訂單會自動取消並補回庫存'
+            : '此訂單已透過綠界付款，付款狀態由金流同步，不可手動修改',
+        );
+      }
     }
 
     // Shipping or delivering a refunded order sends goods (and awards points)
@@ -112,6 +124,9 @@ export class UpdateOrderService {
           status: order.status,
           // A refund committing between our read and this write must still block fulfilment.
           ...(fulfils ? { paymentStatus: { not: 'refunded' as const } } : {}),
+          // An ECPay payment landing between the check above and this write
+          // changes paymentStatus, so the cancel no longer matches (409).
+          ...(wantsCancel ? { paymentStatus: order.paymentStatus } : {}),
         },
         data: updateData,
       });
