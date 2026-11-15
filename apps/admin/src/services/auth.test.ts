@@ -23,13 +23,7 @@ describe('performLogout', () => {
     vi.clearAllMocks()
     mockedPost.mockResolvedValue({ data: { message: 'Logged out successfully' } })
     useAuthStore.setState({
-      user: {
-        id: 'user-1',
-        email: 'admin@haude.tw',
-        name: 'Admin',
-        role: 'ADMIN',
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
+      user: { id: 'user-1', name: 'Admin' },
       isAuthenticated: true,
       isAdmin: true,
     })

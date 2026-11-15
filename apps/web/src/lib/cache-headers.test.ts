@@ -51,11 +51,13 @@ const PERSONALIZED = [
   '/cart',
   '/checkout',
   '/auth/callback',
+  '/payment-result',
   // 帶 locale 前綴的形式（localePrefix: 'as-needed'）
   '/en/account',
   '/en/orders/abc123',
   '/en/checkout',
   '/en/auth/callback',
+  '/en/payment-result',
 ]
 
 const PUBLIC_PAGES = ['/', '/products', '/products/abc123', '/en/products', '/en/farm-tours']

@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useCartStore } from './cartStore'
+import { useCheckoutStore } from './checkoutStore'
 
 // Storage key constant
 const AUTH_STORAGE_KEY = 'auth-storage'
@@ -46,8 +47,7 @@ export function clearAllAuthStorage(): void {
 export function isAuthenticated(): boolean {
   try {
     const authStorage =
-      localStorage.getItem(AUTH_STORAGE_KEY) ||
-      sessionStorage.getItem(AUTH_STORAGE_KEY)
+      localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY)
     if (authStorage) {
       const parsed = JSON.parse(authStorage)
       return !!parsed?.state?.user
@@ -74,6 +74,11 @@ export const useAuthStore = create<AuthState>()(
         // Clear local cart (avoid stale guest cart after logout)
         localStorage.removeItem('cart-storage')
         useCartStore.setState({ items: [] }) // Reset cart in-memory state for immediate UI update
+        // The checkout form persists the recipient's name, phone and address;
+        // on a shared computer the next person would see them. clearForm first
+        // (persist rewrites storage on set), then drop the key.
+        useCheckoutStore.getState().clearForm()
+        localStorage.removeItem('checkout-form-storage')
         set({
           user: null,
           isAuthenticated: false,

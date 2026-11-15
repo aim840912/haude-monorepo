@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
 import { UpsertSiteSettingDto } from './dto';
@@ -58,6 +58,17 @@ export class SiteSettingsService {
    * Upsert a single setting (create or update)
    */
   async upsert(key: string, dto: UpsertSiteSettingDto) {
+    // *.link_url values become <a href> on the home page. Allow same-site
+    // paths and http(s) only: no javascript:/data:, no protocol-relative //.
+    if (
+      key.endsWith('link_url') &&
+      !/^(\/(?!\/)|https?:\/\/)/i.test(dto.value)
+    ) {
+      throw new BadRequestException(
+        '連結必須是站內路徑（以 / 開頭）或 http(s):// 網址',
+      );
+    }
+
     return this.prisma.siteSetting.upsert({
       where: { key },
       create: {

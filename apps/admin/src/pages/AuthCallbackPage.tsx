@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { api } from '../services/api'
 import logger from '../lib/logger'
+import { callbackErrorMessage } from '../lib/auth-callback-error'
 
 /**
  * Google OAuth callback page
@@ -26,7 +27,8 @@ export function AuthCallbackPage() {
         // Check for errors
         const errorMsg = params.get('error')
         if (errorMsg) {
-          throw new Error(decodeURIComponent(errorMsg))
+          // URLSearchParams already decodes; never show arbitrary fragment text.
+          throw new Error(callbackErrorMessage(errorMsg, import.meta.env.DEV))
         }
 
         const userJson = params.get('user')

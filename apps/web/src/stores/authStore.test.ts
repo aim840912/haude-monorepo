@@ -16,13 +16,9 @@ vi.mock('./cartStore', () => ({
   },
 }))
 
-import {
-  useAuthStore,
-  isAuthenticated,
-  clearAllAuthStorage,
-  type User,
-} from './authStore'
+import { useAuthStore, isAuthenticated, clearAllAuthStorage, type User } from './authStore'
 import { useCartStore } from './cartStore'
+import { useCheckoutStore } from './checkoutStore'
 
 // Mock user
 const createMockUser = (overrides = {}): User => ({
@@ -122,6 +118,22 @@ describe('authStore', () => {
 
       expect(useCartStore.setState).toHaveBeenCalledWith({ items: [] })
       expect(window.localStorage.removeItem).toHaveBeenCalledWith('cart-storage')
+    })
+
+    it('登出時應清除結帳表單的收件人個資（含 localStorage）', () => {
+      act(() => {
+        useCheckoutStore
+          .getState()
+          .setShippingAddress({ name: '王小明', phone: '0912345678', street: '某路 1 號' })
+        useAuthStore.getState().setAuth(createMockUser())
+        useAuthStore.getState().logout()
+      })
+
+      const { shippingAddress } = useCheckoutStore.getState()
+      expect(shippingAddress.name).toBe('')
+      expect(shippingAddress.phone).toBe('')
+      expect(shippingAddress.street).toBe('')
+      expect(window.localStorage.removeItem).toHaveBeenCalledWith('checkout-form-storage')
     })
   })
 

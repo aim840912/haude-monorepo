@@ -140,7 +140,15 @@ const privateCacheHeaders = [
 
 // 需要排除在共享快取外的路由前綴
 // auth：callback 頁會從 URL fragment 取出使用者資料並寫入 store
-export const PERSONALIZED_PATHS = ['account', 'orders', 'cart', 'checkout', 'auth'] as const
+export const PERSONALIZED_PATHS = [
+  'account',
+  'orders',
+  'cart',
+  'checkout',
+  'auth',
+  // Reads the orderId from the URL and shows that order's payment result.
+  'payment-result',
+] as const
 
 // 同時涵蓋有無 locale 前綴的兩種形式（localePrefix: 'as-needed'）
 const personalizedHeaderRules = PERSONALIZED_PATHS.flatMap((path) => [
@@ -190,10 +198,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.supabase.co', // Supabase Storage
+        // Public Storage objects only. The host stays a wildcard because the
+        // project ref shouldn't be committed to this public repo.
+        pathname: '/storage/v1/object/public/**',
       },
       {
         protocol: 'https',
         hostname: '*.supabase.in', // Supabase Storage (備用域名)
+        pathname: '/storage/v1/object/public/**',
       },
       {
         protocol: 'https',
