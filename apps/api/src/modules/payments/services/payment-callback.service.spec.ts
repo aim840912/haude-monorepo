@@ -484,6 +484,32 @@ describe('PaymentCallbackService', () => {
       });
     });
 
+    it.each([
+      ['ATM', atmBody, '1234567890123456'],
+      ['CVS', cvsBody, 'CVS12345678'],
+    ])(
+      '%s 取號成功時 log 不含完整帳號／繳費代碼',
+      async (paymentType, body, secret) => {
+        const logSpy = jest.spyOn(
+          (service as unknown as { logger: { log: (msg: string) => void } })
+            .logger,
+          'log',
+        );
+        mockCrypto.verifyCheckMacValue.mockReturnValue(true);
+        mockPrismaService.payment.findUnique.mockResolvedValue({
+          id: 'payment-1',
+          paymentType,
+          order: { orderNumber: 'ORD-001' },
+        });
+
+        await service.handlePaymentInfo(body, '127.0.0.1');
+
+        const logged = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+        expect(logged).toContain(body.MerchantTradeNo);
+        expect(logged).not.toContain(secret);
+      },
+    );
+
     it('CVS 取號成功（RtnCode=10100073）應儲存取號資訊', async () => {
       mockCrypto.verifyCheckMacValue.mockReturnValue(true);
       mockPrismaService.payment.findUnique.mockResolvedValue({

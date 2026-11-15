@@ -79,19 +79,6 @@ export class CreatePaymentService {
       throw new BadRequestException('此訂單已完成付款');
     }
 
-    // 2. 檢查是否已有進行中的付款
-    const existingPayment = await this.prisma.payment.findFirst({
-      where: {
-        orderId,
-        status: 'pending',
-      },
-    });
-
-    if (existingPayment) {
-      // 使用現有的付款記錄重新生成表單
-      return this.regenerateFormData(existingPayment.id, paymentMethod);
-    }
-
     // 3. 生成商店訂單編號
     const merchantTradeNo = generateMerchantTradeNo(order.orderNumber);
 
@@ -124,17 +111,39 @@ export class CreatePaymentService {
     // 8. 生成 CheckMacValue
     const paymentData = crypto.createPaymentData(tradeParams);
 
-    // 9. 建立 Payment 記錄
-    const payment = await this.prisma.payment.create({
-      data: {
-        orderId,
-        merchantOrderNo: merchantTradeNo,
-        amount,
-        paymentType: paymentMethod,
-        status: 'pending',
-        requestData: maskPaymentPayload(tradeParams) as object,
-      },
+    // 9. 建立 Payment 記錄。Check-then-create runs under a row lock on the
+    // order: two concurrent requests (double click, two tabs) would otherwise
+    // both see "no pending payment" and create two. The second request waits
+    // for the lock, then finds the first one's payment and reuses it.
+    const outcome = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM orders WHERE id = ${orderId} FOR UPDATE`;
+
+      const existing = await tx.payment.findFirst({
+        where: { orderId, status: 'pending' },
+        select: { id: true },
+      });
+      if (existing) {
+        return { kind: 'existing', id: existing.id } as const;
+      }
+
+      const created = await tx.payment.create({
+        data: {
+          orderId,
+          merchantOrderNo: merchantTradeNo,
+          amount,
+          paymentType: paymentMethod,
+          status: 'pending',
+          requestData: maskPaymentPayload(tradeParams) as object,
+        },
+      });
+      return { kind: 'created', payment: created } as const;
     });
+
+    if (outcome.kind === 'existing') {
+      // 使用現有的付款記錄重新生成表單
+      return this.regenerateFormData(outcome.id, paymentMethod);
+    }
+    const { payment } = outcome;
 
     this.logger.log(
       `建立付款: ${payment.id}, 訂單: ${order.orderNumber}, 方式: ${paymentMethod}`,

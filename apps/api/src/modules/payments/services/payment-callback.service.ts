@@ -404,10 +404,13 @@ export class PaymentCallbackService {
       data: updateData,
     });
 
+    // The account number and payment code are stored on the Payment row; logs
+    // keep only the last 4 characters (logs are retained and widely readable).
+    const tail = (v?: string) => (v ? `…${v.slice(-4)}` : '');
     this.logger.log(
       `取號成功: ${body.MerchantTradeNo}, 類型: ${paymentType}, ` +
-        `${body.BankCode ? `銀行: ${body.BankCode}, 帳號: ${body.vAccount}` : ''} ` +
-        `${body.PaymentNo ? `代碼: ${body.PaymentNo}` : ''}`,
+        `${body.BankCode ? `銀行: ${body.BankCode}, 帳號: ${tail(body.vAccount)}` : ''} ` +
+        `${body.PaymentNo ? `代碼: ${tail(body.PaymentNo)}` : ''}`,
     );
   }
 

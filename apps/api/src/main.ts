@@ -107,14 +107,16 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 API endpoints: http://localhost:${port}/api/v1`);
+  const logger = app.get(Logger);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`API endpoints: http://localhost:${port}/api/v1`);
   if (process.env.NODE_ENV === 'development') {
-    console.log(`📚 Swagger documentation: http://localhost:${port}/docs`);
+    logger.log(`Swagger documentation: http://localhost:${port}/docs`);
   }
 }
 
 bootstrap().catch((err) => {
+  // The pino logger may not exist yet if bootstrap failed early.
   console.error('Failed to start application:', err);
   process.exit(1);
 });

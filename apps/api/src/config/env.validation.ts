@@ -20,7 +20,15 @@ export const envValidationSchema = Joi.object({
   JWT_SECRET: Joi.string()
     .min(32)
     .required()
-    .description('JWT 簽名密鑰（至少 32 字元以確保安全性）'),
+    // Exact match only: a fuzzy pattern could hit the real Render secret and
+    // crash the deploy, which Render then hides by keeping the old version.
+    .when('NODE_ENV', {
+      is: 'production',
+      then: Joi.invalid('your-super-secret-jwt-key-change-in-production'),
+    })
+    .description(
+      'JWT 簽名密鑰（至少 32 字元；正式環境不可用 .env.example 的範例值）',
+    ),
 
   // === 伺服器設定（有預設值）===
   PORT: Joi.number().default(3001).description('API 服務埠號'),

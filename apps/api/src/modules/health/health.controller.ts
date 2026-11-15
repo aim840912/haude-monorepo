@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Logger, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -8,6 +8,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -51,9 +53,8 @@ export class HealthController {
       health.database = 'disconnected';
       res.status(HttpStatus.SERVICE_UNAVAILABLE);
       // Log error server-side only — never expose DB details to clients
-      console.error(
-        'Readiness check DB error:',
-        error instanceof Error ? error.message : error,
+      this.logger.error(
+        `Readiness check DB error: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
 

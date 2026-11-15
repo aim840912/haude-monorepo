@@ -3,6 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
 import { UpsertSiteSettingDto } from './dto';
 import { v4 as uuidv4 } from 'uuid';
+import { imageExtension } from '@/common/utils/image-extension';
 
 // Storage bucket for site images
 const SITE_IMAGES_BUCKET = 'site-images';
@@ -86,7 +87,7 @@ export class SiteSettingsService {
   async getImageUploadUrl(key: string, fileName: string) {
     // Convert dot-separated key to path: home.hero_images -> home/hero_images
     const keyPath = key.replace(/\./g, '/');
-    const ext = fileName.split('.').pop() || 'jpg';
+    const ext = imageExtension(fileName);
     const uniqueFileName = `${uuidv4()}.${ext}`;
     const filePath = `${keyPath}/${uniqueFileName}`;
 

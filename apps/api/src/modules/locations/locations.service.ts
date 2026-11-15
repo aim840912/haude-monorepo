@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SupabaseService } from '@/common/supabase';
 import {
@@ -9,12 +9,15 @@ import {
 } from './dto';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { imageExtension } from '@/common/utils/image-extension';
 
 // Storage bucket 名稱
 const LOCATION_IMAGES_BUCKET = 'location-images';
 
 @Injectable()
 export class LocationsService {
+  private readonly logger = new Logger(LocationsService.name);
+
   constructor(
     private prisma: PrismaService,
     private supabase: SupabaseService,
@@ -210,7 +213,7 @@ export class LocationsService {
     await this.findOne(locationId);
 
     // 生成唯一檔名，避免覆蓋
-    const ext = fileName.split('.').pop() || 'jpg';
+    const ext = imageExtension(fileName);
     const uniqueFileName = `${uuidv4()}.${ext}`;
     const filePath = `${locationId}/${uniqueFileName}`;
 
@@ -298,9 +301,8 @@ export class LocationsService {
       await this.supabase.deleteFile(LOCATION_IMAGES_BUCKET, image.filePath);
     } catch (error) {
       // 檔案可能不存在，記錄但不阻止刪除記錄
-      console.warn(
-        `Failed to delete file from storage: ${image.filePath}`,
-        error,
+      this.logger.warn(
+        `Failed to delete file from storage: ${image.filePath}: ${String(error)}`,
       );
     }
 

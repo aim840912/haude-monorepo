@@ -28,9 +28,11 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    // 如果沒有設定角色要求，允許通過
+    // Fail closed: applying RolesGuard without @Roles is a mistake, and letting
+    // it through would open the endpoint to every signed-in user.
+    // roles-coverage.spec.ts fails CI if any guarded endpoint lacks @Roles.
     if (!requiredRoles || requiredRoles.length === 0) {
-      return true;
+      return false;
     }
 
     // 從請求中取得用戶資訊（由 JwtAuthGuard 注入）

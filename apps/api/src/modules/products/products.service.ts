@@ -15,6 +15,7 @@ import {
 } from './dto';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { imageExtension } from '@/common/utils/image-extension';
 
 // Storage bucket 名稱
 const PRODUCT_IMAGES_BUCKET = 'product-images';
@@ -271,7 +272,9 @@ export class ProductsService {
       }
     } catch (error) {
       // Storage cleanup failure should not block product deletion
-      console.warn(`Failed to cleanup storage files for product ${id}:`, error);
+      this.logger.warn(
+        `Failed to cleanup storage files for product ${id}: ${String(error)}`,
+      );
     }
 
     try {
@@ -316,7 +319,7 @@ export class ProductsService {
     await this.findOne(productId);
 
     // 生成唯一檔名，避免覆蓋
-    const ext = fileName.split('.').pop() || 'jpg';
+    const ext = imageExtension(fileName);
     const uniqueFileName = `${uuidv4()}.${ext}`;
     const filePath = `${productId}/${uniqueFileName}`;
 
@@ -404,9 +407,8 @@ export class ProductsService {
       await this.supabase.deleteFile(PRODUCT_IMAGES_BUCKET, image.filePath);
     } catch (error) {
       // 檔案可能不存在，記錄但不阻止刪除記錄
-      console.warn(
-        `Failed to delete file from storage: ${image.filePath}`,
-        error,
+      this.logger.warn(
+        `Failed to delete file from storage: ${image.filePath}: ${String(error)}`,
       );
     }
 
