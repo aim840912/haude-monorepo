@@ -37,6 +37,12 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import {
+  OAUTH_STATE_COOKIE,
+  OAUTH_STATE_COOKIE_PATH,
+  isValidOAuthNonce,
+  parseOAuthState,
+} from './strategies/google.strategy';
 import { UsersService } from '../users/users.service';
 
 /**
@@ -442,8 +448,33 @@ export class AuthController {
     },
     @Res() res: Response,
   ) {
-    // 從 user 物件取得 oauthState（由 GoogleStrategy 附加）
+    // 從 user 物件取得 oauthState（由 GoogleStrategy 附加，格式 "<target>.<nonce>"）
     const { oauthState, ...userData } = req.user;
+    const { target, nonce } = parseOAuthState(oauthState);
+    const cookieNonce = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined;
+
+    // One-time cookie: clear it whatever the outcome
+    res.clearCookie(OAUTH_STATE_COOKIE, {
+      ...this.cookieBase(),
+      sameSite: 'lax',
+      path: OAUTH_STATE_COOKIE_PATH,
+    });
+
+    // Login CSRF: the callback must come from a sign-in this browser started.
+    // Checked before googleLogin so no session is issued on a mismatch.
+    if (!isValidOAuthNonce(nonce, cookieNonce)) {
+      const appUrl =
+        target === 'admin'
+          ? this.configService.get<string>('ADMIN_URL') ||
+            'http://localhost:5174'
+          : this.configService.get<string>('FRONTEND_URL') ||
+            'http://localhost:5173';
+      this.redirectNoStore(
+        res,
+        `${appUrl}/auth/callback#error=${encodeURIComponent('登入驗證失敗，請重新登入')}`,
+      );
+      return;
+    }
 
     // Google OAuth — now returns token pair
     const { user, accessToken, refreshToken } =
@@ -452,7 +483,7 @@ export class AuthController {
     // Set httpOnly auth cookies
     this.setAuthCookies(res, accessToken, refreshToken);
 
-    if (oauthState === 'admin') {
+    if (target === 'admin') {
       // Admin 登入：檢查是否為 ADMIN 角色
       const adminUrl =
         this.configService.get<string>('ADMIN_URL') || 'http://localhost:5174';

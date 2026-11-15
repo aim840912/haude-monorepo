@@ -1,4 +1,45 @@
-import { resolveGoogleAuthOptions } from './google.strategy';
+import {
+  isValidOAuthNonce,
+  parseOAuthState,
+  resolveGoogleAuthOptions,
+} from './google.strategy';
+
+describe('OAuth state nonce (login CSRF)', () => {
+  it('puts the nonce into the authorization state after the target', () => {
+    expect(
+      resolveGoogleAuthOptions({ redirect: 'admin' }, {}, 'n1').state,
+    ).toBe('admin.n1');
+    expect(resolveGoogleAuthOptions({}, {}, 'n1').state).toBe('web.n1');
+  });
+
+  it('re-derives the target from a nonce-carrying state on callback', () => {
+    expect(
+      resolveGoogleAuthOptions(
+        { code: 'abc', state: 'admin.n1' },
+        { admin: 'https://a/cb' },
+      ),
+    ).toEqual({ state: 'admin', callbackURL: 'https://a/cb' });
+  });
+
+  it.each([
+    ['admin.n1', { target: 'admin', nonce: 'n1' }],
+    ['web.n1', { target: 'web', nonce: 'n1' }],
+    ['admin', { target: 'admin', nonce: undefined }],
+    [undefined, { target: 'web', nonce: undefined }],
+    ['evil.n1', { target: 'web', nonce: 'n1' }],
+  ])('parses state %p', (raw, expected) => {
+    expect(parseOAuthState(raw)).toEqual(expected);
+  });
+
+  it('accepts only a nonce matching the cookie', () => {
+    expect(isValidOAuthNonce('abc123', 'abc123')).toBe(true);
+    expect(isValidOAuthNonce('abc123', 'abc124')).toBe(false);
+    expect(isValidOAuthNonce('abc', 'abc123')).toBe(false);
+    expect(isValidOAuthNonce(undefined, 'abc123')).toBe(false);
+    expect(isValidOAuthNonce('abc123', undefined)).toBe(false);
+    expect(isValidOAuthNonce('', '')).toBe(false);
+  });
+});
 
 const WEB_CALLBACK = 'https://haude-web.vercel.app/api/v1/auth/google/callback';
 const ADMIN_CALLBACK =

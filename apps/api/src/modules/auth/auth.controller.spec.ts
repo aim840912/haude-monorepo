@@ -446,6 +446,44 @@ describe('AuthController', () => {
       isActive: true,
     };
 
+    describe('login CSRF：state 的隨機值必須與 cookie 相符', () => {
+      it.each([
+        ['隨機值不符', 'web.attacker', { g_oauth_state: 'nonce-1' }],
+        ['沒有 state cookie', 'web.nonce-1', {}],
+        ['舊格式 state（沒有隨機值）', 'web', { g_oauth_state: 'nonce-1' }],
+      ])('%s：不登入，導回錯誤頁', async (_label, oauthState, cookies) => {
+        mockConfigService.get.mockReturnValue('http://localhost:5173');
+
+        await controller.googleAuthCallback(
+          { user: { ...mockUser, oauthState }, cookies } as any,
+          mockResponse,
+        );
+
+        expect(mockAuthService.googleLogin).not.toHaveBeenCalled();
+        expect(mockResponse.cookie).not.toHaveBeenCalled();
+        expect(mockResponse.redirect).toHaveBeenCalledWith(
+          expect.stringContaining('http://localhost:5173/auth/callback#error='),
+        );
+      });
+
+      it('不論成功與否都清掉一次性的 state cookie', async () => {
+        mockConfigService.get.mockReturnValue('http://localhost:5173');
+
+        await controller.googleAuthCallback(
+          {
+            user: { ...mockUser, oauthState: 'web.x' },
+            cookies: { g_oauth_state: 'y' },
+          } as any,
+          mockResponse,
+        );
+
+        expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+          'g_oauth_state',
+          expect.objectContaining({ path: '/api/v1/auth/google' }),
+        );
+      });
+    });
+
     it('應處理 Web 登入回調（預設）', async () => {
       mockAuthService.googleLogin.mockResolvedValue({
         user: mockUser,
@@ -455,7 +493,8 @@ describe('AuthController', () => {
       mockConfigService.get.mockReturnValue('http://localhost:5173');
 
       const req = {
-        user: { ...mockUser, oauthState: undefined },
+        user: { ...mockUser, oauthState: 'web.nonce-1' },
+        cookies: { g_oauth_state: 'nonce-1' },
       } as any;
 
       await controller.googleAuthCallback(req, mockResponse);
@@ -475,7 +514,8 @@ describe('AuthController', () => {
       mockConfigService.get.mockReturnValue('http://localhost:5174');
 
       const req = {
-        user: { ...adminUser, oauthState: 'admin' },
+        user: { ...adminUser, oauthState: 'admin.nonce-1' },
+        cookies: { g_oauth_state: 'nonce-1' },
       } as any;
 
       await controller.googleAuthCallback(req, mockResponse);
@@ -494,7 +534,8 @@ describe('AuthController', () => {
       mockConfigService.get.mockReturnValue('http://localhost:5174');
 
       const req = {
-        user: { ...mockUser, oauthState: 'admin' },
+        user: { ...mockUser, oauthState: 'admin.nonce-1' },
+        cookies: { g_oauth_state: 'nonce-1' },
       } as any;
 
       await controller.googleAuthCallback(req, mockResponse);
@@ -518,7 +559,10 @@ describe('AuthController', () => {
       });
       mockConfigService.get.mockReturnValue('http://localhost:5173');
 
-      const req = { user: { ...mockUser } } as never;
+      const req = {
+        user: { ...mockUser, oauthState: 'web.nonce-1' },
+        cookies: { g_oauth_state: 'nonce-1' },
+      } as never;
 
       await controller.googleAuthCallback(req, mockResponse);
 

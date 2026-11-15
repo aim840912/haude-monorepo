@@ -1,3 +1,4 @@
+import { randomBytes, timingSafeEqual } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import {
@@ -22,6 +23,43 @@ export interface GoogleProfile {
 type GoogleTarget = 'web' | 'admin';
 
 /**
+ * Login-CSRF guard. The authorization request stores a random nonce in this
+ * cookie and sends `state = "<target>.<nonce>"`; the callback only signs in when
+ * the two match. Without it, an attacker can complete their own Google sign-in
+ * in a victim's browser and the victim ends up in the attacker's account.
+ *
+ * SameSite=Lax still reaches the callback: Google returns via a top-level GET.
+ * The path covers both /auth/google and /auth/google/callback, on whichever
+ * origin the browser uses (web / admin proxy, or the API directly in dev).
+ */
+export const OAUTH_STATE_COOKIE = 'g_oauth_state';
+export const OAUTH_STATE_COOKIE_PATH = '/api/v1/auth/google';
+const OAUTH_STATE_MAX_AGE_MS = 10 * 60 * 1000;
+
+/** Split `"<target>.<nonce>"`; anything but "admin" is treated as web. */
+export function parseOAuthState(raw: unknown): {
+  target: GoogleTarget;
+  nonce?: string;
+} {
+  if (typeof raw !== 'string') return { target: 'web', nonce: undefined };
+  const dot = raw.indexOf('.');
+  const prefix = dot === -1 ? raw : raw.slice(0, dot);
+  const nonce = dot === -1 ? undefined : raw.slice(dot + 1);
+  return { target: prefix === 'admin' ? 'admin' : 'web', nonce };
+}
+
+/** Constant-time comparison of the state nonce against the cookie value. */
+export function isValidOAuthNonce(
+  nonce: string | undefined,
+  cookieNonce: string | undefined,
+): boolean {
+  if (!nonce || !cookieNonce) return false;
+  const a = Buffer.from(nonce);
+  const b = Buffer.from(cookieNonce);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
  * Decide which app this OAuth round-trip belongs to and which callback URL
  * Google must redirect back to.
  *
@@ -43,25 +81,32 @@ type GoogleTarget = 'web' | 'admin';
 export function resolveGoogleAuthOptions(
   query: Record<string, unknown>,
   callbackURLs: Partial<Record<GoogleTarget, string>>,
-): { state: GoogleTarget; callbackURL?: string; prompt?: 'select_account' } {
+  nonce?: string,
+): { state: string; callbackURL?: string; prompt?: 'select_account' } {
   // Google comes back with either ?code= or ?error= (e.g. access_denied); both
   // carry the state we sent, and neither carries `redirect`.
   const isCallback = Boolean(query.code || query.error);
-  const requested = isCallback ? query.state : query.redirect;
-  const state: GoogleTarget = requested === 'admin' ? 'admin' : 'web';
+  const target: GoogleTarget = isCallback
+    ? parseOAuthState(query.state).target
+    : query.redirect === 'admin'
+      ? 'admin'
+      : 'web';
 
-  const callbackURL = callbackURLs[state];
+  const callbackURL = callbackURLs[target];
   return {
-    state,
+    // Authorization: carry the CSRF nonce. Callback: passport ignores `state`;
+    // the nonce is checked in the controller against the cookie.
+    state: !isCallback && nonce ? `${target}.${nonce}` : target,
     ...(callbackURL && { callbackURL }),
     // prompt only shapes the authorization URL; the token exchange ignores it
-    ...(state === 'admin' && !isCallback && { prompt: 'select_account' }),
+    ...(target === 'admin' && !isCallback && { prompt: 'select_account' }),
   };
 }
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   private readonly callbackURLs: Partial<Record<GoogleTarget, string>>;
+  private readonly isProd: boolean;
 
   constructor(
     configService: ConfigService,
@@ -76,6 +121,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       passReqToCallback: true,
     };
     super(options);
+    this.isProd = configService.get('NODE_ENV') === 'production';
     // Unset → that app keeps using GOOGLE_CALLBACK_URL (the pre-proxy behaviour)
     this.callbackURLs = {
       web: configService.get<string>('GOOGLE_WEB_CALLBACK_URL') || undefined,
@@ -89,9 +135,23 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
    * 授權請求與 callback 兩個階段都會經過這裡
    */
   authenticate(req: Request, options?: object) {
+    const isCallback = Boolean(req.query.code || req.query.error);
+    let nonce: string | undefined;
+
+    if (!isCallback) {
+      nonce = randomBytes(16).toString('base64url');
+      req.res?.cookie(OAUTH_STATE_COOKIE, nonce, {
+        httpOnly: true,
+        secure: this.isProd,
+        sameSite: 'lax',
+        path: OAUTH_STATE_COOKIE_PATH,
+        maxAge: OAUTH_STATE_MAX_AGE_MS,
+      });
+    }
+
     super.authenticate(req, {
       ...options,
-      ...resolveGoogleAuthOptions(req.query, this.callbackURLs),
+      ...resolveGoogleAuthOptions(req.query, this.callbackURLs, nonce),
     });
   }
 
