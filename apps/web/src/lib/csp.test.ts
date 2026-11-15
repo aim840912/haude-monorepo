@@ -12,6 +12,20 @@ function frameSrc(csp: string): string | undefined {
   return csp.split('; ').find((d) => d.startsWith('frame-src'))
 }
 
+describe('buildCsp form-action', () => {
+  // Checkout builds a form and POSTs it to ECPay (usePayment.ts). With
+  // form-action 'self' only, the browser silently blocks that navigation.
+  it('allows posting the checkout form to ECPay production and stage', () => {
+    const formAction = buildCsp()
+      .split('; ')
+      .find((d) => d.startsWith('form-action'))
+
+    expect(formAction).toBe(
+      "form-action 'self' https://payment.ecpay.com.tw https://payment-stage.ecpay.com.tw"
+    )
+  })
+})
+
 describe('buildCsp frame-src', () => {
   afterEach(() => {
     vi.unstubAllEnvs()

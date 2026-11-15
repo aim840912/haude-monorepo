@@ -51,7 +51,8 @@ export function buildCsp(): string {
     `frame-src ${frameSrc}`,
     "frame-ancestors 'self'",
     "base-uri 'self'",
-    "form-action 'self'",
+    // Checkout POSTs a form to ECPay (hooks/usePayment.ts); production + stage
+    "form-action 'self' https://payment.ecpay.com.tw https://payment-stage.ecpay.com.tw",
     "object-src 'none'",
   ].join('; ')
 }
