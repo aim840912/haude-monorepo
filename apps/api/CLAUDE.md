@@ -269,6 +269,9 @@ export class ProtectedController {
 
 已實作，不要另寫：guard 在 `src/common/guards/roles.guard.ts`、decorator 在 `src/common/decorators/roles.decorator.ts`。
 用法是 `@UseGuards(JwtAuthGuard, RolesGuard)` 加 `@Roles(...)`，實例照 `src/modules/auth/auth.controller.ts`。
+⛔ `RolesGuard` 沒有 `@Roles` 時**拒絕**（fail-closed）；`common/guards/roles-coverage.spec.ts` 會讓漏設的端點在 CI 失敗。
+
+自訂參數 pipe 收到的值可能已是數字：`main.ts` 的全域 `ValidationPipe({ transform: true })` 先依 TS 型別轉換（`?limit=abc` → `NaN`），寫法照 `common/pipes/parse-bounded-int.pipe.ts`。
 
 ---
 
