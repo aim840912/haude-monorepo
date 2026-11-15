@@ -391,6 +391,8 @@ npx prisma migrate deploy
 - ⛔ **不可 `include: { bookings: true }`**：預約含姓名、電話、備註，加回去就是任何人都拿得到（2026-11 安全審查的 HIGH）
 - ⛔ **不可加「只回傳已上架」篩選**：後台會打不開草稿。要篩選得先替後台開 `GET /admin/farm-tours/:id` 並改 `getById`
 
+其他模組（products、locations、schedules、social-posts，2026-11-15 起）已經分開：公開 `GET /:id` 走 `findOnePublic()`（含上架 / 非草稿條件），`findOne()` 留給後台與 `update`／`remove` 等內部呼叫。後台編輯頁打 `GET /admin/<資源>/:id`。⛔ 不要把公開路由改回 `findOne()`：草稿與下架資料會直接對外。
+
 ---
 
 ### 快取標頭：預設 fail-closed
