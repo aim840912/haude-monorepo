@@ -30,6 +30,9 @@ export default tseslint.config(
       ],
       // 降級為警告：在 useEffect 中設定狀態（常見的表單初始化模式）
       'react-hooks/set-state-in-effect': 'warn',
+      // 降級為警告：React Compiler 相容性檢查（plugin 7.1 起列為 error）。
+      // admin 沒有啟用 React Compiler，手寫的 useCallback/useMemo 照常運作
+      'react-hooks/preserve-manual-memoization': 'warn',
       // 錯誤記錄一律走 src/lib/logger（正式環境也會輸出 error，之後接監控只需改一處）
       'no-console': 'error',
     },

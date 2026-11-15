@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Power, Clock, MessageSquare, Users, AlertTriangle, CheckCircle } from 'lucide-react'
 import { api } from '@/services/api/client'
 import { useToast } from '@/components/ui/Toast'
@@ -28,12 +28,8 @@ export function MaintenanceControl() {
     allowedRoles: ['ADMIN'],
   })
 
-  // 載入目前狀態
-  useEffect(() => {
-    fetchStatus()
-  }, [])
-
-  const fetchStatus = async () => {
+  // 載入目前狀態（宣告在呼叫它的 effect 之前；useCallback 讓 effect 只跑一次）
+  const fetchStatus = useCallback(async () => {
     try {
       const response = await api.get<MaintenanceStatus>('/admin/system/maintenance')
       setStatus(response.data)
@@ -46,7 +42,11 @@ export function MaintenanceControl() {
     } catch (err) {
       logger.error('Failed to fetch maintenance status', { error: err })
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchStatus()
+  }, [fetchStatus])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -6,12 +6,7 @@ import { SetMetadata } from '@nestjs/common';
  * Standard action verbs for audit trail tracking.
  */
 export type AuditAction =
-  | 'CREATE'
-  | 'UPDATE'
-  | 'DELETE'
-  | 'EXPORT'
-  | 'IMPORT'
-  | 'STATUS_CHANGE';
+  'CREATE' | 'UPDATE' | 'DELETE' | 'EXPORT' | 'IMPORT' | 'STATUS_CHANGE';
 
 /**
  * Metadata stored on the route handler for the interceptor to read.

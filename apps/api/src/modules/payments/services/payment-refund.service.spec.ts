@@ -154,8 +154,7 @@ describe('PaymentRefundService', () => {
     via: 'update' | 'updateMany',
   ): Record<string, string> {
     const call = mockPrisma.refund[via].mock.calls[0] as
-      | [{ data: { ecpayResponse: Record<string, string> } }]
-      | undefined;
+      [{ data: { ecpayResponse: Record<string, string> } }] | undefined;
 
     if (!call) throw new Error(`refund.${via} 未被呼叫`);
 

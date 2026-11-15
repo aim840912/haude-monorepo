@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Trash2, Info, AlertTriangle, AlertCircle, Wrench, ExternalLink } from 'lucide-react'
 import { api } from '@/services/api/client'
 import { useToast } from '@/components/ui/Toast'
@@ -34,18 +34,19 @@ export function BannerManager() {
     dismissible: true,
   })
 
-  useEffect(() => {
-    fetchBanners()
-  }, [])
-
-  const fetchBanners = async () => {
+  // Declared before the effect that calls it; stable so the effect runs once
+  const fetchBanners = useCallback(async () => {
     try {
       const response = await api.get<SystemBanner[]>('/admin/system/banners')
       setBanners(response.data)
     } catch (err) {
       logger.error('Failed to fetch banners', { error: err })
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchBanners()
+  }, [fetchBanners])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
