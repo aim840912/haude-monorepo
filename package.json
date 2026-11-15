@@ -29,8 +29,8 @@
     "restart": "npx kill-port 5173 3001 5174 && turbo run dev"
   },
   "devDependencies": {
-    "agentation": "^2.2.0",
-    "turbo": "^2.7.3"
+    "agentation": "^2.3.3",
+    "turbo": "^2.11.11"
   },
   "pnpm": {
     "overrides": {
