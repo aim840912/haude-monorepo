@@ -8,7 +8,7 @@ export const locationsApi = {
   // 公開 API
   getAll: () => api.get('/locations'),
   getMain: () => api.get('/locations/main'),
-  getById: (id: string) => api.get(`/locations/${id}`),
+  getById: (id: string) => api.get(`/admin/locations/${id}`),
   // 管理員 API
   getAllAdmin: () => api.get('/admin/locations'),
   createDraft: () => api.post('/admin/locations/draft'),

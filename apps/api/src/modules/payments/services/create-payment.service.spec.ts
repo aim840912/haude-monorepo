@@ -39,6 +39,11 @@ describe('CreatePaymentService.createPayment', () => {
       paymentConfig as unknown as PaymentConfigService,
     );
     prisma.order.findFirst.mockResolvedValue(order);
+    // Re-read inside the transaction, after the row lock.
+    prisma.order.findUnique.mockResolvedValue({
+      status: 'pending',
+      paymentStatus: 'pending',
+    });
   });
 
   it('locks the order row before checking for a pending payment', async () => {
@@ -51,16 +56,45 @@ describe('CreatePaymentService.createPayment', () => {
     const lockSql = (prisma.$queryRaw.mock.calls[0][0] as string[]).join('?');
     expect(lockSql).toMatch(/FOR UPDATE/);
     const lockAt = prisma.$queryRaw.mock.invocationCallOrder[0];
-    expect(lockAt).toBeLessThan(
-      prisma.payment.findFirst.mock.invocationCallOrder[0],
-    );
+    // The last findFirst is the re-check inside the transaction (the first
+    // one is the cheap pre-check before any work).
+    const calls = prisma.payment.findFirst.mock.invocationCallOrder;
+    expect(lockAt).toBeLessThan(calls[calls.length - 1]);
     expect(lockAt).toBeLessThan(
       prisma.payment.create.mock.invocationCallOrder[0],
     );
   });
 
-  it('reuses a pending payment found after the lock instead of creating one', async () => {
+  it('reuses a pending payment found before the lock without opening a transaction', async () => {
     prisma.payment.findFirst.mockResolvedValue({ id: 'pay-existing' });
+    const regen = jest.spyOn(service, 'regenerateFormData').mockResolvedValue({
+      paymentId: 'pay-existing',
+      formData: { action: 'a', method: 'POST', fields: {} },
+    });
+
+    await service.createPayment('order-1', 'user-1', 'CREDIT');
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(regen).toHaveBeenCalledWith('pay-existing', 'CREDIT');
+  });
+
+  it('refuses when the order was cancelled between the first check and the lock', async () => {
+    prisma.payment.findFirst.mockResolvedValue(null);
+    prisma.order.findUnique.mockResolvedValue({
+      status: 'cancelled',
+      paymentStatus: 'pending',
+    });
+
+    await expect(
+      service.createPayment('order-1', 'user-1', 'CREDIT'),
+    ).rejects.toThrow('此訂單狀態無法付款');
+    expect(prisma.payment.create).not.toHaveBeenCalled();
+  });
+
+  it('reuses a pending payment that only appears after the lock (race)', async () => {
+    prisma.payment.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'pay-existing' });
     const regen = jest.spyOn(service, 'regenerateFormData').mockResolvedValue({
       paymentId: 'pay-existing',
       formData: { action: 'a', method: 'POST', fields: {} },

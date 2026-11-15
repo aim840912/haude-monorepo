@@ -31,7 +31,16 @@ function missingRoles(ctrl: Ctrl): string[] {
   const out: string[] = [];
   const classGuarded = hasRolesGuard(ctrl);
   const classRoles = Reflect.getMetadata(ROLES_KEY, ctrl) as unknown;
-  for (const key of Object.getOwnPropertyNames(ctrl.prototype)) {
+  const keys = new Set<string>();
+  // Walk the prototype chain: handlers inherited from a base controller count.
+  for (
+    let p: object | null = ctrl.prototype;
+    p && p !== Object.prototype;
+    p = Object.getPrototypeOf(p) as object | null
+  ) {
+    Object.getOwnPropertyNames(p).forEach((k) => keys.add(k));
+  }
+  for (const key of keys) {
     if (key === 'constructor') continue;
     const handler = (ctrl.prototype as Record<string, unknown>)[key];
     if (typeof handler !== 'function') continue;
@@ -84,5 +93,16 @@ describe('RolesGuard coverage', () => {
       leak() {}
     }
     expect(missingRoles(Leaky)).toEqual(['Leaky.leak']);
+  });
+
+  it('control: also checks handlers inherited from a base class', () => {
+    class Base {
+      @Get('leak')
+      leak() {}
+    }
+    @Controller('y')
+    @UseGuards(RolesGuard)
+    class Child extends Base {}
+    expect(missingRoles(Child)).toEqual(['Child.leak']);
   });
 });

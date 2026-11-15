@@ -17,7 +17,7 @@ export interface SocialPost {
 export const socialPostsApi = {
   // 公開 API
   getAll: () => api.get<SocialPost[]>('/social-posts'),
-  getById: (id: string) => api.get<SocialPost>(`/social-posts/${id}`),
+  getById: (id: string) => api.get<SocialPost>(`/admin/social-posts/${id}`),
   // 管理員 API
   getAllAdmin: () => api.get<SocialPost[]>('/admin/social-posts'),
   create: (data: {

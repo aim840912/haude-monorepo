@@ -76,6 +76,13 @@ export class AdminSocialPostsController {
     return this.socialPostsService.findAllAdmin();
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: '取得單一社群貼文（含停用，管理員）' })
+  @ApiResponse({ status: 404, description: '社群貼文不存在' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.socialPostsService.findOne(id);
+  }
+
   @Post()
   @AuditLog('CREATE', 'social-posts')
   @ApiOperation({ summary: '建立社群貼文（管理員）' })

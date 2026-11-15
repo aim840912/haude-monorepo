@@ -64,6 +64,12 @@ export class AdminLocationsController {
     return this.locationsService.findAllAdmin();
   }
 
+  // Admin reads include inactive and draft locations; the public route hides them.
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.locationsService.findOne(id);
+  }
+
   @Post('draft')
   @AuditLog('CREATE', 'locations')
   createDraft() {

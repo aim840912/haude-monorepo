@@ -148,10 +148,6 @@ export const productsApi = {
   getAll: () => api.get('/products'),
   getById: (id: string) => api.get(`/products/${id}`),
   getCategories: () => api.get<string[]>('/products/categories'),
-  checkName: (name: string, excludeId?: string) =>
-    api.get<{ exists: boolean; name: string }>('/admin/products/check-name', {
-      params: { name, excludeId },
-    }),
   getInventory: (id: string) =>
     api.get<{ stock: number; reservedStock: number }>(`/products/${id}/inventory`),
 

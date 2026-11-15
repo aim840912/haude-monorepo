@@ -104,6 +104,21 @@ describe('cartStore', () => {
       expect(state.items[0].quantity).toBe(5)
     })
 
+    it('單項數量上限 99（與後端訂單、購物車 DTO 一致），即使庫存更多', async () => {
+      const product = createMockProduct({ stock: 500 })
+
+      await act(async () => {
+        await useCartStore.getState().addItem(product, 150)
+      })
+      expect(useCartStore.getState().items[0].quantity).toBe(99)
+      expect(useCartStore.getState().items[0].maxQuantity).toBe(99)
+
+      await act(async () => {
+        await useCartStore.getState().addItem(product, 5)
+      })
+      expect(useCartStore.getState().items[0].quantity).toBe(99)
+    })
+
     it('應該限制數量不超過庫存', async () => {
       const product = createMockProduct({ stock: 5 })
 
@@ -261,9 +276,7 @@ describe('cartStore', () => {
       const error = new Error('Network error')
       vi.mocked(api.post).mockRejectedValue(error)
 
-      await expect(
-        useCartStore.getState().addItem(product, 2)
-      ).rejects.toThrow('Network error')
+      await expect(useCartStore.getState().addItem(product, 2)).rejects.toThrow('Network error')
 
       expect(useCartStore.getState().isLoading).toBe(false)
     })
@@ -354,10 +367,7 @@ describe('cartStore', () => {
       })
 
       // 直接測試 selector 邏輯
-      const totalItems = useCartStore.getState().items.reduce(
-        (sum, item) => sum + item.quantity,
-        0
-      )
+      const totalItems = useCartStore.getState().items.reduce((sum, item) => sum + item.quantity, 0)
       expect(totalItems).toBe(5)
     })
 
@@ -369,10 +379,9 @@ describe('cartStore', () => {
         ],
       })
 
-      const totalPrice = useCartStore.getState().items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      )
+      const totalPrice = useCartStore
+        .getState()
+        .items.reduce((sum, item) => sum + item.price * item.quantity, 0)
       expect(totalPrice).toBe(800) // 100*2 + 200*3
     })
   })

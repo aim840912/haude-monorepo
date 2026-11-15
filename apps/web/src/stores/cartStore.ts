@@ -10,6 +10,10 @@ import { isAuthenticated } from '@/stores/authStore'
 import type { Product } from '@haude/types'
 import logger from '@/lib/logger'
 
+// Per-line cap, same as the API cart and order DTOs (@Max(99)); stock alone
+// let a guest cart exceed it and checkout then failed with a bare 400.
+const MAX_LINE_QUANTITY = 99
+
 // Local cart expires after 14 days of inactivity
 const CART_TTL_MS = 14 * 24 * 60 * 60 * 1000
 
@@ -68,7 +72,7 @@ const mapApiCartToItems = (apiCart: {
     price: item.product.price,
     quantity: item.quantity,
     image: item.product.image || undefined,
-    maxQuantity: item.product.stock,
+    maxQuantity: Math.min(item.product.stock, MAX_LINE_QUANTITY),
   }))
 }
 
@@ -112,9 +116,9 @@ export const useCartStore = create<CartState>()(
             productId: product.id,
             name: product.name,
             price: product.price,
-            quantity,
+            quantity: Math.min(quantity, stock, MAX_LINE_QUANTITY),
             image: imageUrl,
-            maxQuantity: stock,
+            maxQuantity: Math.min(stock, MAX_LINE_QUANTITY),
           }
 
           if (existingIndex >= 0) {

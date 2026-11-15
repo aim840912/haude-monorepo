@@ -79,6 +79,16 @@ export class CreatePaymentService {
       throw new BadRequestException('此訂單已完成付款');
     }
 
+    // 2. 已有進行中的付款就沿用（常見於重複點擊、重新整理）。This cheap check
+    // skips building and signing params; the locked re-check below covers races.
+    const pendingBeforeLock = await this.prisma.payment.findFirst({
+      where: { orderId, status: 'pending' },
+      select: { id: true },
+    });
+    if (pendingBeforeLock) {
+      return this.regenerateFormData(pendingBeforeLock.id, paymentMethod);
+    }
+
     // 3. 生成商店訂單編號
     const merchantTradeNo = generateMerchantTradeNo(order.orderNumber);
 
@@ -117,6 +127,19 @@ export class CreatePaymentService {
     // for the lock, then finds the first one's payment and reuses it.
     const outcome = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM orders WHERE id = ${orderId} FOR UPDATE`;
+
+      // The status checks above ran before the lock; a cancel (customer or
+      // payment expiry) may have committed since. Re-read under the lock.
+      const current = await tx.order.findUnique({
+        where: { id: orderId },
+        select: { status: true, paymentStatus: true },
+      });
+      if (!current || current.status !== 'pending') {
+        throw new BadRequestException('此訂單狀態無法付款');
+      }
+      if (current.paymentStatus === 'paid') {
+        throw new BadRequestException('此訂單已完成付款');
+      }
 
       const existing = await tx.payment.findFirst({
         where: { orderId, status: 'pending' },
