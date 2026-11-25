@@ -195,16 +195,7 @@ pnpm type-check                     # 2. 檢查前端型別
 
 ### 全域規範
 
-> **詳見全域規範：`~/.claude/CLAUDE.md`**
->
-> 以下規範已在全域文件中定義：
-> - **Claude 行為準則** - 執行原則、Git 提交流程
-> - **開發理念** - 核心信念、永不與始終、決策框架
-> - **程式碼品質標準** - 架構原則、品質標準、測試指南
-> - **驗證原則** - 變更後驗證工作流程
-> - **常見錯誤追蹤** - 通用錯誤表格
-> - **UI/UX 設計規範** - 禁止漸層、禁止 Emoji、使用 SVG 圖示
-> - **Next.js 規範** - Client/Server Components、Next.js 15+ 注意事項
+通用規範見 `~/.claude/CLAUDE.md` 與 `~/.claude/rules/`（前端：`rules/frontend.md`）。
 
 ---
 
@@ -236,7 +227,7 @@ pnpm type-check                     # 2. 檢查前端型別
    - 管理後台功能 → `apps/admin`
    - API 端點 → `apps/api`
 3. **開發** - 使用 `pnpm dev` 開發
-4. **驗證** - ⚠️ **重要！每次變更後執行**（或使用 `/verify`）
+4. **驗證** - 改完一個邏輯單元後執行（`/verify` 要由使用者輸入）：
    ```bash
    pnpm type-check   # 型別檢查（必做）
    pnpm build        # 完整建置（確認無錯誤）
