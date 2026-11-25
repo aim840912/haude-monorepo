@@ -59,7 +59,7 @@ src/
 │   ├── ProductsPage.tsx    # 產品管理
 │   └── OrdersPage.tsx      # 訂單管理
 ├── services/            # API 服務層
-│   └── api/client.ts   # Axios 實例（Base URL + API 版本集中在此）
+│   └── api/client.ts   # 共用 Axios 實例（網址與版本見 api-url.ts）
 ├── hooks/               # 自訂 Hooks
 │   ├── useProducts.ts  # 產品資料 Hook
 │   └── useOrders.ts    # 訂單資料 Hook

@@ -72,7 +72,7 @@ src/
 
 ### 本專案關鍵提醒
 
-- **動態路由**：Next.js 15+ 的 `params` 是 Promise，用 `use(params)` 解開
+- **動態路由**：Next.js 15+ 的 `params` 是 Promise：Server Component 用 `await params`，Client Component 用 `use(params)`
 - **useSearchParams**：必須包在 `<Suspense>` 中
 - **預設 Server Component**：只在需要 hooks/事件處理時加 `'use client'`
 
@@ -181,7 +181,7 @@ NEXT_PUBLIC_USE_MOCK=false
 - [ ] TypeScript 類型檢查通過（`pnpm type-check`）
 - [ ] ESLint 無錯誤（`pnpm lint`）
 - [ ] Client/Server Components 正確分離
-- [ ] 動態路由使用 `use(params)` 解開 Promise
+- [ ] 動態路由的 `params` 有解開 Promise（Server：`await`；Client：`use()`）
 - [ ] `useSearchParams()` 包在 Suspense 中
 
 ---

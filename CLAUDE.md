@@ -399,7 +399,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 
 **apps/admin** (`.env`)：
 ```env
-# 只設定 Base URL（不含版本），版本在 client.ts 中集中管理
+# 只設定 Base URL（不含版本），版本在 services/api/api-url.ts 集中管理
 VITE_API_BASE_URL=http://localhost:3001
 ```
 
@@ -488,7 +488,7 @@ VITE_API_BASE_URL=http://localhost:3001
 
 1. **兩套環境隔離**：綠界有測試環境（Stage）與正式環境，各自的 `MerchantID` / `HashKey` / `HashIV` 不同。先確認 `apps/api/src/config/env.validation.ts` 如何切換，測試一律連 Stage。
 2. **CheckMacValue 驗簽**（純函式，最該先測）：`ecpay-crypto.spec.ts` 要驗「固定輸入 → 簽章等於綠界文件預期值」。驗簽沒做好 = 有人可偽造「已付款」通知。
-3. **Callback / Webhook**：綠界主機要打得到後端 `/payment/callback`。本機開發需 `ngrok http 3001` 把 localhost 暴露到公網，再設為綠界 callback URL。
+3. **Callback / Webhook**：綠界主機要打得到後端 `POST /api/v1/payments/ecpay/notify`。本機開發需 `ngrok http 3001` 把 localhost 暴露到公網，再設為綠界 callback URL。
 4. **冪等性（idempotency）**：綠界可能重送同一筆付款通知，`payment-callback.service` 必須確保同一筆只處理一次（否則庫存扣兩次、發兩封信）。
 5. **情境全覆蓋**：成功 / 授權失敗 / 逾時未付（訂單是否自動取消、釋放庫存）/ 重複通知 / 退款（`payment-refund.service`）。付款成功要呼叫 `createPaymentSuccessNotification()`（目前沒有呼叫點），重複通知時只發一次。
 6. **測試卡號**：綠界測試環境提供假卡號觸發不同結果——**具體卡號以綠界官方當前文件為準**（可用 context7 查 ECPay SDK 文件，勿憑記憶硬寫）。
