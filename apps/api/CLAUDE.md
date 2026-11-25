@@ -118,125 +118,14 @@ test/
 
 ## 模組開發規範
 
-### 新增模組步驟
+### 新增模組
 
-1. **建立模組結構**：
+照 `src/modules/products/` 的結構寫，不要從零起手：
 
-```bash
-nest generate module modules/your-module
-nest generate controller modules/your-module
-nest generate service modules/your-module
-```
-
-2. **建立 DTO**：
-
-```typescript
-// dto/create-item.dto.ts
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-
-export class CreateItemDto {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-}
-```
-
-3. **建立 Service**：
-
-```typescript
-// item.service.ts
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateItemDto } from './dto/create-item.dto';
-
-@Injectable()
-export class ItemService {
-  constructor(private prisma: PrismaService) {}
-
-  async create(createItemDto: CreateItemDto) {
-    return this.prisma.item.create({
-      data: createItemDto,
-    });
-  }
-
-  async findAll() {
-    return this.prisma.item.findMany();
-  }
-
-  async findOne(id: string) {
-    return this.prisma.item.findUnique({
-      where: { id },
-    });
-  }
-}
-```
-
-4. **建立 Controller**：
-
-```typescript
-// item.controller.ts
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { ItemService } from './item.service';
-import { CreateItemDto } from './dto/create-item.dto';
-
-@Controller('items')
-export class ItemController {
-  constructor(private readonly itemService: ItemService) {}
-
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  create(@Body() createItemDto: CreateItemDto) {
-    return this.itemService.create(createItemDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.itemService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.itemService.findOne(id);
-  }
-}
-```
-
-### DTO 驗證規範
-
-使用 `class-validator` 進行輸入驗證：
-
-```typescript
-import {
-  IsString,
-  IsEmail,
-  IsNotEmpty,
-  MinLength,
-  IsOptional,
-  IsEnum,
-} from 'class-validator';
-
-export class CreateUserDto {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @MinLength(8)
-  password: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsEnum(['USER', 'ADMIN'])
-  @IsOptional()
-  role?: 'USER' | 'ADMIN';
-}
-```
+- 公開 `GET /:id` 走 `findOnePublic()`（含上架／非草稿條件）；`findOne()` 只給後台與內部呼叫（理由見下方「個資與安全規範」）
+- 寫入端點掛 `@UseGuards(JwtAuthGuard, RolesGuard)` 加 `@Roles(...)`；只掛 `JwtAuthGuard` 等於任何登入者都能寫
+- 後台讀取放在同檔下方的 `/admin/<資源>` controller
+- DTO 用 `class-validator`，寫法照 `products/dto/`
 
 ---
 
@@ -281,37 +170,6 @@ export class ProtectedController {
 
 以 `prisma/schema.prisma` 為準，不在這裡抄 model（抄了就會過時：例如 `Role` 實際有 USER／VIP／STAFF／ADMIN 四種）。
 改 schema 前先讀根目錄 `CLAUDE.md`「Git 與部署」：正式環境沒有自動 migration。
-
-### Prisma Service 使用
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-
-@Injectable()
-export class UsersService {
-  constructor(private prisma: PrismaService) {}
-
-  async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
-  }
-
-  async create(data: { email: string; password: string; name: string }) {
-    return this.prisma.user.create({
-      data,
-    });
-  }
-
-  async update(id: string, data: { name?: string; isActive?: boolean }) {
-    return this.prisma.user.update({
-      where: { id },
-      data,
-    });
-  }
-}
-```
 
 ### 遷移流程
 
@@ -414,63 +272,9 @@ npx prisma migrate deploy
 
 ## 品質標準
 
-### 錯誤處理
+### 錯誤處理與 API 文檔
 
-```typescript
-import {
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-  ForbiddenException,
-} from '@nestjs/common';
-
-@Injectable()
-export class ItemService {
-  async findOne(id: string) {
-    const item = await this.prisma.item.findUnique({
-      where: { id },
-    });
-
-    if (!item) {
-      throw new NotFoundException(`Item ${id} not found`);
-    }
-
-    return item;
-  }
-}
-```
-
-### API 文檔 (Swagger)
-
-```typescript
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
-
-@ApiTags('items')
-@Controller('items')
-export class ItemController {
-  @Get()
-  @ApiOperation({ summary: '取得所有項目' })
-  @ApiResponse({ status: 200, description: '成功' })
-  findAll() {
-    return this.itemService.findAll();
-  }
-
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '建立新項目' })
-  @ApiResponse({ status: 201, description: '建立成功' })
-  @ApiResponse({ status: 401, description: '未認證' })
-  create(@Body() createItemDto: CreateItemDto) {
-    return this.itemService.create(createItemDto);
-  }
-}
-```
+錯誤用 NestJS 內建異常（`NotFoundException` 等）；Swagger decorator 的寫法照既有 controller。
 
 ### 開發完成檢查
 
